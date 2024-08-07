@@ -65,6 +65,7 @@ type AgentInfo struct {
 	Packages                  map[string]string `json:"packages"`
 	PreventPrototypePollution bool              `json:"preventedPrototypePollution"`
 	NodeEnv                   string            `json:"nodeEnv"`
+	Library                   string            `json:"library"`
 }
 
 type Started struct {

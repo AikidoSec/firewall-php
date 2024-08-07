@@ -21,6 +21,7 @@ func GetAgentInfo() AgentInfo {
 		},
 		Packages: make(map[string]string, 0),
 		NodeEnv:  "",
+		Library: "firewall-php",
 	}
 }
 
