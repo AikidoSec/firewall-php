@@ -17,6 +17,7 @@ unordered_map<std::string, PHP_HANDLERS> HOOKED_FUNCTIONS = {
 	
 	/* Path traversal */
 	AIKIDO_REGISTER_FUNCTION_HANDLER_EX(basename,             handle_file_path_access),
+	AIKIDO_REGISTER_FUNCTION_HANDLER_EX(chdir,             	  handle_file_path_access),
 	AIKIDO_REGISTER_FUNCTION_HANDLER_EX(chgrp,	              handle_file_path_access),
 	AIKIDO_REGISTER_FUNCTION_HANDLER_EX(chmod,                handle_file_path_access),
 	AIKIDO_REGISTER_FUNCTION_HANDLER_EX(chown,                handle_file_path_access),
@@ -55,6 +56,7 @@ unordered_map<std::string, PHP_HANDLERS> HOOKED_FUNCTIONS = {
 	AIKIDO_REGISTER_FUNCTION_HANDLER_EX(lstat,                handle_file_path_access),
 	AIKIDO_REGISTER_FUNCTION_HANDLER_EX(mkdir,                handle_file_path_access),
 	AIKIDO_REGISTER_FUNCTION_HANDLER_EX(move_uploaded_file,   handle_file_path_access_2),
+	AIKIDO_REGISTER_FUNCTION_HANDLER_EX(opendir,              handle_file_path_access),
 	AIKIDO_REGISTER_FUNCTION_HANDLER_EX(parse_ini_file,       handle_file_path_access),
 	AIKIDO_REGISTER_FUNCTION_HANDLER_EX(pathinfo,             handle_file_path_access),
 	AIKIDO_REGISTER_FUNCTION_HANDLER_EX(readfile,             handle_file_path_access),
@@ -62,6 +64,7 @@ unordered_map<std::string, PHP_HANDLERS> HOOKED_FUNCTIONS = {
 	AIKIDO_REGISTER_FUNCTION_HANDLER_EX(realpath,             handle_file_path_access),
 	AIKIDO_REGISTER_FUNCTION_HANDLER_EX(rename,               handle_file_path_access_2),
 	AIKIDO_REGISTER_FUNCTION_HANDLER_EX(rmdir,                handle_file_path_access),
+	AIKIDO_REGISTER_FUNCTION_HANDLER_EX(scandir,              handle_file_path_access),
 	AIKIDO_REGISTER_FUNCTION_HANDLER_EX(stat,                 handle_file_path_access),
 	AIKIDO_REGISTER_FUNCTION_HANDLER_EX(symlink,              handle_file_path_access_2),
 	AIKIDO_REGISTER_FUNCTION_HANDLER_EX(touch,                handle_file_path_access),
