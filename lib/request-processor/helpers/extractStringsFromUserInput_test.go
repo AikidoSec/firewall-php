@@ -16,58 +16,58 @@ func TestExtractStringsFromUserInput(t *testing.T) {
 		}
 	})
 
-	/*
-		t.Run("it can extract query objects", func(t *testing.T) {
-			obj := map[string]interface{}{
-				"age": map[string]interface{}{
-					"$gt": "21",
-				},
-			}
+	t.Run("it can extract query objects", func(t *testing.T) {
+		obj := map[string]interface{}{
+			"age": map[string]interface{}{
+				"$gt": "21",
+			},
+		}
 
-			expected := map[string]string{
-				"age": ".",
-				"$gt": ".age",
-				"21":  ".age.$gt",
-			}
-			actual := ExtractStringsFromUserInput(obj, []PathPart{})
-			if !reflect.DeepEqual(expected, actual) {
-				t.Errorf("Expected %v, got %v", expected, actual)
-			}
+		expected := map[string]string{
+			"age": ".",
+			"$gt": ".age",
+			"21":  ".age.$gt",
+		}
+		actual := ExtractStringsFromUserInput(obj, []PathPart{})
+		if !reflect.DeepEqual(expected, actual) {
+			t.Errorf("Expected %v, got %v", expected, actual)
+		}
 
-			obj = map[string]interface{}{
-				"title": map[string]interface{}{
-					"$ne": "null",
-				},
-			}
+		obj = map[string]interface{}{
+			"title": map[string]interface{}{
+				"$ne": "null",
+			},
+		}
 
-			expected = map[string]string{
-				"title": ".",
-				"$ne":   ".title",
-				"null":  ".title.$ne",
-			}
-			actual = ExtractStringsFromUserInput(obj, []PathPart{})
-			if !reflect.DeepEqual(expected, actual) {
-				t.Errorf("Expected %v, got %v", expected, actual)
-			}
+		expected = map[string]string{
+			"title": ".",
+			"$ne":   ".title",
+			"null":  ".title.$ne",
+		}
+		actual = ExtractStringsFromUserInput(obj, []PathPart{})
+		if !reflect.DeepEqual(expected, actual) {
+			t.Errorf("Expected %v, got %v", expected, actual)
+		}
 
-			obj = map[string]interface{}{
-				"age":        "whaat",
-				"user_input": []string{"whaat", "dangerous"},
-			}
+		obj = map[string]interface{}{
+			"age":        "whaat1",
+			"user_input": []string{"whaat", "dangerous"},
+		}
 
-			expected = map[string]string{
-				"user_input": ".",
-				"age":        ".",
-				"whaat":      ".user_input.[0]",
-				"dangerous":  ".user_input.[1]",
-			}
-			actual = ExtractStringsFromUserInput(obj, []PathPart{})
-			if !reflect.DeepEqual(expected, actual) {
-				t.Errorf("Expected %v, got %v", expected, actual)
-			}
+		expected = map[string]string{
+			"user_input":      ".",
+			"age":             ".",
+			"whaat1":          ".age",
+			"whaat":           ".user_input.[0]",
+			"dangerous":       ".user_input.[1]",
+			"whaat,dangerous": ".user_input",
+		}
+		actual = ExtractStringsFromUserInput(obj, []PathPart{})
+		if !reflect.DeepEqual(expected, actual) {
+			t.Errorf("Expected %v, got %v", expected, actual)
+		}
 
-		})
-	*/
+	})
 
 	t.Run("it can extract cookie objects", func(t *testing.T) {
 		obj := map[string]interface{}{
@@ -143,7 +143,7 @@ func TestExtractStringsFromUserInput(t *testing.T) {
 		}
 	})
 
-	t.Run("iit can extract body objects", func(t *testing.T) {
+	t.Run("it can extract body objects", func(t *testing.T) {
 		obj := map[string]interface{}{
 			"nested": map[string]interface{}{
 				"nested": map[string]interface{}{
@@ -213,6 +213,57 @@ func TestExtractStringsFromUserInput(t *testing.T) {
 		}
 
 		actual := ExtractStringsFromUserInput(obj, []PathPart{})
+		if !reflect.DeepEqual(expected, actual) {
+			t.Errorf("Expected %v, got %v", expected, actual)
+		}
+	})
+
+	t.Run("it concatenates array values", func(t *testing.T) {
+		obj := map[string]interface{}{
+			"arr": []interface{}{"1", "2", "3"},
+		}
+
+		expected := map[string]string{
+			"arr":   ".",
+			"1,2,3": ".arr",
+			"1":     ".arr.[0]",
+			"2":     ".arr.[1]",
+			"3":     ".arr.[2]",
+		}
+		actual := ExtractStringsFromUserInput(obj, []PathPart{})
+		if !reflect.DeepEqual(expected, actual) {
+			t.Errorf("Expected %v, got %v", expected, actual)
+		}
+
+		obj = map[string]interface{}{
+			"arr": []interface{}{"1", 2, true, nil, nil, map[string]interface{}{"test": "test"}},
+		}
+
+		expected = map[string]string{
+			"arr":  ".",
+			"1":    ".arr.[0]",
+			"test": ".arr.[5].test",
+			"1,<int Value>,<bool Value>,<invalid Value>,<invalid Value>,<map[string]interface {} Value>": ".arr",
+		}
+		actual = ExtractStringsFromUserInput(obj, []PathPart{})
+		if !reflect.DeepEqual(expected, actual) {
+			t.Errorf("Expected %v, got %v", expected, actual)
+		}
+
+		obj = map[string]interface{}{
+			"arr": []interface{}{"1", 2, true, nil, nil, map[string]interface{}{"test": []string{"test123", "test345"}}},
+		}
+
+		expected = map[string]string{
+			"arr":             ".",
+			"1":               ".arr.[0]",
+			"test":            ".arr.[5]",
+			"test123":         ".arr.[5].test.[0]",
+			"test345":         ".arr.[5].test.[1]",
+			"test123,test345": ".arr.[5].test",
+			"1,<int Value>,<bool Value>,<invalid Value>,<invalid Value>,<map[string]interface {} Value>": ".arr",
+		}
+		actual = ExtractStringsFromUserInput(obj, []PathPart{})
 		if !reflect.DeepEqual(expected, actual) {
 			t.Errorf("Expected %v, got %v", expected, actual)
 		}

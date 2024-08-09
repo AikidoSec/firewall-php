@@ -3,6 +3,7 @@ package helpers
 import (
 	"fmt"
 	"reflect"
+	"strings"
 )
 
 type PathPart struct {
@@ -52,6 +53,18 @@ func ExtractStringsFromUserInput(obj interface{}, pathToPayload []PathPart) map[
 			for k, v := range nestedResults {
 				results[k] = v
 			}
+		}
+
+		// Add array as string to results
+		// This prevents bypassing the firewall by HTTP Parameter Pollution
+		// Example: ?param=value1&param=value2 will be treated as array by express
+		// If its used inside a string, it will be converted to a comma separated string
+		if val.Len() > 0 {
+			var values []string
+			for i := 0; i < val.Len(); i++ {
+				values = append(values, reflect.ValueOf(val.Index(i).Interface()).String())
+			}
+			results[strings.Join(values, ",")] = buildPathToPayload(pathToPayload)
 		}
 
 	case reflect.String:
