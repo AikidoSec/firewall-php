@@ -1,6 +1,7 @@
 #include "HandlePathTraversal.h"
 #include "Utils.h"
 
+/* Handles PHP functions that have a file path as first parameter */
 AIKIDO_HANDLER_FUNCTION(handle_file_path_access) {
     zend_string *filename = NULL;
    
@@ -31,6 +32,7 @@ AIKIDO_HANDLER_FUNCTION(handle_file_path_access) {
     };
 }
 
+/* Handles PHP functions that have file paths as first and second parameter */
 AIKIDO_HANDLER_FUNCTION(handle_file_path_access_2) {
     zend_string *filename = NULL;
     zend_string *filename2 = NULL;
