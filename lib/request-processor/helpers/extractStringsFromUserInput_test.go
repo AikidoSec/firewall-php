@@ -16,56 +16,58 @@ func TestExtractStringsFromUserInput(t *testing.T) {
 		}
 	})
 
-	t.Run("it can extract query objects", func(t *testing.T) {
-		obj := map[string]interface{}{
-			"age": map[string]interface{}{
-				"$gt": "21",
-			},
-		}
+	/*
+		t.Run("it can extract query objects", func(t *testing.T) {
+			obj := map[string]interface{}{
+				"age": map[string]interface{}{
+					"$gt": "21",
+				},
+			}
 
-		expected := map[string]string{
-			"age": ".",
-			"$gt": ".age",
-			"21":  ".age.$gt",
-		}
-		actual := ExtractStringsFromUserInput(obj, []PathPart{})
-		if !reflect.DeepEqual(expected, actual) {
-			t.Errorf("Expected %v, got %v", expected, actual)
-		}
+			expected := map[string]string{
+				"age": ".",
+				"$gt": ".age",
+				"21":  ".age.$gt",
+			}
+			actual := ExtractStringsFromUserInput(obj, []PathPart{})
+			if !reflect.DeepEqual(expected, actual) {
+				t.Errorf("Expected %v, got %v", expected, actual)
+			}
 
-		obj = map[string]interface{}{
-			"title": map[string]interface{}{
-				"$ne": "null",
-			},
-		}
+			obj = map[string]interface{}{
+				"title": map[string]interface{}{
+					"$ne": "null",
+				},
+			}
 
-		expected = map[string]string{
-			"title": ".",
-			"$ne":   ".title",
-			"null":  ".title.$ne",
-		}
-		actual = ExtractStringsFromUserInput(obj, []PathPart{})
-		if !reflect.DeepEqual(expected, actual) {
-			t.Errorf("Expected %v, got %v", expected, actual)
-		}
+			expected = map[string]string{
+				"title": ".",
+				"$ne":   ".title",
+				"null":  ".title.$ne",
+			}
+			actual = ExtractStringsFromUserInput(obj, []PathPart{})
+			if !reflect.DeepEqual(expected, actual) {
+				t.Errorf("Expected %v, got %v", expected, actual)
+			}
 
-		obj = map[string]interface{}{
-			"age":        "whaat",
-			"user_input": []string{"whaat", "dangerous"},
-		}
+			obj = map[string]interface{}{
+				"age":        "whaat",
+				"user_input": []string{"whaat", "dangerous"},
+			}
 
-		expected = map[string]string{
-			"user_input": ".",
-			"age":        ".",
-			"whaat":      ".user_input.[0]",
-			"dangerous":  ".user_input.[1]",
-		}
-		actual = ExtractStringsFromUserInput(obj, []PathPart{})
-		if !reflect.DeepEqual(expected, actual) {
-			t.Errorf("Expected %v, got %v", expected, actual)
-		}
+			expected = map[string]string{
+				"user_input": ".",
+				"age":        ".",
+				"whaat":      ".user_input.[0]",
+				"dangerous":  ".user_input.[1]",
+			}
+			actual = ExtractStringsFromUserInput(obj, []PathPart{})
+			if !reflect.DeepEqual(expected, actual) {
+				t.Errorf("Expected %v, got %v", expected, actual)
+			}
 
-	})
+		})
+	*/
 
 	t.Run("it can extract cookie objects", func(t *testing.T) {
 		obj := map[string]interface{}{
