@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"strings"
@@ -48,4 +49,49 @@ func GetDomain(rawurl string) string {
 		return ""
 	}
 	return parsedURL.Hostname()
+}
+
+func ParseFormData(data string, separator string) map[string]interface{} {
+	result := map[string]interface{}{}
+	parts := strings.Split(data, separator)
+	for _, part := range parts {
+		keyValue := strings.Split(part, "=")
+		if len(keyValue) != 2 {
+			continue
+		}
+		result[keyValue[0]] = keyValue[1]
+	}
+	return result
+}
+
+func ParseContext(context map[string]interface{}) map[string]interface{} {
+	if context == nil {
+		return map[string]interface{}{}
+	}
+	// first we check if the body is a string, and if it is, we try to parse it as JSON
+	// if it fails, we parse it as form data
+	if body, ok := context["body"].(string); ok {
+		if strings.HasPrefix(body, "{") && strings.HasSuffix(body, "}") {
+			// if the body is a JSON object, we parse it as JSON
+			jsonBody := map[string]interface{}{}
+			err := json.Unmarshal([]byte(body), &jsonBody)
+			if err == nil {
+				context["body"] = jsonBody
+			}
+		} else {
+			context["body"] = ParseFormData(body, "&")
+		}
+	}
+
+	// for the query, we always parse it as form data
+	if query, ok := context["query"].(string); ok {
+		context["query"] = ParseFormData(query, "&")
+	}
+
+	// for cookies
+	if cookies, ok := context["cookies"].(string); ok {
+		context["cookies"] = ParseFormData(cookies, ";")
+	}
+
+	return context
 }

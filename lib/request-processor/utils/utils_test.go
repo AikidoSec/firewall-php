@@ -223,3 +223,32 @@ func TestBuildRouteFromURL(t *testing.T) {
 		})
 	}
 }
+
+func TestParseFormData(t *testing.T) {
+	data := "a=1&b=2"
+	result := ParseFormData(data, "&")
+	if result["a"] != "1" {
+		t.Errorf("Expected 1, got %v", result["a"])
+	}
+	if result["b"] != "2" {
+		t.Errorf("Expected 2, got %v", result["b"])
+	}
+}
+
+func TestParseContext(t *testing.T) {
+	context := map[string]interface{}{"body": "{\"a\":\"1\", \"b\":\"2\"}", "query": "c=3&d=4"}
+	result := ParseContext(context)
+
+	if result["body"].(map[string]interface{})["a"] != "1" {
+		t.Errorf("Expected 1, got %v", result["body"].(map[string]interface{})["a"])
+	}
+	if result["body"].(map[string]interface{})["b"] != "2" {
+		t.Errorf("Expected 2, got %v", result["body"].(map[string]interface{})["b"])
+	}
+	if result["query"].(map[string]interface{})["c"] != "3" {
+		t.Errorf("Expected 3, got %v", result["query"].(map[string]interface{})["c"])
+	}
+	if result["query"].(map[string]interface{})["d"] != "4" {
+		t.Errorf("Expected 4, got %v", result["query"].(map[string]interface{})["d"])
+	}
+}

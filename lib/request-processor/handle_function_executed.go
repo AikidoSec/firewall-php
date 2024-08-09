@@ -14,6 +14,9 @@ var functionExecutedHandlers = map[string]HandlerFunction{
 	"passthru":   OnFunctionExecutedShell,
 	"popen":      OnFunctionExecutedShell,
 	"proc_open":  OnFunctionExecutedShell,
+
+	// basename, chgrp, chmod, chown, clearstatcache, copy, dirname, disk_free_space ...
+	"path_accessed": OnPathAccessed,
 }
 
 func OnFunctionExecuted(data map[string]interface{}) string {

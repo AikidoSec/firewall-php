@@ -91,7 +91,6 @@ bool config_override_with_env_bool(const std::string& env_key, bool default_valu
     return default_value;
 }
 
-
 std::string extract_server_var(zval *server, const char *var) {
     zval *data = zend_hash_str_find(Z_ARRVAL_P(server), var, strlen(var));
     if (!data) {
@@ -115,9 +114,65 @@ json get_route_and_method(zval *server) {
     return result;
 }
 
+
 int get_status_code() {
     int status_code = SG(sapi_headers).http_response_code;
     return status_code;
+}
+
+
+std::string extract_body() {
+    long maxlen = PHP_STREAM_COPY_ALL;
+    zend_string *contents;
+    php_stream *stream;
+
+    stream = php_stream_open_wrapper("php://input", "rb", 0 | REPORT_ERRORS, NULL);
+    if ((contents = php_stream_copy_to_mem(stream, maxlen, 0)) != NULL) {
+        php_stream_close(stream);
+        return std::string(ZSTR_VAL(contents));
+    }
+    php_stream_close(stream);
+    return "";
+}
+
+json extract_headers(zval *server) {
+    std::map<std::string, std::string> headers;
+    zend_string *key;
+    zval *val;
+    ZEND_HASH_FOREACH_STR_KEY_VAL(Z_ARRVAL_P(server), key, val) {
+        if (key && ZSTR_LEN(key) > 5 && memcmp(ZSTR_VAL(key), "HTTP_", 5) == 0) {
+            std::string header(ZSTR_VAL(key) + 5);
+            std::transform(header.begin(), header.end(), header.begin(), ::tolower);
+            headers[header] = Z_STRVAL_P(val);
+        }
+    } ZEND_HASH_FOREACH_END();
+
+  
+    json headers_json;
+    for (auto const& [key, val] : headers) {
+        headers_json[key] = val;
+    }
+    return headers_json;
+}
+
+json get_context() {
+    zval *server = zend_hash_str_find(&EG(symbol_table), "_SERVER", sizeof("_SERVER") - 1);
+    bool https = extract_server_var(server, "HTTPS") != "" ? true : false;
+
+    if (server && Z_TYPE_P(server) == IS_ARRAY) {
+        return {
+            { "https", https },
+            { "url", (https ? "https://" : "http://") + extract_server_var(server, "HTTP_HOST") + extract_server_var(server, "REQUEST_URI") },
+            { "method", extract_server_var(server, "REQUEST_METHOD") },
+            { "query", extract_server_var(server, "QUERY_STRING") },
+            { "headers", extract_headers(server) },
+            { "remoteAddress", extract_server_var(server, "REMOTE_ADDR") },
+            { "cookies", extract_server_var(server, "HTTP_COOKIE") },
+            { "body", extract_body() }
+        };
+    }
+
+    return {};
 }
 
 ACTION send_request_init_metadata_event(){

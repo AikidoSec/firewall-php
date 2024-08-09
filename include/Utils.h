@@ -71,3 +71,5 @@ ACTION send_request_init_metadata_event();
 ACTION send_request_shutdown_metadata_event();
 
 ACTION aikido_execute_output(json event);
+
+json get_context();
