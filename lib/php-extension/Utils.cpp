@@ -233,52 +233,7 @@ ACTION send_request_shutdown_metadata_event(){
     }
     return CONTINUE;
 }
-   
 
-
-ACTION aikido_execute_output(json event) {
-	if (event["action"] == "throw") {
-		std::string message = event["message"].get<std::string>();
-		int code = event["code"].get<int>();
-		zend_throw_exception(zend_exception_get_default(), message.c_str(), code);
-		return BLOCK;
-	}
-	else if (event["action"] == "exit") {
-		int response_code = event["response_code"].get<int>();
-		std::string message = event["message"].get<std::string>();
-
-        #if PHP_VERSION_ID >= 80000
-            const char* exit = "exit();\n";
-        #else
-            const char* exit = "";
-        #endif
-
-		int size_s = std::snprintf(nullptr, 0, PHP_EXIT_ACTION_TEMPLATE, response_code, message.c_str(), exit);
-		if(size_s <= 0) {
-			throw std::runtime_error("Error during formatting.");
-		}
-		size_s += 1;
-		auto size = static_cast<size_t>(size_s);
-		std::unique_ptr<char[]> php_code(new char[ size ]);
-
-		std::snprintf(php_code.get(), size, PHP_EXIT_ACTION_TEMPLATE, response_code, message.c_str(), exit);
-
-        AIKIDO_LOG_INFO("Executing PHP code: \n%s\n", php_code.get());
-
-		int ret = 0;
-		zend_try {
-			ret = zend_eval_stringl(php_code.get(), size - 1, NULL, "aikido php code (exit action)");
-		} zend_catch {
-            throw std::runtime_error( "Exception during php code eval" );
-		} zend_end_try();
-
-		if (ret == FAILURE) {
-			throw std::runtime_error( "Php code eval resulted in failure." );
-		}
-		return EXIT;
-	}
-	return CONTINUE;
-}
 
 bool send_user_event(std::string id, std::string username) {
     zval *server = zend_hash_str_find(&EG(symbol_table), "_SERVER", sizeof("_SERVER") - 1);
@@ -307,4 +262,37 @@ bool send_user_event(std::string id, std::string username) {
         AIKIDO_LOG_ERROR("Exception encountered in processing user event: %s\n", e.what());
     }
     return false;
+}
+
+bool aikido_call_user_function(std::string function_name, unsigned int params_number, zval* params) {
+    zval _function_name;
+    zend_string* _function_name_str = zend_string_init(function_name.c_str(), function_name.length(), 0);
+    ZVAL_STR(&_function_name, _function_name_str);
+
+    zval _return_value;
+
+    zend_result _result = call_user_function(EG(function_table), nullptr, &_function_name, &_return_value, params_number, params);
+
+    zend_string_release(_function_name_str);
+    zval_ptr_dtor(&_return_value);
+
+    return _result == SUCCESS;
+}
+
+bool aikido_call_user_function_one_param(std::string function_name, long first_param) {
+    zval _params[1];
+    ZVAL_LONG(&_params[0], first_param);
+    return aikido_call_user_function(function_name, 1, _params);
+}
+
+bool aikido_call_user_function_one_param(std::string function_name, std::string first_param) {
+    zval _params[1];
+    zend_string* _first_param = zend_string_init(first_param.c_str(), first_param.length(), 0);
+    ZVAL_STR(&_params[0], _first_param);
+
+    bool ret = aikido_call_user_function(function_name, 1, _params);
+
+    zend_string_release(_first_param);
+
+    return ret;
 }
