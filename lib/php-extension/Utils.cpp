@@ -271,7 +271,7 @@ bool aikido_call_user_function(std::string function_name, unsigned int params_nu
 
     zval _return_value;
 
-    zend_result _result = call_user_function(EG(function_table), nullptr, &_function_name, &_return_value, params_number, params);
+    int _result = call_user_function(EG(function_table), nullptr, &_function_name, &_return_value, params_number, params);
 
     zend_string_release(_function_name_str);
     zval_ptr_dtor(&_return_value);
