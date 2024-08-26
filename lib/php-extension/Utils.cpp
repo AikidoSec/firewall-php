@@ -300,6 +300,7 @@ bool send_user_event(std::string id, std::string username) {
 
     try {
         json response = GoRequestProcessorOnEvent(inputEvent);
+        aikido_execute_output(response);
         return true;
     }
     catch (const std::exception& e) {

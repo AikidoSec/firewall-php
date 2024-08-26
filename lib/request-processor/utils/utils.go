@@ -164,3 +164,9 @@ func GetBlockingMode() int {
 	defer globals.CloudConfigMutex.Unlock()
 	return globals.CloudConfig.Block
 }
+
+func IsUserBlocked(userID string) bool {
+	globals.CloudConfigMutex.Lock()
+	defer globals.CloudConfigMutex.Unlock()
+	return KeyExists(globals.CloudConfig.BlockedUserIds, userID)
+}
