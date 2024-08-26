@@ -13,12 +13,13 @@ ACTION aikido_execute_output_exit(json event) {
 
     aikido_call_user_function("ob_clean");
     aikido_call_user_function("header_remove");
-    aikido_call_user_function("http_response_code", _response_code);
+    aikido_call_user_function_one_param("http_response_code", _response_code);
     aikido_call_user_function_one_param("header", "Content-Type: text/plain");
-    aikido_call_user_function_one_param("echo", _message);
+
+    zend_write(_message.c_str(), _message.length()); // echo '<message>'
 
 #if PHP_VERSION_ID >= 80000
-    aikido_call_user_function("exit");
+    zend_bailout(); // exit
 #endif
     
     return EXIT;
