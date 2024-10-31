@@ -2,7 +2,9 @@ package sql_injection
 
 import (
 	"main/context"
+	"main/log"
 	"main/utils"
+	zen_internals "main/vulnerabilities/zen-internals"
 )
 
 /**
@@ -15,7 +17,12 @@ func CheckContextForSqlInjection(sql string, operation string, dialect string) *
 		mapss := source.CacheGet()
 
 		for str, path := range mapss {
-			if detectSQLInjection(sql, str, utils.GetSqlDialectFromString(dialect)) {
+			status, err := zen_internals.DetectSQLInjection(sql, str, utils.GetSqlDialectFromString(dialect))
+			if err != nil {
+				log.Error("Error while getting sql injection handler from zen internals", err)
+				return nil
+			}
+			if status == 1 {
 				return &utils.InterceptorResult{
 					Operation:     operation,
 					Kind:          utils.Sql_injection,

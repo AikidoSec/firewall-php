@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"main/globals"
-	"main/vulnerabilities/sql-injection/dialects"
 	"net"
 	"strings"
 )
@@ -178,26 +177,35 @@ func IsUserBlocked(userID string) bool {
 	return KeyExists(globals.CloudConfig.BlockedUserIds, userID)
 }
 
-func ArrayContains(array []string, search string) bool {
-	for _, member := range array {
-		if member == search {
-			return true
-		}
-	}
-	return false
-}
+type DatabaseType int
 
-func GetSqlDialectFromString(dialect string) dialects.SQLDialect {
+const (
+	Generic DatabaseType = iota
+	Ansi
+	BigQuery
+	Clickhouse
+	Databricks
+	DuckDB
+	Hive
+	MSSQL
+	MySQL
+	PostgreSQL
+	Redshift
+	Snowflake
+	SQLite
+)
+
+func GetSqlDialectFromString(dialect string) int {
 	dialect = strings.ToLower(dialect)
 	switch dialect {
 	case "mysql":
-		return dialects.SQLDialectMySQL{}
+		return int(MySQL)
 	case "sqlite":
-		return dialects.SQLDialectSQLite{}
+		return int(SQLite)
 	case "postgres":
-		return dialects.SQLDialectPostgres{}
+		return int(PostgreSQL)
 	default:
-		return dialects.SQLDialectMySQL{} // default -> MySQL
+		return int(Generic)
 	}
 }
 

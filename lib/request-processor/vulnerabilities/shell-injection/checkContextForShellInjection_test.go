@@ -3,11 +3,12 @@ package shell_injection
 import (
 	"main/context"
 	"main/utils"
+	zen_internals "main/vulnerabilities/zen-internals"
 	"testing"
 )
 
 func TestCheckContextForShellInjection(t *testing.T) {
-
+	zen_internals.InitZenInternals()
 	t.Run("it detects shell injection", func(t *testing.T) {
 		context.LoadForUnitTests(map[string]string{
 			"remoteAddress": "ip",
@@ -85,4 +86,6 @@ func TestCheckContextForShellInjection(t *testing.T) {
 			t.Errorf("expected payload, got %v", result.Payload)
 		}
 	})
+
+	zen_internals.CloseZenInternals()
 }

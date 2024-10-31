@@ -3,10 +3,13 @@ package sql_injection
 import (
 	"main/context"
 	"main/utils"
+	zen_internals "main/vulnerabilities/zen-internals"
 	"testing"
 )
 
 func TestCheckContextForSqlInjection(t *testing.T) {
+	zen_internals.InitZenInternals()
+
 	sql := "SELECT * FROM users WHERE id = '1' OR 1=1; -- '"
 	operation := "mysql.query"
 	context.LoadForUnitTests(map[string]string{
@@ -41,4 +44,5 @@ func TestCheckContextForSqlInjection(t *testing.T) {
 		t.Errorf("Expected payload 1' OR 1=1; --, got %s", result.Payload)
 	}
 
+	zen_internals.CloseZenInternals()
 }
