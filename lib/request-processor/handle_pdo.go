@@ -1,6 +1,7 @@
 package main
 
 import (
+	. "main/aikido_types"
 	"main/attack"
 	"main/context"
 	"main/log"
@@ -21,7 +22,9 @@ func OnPreSqlQueryExecuted() string {
 		return ""
 	}
 
-	res := sql_injection.CheckContextForSqlInjection(query, operation, dialect)
+	res := context.CheckVulnerabilityOrGetFromCache(&QueryExecuted{Query: query, Operation: operation, Dialect: dialect},
+		sql_injection.CheckContextForSqlInjection,
+		context.Context.CachedQueryExecutedResults)
 	if res != nil {
 		return attack.ReportAttackDetected(res)
 	}

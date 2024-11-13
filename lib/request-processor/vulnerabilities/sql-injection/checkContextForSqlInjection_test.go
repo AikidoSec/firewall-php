@@ -1,6 +1,7 @@
 package sql_injection
 
 import (
+	. "main/aikido_types"
 	"main/context"
 	"main/utils"
 	zen_internals "main/vulnerabilities/zen-internals"
@@ -21,7 +22,7 @@ func TestCheckContextForSqlInjection(t *testing.T) {
 		"route":         "/",
 	})
 
-	result := CheckContextForSqlInjection(sql, operation, "mysql")
+	result := CheckContextForSqlInjection(&QueryExecuted{Query: sql, Operation: operation, Dialect: "mysql"})
 
 	if result == nil {
 		t.Errorf("Expected result, got nil")

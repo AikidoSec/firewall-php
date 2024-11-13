@@ -1,39 +1,30 @@
 package path_traversal
 
 import (
+	. "main/aikido_types"
 	"main/context"
 	"main/utils"
 )
 
-func CheckContextForPathTraversal(filename string, operation string, checkPathStart bool) *utils.InterceptorResult {
+func CheckContextForPathTraversal(fileAccessed *FileAccessed) *utils.InterceptorResult {
 	for _, source := range context.SOURCES {
 		mapss := source.CacheGet()
-		sanitizedPath := SanitizePath(filename)
 
 		for str, path := range mapss {
-			inputString := SanitizePath(str)
-			if detectPathTraversal(sanitizedPath, inputString, checkPathStart) {
+			inputString := utils.SanitizePath(str)
+			if detectPathTraversal(fileAccessed.Filename, inputString, true) {
 				return &utils.InterceptorResult{
-					Operation:     operation,
+					Operation:     fileAccessed.Operation,
 					Kind:          utils.Path_traversal,
 					Source:        source.Name,
 					PathToPayload: path,
 					Metadata: map[string]string{
-						"filename": filename,
+						"filename": fileAccessed.Filename,
 					},
 					Payload: str,
 				}
 			}
 		}
-
 	}
 	return nil
-}
-
-func SanitizePath(path string) string {
-	// If path starts with file:// -> remove it
-	if len(path) > 7 && path[:7] == "file://" {
-		path = path[7:]
-	}
-	return path
 }

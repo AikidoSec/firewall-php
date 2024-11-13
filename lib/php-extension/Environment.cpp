@@ -34,7 +34,7 @@ void LoadEnvironment() {
 
     AIKIDO_GLOBAL(blocking) = GetEnvBool("AIKIDO_BLOCK", false);
     AIKIDO_GLOBAL(disable) = GetEnvBool("AIKIDO_DISABLE", false);
-    AIKIDO_GLOBAL(collect_api_schema) = GetEnvBool("AIKIDO_FEATURE_COLLECT_API_SCHEMA", false);
+    AIKIDO_GLOBAL(collect_api_schema) = GetEnvBool("AIKIDO_FEATURE_COLLECT_API_SCHEMA", true);
     AIKIDO_GLOBAL(localhost_allowed_by_default) = GetEnvBool("AIKIDO_LOCALHOST_ALLOWED_BY_DEFAULT", true);
     AIKIDO_GLOBAL(trust_proxy) = GetEnvBool("AIKIDO_TRUST_PROXY", true);
     AIKIDO_GLOBAL(socket_path) = GenerateSocketPath();

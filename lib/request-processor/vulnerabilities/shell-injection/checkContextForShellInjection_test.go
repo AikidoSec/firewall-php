@@ -1,6 +1,7 @@
 package shell_injection
 
 import (
+	. "main/aikido_types"
 	"main/context"
 	"main/utils"
 	"testing"
@@ -19,7 +20,7 @@ func TestCheckContextForShellInjection(t *testing.T) {
 			"route":  "/",
 		})
 		operation := "child_process.exec"
-		result := CheckContextForShellInjection("binary --domain www.example`whoami`.com", operation)
+		result := CheckContextForShellInjection(&ShellExecuted{Cmd: "binary --domain www.example`whoami`.com", Operation: operation})
 
 		if result == nil {
 			t.Errorf("expected result, got nil")
@@ -59,7 +60,7 @@ func TestCheckContextForShellInjection(t *testing.T) {
 			"route":  "/",
 		})
 
-		result := CheckContextForShellInjection("binary --domain www.example`whoami`.com", operation)
+		result := CheckContextForShellInjection(&ShellExecuted{Cmd: "binary --domain www.example`whoami`.com", Operation: operation})
 
 		if result == nil {
 			t.Errorf("expected result, got nil")

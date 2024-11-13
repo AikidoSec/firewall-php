@@ -1,6 +1,7 @@
 package sql_injection
 
 import (
+	. "main/aikido_types"
 	"main/context"
 	"main/utils"
 )
@@ -9,22 +10,22 @@ import (
  * This function goes over all the different input types in the context and checks
  * if it's a possible SQL Injection, if so the function returns an InterceptorResult
  */
-func CheckContextForSqlInjection(sql string, operation string, dialect string) *utils.InterceptorResult {
-	dialectId := utils.GetSqlDialectFromString(dialect)
+func CheckContextForSqlInjection(queryExecuted *QueryExecuted) *utils.InterceptorResult {
+	dialectId := utils.GetSqlDialectFromString(queryExecuted.Dialect)
 
 	for _, source := range context.SOURCES {
 		mapss := source.CacheGet()
 
 		for str, path := range mapss {
-			if detectSQLInjection(sql, str, dialectId) {
+			if detectSQLInjection(queryExecuted.Query, str, dialectId) {
 				return &utils.InterceptorResult{
-					Operation:     operation,
+					Operation:     queryExecuted.Operation,
 					Kind:          utils.Sql_injection,
 					Source:        source.Name,
 					PathToPayload: path,
 					Metadata: map[string]string{
-						"sql":     sql,
-						"dialect": dialect,
+						"sql":     queryExecuted.Query,
+						"dialect": queryExecuted.Dialect,
 					},
 					Payload: str,
 				}

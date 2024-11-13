@@ -3,34 +3,39 @@ package context
 // #include "../../API.h"
 import "C"
 import (
+	. "main/aikido_types"
 	"main/log"
+	"main/utils"
 )
 
 type CallbackFunction func(int) string
 
 /* Request level context cache (changes on each PHP request) */
 type RequestContextData struct {
-	Callback               CallbackFunction // callback to access data from the PHP layer (C++ extension) about the current request and current event
-	Method                 *string
-	Route                  *string
-	RouteParsed            *string
-	URL                    *string
-	StatusCode             *int
-	IP                     *string
-	IsIpBypassed           *bool
-	IsProtectionTurnedOff  *bool
-	UserAgent              *string
-	UserId                 *string
-	UserName               *string
-	BodyRaw                *string
-	BodyParsed             *map[string]interface{}
-	BodyParsedFlattened    *map[string]string
-	QueryParsed            *map[string]interface{}
-	QueryParsedFlattened   *map[string]string
-	CookiesParsed          *map[string]interface{}
-	CookiesParsedFlattened *map[string]string
-	HeadersParsed          *map[string]interface{}
-	HeadersParsedFlattened *map[string]string
+	Callback                   CallbackFunction // callback to access data from the PHP layer (C++ extension) about the current request and current event
+	Method                     *string
+	Route                      *string
+	RouteParsed                *string
+	URL                        *string
+	StatusCode                 *int
+	IP                         *string
+	IsIpBypassed               *bool
+	IsProtectionTurnedOff      *bool
+	UserAgent                  *string
+	UserId                     *string
+	UserName                   *string
+	BodyRaw                    *string
+	BodyParsed                 *map[string]interface{}
+	BodyParsedFlattened        *map[string]string
+	QueryParsed                *map[string]interface{}
+	QueryParsedFlattened       *map[string]string
+	CookiesParsed              *map[string]interface{}
+	CookiesParsedFlattened     *map[string]string
+	HeadersParsed              *map[string]interface{}
+	HeadersParsedFlattened     *map[string]string
+	CachedQueryExecutedResults map[QueryExecuted]*utils.InterceptorResult
+	CachedFileAccessedResults  map[FileAccessed]*utils.InterceptorResult
+	CachedShellExecutedResults map[ShellExecuted]*utils.InterceptorResult
 }
 
 var Context RequestContextData
@@ -47,6 +52,16 @@ func Clear() bool {
 		Callback: Context.Callback,
 	}
 	return true
+}
+
+func CheckVulnerabilityOrGetFromCache[T comparable](eventData *T, checkVulnFn func(*T) *utils.InterceptorResult, cache map[T]*utils.InterceptorResult) *utils.InterceptorResult {
+	result, resultWasCached := cache[*eventData]
+	if resultWasCached {
+		return result
+	}
+	result = checkVulnFn(eventData)
+	cache[*eventData] = result
+	return result
 }
 
 func GetFromCache[T any](fetchDataFn func(), s **T) T {

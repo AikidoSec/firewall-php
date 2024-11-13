@@ -226,3 +226,11 @@ func ArrayContains(array []string, search string) bool {
 	}
 	return false
 }
+
+func SanitizePath(path string) string {
+	// If path starts with file:// -> remove it
+	if len(path) > 7 && path[:7] == "file://" {
+		path = path[7:]
+	}
+	return path
+}

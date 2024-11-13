@@ -1,6 +1,7 @@
 package path_traversal
 
 import (
+	. "main/aikido_types"
 	"main/context"
 	"main/utils"
 	"testing"
@@ -18,7 +19,7 @@ func TestCheckContextForPathTraversal(t *testing.T) {
 		})
 
 		operation := "operation"
-		result := CheckContextForPathTraversal("../file/test.txt", operation, true)
+		result := CheckContextForPathTraversal(&FileAccessed{Filename: "../file/test.txt", Operation: operation})
 
 		if result == nil {
 			t.Errorf("expected result, got nil")
@@ -83,7 +84,7 @@ func TestCheckContextForPathTraversal(t *testing.T) {
 			"remoteAddress": "127.0.0.1",
 		})
 
-		result := CheckContextForPathTraversal("../../web/spec-extension/cookies", operation, true)
+		result := CheckContextForPathTraversal(&FileAccessed{Filename: "../../web/spec-extension/cookies", Operation: operation})
 		if result != nil {
 			t.Errorf("expected nil, got %v", result)
 		}

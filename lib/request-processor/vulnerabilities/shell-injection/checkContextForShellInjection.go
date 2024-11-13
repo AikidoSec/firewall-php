@@ -1,23 +1,24 @@
 package shell_injection
 
 import (
+	. "main/aikido_types"
 	"main/context"
 	"main/utils"
 )
 
-func CheckContextForShellInjection(command string, operation string) *utils.InterceptorResult {
+func CheckContextForShellInjection(shellExecuted *ShellExecuted) *utils.InterceptorResult {
 	for _, source := range context.SOURCES {
 		mapss := source.CacheGet()
 
 		for str, path := range mapss {
-			if detectShellInjection(command, str) {
+			if detectShellInjection(shellExecuted.Cmd, str) {
 				return &utils.InterceptorResult{
-					Operation:     operation,
+					Operation:     shellExecuted.Operation,
 					Kind:          utils.Shell_injection,
 					Source:        source.Name,
 					PathToPayload: path,
 					Metadata: map[string]string{
-						"command": command,
+						"command": shellExecuted.Cmd,
 					},
 					Payload: str,
 				}

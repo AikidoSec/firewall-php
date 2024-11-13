@@ -1,6 +1,7 @@
 package main
 
 import (
+	. "main/aikido_types"
 	"main/attack"
 	"main/context"
 	"main/log"
@@ -20,8 +21,9 @@ func OnPreShellExecuted() string {
 		log.Infof("Protection is turned off -> will not run detection logic!")
 		return ""
 	}
-
-	res := shell_injection.CheckContextForShellInjection(cmd, operation)
+	res := context.CheckVulnerabilityOrGetFromCache(&ShellExecuted{Cmd: cmd, Operation: operation},
+		shell_injection.CheckContextForShellInjection,
+		context.Context.CachedShellExecutedResults)
 	if res != nil {
 		return attack.ReportAttackDetected(res)
 	}
