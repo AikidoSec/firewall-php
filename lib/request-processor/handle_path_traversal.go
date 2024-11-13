@@ -42,7 +42,7 @@ func OnPrePathAccessed() string {
 	for _, f := range []string{filename, filename2} {
 		res := context.CheckVulnerabilityOrGetFromCache(&FileAccessed{Filename: f, Operation: operation},
 			path_traversal.CheckContextForPathTraversal,
-			context.Context.CachedFileAccessedResults)
+			&context.Context.CachedFileAccessedResults)
 		if res != nil {
 			return attack.ReportAttackDetected(res)
 		}

@@ -24,7 +24,7 @@ func OnPreSqlQueryExecuted() string {
 
 	res := context.CheckVulnerabilityOrGetFromCache(&QueryExecuted{Query: query, Operation: operation, Dialect: dialect},
 		sql_injection.CheckContextForSqlInjection,
-		context.Context.CachedQueryExecutedResults)
+		&context.Context.CachedQueryExecutedResults)
 	if res != nil {
 		return attack.ReportAttackDetected(res)
 	}

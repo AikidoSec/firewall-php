@@ -54,13 +54,16 @@ func Clear() bool {
 	return true
 }
 
-func CheckVulnerabilityOrGetFromCache[T comparable](eventData *T, checkVulnFn func(*T) *utils.InterceptorResult, cache map[T]*utils.InterceptorResult) *utils.InterceptorResult {
-	result, resultWasCached := cache[*eventData]
+func CheckVulnerabilityOrGetFromCache[T comparable](eventData *T, checkVulnFn func(*T) *utils.InterceptorResult, cache *map[T]*utils.InterceptorResult) *utils.InterceptorResult {
+	if *cache == nil {
+		*cache = make(map[T]*utils.InterceptorResult)
+	}
+	result, resultWasCached := (*cache)[*eventData]
 	if resultWasCached {
 		return result
 	}
 	result = checkVulnFn(eventData)
-	cache[*eventData] = result
+	(*cache)[*eventData] = result
 	return result
 }
 

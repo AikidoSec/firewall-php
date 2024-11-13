@@ -23,7 +23,7 @@ func OnPreShellExecuted() string {
 	}
 	res := context.CheckVulnerabilityOrGetFromCache(&ShellExecuted{Cmd: cmd, Operation: operation},
 		shell_injection.CheckContextForShellInjection,
-		context.Context.CachedShellExecutedResults)
+		&context.Context.CachedShellExecutedResults)
 	if res != nil {
 		return attack.ReportAttackDetected(res)
 	}
