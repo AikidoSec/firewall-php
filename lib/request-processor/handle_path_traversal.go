@@ -9,22 +9,6 @@ import (
 	path_traversal "main/vulnerabilities/path-traversal"
 )
 
-func CheckOrGetFromCache(fileAccessed *FileAccessed) *utils.InterceptorResult {
-	res, resultWasCached := context.Context.CachedFileAccessedResults[*fileAccessed]
-	if resultWasCached {
-		if res != nil {
-			return res
-		}
-	} else {
-		res = path_traversal.CheckContextForPathTraversal(fileAccessed)
-		context.Context.CachedFileAccessedResults[*fileAccessed] = res
-		if res != nil {
-			return res
-		}
-	}
-	return nil
-}
-
 func OnPrePathAccessed() string {
 	filename := utils.SanitizePath(context.GetFilename())
 	filename2 := utils.SanitizePath(context.GetFilename2())
