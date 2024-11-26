@@ -20,3 +20,5 @@ $command = ["echo", "test"];
 $process = proc_open($command, $descriptorspec, $pipes);
 
 ?>
+
+--EXPECTF--
