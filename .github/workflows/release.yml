@@ -25,7 +25,7 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         pattern: |
-          aikido-php-firewall-*
+          aikido-php-firewall*
     
     - name: List Artifacts
       run: |
@@ -36,4 +36,4 @@ jobs:
       uses: softprops/action-gh-release@v2
       with:
         files: |
-          ./**/aikido-php-firewall-${{ env.AIKIDO_VERSION }}*
+          ./**/aikido-php-firewall*
