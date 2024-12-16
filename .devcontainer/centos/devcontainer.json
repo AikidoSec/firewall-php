@@ -1,6 +1,7 @@
 {
   "name": "Centos Dev Container",
   "runArgs": ["--platform=linux/amd64"],
+  "forwardPorts": [8080],
   "build": {
     "dockerfile": "Dockerfile",
     "args": {

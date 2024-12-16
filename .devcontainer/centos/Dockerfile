@@ -21,6 +21,7 @@ RUN yum install -y unzip
 RUN yum install -y nano
 RUN yum install -y lsof
 RUN yum install -y jq
+RUN yum install -y wget
 RUN yum install -y libcurl-devel
 RUN curl -O https://dl.google.com/go/go1.23.3.linux-amd64.tar.gz
 RUN tar -C /usr/local -xzf go1.23.3.linux-amd64.tar.gz
