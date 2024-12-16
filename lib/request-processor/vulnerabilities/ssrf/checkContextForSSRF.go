@@ -2,6 +2,7 @@ package ssrf
 
 import (
 	"main/context"
+	"main/log"
 	"main/utils"
 )
 
@@ -11,6 +12,7 @@ func CheckContextForSSRF(hostname string, port int, operation string) *utils.Int
 		mapss := source.CacheGet()
 
 		for str, path := range mapss {
+			log.Infof("%s %s", str, path)
 
 			if findHostnameInUserInput(str, hostname, port) {
 				interceptorResult := utils.InterceptorResult{
