@@ -5,7 +5,7 @@ if (extension_loaded('aikido')) {
 
     if ($decision->block && $decision->type == "blocked" && $decision->trigger == "ip") {
         http_response_code(403);
-        echo "Your IP address is not allowed to access this endpoint! (Your IP: {$decision->ip})";
+        echo "Your IP ({$decision->ip}) is blocked due to: {$decision->description}!";
         exit();
     }
 }

@@ -41,6 +41,7 @@ ZEND_FUNCTION(should_block_request) {
     zend_update_property_bool(blockingStatusClass, obj, "block", sizeof("block") - 1, action.Block());
     zend_update_property_string(blockingStatusClass, obj, "type", sizeof("type") - 1, action.Type());
     zend_update_property_string(blockingStatusClass, obj, "trigger", sizeof("trigger") - 1, action.Trigger());
+    zend_update_property_string(blockingStatusClass, obj, "description", sizeof("description") - 1, action.Description());
     zend_update_property_string(blockingStatusClass, obj, "ip", sizeof("ip") - 1, action.Ip());
 }
 
@@ -52,5 +53,6 @@ void RegisterAikidoBlockRequestStatusClass() {
     zend_declare_property_bool(blockingStatusClass, "block", sizeof("block") - 1, 0, ZEND_ACC_PUBLIC);
     zend_declare_property_string(blockingStatusClass, "type", sizeof("type") - 1, "", ZEND_ACC_PUBLIC);
     zend_declare_property_string(blockingStatusClass, "trigger", sizeof("trigger") - 1, "", ZEND_ACC_PUBLIC);
+    zend_declare_property_string(blockingStatusClass, "description", sizeof("description") - 1, "", ZEND_ACC_PUBLIC);
     zend_declare_property_string(blockingStatusClass, "ip", sizeof("ip") - 1, "", ZEND_ACC_PUBLIC);
 }

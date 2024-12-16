@@ -62,12 +62,17 @@ message CloudConfigUpdatedAt {
   int64 configUpdatedAt = 1;
 }
 
+message IpBlockList {
+  string description = 1;
+  repeated string ips = 2;
+}
+
 message CloudConfig {
   int64 configUpdatedAt = 1;
   repeated Endpoint endpoints = 2;
   repeated string blockedUserIds = 3;
   repeated string bypassedIps = 4;
-  repeated string geoBlockedIps = 5;
+  map<string, IpBlockList> blockedIps = 5;
   bool block = 6;
 }
 

@@ -14,6 +14,7 @@ class Action {
         bool block = false;
         std::string type;
         std::string trigger;
+        std::string description;
         std::string ip;
 
     private:
@@ -34,6 +35,7 @@ class Action {
         bool Block();
         char* Type();
         char* Trigger();
+        char* Description();
         char* Ip();
 };
 

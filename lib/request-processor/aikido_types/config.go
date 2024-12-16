@@ -36,12 +36,17 @@ type EndpointKey struct {
 	Route  string
 }
 
+type IpBlockList struct {
+	Description string
+	TrieV4      *ipaddr.IPv4AddressTrie
+	TrieV6      *ipaddr.IPv6AddressTrie
+}
+
 type CloudConfigData struct {
-	ConfigUpdatedAt     int64
-	Endpoints           map[EndpointKey]EndpointData
-	BlockedUserIds      map[string]bool
-	BypassedIps         map[string]bool
-	GeoBlockedIpsTrieV4 *ipaddr.IPv4AddressTrie
-	GeoBlockedIpsTrieV6 *ipaddr.IPv6AddressTrie
-	Block               int
+	ConfigUpdatedAt int64
+	Endpoints       map[EndpointKey]EndpointData
+	BlockedUserIds  map[string]bool
+	BypassedIps     map[string]bool
+	BlockedIps      map[string]IpBlockList
+	Block           int
 }

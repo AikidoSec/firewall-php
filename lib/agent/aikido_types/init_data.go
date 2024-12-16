@@ -42,6 +42,11 @@ type Endpoint struct {
 	RateLimiting       RateLimiting `json:"rateLimiting"`
 }
 
+type IpBlocklist struct {
+	Description string
+	Ips         []string
+}
+
 type CloudConfigData struct {
 	Success               bool       `json:"success"`
 	ServiceId             int        `json:"serviceId"`
@@ -52,7 +57,7 @@ type CloudConfigData struct {
 	BypassedIps           []string   `json:"allowedIPAddresses"`
 	ReceivedAnyStats      bool       `json:"receivedAnyStats"`
 	Block                 *bool      `json:"block,omitempty"`
-	GeoBlockedIps         []string
+	BlockedIpsList        map[string]IpBlocklist
 }
 
 type BlockedIpsData struct {

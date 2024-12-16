@@ -180,25 +180,24 @@ func IsUserBlocked(userID string) bool {
 	return KeyExists(globals.CloudConfig.BlockedUserIds, userID)
 }
 
-func IsIpGeoBlocked(ip string) bool {
+func IsIpBlocked(ip string) (bool, string) {
 	globals.CloudConfigMutex.Lock()
 	defer globals.CloudConfigMutex.Unlock()
 
 	ipAddress, err := ipaddr.NewIPAddressString(ip).ToAddress()
 	if err != nil {
 		log.Infof("Invalid ip address: %s\n", ip)
-		return false
+		return false, ""
 	}
 
-	if ipAddress.IsIPv4() && globals.CloudConfig.GeoBlockedIpsTrieV4 != nil {
-		log.Infof("Checking ipv4 address for geo-blocking: %v\n", ipAddress.ToIPv4())
-		return globals.CloudConfig.GeoBlockedIpsTrieV4.ElementContains(ipAddress.ToIPv4())
-	} else if ipAddress.IsIPv6() && globals.CloudConfig.GeoBlockedIpsTrieV6 != nil {
-		log.Infof("Checking ipv6 address for geo-blocking: %v\n", ipAddress.ToIPv6())
-		return globals.CloudConfig.GeoBlockedIpsTrieV6.ElementContains(ipAddress.ToIPv6())
+	for _, ipBlocklist := range globals.CloudConfig.BlockedIps {
+		if (ipAddress.IsIPv4() && ipBlocklist.TrieV4.ElementContains(ipAddress.ToIPv4())) ||
+			(ipAddress.IsIPv6() && ipBlocklist.TrieV6.ElementContains(ipAddress.ToIPv6())) {
+			return true, ipBlocklist.Description
+		}
 	}
 
-	return false
+	return false, ""
 }
 
 type DatabaseType int

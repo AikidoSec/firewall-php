@@ -15,30 +15,30 @@ var (
 	cloudConfigTicker = time.NewTicker(1 * time.Minute)
 )
 
-func buildGeoBlockedIpsTrie(geoBlockedIps []string) {
-	if len(geoBlockedIps) == 0 {
-		globals.CloudConfig.GeoBlockedIpsTrieV4 = nil
-		globals.CloudConfig.GeoBlockedIpsTrieV6 = nil
-	} else {
-		globals.CloudConfig.GeoBlockedIpsTrieV4 = &ipaddr.IPv4AddressTrie{}
-		globals.CloudConfig.GeoBlockedIpsTrieV6 = &ipaddr.IPv6AddressTrie{}
-		for _, ip := range geoBlockedIps {
-			ipAddress, err := ipaddr.NewIPAddressString(ip).ToAddress()
-			if err != nil {
-				log.Infof("Invalid geoip address: %s\n", ip)
-				continue
-			}
+func buildIpBlocklist(name, description string, ipsList []string) IpBlockList {
+	ipBlocklist := IpBlockList{
+		Description: description,
+		TrieV4:      &ipaddr.IPv4AddressTrie{},
+		TrieV6:      &ipaddr.IPv6AddressTrie{},
+	}
 
-			if ipAddress.IsIPv4() {
-				globals.CloudConfig.GeoBlockedIpsTrieV4.Add(ipAddress.ToIPv4())
-			} else if ipAddress.IsIPv6() {
-				globals.CloudConfig.GeoBlockedIpsTrieV6.Add(ipAddress.ToIPv6())
-			}
+	for _, ip := range ipsList {
+		ipAddress, err := ipaddr.NewIPAddressString(ip).ToAddress()
+		if err != nil {
+			log.Infof("Invalid address for %s: %s\n", name, ip)
+			continue
+		}
+
+		if ipAddress.IsIPv4() {
+			ipBlocklist.TrieV4.Add(ipAddress.ToIPv4())
+		} else if ipAddress.IsIPv6() {
+			ipBlocklist.TrieV6.Add(ipAddress.ToIPv6())
 		}
 	}
 
-	log.Debugf("GeoBlockedIpsTrieV4: %v", globals.CloudConfig.GeoBlockedIpsTrieV4)
-	log.Debugf("GeoBlockedIpsTrieV6: %v", globals.CloudConfig.GeoBlockedIpsTrieV6)
+	log.Debugf("%s (v4): %v", name, ipBlocklist.TrieV4)
+	log.Debugf("%s (v6): %v", name, ipBlocklist.TrieV6)
+	return ipBlocklist
 }
 
 func setCloudConfig(cloudConfigFromAgent *protos.CloudConfig) {
@@ -82,7 +82,10 @@ func setCloudConfig(cloudConfigFromAgent *protos.CloudConfig) {
 		globals.CloudConfig.Block = 0
 	}
 
-	buildGeoBlockedIpsTrie(cloudConfigFromAgent.GeoBlockedIps)
+	globals.CloudConfig.BlockedIps = map[string]IpBlockList{}
+	for ipBlocklistSource, ipBlocklist := range cloudConfigFromAgent.BlockedIps {
+		globals.CloudConfig.BlockedIps[ipBlocklistSource] = buildIpBlocklist(ipBlocklistSource, ipBlocklist.Description, ipBlocklist.Ips)
+	}
 }
 
 func startCloudConfigRoutine() {
