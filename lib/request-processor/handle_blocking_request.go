@@ -17,7 +17,7 @@ func GetStoreAction(actionType, trigger, description, ip string) string {
 		"trigger":     trigger,
 		"description": html.EscapeString(description),
 	}
-	if trigger == ip {
+	if trigger == "ip" {
 		actionMap["ip"] = ip
 	}
 	actionJson, err := json.Marshal(actionMap)

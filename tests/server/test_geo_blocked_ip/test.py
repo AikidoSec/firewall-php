@@ -14,7 +14,7 @@ def run_test():
     response = php_server_get("/test")
     assert_response_code_is(response, 403)
     assert_response_header_contains(response, "Content-Type", "text")
-    assert_response_body_contains(response, "is blocked due to: geo restrictions!")
+    assert_response_body_contains(response, "Your IP (5.8.19.22) is blocked due to: geo restrictions!")
 
     apply_config("change_config_remove_geo_blocked_ips.json")
         
@@ -27,7 +27,7 @@ def run_test():
     response = php_server_get("/test")
     assert_response_code_is(response, 403)
     assert_response_header_contains(response, "Content-Type", "text")
-    assert_response_body_contains(response, "is blocked due to: geo restrictions!")
+    assert_response_body_contains(response, "Your IP (5.8.19.22) is blocked due to: geo restrictions!")
     
     
 if __name__ == "__main__":
