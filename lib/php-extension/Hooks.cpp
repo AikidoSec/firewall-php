@@ -37,6 +37,10 @@ unordered_map<std::string, PHP_HANDLERS> HOOKED_FUNCTIONS = {
     AIKIDO_REGISTER_FUNCTION_HANDLER_EX(symlink, handle_pre_file_path_access_2),
     AIKIDO_REGISTER_FUNCTION_HANDLER_EX(touch, handle_pre_file_path_access),
     AIKIDO_REGISTER_FUNCTION_HANDLER_EX(unlink, handle_pre_file_path_access),
+    AIKIDO_REGISTER_FUNCTION_HANDLER_EX(require, handle_pre_file_path_access),
+    AIKIDO_REGISTER_FUNCTION_HANDLER_EX(require_once, handle_pre_file_path_access),
+    AIKIDO_REGISTER_FUNCTION_HANDLER_EX(include, handle_pre_file_path_access),
+    AIKIDO_REGISTER_FUNCTION_HANDLER_EX(include_once, handle_pre_file_path_access),
 };
 
 unordered_map<AIKIDO_METHOD_KEY, PHP_HANDLERS, AIKIDO_METHOD_KEY_HASH> HOOKED_METHODS = {
