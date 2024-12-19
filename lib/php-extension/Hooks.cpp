@@ -42,6 +42,8 @@ unordered_map<std::string, PHP_HANDLERS> HOOKED_FUNCTIONS = {
 unordered_map<AIKIDO_METHOD_KEY, PHP_HANDLERS, AIKIDO_METHOD_KEY_HASH> HOOKED_METHODS = {
     AIKIDO_REGISTER_METHOD_HANDLER(pdo, query)};
 
+aikido_file_compilation_handler original_file_compilation_handler = nullptr;
+
 void HookFunctions() {
     for (auto &it : HOOKED_FUNCTIONS) {
         zend_function *function_data = (zend_function *)zend_hash_str_find_ptr(CG(function_table), it.first.c_str(), it.first.length());
@@ -125,4 +127,26 @@ void UnhookMethods() {
         AIKIDO_LOG_INFO("Unhooked method \"%s->%s\" (original handler %p)!\n", it.first.class_name.c_str(), it.first.method_name.c_str(), it.second.original_handler);
         it.second.original_handler = nullptr;
     }
+}
+
+void HookFileCompilation() {
+    if (original_file_compilation_handler) {
+        AIKIDO_LOG_WARN("\"zend_compile_file\" already hooked (original handler %p)!\n", original_file_compilation_handler);
+        return;
+    }
+    original_file_compilation_handler = zend_compile_file;
+    zend_compile_file = handle_file_compilation;
+
+    AIKIDO_LOG_INFO("Hooked \"zend_compile_file\" (original handler %p)!\n", original_file_compilation_handler);
+}
+
+void UnhookFileCompilation() {
+    if (!original_file_compilation_handler) {
+        AIKIDO_LOG_WARN("Cannot unhook \"zend_compile_file\" without an original handler (was not previously hooked)!\n");
+        return;
+    }
+    zend_compile_file = original_file_compilation_handler;
+    original_file_compilation_handler = nullptr;
+
+    AIKIDO_LOG_INFO("Unhooked \"zend_compile_file\" (original handler %p)!\n", original_file_compilation_handler);
 }

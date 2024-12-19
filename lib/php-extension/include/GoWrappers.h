@@ -1,7 +1,7 @@
 #pragma once
 
-std::string CppCreateString(GoString);
+GoString GoCreateString(const std::string&);
 
-GoString GoCreateString(std::string&);
+GoSlice GoCreateSlice(const std::vector<int64_t>& v);
 
 char* GoContextCallback(int callbackId);

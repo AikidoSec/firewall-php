@@ -10,6 +10,7 @@ lib/php-extension/configure~
 lib/php-extension/configure
 lib/php-extension/configure.ac
 lib/php-extension/run-tests.php
+.devcontainer/shared/*.rpm
 *.sqlite
 tests/cli/*.diff
 tests/cli/*.exp
@@ -23,6 +24,7 @@ tests/cli/**/*.log
 tests/cli/**/*.out
 tests/cli/**/*.php
 tests/cli/**/*.sh
+tests/cli/**/*.post
 *aikido-agent
 *.pb.go
 *.pb.go

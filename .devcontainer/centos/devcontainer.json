@@ -1,6 +1,9 @@
 {
   "name": "Centos Dev Container",
   "runArgs": ["--platform=linux/amd64"],
+  "mounts": [
+    "source=${localWorkspaceFolder}/.devcontainer/shared,target=/shared,type=bind"
+  ],
   "build": {
     "dockerfile": "Dockerfile",
     "args": {

@@ -14,6 +14,7 @@ service Aikido {
   rpc GetCloudConfig(CloudConfigUpdatedAt) returns (CloudConfig);
   rpc OnUser(User) returns (google.protobuf.Empty);
   rpc OnAttackDetected(AttackDetected) returns (google.protobuf.Empty);
+  rpc OnMonitoredSinkStats(MonitoredSinkStats) returns (google.protobuf.Empty);
   rpc OnMiddlewareInstalled(google.protobuf.Empty) returns (google.protobuf.Empty);
 }
 
@@ -44,6 +45,21 @@ message RequestMetadataShutdown {
   string user = 4;
   string ip = 5;
   APISpec apiSpec = 6;
+}
+
+message CompressedTiming {
+  double averageInMs = 1;
+  map<string, double> percentiles = 2;
+}
+
+message MonitoredSinkStats {
+  string sink = 1;
+  int32 attacksDetected = 2;
+  int32 attacksBlocked = 3;
+  int32 interceptorThrewError = 4;
+  int32 withoutContext = 5;
+  int32 total = 6;
+  CompressedTiming compressedTiming = 7;
 }
 
 message RateLimiting {

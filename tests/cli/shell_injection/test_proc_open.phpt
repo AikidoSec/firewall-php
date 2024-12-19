@@ -5,10 +5,11 @@ Test PHP shell injection (proc_open)
 AIKIDO_LOG_LEVEL=INFO
 AIKIDO_BLOCK=1
 
+--POST--
+test=www.example`whoami`.com
+
 --FILE--
 <?php
-
-$_SERVER['HTTP_USER'] = 'www.example`whoami`.com';
 
 $descriptorspec = array(
     0 => array("pipe", "r"),  // stdin is a pipe that the child will read from

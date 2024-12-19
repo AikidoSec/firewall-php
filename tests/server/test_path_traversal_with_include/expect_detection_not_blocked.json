@@ -1,0 +1,27 @@
+{
+    "type": "detected_attack",
+    "request": {
+        "headers": {
+            "content_type": [
+                "application/json"
+            ]
+        },
+        "method": "POST",
+        "body": "{\"file\": \"../test_include.php\"}",
+        "route": "/testDetection"
+    },
+    "attack": {
+        "kind": "path_traversal",
+        "operation": "include",
+        "blocked": false,
+        "source": "body",
+        "path": ".file",
+        "payload": "../test_include.php",
+        "metadata": {
+            "filename": "../test_include.php"
+        }
+    },
+    "agent": {
+        "dryMode": true
+    }
+}

@@ -1,6 +1,7 @@
 #pragma once
 
 typedef void (*aikido_handler)(INTERNAL_FUNCTION_PARAMETERS, EVENT_ID &eventId);
+typedef zend_op_array* (*aikido_file_compilation_handler)(zend_file_handle *file_handle, int type);
 
 struct PHP_HANDLERS {
     aikido_handler handler;
@@ -32,6 +33,8 @@ class AIKIDO_METHOD_KEY_HASH {
 
 extern unordered_map<AIKIDO_METHOD_KEY, PHP_HANDLERS, AIKIDO_METHOD_KEY_HASH> HOOKED_METHODS;
 
+extern aikido_file_compilation_handler original_file_compilation_handler;
+
 void HookFunctions();
 
 void UnhookFunctions();
@@ -39,3 +42,7 @@ void UnhookFunctions();
 void HookMethods();
 
 void UnhookMethods();
+
+void HookFileCompilation();
+
+void UnhookFileCompilation();

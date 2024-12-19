@@ -1,11 +1,38 @@
 #include "Includes.h"
+#include "include/Stats.h"
+
+ACTION_STATUS aikido_process_event(EVENT_ID& eventId, std::string& sink) {
+    if (eventId == NO_EVENT_ID) {
+        return CONTINUE;
+    }
+
+    std::string outputEvent;
+    requestProcessor.SendEvent(eventId, outputEvent);
+
+    if (action.IsDetection(outputEvent)) {
+        stats[sink].IncrementAttacksDetected();
+    }
+
+    if (!requestProcessor.IsBlockingEnabled()) {
+        return CONTINUE;
+    }
+
+    ACTION_STATUS action_status = action.Execute(outputEvent);
+    if (action_status == BLOCK) {
+        stats[sink].IncrementAttacksBlocked();
+    }
+    return action_status;
+}
 
 ZEND_NAMED_FUNCTION(aikido_generic_handler) {
+    ScopedTimer scopedTimer;
+
     AIKIDO_LOG_DEBUG("Aikido generic handler started!\n");
 
     zif_handler original_handler = nullptr;
     aikido_handler post_handler = nullptr;
 
+    std::string sink;
     std::string outputEvent;
     bool caughtException = false;
 
@@ -53,6 +80,9 @@ ZEND_NAMED_FUNCTION(aikido_generic_handler) {
             return;
         }
 
+        sink = scope_name;
+        scopedTimer.SetSink(sink);
+
         AIKIDO_LOG_DEBUG("Calling handler for \"%s\"!\n", scope_name.c_str());
 
         EVENT_ID eventId = NO_EVENT_ID;
@@ -65,14 +95,10 @@ ZEND_NAMED_FUNCTION(aikido_generic_handler) {
         */
         handler(INTERNAL_FUNCTION_PARAM_PASSTHRU, eventId);
 
-        if (eventId != NO_EVENT_ID) {
-            std::string outputEvent;
-            requestProcessor.SendEvent(eventId, outputEvent);
-            if (requestProcessor.IsBlockingEnabled() && action.Execute(outputEvent) == BLOCK) {
-                // exit generic handler and do not call the original handler
-                // thus blocking the execution
-                return;
-            }
+        if (aikido_process_event(eventId, sink) == BLOCK) {
+            // exit generic handler and do not call the original handler, thus blocking the execution
+            AIKIDO_LOG_DEBUG("Aikido generic handler ended (block)!\n");
+            return;
         }
     } catch (const std::exception& e) {
         caughtException = true;
@@ -80,7 +106,9 @@ ZEND_NAMED_FUNCTION(aikido_generic_handler) {
     }
 
     if (original_handler) {
+        scopedTimer.Stop();
         original_handler(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+        scopedTimer.Start();
 
         if (!caughtException && post_handler) {
             EVENT_ID eventId = NO_EVENT_ID;
@@ -92,13 +120,7 @@ ZEND_NAMED_FUNCTION(aikido_generic_handler) {
                     for the currently hooked function sets it.
             */
             post_handler(INTERNAL_FUNCTION_PARAM_PASSTHRU, eventId);
-            if (eventId != NO_EVENT_ID) {
-                std::string output;
-                requestProcessor.SendEvent(eventId, output);
-                if (requestProcessor.IsBlockingEnabled()) {
-                    action.Execute(output);
-                }
-            }
+            aikido_process_event(eventId, sink);
         }
     }
 
