@@ -53,3 +53,4 @@ using json = nlohmann::json;
 #include "HandleShouldBlockRequest.h"
 #include "HandlePDO.h"
 #include "HandlePathAccess.h"
+#include "HandleFileCompilation.h"

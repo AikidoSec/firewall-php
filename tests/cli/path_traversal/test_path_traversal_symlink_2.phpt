@@ -5,10 +5,11 @@ Test path traversal (symlink)
 AIKIDO_LOG_LEVEL=INFO
 AIKIDO_BLOCK=1
 
+--POST--
+test=../file
+
 --FILE--
 <?php
-
-$_SERVER['HTTP_USER'] = '../file';
 
 $file = 'test.txt';
 $dest = '../file/test.txt';
