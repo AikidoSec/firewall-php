@@ -142,7 +142,7 @@ func OnUserEvent(id string, username string, ip string) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	_, err := client.OnUser(ctx, &protos.User{Id: id, Username: username, Ip: ip})
@@ -159,7 +159,7 @@ func OnAttackDetected(attackDetected *protos.AttackDetected) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	_, err := client.OnAttackDetected(ctx, attackDetected)
@@ -168,6 +168,27 @@ func OnAttackDetected(attackDetected *protos.AttackDetected) {
 		return
 	}
 	log.Debugf("Attack detected event sent via socket")
+}
+
+func OnMonitoredSinkStats(sink string, attacksDetected, attacksBlocked, interceptorThrewError, withoutContext, total int32, averageInMs float64, percentiles map[string]float64) {
+	if client == nil {
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	_, err := client.OnMonitoredSinkStats(ctx, &protos.MonitoredSinkStats{Sink: sink, AttacksDetected: attacksDetected,
+		InterceptorThrewError: interceptorThrewError, WithoutContext: withoutContext, Total: total,
+		CompressedTiming: &protos.CompressedTiming{
+			AverageInMs: averageInMs,
+			Percentiles: percentiles,
+		}})
+	if err != nil {
+		log.Warnf("Could not send monitored sink stats event")
+		return
+	}
+	log.Debugf("Monitored sink stats for sink \"%s\" sent via socket", sink)
 }
 
 func OnMiddlewareInstalled() {

@@ -79,6 +79,8 @@ func OnPostOutgoingRequest() string {
 
 	res := ssrf.CheckResolvedIpForSSRF(resolvedIp)
 	if effectiveHostname != hostname {
+		log.Infof("EffectiveHostname \"%s\" is different than Hostname \"%s\"!", effectiveHostname, hostname)
+
 		// After the request was made, the effective hostname is different that the initially requested one (redirects)
 		if res == nil {
 			// We double check here for SSRF on the effective hostname because some sinks might not provide the resolved IP address

@@ -77,6 +77,17 @@ bool RequestProcessor::IsBlockingEnabled() {
     return ret;
 }
 
+bool RequestProcessor::ReportStats() {
+    AIKIDO_LOG_INFO("Reporting stats to Aikido Request Processor...\n");
+
+    for (const auto& [sink, sinkStats] : stats) {
+        AIKIDO_LOG_INFO("Reporting stats for sink \"%s\" to Aikido Request Processor...\n", sink.c_str());
+        requestProcessorReportStatsFn(GoCreateString(sink), sinkStats.attacksDetected, sinkStats.attacksBlocked, sinkStats.interceptorThrewError, sinkStats.withoutContext, sinkStats.timings.size(), GoCreateSlice(sinkStats.timings));
+    }
+    stats.clear();
+    return true;
+}
+
 bool RequestProcessor::Init() {
     if (this->initFailed) {
         return false;
@@ -101,12 +112,14 @@ bool RequestProcessor::Init() {
     this->requestProcessorConfigUpdateFn = (RequestProcessorConfigUpdateFn)dlsym(libHandle, "RequestProcessorConfigUpdate");
     this->requestProcessorOnEventFn = (RequestProcessorOnEventFn)dlsym(libHandle, "RequestProcessorOnEvent");
     this->requestProcessorGetBlockingModeFn = (RequestProcessorGetBlockingModeFn)dlsym(libHandle, "RequestProcessorGetBlockingMode");
+    this->requestProcessorReportStatsFn = (RequestProcessorReportStats)dlsym(libHandle, "RequestProcessorReportStats");
     this->requestProcessorUninitFn = (RequestProcessorUninitFn)dlsym(libHandle, "RequestProcessorUninit");
     if (!requestProcessorInitFn ||
         !this->requestProcessorContextInitFn ||
         !this->requestProcessorConfigUpdateFn ||
         !this->requestProcessorOnEventFn ||
         !this->requestProcessorGetBlockingModeFn ||
+        !this->requestProcessorReportStatsFn ||
         !this->requestProcessorUninitFn) {
         AIKIDO_LOG_ERROR("Error loading symbols from the Aikido Request Processor library!\n");
         this->initFailed = true;
@@ -135,10 +148,15 @@ bool RequestProcessor::RequestInit() {
         return false;
     }
 
-    requestInitialized = true;
+    this->requestInitialized = true;
+    this->numberOfRequests++;
 
     ContextInit();
     SendPreRequestEvent();
+
+    if ((this->numberOfRequests % AIKIDO_GLOBAL(report_stats_interval)) == 0) {
+        requestProcessor.ReportStats();
+    }
     return true;
 }
 
@@ -161,7 +179,7 @@ void RequestProcessor::RequestShutdown() {
     
     LoadConfigOnce();
     SendPostRequestEvent();
-    requestInitialized = false;
+    this->requestInitialized = false;
 }
 
 void RequestProcessor::Uninit() {
@@ -169,6 +187,9 @@ void RequestProcessor::Uninit() {
         return;
     }
     if (!this->initFailed && this->requestProcessorUninitFn) {
+        AIKIDO_LOG_INFO("Reporting final stats to Aikido Request Processor...\n");
+        this->ReportStats();
+
         AIKIDO_LOG_INFO("Calling uninit for Aikido Request Processor...\n");
         this->requestProcessorUninitFn();
     }

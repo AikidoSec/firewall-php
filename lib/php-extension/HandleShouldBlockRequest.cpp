@@ -15,6 +15,8 @@ bool GetBlockingStatus() {
 }
 
 ZEND_FUNCTION(should_block_request) {
+    ScopedTimer scopedTimer("should_block_request");
+
     if (AIKIDO_GLOBAL(disable) == true) {
         return;
     }

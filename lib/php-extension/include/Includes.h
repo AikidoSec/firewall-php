@@ -17,6 +17,7 @@
 #include <string>
 #include <ctime>
 #include <unordered_map>
+#include <chrono>
 
 #include "3rdparty/json.hpp"
 using namespace std;
@@ -43,6 +44,7 @@ using json = nlohmann::json;
 #include "Request.h"
 #include "RequestProcessor.h"
 #include "PhpLifecycle.h"
+#include "Stats.h"
 
 #include "Utils.h"
 

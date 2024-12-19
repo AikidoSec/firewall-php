@@ -70,7 +70,13 @@ func (s *server) OnUser(ctx context.Context, req *protos.User) (*emptypb.Empty, 
 }
 
 func (s *server) OnAttackDetected(ctx context.Context, req *protos.AttackDetected) (*emptypb.Empty, error) {
-	go cloud.SendAttackDetectedEvent(req)
+	cloud.SendAttackDetectedEvent(req)
+	storeAttackStats(req)
+	return &emptypb.Empty{}, nil
+}
+
+func (s *server) OnMonitoredSinkStats(ctx context.Context, req *protos.MonitoredSinkStats) (*emptypb.Empty, error) {
+	storeSinkStats(req)
 	return &emptypb.Empty{}, nil
 }
 

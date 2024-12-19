@@ -6,6 +6,7 @@ import (
 	"main/globals"
 	"main/log"
 	"net"
+	"sort"
 	"strings"
 
 	"github.com/seancfoley/ipaddress-go/ipaddr"
@@ -248,4 +249,37 @@ func ArrayContains(array []string, search string) bool {
 		}
 	}
 	return false
+}
+
+func ComputeAverage(times []int64) float64 {
+	if len(times) == 0 {
+		return 0
+	}
+	var total int64
+	for _, t := range times {
+		total += t
+	}
+
+	return float64(total) / float64(len(times)) / 1e6
+}
+
+func ComputePercentiles(times []int64) map[string]float64 {
+	if len(times) == 0 {
+		return map[string]float64{
+			"P50": 0,
+			"P90": 0,
+			"P95": 0,
+			"P99": 0,
+		}
+	}
+
+	sort.Slice(times, func(i, j int) bool { return times[i] < times[j] })
+
+	percentiles := map[string]float64{}
+	percentiles["P50"] = float64(times[len(times)/2]) / 1e6
+	percentiles["P90"] = float64(times[int(0.9*float64(len(times)))]) / 1e6
+	percentiles["P95"] = float64(times[int(0.95*float64(len(times)))]) / 1e6
+	percentiles["P99"] = float64(times[int(0.99*float64(len(times)))]) / 1e6
+
+	return percentiles
 }

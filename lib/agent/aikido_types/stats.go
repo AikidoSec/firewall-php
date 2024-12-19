@@ -10,6 +10,8 @@ type StatsDataType struct {
 	RequestsAborted int
 	Attacks         int
 	AttacksBlocked  int
+
+	MonitoredSinkStats map[string]MonitoredSinkStats
 }
 
 type RateLimitingConfig struct {
