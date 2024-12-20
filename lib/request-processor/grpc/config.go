@@ -5,6 +5,8 @@ import (
 	"main/globals"
 	"main/ipc/protos"
 	"main/log"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/seancfoley/ipaddress-go/ipaddr"
@@ -41,6 +43,42 @@ func buildIpBlocklist(name, description string, ipsList []string) IpBlockList {
 	return ipBlocklist
 }
 
+func getEndpointData(ep *protos.Endpoint) EndpointData {
+	endpointData := EndpointData{
+		ForceProtectionOff: ep.ForceProtectionOff,
+		RateLimiting: RateLimiting{
+			Enabled: ep.RateLimiting.Enabled,
+		},
+		AllowedIPAddresses: map[string]bool{},
+	}
+	for _, ip := range ep.AllowedIPAddresses {
+		endpointData.AllowedIPAddresses[ip] = true
+	}
+	return endpointData
+}
+
+func storeEndpointConfig(ep *protos.Endpoint) {
+	globals.CloudConfig.Endpoints[EndpointKey{Method: ep.Method, Route: ep.Route}] = getEndpointData(ep)
+}
+
+func storeWildcardEndpointConfig(ep *protos.Endpoint) {
+	wildcardRouteCompiled, err := regexp.Compile(ep.Route)
+	if err != nil {
+		return
+	}
+
+	wildcardRoutes, exists := globals.CloudConfig.WildcardEndpoints[ep.Method]
+	if !exists {
+		globals.CloudConfig.WildcardEndpoints[ep.Method] = []WildcardEndpointData{}
+	}
+
+	globals.CloudConfig.WildcardEndpoints[ep.Method] = append(wildcardRoutes, WildcardEndpointData{RouteRegex: wildcardRouteCompiled, Data: getEndpointData(ep)})
+}
+
+func isWildcardEndpoint(method, route string) bool {
+	return method == "*" || strings.Contains(route, "*")
+}
+
 func setCloudConfig(cloudConfigFromAgent *protos.CloudConfig) {
 	if cloudConfigFromAgent == nil {
 		return
@@ -52,18 +90,14 @@ func setCloudConfig(cloudConfigFromAgent *protos.CloudConfig) {
 	globals.CloudConfig.ConfigUpdatedAt = cloudConfigFromAgent.ConfigUpdatedAt
 
 	globals.CloudConfig.Endpoints = map[EndpointKey]EndpointData{}
+	globals.CloudConfig.WildcardEndpoints = map[string][]WildcardEndpointData{}
+
 	for _, ep := range cloudConfigFromAgent.Endpoints {
-		endpointData := EndpointData{
-			ForceProtectionOff: ep.ForceProtectionOff,
-			RateLimiting: RateLimiting{
-				Enabled: ep.RateLimiting.Enabled,
-			},
-			AllowedIPAddresses: map[string]bool{},
+		if isWildcardEndpoint(ep.Method, ep.Route) {
+			storeWildcardEndpointConfig(ep)
+		} else {
+			storeEndpointConfig(ep)
 		}
-		for _, ip := range ep.AllowedIPAddresses {
-			endpointData.AllowedIPAddresses[ip] = true
-		}
-		globals.CloudConfig.Endpoints[EndpointKey{Method: ep.Method, Route: ep.Route}] = endpointData
 	}
 
 	globals.CloudConfig.BlockedUserIds = map[string]bool{}

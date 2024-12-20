@@ -48,13 +48,12 @@ func OnGetBlockingStatus() string {
 		return ""
 	}
 
-	endpointData, err := utils.GetEndpointConfig(method, route)
-	if err != nil {
+	if context.IsEndpointConfigured() {
 		log.Debugf("Method+route is not configured in endpoints! Skipping checks...")
 		return ""
 	}
 
-	if endpointData.RateLimiting.Enabled {
+	if context.IsEndpointRateLimitingEnabled() {
 		if !context.IsIpBypassed() {
 			// If request is monitored for rate limiting and the IP is not bypassed,
 			// do a sync call via gRPC to see if the request should be blocked or not
@@ -68,8 +67,8 @@ func OnGetBlockingStatus() string {
 		}
 	}
 
-	if !utils.IsIpAllowed(endpointData.AllowedIPAddresses, ip) {
-		log.Infof("IP \"%s\" is not allowd to access this endpoint!", ip)
+	if !context.IsEndpointIpAllowed() {
+		log.Infof("IP \"%s\" is not allowed to access this endpoint!", ip)
 		return GetStoreAction("blocked", "ip", "not allowed by config to access this endpoint", ip)
 	}
 	return ""
