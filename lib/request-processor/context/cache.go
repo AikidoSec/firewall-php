@@ -3,6 +3,7 @@ package context
 // #include "../../API.h"
 import "C"
 import (
+	. "main/aikido_types"
 	"main/helpers"
 	"main/log"
 	"main/utils"
@@ -123,18 +124,108 @@ func ContextSetUserName() {
 	ContextSetString(C.CONTEXT_USER_NAME, &Context.UserName)
 }
 
-func ContextSetIsProtectionTurnedOff() {
-	if Context.IsProtectionTurnedOff != nil {
+func ContextSetEndpointConfig() {
+	if Context.EndpointConfig != nil {
 		return
 	}
 
-	method := GetMethod()
-	route := GetParsedRoute()
+	endpointConfig, endpointConfigFound := utils.GetEndpointConfig(GetMethod(), GetParsedRoute())
+	Context.EndpointConfig = &EndpointDataStatus{Data: endpointConfig, Found: endpointConfigFound}
+}
 
-	endpointConfig, err := utils.GetEndpointConfig(method, route)
-	isProtectionTurnedOff := false
-	if err == nil {
-		isProtectionTurnedOff = endpointConfig.ForceProtectionOff
+func ContextSetWildcardEndpointsConfigs() {
+	if Context.WildcardEndpointsConfigs != nil {
+		return
 	}
-	Context.IsProtectionTurnedOff = &isProtectionTurnedOff
+
+	wildcardEndpointsConfigs := utils.GetWildcardEndpointsConfigs(GetMethod(), GetParsedRoute())
+	Context.WildcardEndpointsConfigs = &wildcardEndpointsConfigs
+}
+
+func ContextSetIsEndpointProtectionTurnedOff() {
+	if Context.IsEndpointProtectionTurnedOff != nil {
+		return
+	}
+
+	isEndpointProtectionTurnedOff := false
+
+	endpointConfig, found := GetEndpointConfig()
+	if found {
+		isEndpointProtectionTurnedOff = endpointConfig.ForceProtectionOff
+	}
+	if !isEndpointProtectionTurnedOff {
+		for _, wildcardEndpointConfig := range GetWildcardEndpointsConfig() {
+			if wildcardEndpointConfig.ForceProtectionOff {
+				isEndpointProtectionTurnedOff = true
+				break
+			}
+		}
+	}
+	Context.IsEndpointProtectionTurnedOff = &isEndpointProtectionTurnedOff
+}
+
+func ContextSetIsEndpointConfigured() {
+	if Context.IsEndpointConfigured != nil {
+		return
+	}
+
+	IsEndpointConfigured := false
+
+	_, found := GetEndpointConfig()
+	if found {
+		IsEndpointConfigured = true
+	}
+	if !IsEndpointConfigured {
+		if len(GetWildcardEndpointsConfig()) != 0 {
+			IsEndpointConfigured = true
+		}
+	}
+	Context.IsEndpointConfigured = &IsEndpointConfigured
+}
+
+func ContextSetIsEndpointRateLimitingEnabled() {
+	if Context.IsEndpointRateLimitingEnabled != nil {
+		return
+	}
+
+	IsEndpointRateLimitingEnabled := false
+
+	endpointData, found := GetEndpointConfig()
+	if found {
+		IsEndpointRateLimitingEnabled = endpointData.RateLimiting.Enabled
+	}
+	if !IsEndpointRateLimitingEnabled {
+		for _, wildcardEndpointConfig := range GetWildcardEndpointsConfig() {
+			if wildcardEndpointConfig.RateLimiting.Enabled {
+				IsEndpointRateLimitingEnabled = true
+				break
+			}
+		}
+	}
+	Context.IsEndpointRateLimitingEnabled = &IsEndpointRateLimitingEnabled
+}
+
+func ContextSetIsEndpointIpAllowed() {
+	if Context.IsEndpointIpAllowed != nil {
+		return
+	}
+
+	ip := GetIp()
+
+	isEndpointIpAllowed := true
+
+	endpointData, found := GetEndpointConfig()
+	if found {
+		isEndpointIpAllowed = utils.IsIpAllowed(endpointData.AllowedIPAddresses, ip)
+	}
+
+	if isEndpointIpAllowed {
+		for _, wildcardEndpointConfig := range GetWildcardEndpointsConfig() {
+			if !utils.IsIpAllowed(wildcardEndpointConfig.AllowedIPAddresses, ip) {
+				isEndpointIpAllowed = false
+				break
+			}
+		}
+	}
+	Context.IsEndpointIpAllowed = &isEndpointIpAllowed
 }
