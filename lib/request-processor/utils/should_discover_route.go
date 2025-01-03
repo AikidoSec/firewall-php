@@ -15,14 +15,6 @@ const (
 	PERMANENT_REDIRECT = 308
 )
 
-var ERROR_CODES = []int{NOT_FOUND, METHOD_NOT_ALLOWED}
-var REDIRECT_CODES = []int{
-	MOVED_PERMANENTLY,
-	FOUND,
-	SEE_OTHER,
-	TEMPORARY_REDIRECT,
-	PERMANENT_REDIRECT,
-}
 var EXCLUDED_METHODS = []string{"OPTIONS", "HEAD"}
 var IGNORE_EXTENSIONS = []string{"properties", "asp", "aspx", "jsp", "config"}
 var ALLOW_EXTENSIONS = []string{"html", "php"}
@@ -33,11 +25,7 @@ func ShouldDiscoverRoute(statusCode int, route, method string) bool {
 		return false
 	}
 
-	if containsInt(ERROR_CODES, statusCode) {
-		return false
-	}
-
-	if containsInt(REDIRECT_CODES, statusCode) {
+	if statusCode < 200 || statusCode > 399 {
 		return false
 	}
 
@@ -98,15 +86,6 @@ func isDotFile(segment string) bool {
 func containsIgnoredString(segment string) bool {
 	for _, str := range IGNORE_STRINGS {
 		if strings.Contains(segment, str) {
-			return true
-		}
-	}
-	return false
-}
-
-func containsInt(slice []int, item int) bool {
-	for _, s := range slice {
-		if s == item {
 			return true
 		}
 	}

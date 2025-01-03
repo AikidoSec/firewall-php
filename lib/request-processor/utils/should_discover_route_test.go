@@ -14,15 +14,15 @@ func TestShouldDiscoverRoute(t *testing.T) {
 		}
 	})
 
-	t.Run("it discovers route for all other status codes", func(t *testing.T) {
+	t.Run("it discovers route for all non error status codes", func(t *testing.T) {
 		if ShouldDiscoverRoute(200, "/", "GET") != true {
 			t.Errorf("Expected true, got false")
 		}
-		if ShouldDiscoverRoute(500, "/", "GET") != true {
-			t.Errorf("Expected true, got false")
+		if ShouldDiscoverRoute(500, "/", "GET") != false {
+			t.Errorf("Expected false, got true")
 		}
-		if ShouldDiscoverRoute(400, "/", "GET") != true {
-			t.Errorf("Expected true, got false")
+		if ShouldDiscoverRoute(400, "/", "GET") != false {
+			t.Errorf("Expected false, got true")
 		}
 		if ShouldDiscoverRoute(300, "/", "GET") != true {
 			t.Errorf("Expected true, got false")
@@ -167,21 +167,4 @@ func TestShouldDiscoverRoute(t *testing.T) {
 		}
 	})
 
-	t.Run("it ignores redirects", func(t *testing.T) {
-		if ShouldDiscoverRoute(301, "/", "GET") != false {
-			t.Errorf("Expected false, got true")
-		}
-		if ShouldDiscoverRoute(302, "/", "GET") != false {
-			t.Errorf("Expected false, got true")
-		}
-		if ShouldDiscoverRoute(303, "/", "GET") != false {
-			t.Errorf("Expected false, got true")
-		}
-		if ShouldDiscoverRoute(307, "/", "GET") != false {
-			t.Errorf("Expected false, got true")
-		}
-		if ShouldDiscoverRoute(308, "/", "GET") != false {
-			t.Errorf("Expected false, got true")
-		}
-	})
 }
