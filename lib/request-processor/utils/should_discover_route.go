@@ -36,15 +36,11 @@ func ShouldDiscoverRoute(statusCode int, route, method string) bool {
 		if isDotFile(segment) {
 			return false
 		}
-	}
 
-	for _, segment := range segments {
 		if containsIgnoredString(segment) {
 			return false
 		}
-	}
-
-	for _, segment := range segments {
+		
 		if !isAllowedExtension(segment) {
 			return false
 		}
