@@ -22,7 +22,7 @@ try {
     $_SERVER['HTTP_USER'] = $unsafeInput;
 
     // Vulnerable query
-    $result = $pdo->query("SELECT * FROM users WHERE id = $unsafeInput");
+    $result = $pdo->query("SELECT * FROM users WHERE id = '$unsafeInput'");
 
     foreach ($result as $row) {
         echo "ID: " . $row['id'] . "\n";
