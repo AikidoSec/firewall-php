@@ -57,8 +57,6 @@ dpkg -i -E ./aikido-php-firewall.x86_64.deb
 - [AWS Elastic beanstalk](./docs/aws-elastic-beanstalk.md)
 - [Fly.io](./docs/fly-io.md)
 
-4. Run `fly deploy`.
-
 ### Troubleshooting
 
 [Read our troubleshooting documentation.](./docs/troubleshooting.md)
