@@ -49,77 +49,9 @@ dpkg -i -E ./aikido-php-firewall.x86_64.deb
 
 ### Managed platforms
 
-#### AWS Elastic beanstalk
-
-1. In your repo, create a new file in `.ebextensions/01_aikido_php_firewall.config` with the following content:
-```
-commands:
-  aikido-php-firewall:
-    command: "rpm -Uvh --oldpackage https://github.com/AikidoSec/firewall-php/releases/download/v1.0.104/aikido-php-firewall.x86_64.rpm"
-    ignoreErrors: true
-
-files: 
-  "/opt/elasticbeanstalk/tasks/bundlelogs.d/aikido-php-firewall.conf" :
-    mode: "000755"
-    owner: root
-    group: root
-    content: |
-      /var/log/aikido-*/*.log
-
-  "/opt/elasticbeanstalk/tasks/taillogs.d/aikido-php-firewall.conf" :
-    mode: "000755"
-    owner: root
-    group: root
-    content: |
-      /var/log/aikido-*/*.log
-```
-
-2. Go to `AWS EB enviroment -> Configuration -> Updates, monitoring, and logging -> Edit` and add the desired environment variables like: AIKIDO_TOKEN
-
-#### Forge (recipe)
-1. Go to `[server_name] -> [site_name] -> Enviroment` and add the desired environment variables like: AIKIDO_TOKEN
-2. Go to "Recipes".
-3. Based on the running OS, use the [Manual install](#Manual-install) commands to create a new recipe called "Install Aikido Firewall" and select "root" as user. Example for Debian-based systems:
-```
-cd /tmp
-
-# Install commands from the "Manual install" section below, based on your OS
-curl -L -O https://github.com/AikidoSec/firewall-php/releases/download/v1.0.104/aikido-php-firewall.x86_64.deb
-dpkg -i -E ./aikido-php-firewall.x86_64.deb
-
-# Restarting the php services in order to load the Aikido PHP Firewall
-for service in $(systemctl list-units | grep php | awk '{print $1}'); do
-    sudo systemctl restart $service
-done
-```
-4. Based on the running OS, use the [Manual uninstall](#Manual-uninstall) commands to create a new recipe called "Uninstall Aikido Firewall" and select "root" as user. Example for Debian-based systems:
-```
-# Install commands from the "Manual uninstall" section below, based on your OS
-dpkg --purge aikido-php-firewall
-
-# Restarting the php services in order to load the Aikido PHP Firewall
-for service in $(systemctl list-units | grep php | awk '{print $1}'); do
-    sudo systemctl restart $service
-done
-```
-5. Run the created recipes to install / uninstall the Aikido PHP Firewall.
-
-#### Forge (ssh)
-1. Go to `[server_name] -> [site_name] -> Enviroment` and add the desired environment variables like: AIKIDO_TOKEN
-2. Use ssh to connect to the Forge server that you want to be protected by Aikido and, based on the running OS, execute the install commands from the [Manual install](#Manual-install) section.
-3. Go to `[server_name] -> [site_name] -> Restart` and click `Restart PHP <version>`.
-
-#### Fly.io (flyctl)
-1. In your repo, run `fly launch`.
-2. Add the desired environment variables, by running `fly secrets set AIKIDO_TOKEN=AIK_RUNTIME...`.
-3. Go to `./.fly/scripts` folder and create the `aikido.sh` file with the [Manual install](#Manual-install) commands:
-```
-#!/usr/bin/env bash
-cd /tmp
-curl -L -O https://github.com/AikidoSec/firewall-php/releases/download/v1.0.104/aikido-php-firewall.x86_64.deb
-dpkg -i -E ./aikido-php-firewall.x86_64.deb
-```
-4. Run `fly deploy`.
+- [Laravel Forge](./docs/laravel-forge.md)
+- [AWS Elastic beanstalk](./docs/aws-elastic-beanstalk.md)
+- [Fly.io](./docs/fly-io.md)
 
 ## Supported libraries and frameworks
 
