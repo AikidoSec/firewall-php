@@ -30,13 +30,14 @@ func TestDetectPathTraversal(t *testing.T) {
 		{"user input is longer than file path", "../file.txt", "../../file.txt", true, false},
 		{"absolute linux path", "/etc/passwd", "/etc/passwd", true, true},
 		{"linux user directory", "/home/user/file.txt", "/home/user/", true, true},
-		{"windows drive letter", "C:\\file.txt", "C:\\", true, true},
 		{"no path traversal", "/appdata/storage/file.txt", "/storage/file.txt", true, false},
 		{"does not flag test", "/app/test.txt", "test", true, false},
 		{"does not flag example/test.txt", "/app/data/example/test.txt", "example/test.txt", true, false},
 		{"does not absolute path with different folder", "/etc/app/config", "/etc/hack/config", true, false},
 		{"does not absolute path inside another folder", "/etc/app/data/etc/config", "/etc/config", true, false},
 		{"disable checkPathStart", "/etc/passwd", "/etc/passwd", false, false},
+		{"no path traversal if only path start", "/etc/passwd", "/etc/", true, false},
+		{"no path traversal if only path start", "/var/log/whatever.txt", "/var", true, false},
 	}
 
 	for _, tc := range tests {
