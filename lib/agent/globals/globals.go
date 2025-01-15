@@ -37,7 +37,13 @@ var RoutesMutex sync.Mutex
 var StatsData StatsDataType
 
 // Rate limiting map, which holds the current rate limiting state for each configured route
+// map[(method, route)] -> RateLimitingValue
 var RateLimitingMap = make(map[RateLimitingKey]*RateLimitingValue)
+
+// Rate limiting wildcard map, which holds the current rate limiting state for each configured wildcard route
+// map[method] -> (RouteRegex, RateLimitingValue)
+// method can also be '*'
+var RateLimitingWildcardMap = make(map[RateLimitingKey]*RateLimitingWildcardValue)
 
 // Rate limiting mutex used to sync access across the go routines
 var RateLimitingMutex sync.RWMutex
