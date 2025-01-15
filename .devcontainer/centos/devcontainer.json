@@ -1,7 +1,8 @@
 {
   "name": "Centos Dev Container",
-  "runArgs": ["--platform=linux/amd64"],
+  "runArgs": [],
   "build": {
+    "platform": "linux/amd64",
     "dockerfile": "Dockerfile",
     "args": {
       "PHP_VERSION": "8.1"
