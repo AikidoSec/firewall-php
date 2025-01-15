@@ -5,10 +5,11 @@ Test PHP shell injection (system)
 AIKIDO_LOG_LEVEL=INFO
 AIKIDO_BLOCK=1
 
+--POST--
+test=www.example`whoami`.com
+
 --FILE--
 <?php
-
-$_SERVER['HTTP_USER'] = 'www.example`whoami`.com';
 
 $output = array();
 $return_var = 0;

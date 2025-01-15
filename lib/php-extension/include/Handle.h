@@ -52,3 +52,6 @@
 #define AIKIDO_HANDLER_FUNCTION(name) void name(INTERNAL_FUNCTION_PARAMETERS, EVENT_ID& eventId)
 
 ZEND_NAMED_FUNCTION(aikido_generic_handler);
+
+ACTION_STATUS aikido_process_event(EVENT_ID& eventId, std::string& sink);
+

@@ -1,5 +1,5 @@
 Name:           aikido-php-firewall
-Version:        1.0.104
+Version:        1.0.105
 Release:        1
 Summary:        Aikido PHP Extension
 License:        GPL
@@ -44,6 +44,7 @@ fi
 # Install Aikido mod
 PHP_DEBIAN_MOD_DIR="/etc/php/$PHP_VERSION/mods-available"
 PHP_DEBIAN_MOD_DIR_CLI="/etc/php/$PHP_VERSION/cli/conf.d"
+PHP_DEBIAN_MOD_DIR_CGI="/etc/php/$PHP_VERSION/cgi/conf.d"
 PHP_DEBIAN_MOD_DIR_FPM="/etc/php/$PHP_VERSION/fpm/conf.d"
 PHP_DEBIAN_MOD_DIR_APACHE2="/etc/php/$PHP_VERSION/apache2/conf.d"
 
@@ -55,6 +56,10 @@ if [ -d $PHP_DEBIAN_MOD_DIR ]; then
     if [ -d $PHP_DEBIAN_MOD_DIR_CLI ]; then
         echo "Installing new Aikido mod in $PHP_DEBIAN_MOD_DIR_CLI/zz-aikido-%{version}.ini..."
         ln -sf $PHP_DEBIAN_MOD_DIR/aikido-%{version}.ini $PHP_DEBIAN_MOD_DIR_CLI/zz-aikido-%{version}.ini
+    fi
+    if [ -d $PHP_DEBIAN_MOD_DIR_CGI ]; then
+        echo "Installing new Aikido mod in $PHP_DEBIAN_MOD_DIR_CGI/zz-aikido-%{version}.ini..."
+        ln -sf $PHP_DEBIAN_MOD_DIR/aikido-%{version}.ini $PHP_DEBIAN_MOD_DIR_CGI/zz-aikido-%{version}.ini
     fi
     if [ -d $PHP_DEBIAN_MOD_DIR_FPM ]; then
         echo "Installing new Aikido mod in $PHP_DEBIAN_MOD_DIR_FPM/zz-aikido-%{version}.ini..."
@@ -95,6 +100,7 @@ echo "Found PHP version $PHP_VERSION!"
 # Uninstall Aikido mod
 PHP_DEBIAN_MOD_DIR="/etc/php/$PHP_VERSION/mods-available"
 PHP_DEBIAN_MOD_DIR_CLI="/etc/php/$PHP_VERSION/cli/conf.d"
+PHP_DEBIAN_MOD_DIR_CGI="/etc/php/$PHP_VERSION/cgi/conf.d"
 PHP_DEBIAN_MOD_DIR_FPM="/etc/php/$PHP_VERSION/fpm/conf.d"
 PHP_DEBIAN_MOD_DIR_APACHE2="/etc/php/$PHP_VERSION/apache2/conf.d"
 
@@ -106,6 +112,10 @@ if [ -d $PHP_DEBIAN_MOD_DIR ]; then
     if [ -d $PHP_DEBIAN_MOD_DIR_CLI ]; then
         echo "Uninstalling Aikido mod from $PHP_DEBIAN_MOD_DIR_CLI/zz-aikido-%{version}.ini..."
         rm -f $PHP_DEBIAN_MOD_DIR_CLI/zz-aikido-%{version}.ini
+    fi
+    if [ -d $PHP_DEBIAN_MOD_DIR_CGI ]; then
+        echo "Uninstalling Aikido mod from $PHP_DEBIAN_MOD_DIR_CGI/zz-aikido-%{version}.ini..."
+        rm -f $PHP_DEBIAN_MOD_DIR_CGI/zz-aikido-%{version}.ini
     fi
     if [ -d $PHP_DEBIAN_MOD_DIR_FPM ]; then
         echo "Uninstalling Aikido mod from $PHP_DEBIAN_MOD_DIR_FPM/zz-aikido-%{version}.ini..."

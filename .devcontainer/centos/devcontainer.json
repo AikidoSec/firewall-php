@@ -1,7 +1,11 @@
 {
   "name": "Centos Dev Container",
-  "runArgs": ["--platform=linux/amd64"],
+  "runArgs": [],
+  "mounts": [
+    "source=${localWorkspaceFolder}/.devcontainer/shared,target=/shared,type=bind"
+  ],
   "build": {
+    "platform": "linux/amd64",
     "dockerfile": "Dockerfile",
     "args": {
       "PHP_VERSION": "8.1"

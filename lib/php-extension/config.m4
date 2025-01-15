@@ -90,5 +90,5 @@ if test "$PHP_AIKIDO" != "no"; then
   dnl In case of no dependencies
   AC_DEFINE(HAVE_AIKIDO, 1, [ Have aikido support ])
 
-  PHP_NEW_EXTENSION(aikido, Aikido.cpp GoWrappers.cpp PhpWrappers.cpp PhpLifecycle.cpp Stats.cpp Request.cpp Environment.cpp RequestProcessor.cpp Agent.cpp Hooks.cpp Utils.cpp Handle.cpp HandleUrls.cpp HandleUsers.cpp HandleShouldBlockRequest.cpp Cache.cpp HandleShellExecution.cpp Log.cpp HandlePDO.cpp HandlePathAccess.cpp Action.cpp, $ext_shared)
+  PHP_NEW_EXTENSION(aikido, Aikido.cpp GoWrappers.cpp PhpWrappers.cpp PhpLifecycle.cpp Stats.cpp Request.cpp Environment.cpp RequestProcessor.cpp Agent.cpp Hooks.cpp Utils.cpp Handle.cpp HandleUrls.cpp HandleUsers.cpp HandleShouldBlockRequest.cpp Cache.cpp HandleFileCompilation.cpp HandleShellExecution.cpp Log.cpp HandlePDO.cpp HandlePathAccess.cpp Action.cpp, $ext_shared)
 fi

@@ -5,6 +5,12 @@ Test SQLite database operations
 AIKIDO_LOG_LEVEL=INFO
 AIKIDO_BLOCK=1
 
+--POST_RAW--
+Content-Type: application/json
+{
+    "test": "1' OR $$ IS NULL -- "
+}
+
 --FILE--
 <?php
 try {
@@ -17,12 +23,8 @@ try {
 
     $pdo->exec("INSERT INTO users (name, email) VALUES ('John Doe', 'john@example.com')");
 
-    // Simulate user input
-    $unsafeInput = "1' OR $$ IS NULL -- ";
-    $_SERVER['HTTP_USER'] = $unsafeInput;
-
     // Vulnerable query
-    $result = $pdo->query("SELECT * FROM users WHERE id = '$unsafeInput'");
+    $result = $pdo->query("SELECT * FROM users WHERE id = '1' OR $$ IS NULL -- '");
 
     foreach ($result as $row) {
         echo "ID: " . $row['id'] . "\n";

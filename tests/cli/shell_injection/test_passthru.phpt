@@ -5,10 +5,11 @@ Test PHP shell injection (passthru)
 AIKIDO_LOG_LEVEL=INFO
 AIKIDO_BLOCK=1
 
+--POST--
+test=www.example`whoami`.com
+
 --FILE--
 <?php
-
-$_SERVER['HTTP_USER'] = 'www.example`whoami`.com';
 
 passthru('binary --domain www.example`whoami`.com');
 
