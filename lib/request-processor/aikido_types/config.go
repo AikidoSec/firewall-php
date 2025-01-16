@@ -3,7 +3,7 @@ package aikido_types
 import "github.com/seancfoley/ipaddress-go/ipaddr"
 
 type EnvironmentConfigData struct {
-	SocketPath                string `json:"socket_path"`                  // '/run/aikido-{version}/aikido-{datetime}-{randint}.sock'
+	SocketPath                string `json:"socket_path"`                  // '/var/run/aikido-{version}/aikido-{datetime}-{randint}.sock'
 	SAPI                      string `json:"sapi"`                         // '{php-sapi}'
 	TrustProxy                bool   `json:"trust_proxy"`                  // default: true
 	LocalhostAllowedByDefault bool   `json:"localhost_allowed_by_default"` // default: true

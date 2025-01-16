@@ -11,7 +11,7 @@ type MachineData struct {
 }
 
 type EnvironmentConfigData struct {
-	SocketPath      string `json:"socket_path"`               // '/run/aikido-{version}/aikido-{datetime}-{randint}.sock'
+	SocketPath      string `json:"socket_path"`               // '/var/run/aikido-{version}/aikido-{datetime}-{randint}.sock'
 	PlatformName    string `json:"platform_name"`             // PHP platform name (fpm-fcgi, cli-server, ...)
 	PlatformVersion string `json:"platform_version"`          // PHP version
 	Endpoint        string `json:"endpoint,omitempty"`        // default: 'https://guard.aikido.dev/'

@@ -76,8 +76,8 @@ else
     fi
 fi
 
-mkdir -p /run/aikido-%{version}
-chmod 777 /run/aikido-%{version}
+mkdir -p /var/run/aikido-%{version}
+chmod 777 /var/run/aikido-%{version}
 
 echo "Installation process for Aikido v%{version} completed."
 
@@ -140,7 +140,7 @@ fi
 rm -rf /var/log/aikido-%{version}
 
 # Remove the Aikido socket folder
-SOCKET_FOLDER="/run/aikido-%{version}"
+SOCKET_FOLDER="/var/run/aikido-%{version}"
 
 if [ -d "$SOCKET_FOLDER" ]; then
     echo "Removing $SOCKET_FOLDER ..."
