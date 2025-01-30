@@ -16,6 +16,36 @@ func storeStats() {
 	globals.StatsData.Requests += 1
 }
 
+func storeAttackStats(req *protos.AttackDetected) {
+	globals.StatsData.StatsMutex.Lock()
+	defer globals.StatsData.StatsMutex.Unlock()
+
+	globals.StatsData.Attacks += 1
+	if req.GetAttack().GetBlocked() {
+		globals.StatsData.AttacksBlocked += 1
+	}
+}
+
+func storeSinkStats(protoSinkStats *protos.MonitoredSinkStats) {
+	globals.StatsData.StatsMutex.Lock()
+	defer globals.StatsData.StatsMutex.Unlock()
+
+	sink := protoSinkStats.GetSink()
+	monitoredSinkTimings, found := globals.StatsData.MonitoredSinkTimings[sink]
+	if !found {
+		monitoredSinkTimings = MonitoredSinkTimings{}
+	}
+
+	monitoredSinkTimings.AttacksDetected.Total += int(protoSinkStats.GetAttacksDetected())
+	monitoredSinkTimings.AttacksDetected.Blocked += int(protoSinkStats.GetAttacksBlocked())
+	monitoredSinkTimings.InterceptorThrewError += int(protoSinkStats.GetInterceptorThrewError())
+	monitoredSinkTimings.WithoutContext += int(protoSinkStats.GetWithoutContext())
+	monitoredSinkTimings.Total += int(protoSinkStats.GetTotal())
+	monitoredSinkTimings.Timings = append(monitoredSinkTimings.Timings, protoSinkStats.GetTimings()...)
+
+	globals.StatsData.MonitoredSinkTimings[sink] = monitoredSinkTimings
+}
+
 func getApiSpecData(apiSpec *protos.APISpec) (*protos.DataSchema, string, *protos.DataSchema, []*protos.APIAuthType) {
 	if apiSpec == nil {
 		return nil, "", nil, nil

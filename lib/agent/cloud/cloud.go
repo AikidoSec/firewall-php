@@ -1,6 +1,7 @@
 package cloud
 
 import (
+	. "main/aikido_types"
 	"main/globals"
 	"main/utils"
 	"time"
@@ -19,6 +20,7 @@ func Init() {
 	utils.StartPollingRoutine(ConfigPollingRoutineChannel, ConfigPollingTicker, CheckConfigUpdatedAt)
 
 	globals.StatsData.StartedAt = utils.GetTime()
+	globals.StatsData.MonitoredSinkTimings = make(map[string]MonitoredSinkTimings)
 	globals.MiddlewareInstalled = 0
 }
 

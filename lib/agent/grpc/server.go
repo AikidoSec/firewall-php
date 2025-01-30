@@ -35,7 +35,7 @@ func (s *server) OnConfig(ctx context.Context, req *protos.Config) (*emptypb.Emp
 
 func (s *server) OnDomain(ctx context.Context, req *protos.Domain) (*emptypb.Empty, error) {
 	log.Debugf("Received domain: %s:%d", req.GetDomain(), req.GetPort())
-	storeDomain(req.GetDomain(), int(req.GetPort()))
+	storeDomain(req.GetDomain(), req.GetPort())
 	return &emptypb.Empty{}, nil
 }
 
@@ -70,7 +70,13 @@ func (s *server) OnUser(ctx context.Context, req *protos.User) (*emptypb.Empty, 
 }
 
 func (s *server) OnAttackDetected(ctx context.Context, req *protos.AttackDetected) (*emptypb.Empty, error) {
-	go cloud.SendAttackDetectedEvent(req)
+	cloud.SendAttackDetectedEvent(req)
+	storeAttackStats(req)
+	return &emptypb.Empty{}, nil
+}
+
+func (s *server) OnMonitoredSinkStats(ctx context.Context, req *protos.MonitoredSinkStats) (*emptypb.Empty, error) {
+	storeSinkStats(req)
 	return &emptypb.Empty{}, nil
 }
 

@@ -5,11 +5,11 @@ Test path ssrf (curl_exec)
 AIKIDO_LOG_LEVEL=INFO
 AIKIDO_BLOCK=1
 
+--POST--
+test=http://127.0.0.1:8081
+
 --FILE--
 <?php
-
-$_SERVER['HTTP_USER'] = 'http://127.0.0.1:8081';
-
     
 $ch1 = curl_init("http://127.0.0.1:8081");
 curl_setopt($ch1, CURLOPT_RETURNTRANSFER, true);

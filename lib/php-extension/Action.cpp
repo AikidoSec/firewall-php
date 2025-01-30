@@ -54,6 +54,10 @@ ACTION_STATUS Action::Execute(std::string &event) {
     return CONTINUE;
 }
 
+bool Action::IsDetection(std::string &event) {
+    return !event.empty();
+}
+
 void Action::Reset() {
     exit = false;
     block = false;

@@ -36,12 +36,6 @@ func OnGetBlockingStatus() string {
 		return GetStoreAction("blocked", "user", "user blocked from config", "")
 	}
 
-	ip := context.GetIp()
-	if ipBlocked, ipBlockedDescription := utils.IsIpBlocked(ip); ipBlocked {
-		log.Infof("IP \"%s\" blocked due to: %s!", ip, ipBlockedDescription)
-		return GetStoreAction("blocked", "ip", ipBlockedDescription, ip)
-	}
-
 	method := context.GetMethod()
 	route := context.GetParsedRoute()
 	if method == "" || route == "" {
@@ -71,5 +65,6 @@ func OnGetBlockingStatus() string {
 		log.Infof("IP \"%s\" is not allowed to access this endpoint!", ip)
 		return GetStoreAction("blocked", "ip", "not allowed by config to access this endpoint", ip)
 	}
+
 	return ""
 }

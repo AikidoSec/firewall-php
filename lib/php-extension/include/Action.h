@@ -29,6 +29,8 @@ class Action {
         ~Action() = default;
 
         ACTION_STATUS Execute(std::string &event);
+        bool IsDetection(std::string &event);
+
         void Reset();
 
         bool Exit();

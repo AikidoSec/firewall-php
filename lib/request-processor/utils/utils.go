@@ -6,6 +6,8 @@ import (
 	"main/globals"
 	"main/log"
 	"net"
+	"net/url"
+	"runtime"
 	"strings"
 
 	"github.com/seancfoley/ipaddress-go/ipaddr"
@@ -51,6 +53,10 @@ func ParseFormData(data string, separator string) map[string]interface{} {
 			continue
 		}
 		result[keyValue[0]] = keyValue[1]
+		decodedValue, err := url.QueryUnescape(keyValue[1])
+		if err == nil && decodedValue != keyValue[1] {
+			result[keyValue[0]] = decodedValue
+		}
 	}
 	return result
 }
@@ -71,6 +77,11 @@ func ParseBody(body string) map[string]interface{} {
 }
 
 func ParseQuery(query string) map[string]interface{} {
+	jsonQuery := map[string]interface{}{}
+	err := json.Unmarshal([]byte(query), &jsonQuery)
+	if err == nil {
+		return jsonQuery
+	}
 	return ParseFormData(query, "&")
 }
 
@@ -248,4 +259,14 @@ func ArrayContains(array []string, search string) bool {
 		}
 	}
 	return false
+}
+
+func GetArch() string {
+	switch runtime.GOARCH {
+	case "amd64":
+		return "x86_64"
+	case "arm64":
+		return "aarch64"
+	}
+	panic(fmt.Sprintf("Running on unsupported architecture \"%s\"!", runtime.GOARCH))
 }

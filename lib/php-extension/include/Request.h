@@ -21,6 +21,8 @@ class Request {
 
     std::string GetBody();
 
+    std::string GetQuery();
+
     std::string GetHeaders();
 
     bool IsHttps();

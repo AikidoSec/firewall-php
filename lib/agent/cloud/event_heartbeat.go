@@ -15,11 +15,11 @@ func GetHostnamesAndClear() []Hostname {
 	var hostnames []Hostname
 	for domain := range globals.Hostnames {
 		for port := range globals.Hostnames[domain] {
-			hostnames = append(hostnames, Hostname{URL: domain, Port: int64(port)})
+			hostnames = append(hostnames, Hostname{URL: domain, Port: port, Hits: globals.Hostnames[domain][port]})
 		}
 	}
 
-	globals.Hostnames = make(map[string]map[int]bool)
+	globals.Hostnames = make(map[string]map[uint32]uint64)
 	return hostnames
 }
 
@@ -56,12 +56,38 @@ func GetUsersAndClear() []User {
 	return users
 }
 
+func GetMonitoredSinkStatsAndClear() map[string]MonitoredSinkStats {
+	monitoredSinkStats := make(map[string]MonitoredSinkStats)
+	for sink, stats := range globals.StatsData.MonitoredSinkTimings {
+		if stats.Total <= globals.MinStatsCollectedForRelevantMetrics {
+			continue
+		}
+
+		monitoredSinkStats[sink] = MonitoredSinkStats{
+			AttacksDetected:       stats.AttacksDetected,
+			InterceptorThrewError: stats.InterceptorThrewError,
+			WithoutContext:        stats.WithoutContext,
+			Total:                 stats.Total,
+			CompressedTimings: []CompressedTiming{
+				{
+					AverageInMS:  utils.ComputeAverage(stats.Timings),
+					Percentiles:  utils.ComputePercentiles(stats.Timings),
+					CompressedAt: utils.GetTime(),
+				},
+			},
+		}
+
+		delete(globals.StatsData.MonitoredSinkTimings, sink)
+	}
+	return monitoredSinkStats
+}
+
 func GetStatsAndClear() Stats {
 	globals.StatsData.StatsMutex.Lock()
 	defer globals.StatsData.StatsMutex.Unlock()
 
 	stats := Stats{
-		Sinks:     make(map[string]MonitoredSinkStats),
+		Sinks:     GetMonitoredSinkStatsAndClear(),
 		StartedAt: globals.StatsData.StartedAt,
 		EndedAt:   utils.GetTime(),
 		Requests: Requests{

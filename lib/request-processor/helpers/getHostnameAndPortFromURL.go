@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-func ParsePort(portStr string) int {
+func ParsePort(portStr string) uint32 {
 	if portStr == "" {
 		return 0
 	}
@@ -13,7 +13,10 @@ func ParsePort(portStr string) int {
 	if err != nil {
 		return 0
 	}
-	return port
+	if port < 0 {
+		return 0
+	}
+	return uint32(port)
 }
 
 /*
@@ -31,7 +34,7 @@ func FixURL(url string) string {
 	return url
 }
 
-func GetHostnameAndPortFromURL(url string) (string, int) {
+func GetHostnameAndPortFromURL(url string) (string, uint32) {
 	parsedURL := TryParseURL(FixURL(url))
 	if parsedURL == nil {
 		return "", 0

@@ -1,9 +1,12 @@
 #include "Includes.h"
 
-GoString GoCreateString(std::string& s) {
+GoString GoCreateString(const std::string& s) {
     return GoString{s.c_str(), s.length()};
 }
 
+GoSlice GoCreateSlice(const std::vector<int64_t>& v) {
+    return GoSlice{ (void*)v.data(), v.size(), v.capacity() };
+}
 /*
     Callback wrapper called by the RequestProcessor (GO) whenever it needs data from PHP (C++ extension).
 */
@@ -45,7 +48,7 @@ char* GoContextCallback(int callbackId) {
             break;
         case CONTEXT_QUERY:
             ctx = "QUERY";
-            ret = request.GetVar("QUERY_STRING");
+            ret = request.GetQuery();
             break;
         case CONTEXT_HTTPS:
             ctx = "HTTPS";

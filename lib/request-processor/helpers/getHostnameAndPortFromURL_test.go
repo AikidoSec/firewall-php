@@ -8,7 +8,7 @@ func TestGetHostnameAndPortFromURL(t *testing.T) {
 	tests := []struct {
 		url      string
 		hostname string
-		port     int
+		port     uint32
 	}{
 		{"httpsss", "", 0},
 		{"http://localhost:4000", "localhost", 4000},

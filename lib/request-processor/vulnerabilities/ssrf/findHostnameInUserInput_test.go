@@ -8,7 +8,7 @@ func TestFindHostnameInUserInput(t *testing.T) {
 	tests := []struct {
 		userInput string
 		hostname  string
-		port      int
+		port      uint32
 		expected  bool
 	}{
 		{"", "", 0, false},

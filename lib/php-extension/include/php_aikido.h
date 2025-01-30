@@ -3,7 +3,7 @@
 extern zend_module_entry aikido_module_entry;
 #define phpext_aikido_ptr &aikido_module_entry
 
-#define PHP_AIKIDO_VERSION "1.0.102"
+#define PHP_AIKIDO_VERSION "1.0.108"
 
 #if defined(ZTS) && defined(COMPILE_DL_AIKIDO)
 ZEND_TSRMLS_CACHE_EXTERN()
@@ -17,6 +17,7 @@ bool disable;
 bool collect_api_schema;
 bool trust_proxy;
 bool localhost_allowed_by_default;
+unsigned int report_stats_interval_to_agent; // Report once every X requests the collected stats to Agent
 std::string socket_path;
 std::string log_level_str;
 std::string sapi_name;

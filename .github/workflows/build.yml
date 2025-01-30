@@ -11,16 +11,24 @@ on:
 
 jobs:
   build_libs:
-    runs-on: ubuntu-20.04
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [	ubuntu-20.04, ubuntu-22.04-arm ]
+      fail-fast: true
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+    - name: Get Arch
+      run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
 
     - name: Install dependencies
       run: |
+        sudo add-apt-repository ppa:longsleep/golang-backports
         sudo apt-get update
-        sudo apt-get install -y protobuf-compiler protobuf-compiler-grpc
+        sudo apt-get install -y golang-go protobuf-compiler protobuf-compiler-grpc
 
     - name: GO setup
       run: |
@@ -63,10 +71,10 @@ jobs:
         ls -l ../../build
 
     - name: Archive agent 
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4
       if: always()
       with:
-        name: aikido-agent
+        name: aikido-agent-${{ env.ARCH }}
         if-no-files-found: error
         path: |
           ${{ github.workspace }}/build/aikido-agent.so
@@ -75,17 +83,18 @@ jobs:
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: aikido-request-processor
+        name: aikido-request-processor-${{ env.ARCH }}
         if-no-files-found: error
         path: |
           ${{ github.workspace }}/build/aikido-request-processor.so
 
   build_php_extension:
-    runs-on: ubuntu-20.04
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        php_version: ['7.3', '7.4', '8.0', '8.1', '8.2', '8.3']
-      fail-fast: false
+        php_version: ['7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4']
+        os: [	ubuntu-20.04, ubuntu-22.04-arm ]
+      fail-fast: true
 
     steps:
     - name: Checkout repository
@@ -96,6 +105,9 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y autoconf bison re2c libxml2-dev libssl-dev libcurl4-gnutls-dev
 
+    - name: Get Arch
+      run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
+
     - name: Get Aikido version
       run: |
         AIKIDO_VERSION=$(grep '#define PHP_AIKIDO_VERSION' lib/php-extension/include/php_aikido.h | awk -F'"' '{print $2}')
@@ -104,7 +116,7 @@ jobs:
         echo "AIKIDO_ARTIFACT=aikido-extension-php-${{ matrix.php_version }}" >> $GITHUB_ENV
 
     - name: Setup PHP
-      uses: AikidoSec/setup-php@v2
+      uses: AikidoSec/setup-php@fc14643b0a99ee9db10a3c025a33d76544fa3761 # v2
       with:
         php-version: ${{ matrix.php_version }}
         extensions: curl
@@ -136,16 +148,20 @@ jobs:
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: ${{ env.AIKIDO_ARTIFACT }}
+        name: ${{ env.AIKIDO_ARTIFACT }}-${{ env.ARCH }}
         if-no-files-found: error
         path: |
           ${{ github.workspace }}/build/modules/${{ env.AIKIDO_ARTIFACT }}.so
           ${{ github.workspace }}/tests/*.diff
 
   build_rpm:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     container:
       image: centos:latest
+    strategy:
+      matrix:
+        os: ['ubuntu-22.04', 'ubuntu-24.04-arm']
+      fail-fast: true
     needs: [ build_libs, build_php_extension ]
     steps:
       - name: Checkout repository
@@ -160,31 +176,34 @@ jobs:
           yum -y install rpmdevtools
           yum -y install jq
 
+      - name: Get Arch
+        run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
+
       - name: Get Aikido version
         run: |
           AIKIDO_VERSION=$(grep '#define PHP_AIKIDO_VERSION' lib/php-extension/include/php_aikido.h | awk -F'"' '{print $2}')
           echo $AIKIDO_VERSION
           echo "AIKIDO_VERSION=$AIKIDO_VERSION" >> $GITHUB_ENV
-          echo "AIKIDO_LIBZEN=libzen_internals_x86_64-unknown-linux-gnu.so" >> $GITHUB_ENV
-          echo "AIKIDO_LIBZEN_VERSION=0.1.31" >> $GITHUB_ENV
-      
+          echo "AIKIDO_LIBZEN=libzen_internals_${{ env.ARCH }}-unknown-linux-gnu.so" >> $GITHUB_ENV
+          echo "AIKIDO_LIBZEN_VERSION=0.1.35" >> $GITHUB_ENV
+
       - name: Download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4
         with:
           pattern: |
-            aikido-extension-php-*
+            aikido-extension-php-*-${{ env.ARCH }}
 
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
           pattern: |
-            aikido-agent*
+            aikido-agent-${{ env.ARCH }}
 
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
           pattern: |
-            aikido-request-processor*
+            aikido-request-processor-${{ env.ARCH }}
 
       - name: Download Aikido Zen Internals Lib
         run: |
@@ -192,8 +211,8 @@ jobs:
 
       - name: Prepare rpm package
         run: |
-          mv aikido-agent/aikido-agent.so package/rpm/opt/aikido/aikido-agent.so
-          mv aikido-request-processor/aikido-request-processor.so package/rpm/opt/aikido/aikido-request-processor.so
+          mv aikido-agent-${{ env.ARCH }}/aikido-agent.so package/rpm/opt/aikido/aikido-agent.so
+          mv aikido-request-processor-${{ env.ARCH }}/aikido-request-processor.so package/rpm/opt/aikido/aikido-request-processor.so
           mv ${{ env.AIKIDO_LIBZEN }} package/rpm/opt/aikido/${{ env.AIKIDO_LIBZEN }}
           mv aikido-extension-php-*/build/modules/aikido-extension-php-* package/rpm/opt/aikido/
           mv package/rpm/opt/aikido package/rpm/opt/aikido-${{ env.AIKIDO_VERSION }}
@@ -205,8 +224,8 @@ jobs:
 
       - name: Setup RPM for prod
         run: |
-          echo "AIKIDO_ARTIFACT=aikido-php-firewall-$AIKIDO_VERSION-1.x86_64.rpm" >> $GITHUB_ENV
-          echo "AIKIDO_ARTIFACT_RELEASE=aikido-php-firewall.x86_64.rpm" >> $GITHUB_ENV
+          echo "AIKIDO_ARTIFACT=aikido-php-firewall-$AIKIDO_VERSION-1.${{ env.ARCH }}.rpm" >> $GITHUB_ENV
+          echo "AIKIDO_ARTIFACT_RELEASE=aikido-php-firewall.${{ env.ARCH }}.rpm" >> $GITHUB_ENV
           sed -i "s/aikido.so/aikido-${{ env.AIKIDO_VERSION }}.so/" ~/rpmbuild/SOURCES/aikido-php-firewall-${{ env.AIKIDO_VERSION }}/opt/aikido-${{ env.AIKIDO_VERSION }}/aikido.ini
 
       - name: Build rpm package
@@ -215,12 +234,13 @@ jobs:
           tar czvf ~/rpmbuild/SOURCES/aikido-php-firewall-${{ env.AIKIDO_VERSION }}.tar.gz *
           rm -rf ~/rpmbuild/SOURCES/aikido-php-firewall-${{ env.AIKIDO_VERSION }}
           rpmbuild -ba ~/rpmbuild/SPECS/aikido.spec
-          ls -l ~/rpmbuild/RPMS/x86_64/
-          mv ~/rpmbuild/RPMS/x86_64/${{ env.AIKIDO_ARTIFACT }} ~/rpmbuild/RPMS/x86_64/${{ env.AIKIDO_ARTIFACT_RELEASE }}
+          ls -l ~/rpmbuild/RPMS/${{ env.ARCH }}/
+          mv ~/rpmbuild/RPMS/${{ env.ARCH }}/${{ env.AIKIDO_ARTIFACT }} ~/rpmbuild/RPMS/${{ env.ARCH }}/${{ env.AIKIDO_ARTIFACT_RELEASE }}
 
       - name: Check rpm dependencies
+        if: matrix.os == 'ubuntu-22.04'
         run: |
-          yum deplist ~/rpmbuild/RPMS/x86_64/${{ env.AIKIDO_ARTIFACT_RELEASE }} | grep -E "GLIBC_2.32|GLIBC_2.34|GLIBCXX_3.4.29" && exit 1 || exit 0
+          yum deplist ~/rpmbuild/RPMS/${{ env.ARCH }}/${{ env.AIKIDO_ARTIFACT_RELEASE }} | grep -E "GLIBC_2.32|GLIBC_2.34|GLIBCXX_3.4.29" && exit 1 || exit 0
       
       - name: Archive rpm package
         uses: actions/upload-artifact@v4
@@ -228,20 +248,37 @@ jobs:
           name: ${{ env.AIKIDO_ARTIFACT_RELEASE }}
           if-no-files-found: error
           path: |
-            ~/rpmbuild/RPMS/x86_64/${{ env.AIKIDO_ARTIFACT_RELEASE }}
+            ~/rpmbuild/RPMS/${{ env.ARCH }}/${{ env.AIKIDO_ARTIFACT_RELEASE }}
 
   build_deb:
-    runs-on: ubuntu-20.04
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: ['ubuntu-22.04', 'ubuntu-24.04-arm']
+      fail-fast: true
     needs: [ build_rpm ]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Get Arch
+        run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
+
+      - name: Get deb arch
+        run: |
+          if [ "${{ env.ARCH }}" = "x86_64" ]; then
+            echo "DEB_ARCH=amd64" >> $GITHUB_ENV
+          elif [ "$ARCH" = "aarch64" ]; then
+            echo "DEB_ARCH=arm64" >> $GITHUB_ENV
+          else
+            echo "DEB_ARCH=${{ env.ARCH }}" >> $GITHUB_ENV
+          fi
+
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
           pattern: |
-            aikido-php-firewall*
+            aikido-php-firewall.${{ env.ARCH }}.rpm
 
       - name: Install dependencies
         run: |
@@ -253,15 +290,14 @@ jobs:
           AIKIDO_VERSION=$(grep '#define PHP_AIKIDO_VERSION' lib/php-extension/include/php_aikido.h | awk -F'"' '{print $2}')
           echo $AIKIDO_VERSION
           echo "AIKIDO_VERSION=$AIKIDO_VERSION" >> $GITHUB_ENV
-          echo "AIKIDO_RPM=aikido-php-firewall.x86_64.rpm" >> $GITHUB_ENV
-          echo "AIKIDO_ARTIFACT=aikido-php-firewall.x86_64.deb" >> $GITHUB_ENV
+          echo "AIKIDO_RPM=aikido-php-firewall.${{ env.ARCH }}.rpm" >> $GITHUB_ENV
+          echo "AIKIDO_ARTIFACT=aikido-php-firewall.${{ env.ARCH }}.deb" >> $GITHUB_ENV    
       
       - name: Build deb
         run: |
-          ls -R
           sudo alien --to-deb --scripts --keep-version ${{ env.AIKIDO_RPM }}/${{ env.AIKIDO_RPM }}
           ls -R
-          mv aikido-php-firewall_${{ env.AIKIDO_VERSION }}-1_amd64.deb ${{ env.AIKIDO_ARTIFACT }}
+          mv aikido-php-firewall_${{ env.AIKIDO_VERSION }}-1_${{ env.DEB_ARCH }}.deb ${{ env.AIKIDO_ARTIFACT }}
   
       - name: Archive deb package
         uses: actions/upload-artifact@v4
@@ -272,14 +308,15 @@ jobs:
             ${{ env.AIKIDO_ARTIFACT }}
 
   test_php_centos:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     container:
       image: centos:latest
     needs: [ build_rpm ]
     strategy:
       matrix:
-        php_version: ['7.3', '7.4', '8.0', '8.1', '8.2', '8.3']
+        php_version: ['7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4']
         server: ['nginx-php-fpm', 'apache-mod-php', 'php-built-in']
+        os: ['ubuntu-20.04', 'ubuntu-22.04', 'ubuntu-24.04']
       fail-fast: false
     steps:
       - name: Checkout repository
@@ -287,16 +324,17 @@ jobs:
 
       - name: Setup
         run: |
+          uname -a
           cat /etc/centos-release
           cd /etc/yum.repos.d/
           sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-*
           sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-*
           yum install -y yum-utils
           yum install -y https://rpms.remirepo.net/enterprise/remi-release-8.4.rpm
-          yum -y install gcc python3-devel
+          yum install -y gcc
+          yum install -y python3-devel
           pip3 install flask
           pip3 install requests
-          pip3 install pandas
           pip3 install psutil
           yum install -y httpd
           dnf --assumeyes module reset php
@@ -306,8 +344,12 @@ jobs:
           yum install -y nginx
           yum install -y php-fpm
 
+      - name: Get Arch
+        run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
+
       - name: Check PHP setup
         run: |
+          uname -m
           php -v
           php -i
 
@@ -316,13 +358,13 @@ jobs:
           AIKIDO_VERSION=$(grep '#define PHP_AIKIDO_VERSION' lib/php-extension/include/php_aikido.h | awk -F'"' '{print $2}')
           echo $AIKIDO_VERSION
           echo "AIKIDO_VERSION=$AIKIDO_VERSION" >> $GITHUB_ENV
-          echo "AIKIDO_RPM=aikido-php-firewall.x86_64.rpm" >> $GITHUB_ENV
+          echo "AIKIDO_RPM=aikido-php-firewall.${{ env.ARCH }}.rpm" >> $GITHUB_ENV
       
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
           pattern: |
-            aikido-php-firewall*
+            ${{ env.AIKIDO_RPM }}
 
       - name: Install RPM
         run: |
@@ -337,33 +379,35 @@ jobs:
         run: |
           cd tools
           python3 run_server_tests.py ../tests/server ../tests/testlib --server=${{ matrix.server }}
-            
 
   test_php_ubuntu:
     runs-on: ${{ matrix.os }}
     needs: [ build_deb ]
     strategy:
       matrix:
-        os: ['ubuntu-latest', 'ubuntu-20.04']
-        php_version: ['7.3', '7.4', '8.0', '8.1', '8.2', '8.3']
+        os: ['ubuntu-24.04', 'ubuntu-22.04', 'ubuntu-20.04', 'ubuntu-22.04-arm', 'ubuntu-24.04-arm']
+        php_version: ['7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4']
         server: ['nginx-php-fpm', 'apache-mod-php', 'php-built-in']
       fail-fast: false
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
-        with:
-          pattern: |
-            aikido-php-firewall*
+      - name: Get Arch
+        run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
 
       - name: Set env
         run: |
           AIKIDO_VERSION=$(grep '#define PHP_AIKIDO_VERSION' lib/php-extension/include/php_aikido.h | awk -F'"' '{print $2}')
           echo $AIKIDO_VERSION
           echo "AIKIDO_VERSION=$AIKIDO_VERSION" >> $GITHUB_ENV
-          echo "AIKIDO_DEB=aikido-php-firewall.x86_64.deb" >> $GITHUB_ENV
+          echo "AIKIDO_DEB=aikido-php-firewall.${{ env.ARCH }}.deb" >> $GITHUB_ENV
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: |
+            ${{ env.AIKIDO_DEB }}
 
       - name: Setup nginx & php-fpm
         run: |
@@ -379,7 +423,7 @@ jobs:
           sudo a2enmod rewrite
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@9e72090525849c5e82e596468b86eb55e9cc5401 # v2
         with:
           php-version: ${{ matrix.php_version }}
           extensions: curl
@@ -411,7 +455,7 @@ jobs:
           sudo dpkg -i -E ${{ env.AIKIDO_DEB }}/${{ env.AIKIDO_DEB }}
 
       - name: Run CLI tests
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.os == 'ubuntu-24.04' || matrix.os == 'ubuntu-24.04-arm'
         run: |
           cd ${{ github.workspace }}
           php lib/php-extension/run-tests.php ./tests/cli

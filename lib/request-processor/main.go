@@ -11,6 +11,7 @@ import (
 	"main/log"
 	"main/utils"
 	zen_internals "main/vulnerabilities/zen-internals"
+	"strings"
 	"unsafe"
 )
 
@@ -129,6 +130,13 @@ func RequestProcessorOnEvent(eventId int) (outputJson *C.char) {
 //export RequestProcessorGetBlockingMode
 func RequestProcessorGetBlockingMode() int {
 	return utils.GetBlockingMode()
+}
+
+//export RequestProcessorReportStats
+func RequestProcessorReportStats(sink string, attacksDetected, attacksBlocked, interceptorThrewError, withoutContext, total int32, timings []int64) {
+	clonedTimings := make([]int64, len(timings))
+	copy(clonedTimings, timings)
+	go grpc.OnMonitoredSinkStats(strings.Clone(sink), attacksDetected, attacksBlocked, interceptorThrewError, withoutContext, total, clonedTimings)
 }
 
 //export RequestProcessorUninit

@@ -7,11 +7,11 @@ import (
 	"net/url"
 )
 
-func GetOutgoingRequestHostnameAndPort() (string, int) {
+func GetOutgoingRequestHostnameAndPort() (string, uint32) {
 	return getHostNameAndPort(C.OUTGOING_REQUEST_URL)
 }
 
-func GetOutgoingRequestEffectiveHostnameAndPort() (string, int) {
+func GetOutgoingRequestEffectiveHostnameAndPort() (string, uint32) {
 	return getHostNameAndPort(C.OUTGOING_REQUEST_EFFECTIVE_URL)
 }
 
@@ -47,7 +47,7 @@ func GetModule() string {
 	return Context.Callback(C.MODULE)
 }
 
-func getHostNameAndPort(urlCallbackId int) (string, int) { // urlcallbackid is the type of data we request, eg C.OUTGOING_REQUEST_URL
+func getHostNameAndPort(urlCallbackId int) (string, uint32) { // urlcallbackid is the type of data we request, eg C.OUTGOING_REQUEST_URL
 	urlStr := Context.Callback(urlCallbackId)
 	urlParsed, err := url.Parse(urlStr)
 	if err != nil {

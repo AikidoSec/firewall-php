@@ -35,10 +35,10 @@ func GetEndpointConfig(method string, route string) (EndpointData, bool) {
 
 	endpointData, exists := globals.CloudConfig.Endpoints[EndpointKey{Method: method, Route: route}]
 	if !exists {
-		return EndpointData{}, false
+		return nil
 	}
 
-	return endpointData, true
+	return &endpointData
 }
 
 func GetCloudConfigUpdatedAt() int64 {

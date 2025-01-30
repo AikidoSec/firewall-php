@@ -19,6 +19,8 @@ bool SendUserEvent(std::string id, std::string username) {
 // Receives two parameters: "id" (string) and "name" (string, optional).
 // Returns true if the setting of the user succeeded, false otherwise.
 ZEND_FUNCTION(set_user) {
+    ScopedTimer scopedTimer("set_user");
+
     if (AIKIDO_GLOBAL(disable) == true) {
         RETURN_BOOL(false);
     }

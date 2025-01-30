@@ -64,7 +64,7 @@ func SendAikidoConfig() {
 }
 
 /* Send outgoing domain to Aikido Agent via gRPC */
-func OnDomain(domain string, port int) {
+func OnDomain(domain string, port uint32) {
 	if client == nil {
 		return
 	}
@@ -72,7 +72,7 @@ func OnDomain(domain string, port int) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
-	_, err := client.OnDomain(ctx, &protos.Domain{Domain: domain, Port: int32(port)})
+	_, err := client.OnDomain(ctx, &protos.Domain{Domain: domain, Port: port})
 	if err != nil {
 		log.Warnf("Could not send domain %v: %v", domain, err)
 		return
@@ -142,7 +142,7 @@ func OnUserEvent(id string, username string, ip string) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	_, err := client.OnUser(ctx, &protos.User{Id: id, Username: username, Ip: ip})
@@ -159,7 +159,7 @@ func OnAttackDetected(attackDetected *protos.AttackDetected) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	_, err := client.OnAttackDetected(ctx, attackDetected)
@@ -168,6 +168,32 @@ func OnAttackDetected(attackDetected *protos.AttackDetected) {
 		return
 	}
 	log.Debugf("Attack detected event sent via socket")
+}
+
+func OnMonitoredSinkStats(sink string, attacksDetected, attacksBlocked, interceptorThrewError, withoutContext, total int32, timings []int64) {
+	if client == nil {
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	log.Debugf("Got stats for sink \"%s\": attacksDetected = %d, attacksBlocked = %d, interceptorThrewError = %d, withoutContext = %d, total = %d", sink, attacksDetected, attacksBlocked, interceptorThrewError, withoutContext, total)
+
+	_, err := client.OnMonitoredSinkStats(ctx, &protos.MonitoredSinkStats{
+		Sink:                  sink,
+		AttacksDetected:       attacksDetected,
+		AttacksBlocked:        attacksBlocked,
+		InterceptorThrewError: interceptorThrewError,
+		WithoutContext:        withoutContext,
+		Total:                 total,
+		Timings:               timings,
+	})
+	if err != nil {
+		log.Warnf("Could not send monitored sink stats event")
+		return
+	}
+	log.Debugf("Monitored sink stats for sink \"%s\" sent via socket", sink)
 }
 
 func OnMiddlewareInstalled() {

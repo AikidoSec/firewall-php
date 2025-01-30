@@ -26,9 +26,10 @@ Zen operates autonomously on the same server as your PHP app to:
 ## Install
 
 Zen for PHP comes as a single package that needs to be installed on the system to be protected.
+
 Prerequisites:
 * Ensure you have sudo privileges on your system.
-* Check that you have a supported PHP version installed (PHP version >= 7.3 and test up to 8.3).
+* Check that you have a supported PHP version installed (PHP version >= 7.3 and tested up to 8.4).
 * Make sure to use the appropriate commands for your system or cloud provider.
 
 ### Manual install
@@ -36,94 +37,32 @@ Prerequisites:
 #### For Red Hat-based Systems (RHEL, CentOS, Fedora)
 
 ```
-rpm -Uvh --oldpackage https://github.com/AikidoSec/firewall-php/releases/download/v1.0.102/aikido-php-firewall.x86_64.rpm
+rpm -Uvh --oldpackage https://github.com/AikidoSec/firewall-php/releases/download/v1.0.108/aikido-php-firewall.x86_64.rpm
 ```
 
 #### For Debian-based Systems (Debian, Ubuntu)
 
 ```
-curl -L -O https://github.com/AikidoSec/firewall-php/releases/download/v1.0.102/aikido-php-firewall.x86_64.deb
+curl -L -O https://github.com/AikidoSec/firewall-php/releases/download/v1.0.108/aikido-php-firewall.x86_64.deb
 dpkg -i -E ./aikido-php-firewall.x86_64.deb
 ```
+
+- [Caddy & PHP-FPM](./caddy.md)
 
 ### Managed platforms
 
-#### AWS Elastic beanstalk
+- [Laravel Forge](./docs/laravel-forge.md)
+- [AWS Elastic beanstalk](./docs/aws-elastic-beanstalk.md)
+- [Fly.io](./docs/fly-io.md)
 
-1. In your repo, create a new file in `.ebextensions/01_aikido_php_firewall.config` with the following content:
-```
-commands:
-  aikido-php-firewall:
-    command: "rpm -Uvh --oldpackage https://github.com/AikidoSec/firewall-php/releases/download/v1.0.102/aikido-php-firewall.x86_64.rpm"
-    ignoreErrors: true
+### Troubleshooting
 
-files: 
-  "/opt/elasticbeanstalk/tasks/bundlelogs.d/aikido-php-firewall.conf" :
-    mode: "000755"
-    owner: root
-    group: root
-    content: |
-      /var/log/aikido-*/*.log
-
-  "/opt/elasticbeanstalk/tasks/taillogs.d/aikido-php-firewall.conf" :
-    mode: "000755"
-    owner: root
-    group: root
-    content: |
-      /var/log/aikido-*/*.log
-```
-
-2. Go to `AWS EB enviroment -> Configuration -> Updates, monitoring, and logging -> Edit` and add the desired environment variables like: AIKIDO_TOKEN
-
-#### Forge (recipe)
-1. Go to `[server_name] -> [site_name] -> Enviroment` and add the desired environment variables like: AIKIDO_TOKEN
-2. Go to "Recipes".
-3. Based on the running OS, use the [Manual install](#Manual-install) commands to create a new recipe called "Install Aikido Firewall" and select "root" as user. Example for Debian-based systems:
-```
-cd /tmp
-
-# Install commands from the "Manual install" section below, based on your OS
-curl -L -O https://github.com/AikidoSec/firewall-php/releases/download/v1.0.99/aikido-php-firewall.x86_64.deb
-dpkg -i -E ./aikido-php-firewall.x86_64.deb
-
-# Restarting the php services in order to load the Aikido PHP Firewall
-for service in $(systemctl list-units | grep php | awk '{print $1}'); do
-    sudo systemctl restart $service
-done
-```
-4. Based on the running OS, use the [Manual uninstall](#Manual-uninstall) commands to create a new recipe called "Uninstall Aikido Firewall" and select "root" as user. Example for Debian-based systems:
-```
-# Install commands from the "Manual uninstall" section below, based on your OS
-dpkg --purge aikido-php-firewall
-
-# Restarting the php services in order to load the Aikido PHP Firewall
-for service in $(systemctl list-units | grep php | awk '{print $1}'); do
-    sudo systemctl restart $service
-done
-```
-5. Run the created recipes to install / uninstall the Aikido PHP Firewall.
-
-#### Forge (ssh)
-1. Go to `[server_name] -> [site_name] -> Enviroment` and add the desired environment variables like: AIKIDO_TOKEN
-2. Use ssh to connect to the Forge server that you want to be protected by Aikido and, based on the running OS, execute the install commands from the [Manual install](#Manual-install) section.
-3. Go to `[server_name] -> [site_name] -> Restart` and click `Restart PHP <version>`.
-
-#### Fly.io (flyctl)
-1. In your repo, run `fly launch`.
-2. Add the desired environment variables, by running `fly secrets set AIKIDO_TOKEN=AIK_RUNTIME...`.
-3. Go to `./.fly/scripts` folder and create the `aikido.sh` file with the [Manual install](#Manual-install) commands:
-```
-#!/usr/bin/env bash
-cd /tmp
-curl -L -O https://github.com/AikidoSec/firewall-php/releases/download/v1.0.99/aikido-php-firewall.x86_64.deb
-dpkg -i -E ./aikido-php-firewall.x86_64.deb
-```
-4. Run `fly deploy`.
+[Read our troubleshooting documentation.](./docs/troubleshooting.md)
 
 ## Supported libraries and frameworks
 
 ### PHP versions
-Zen for PHP supports the following PHP versions: 7.3, 7.4, 8.0, 8.1, 8.2, 8.3.
+Zen for PHP supports the following PHP versions: 7.3, 7.4, 8.0, 8.1, 8.2, 8.3, 8.4.
 
 ### Web frameworks
 
@@ -182,6 +121,10 @@ By default, Zen will only detect and report attacks to Aikido.
 To block requests, set the `AIKIDO_BLOCK` environment variable to `true`.
 
 See [Reporting to Aikido](#reporting-to-your-aikido-security-dashboard) to learn how to send events to Aikido.
+
+## Additional configuration
+
+[Configure Zen using environment variables for authentication, mode settings, debugging, and more.](https://help.aikido.dev/doc/configuration-via-env-vars/docrSItUkeR9)
 
 ## Benchmarks
 
