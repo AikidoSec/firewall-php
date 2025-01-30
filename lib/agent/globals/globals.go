@@ -38,6 +38,7 @@ var StatsData StatsDataType
 
 // Rate limiting map, which holds the current rate limiting state for each configured route
 // map[(method, route)] -> RateLimitingValue
+// method can also be '*'
 var RateLimitingMap = make(map[RateLimitingKey]*RateLimitingValue)
 
 // Rate limiting wildcard map, which holds the current rate limiting state for each configured wildcard route

@@ -62,7 +62,7 @@ func storeEndpointConfig(ep *protos.Endpoint) {
 }
 
 func storeWildcardEndpointConfig(ep *protos.Endpoint) {
-	wildcardRouteCompiled, err := regexp.Compile(ep.Route)
+	wildcardRouteCompiled, err := regexp.Compile(strings.ReplaceAll(ep.Route, "*", ".*"))
 	if err != nil {
 		return
 	}
