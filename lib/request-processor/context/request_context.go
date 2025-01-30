@@ -18,7 +18,7 @@ type RequestContextData struct {
 	URL                           *string
 	StatusCode                    *int
 	IP                            *string
-	EndpointConfig                *EndpointDataStatus
+	EndpointConfig                **EndpointData
 	WildcardEndpointsConfigs      *[]EndpointData
 	IsIpBypassed                  *bool
 	IsEndpointConfigured          *bool
@@ -143,9 +143,8 @@ func GetUserName() string {
 	return GetFromCache(ContextSetUserName, &Context.UserName)
 }
 
-func GetEndpointConfig() (EndpointData, bool) {
-	endpointDataStatus := GetFromCache(ContextSetEndpointConfig, &Context.EndpointConfig)
-	return endpointDataStatus.Data, endpointDataStatus.Found
+func GetEndpointConfig() *EndpointData {
+	return GetFromCache(ContextSetEndpointConfig, &Context.EndpointConfig)
 }
 
 func GetWildcardEndpointsConfig() []EndpointData {

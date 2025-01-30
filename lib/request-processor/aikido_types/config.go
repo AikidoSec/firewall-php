@@ -35,11 +35,6 @@ type EndpointData struct {
 	AllowedIPAddresses map[string]bool
 }
 
-type EndpointDataStatus struct {
-	Data  EndpointData
-	Found bool
-}
-
 type WildcardEndpointData struct {
 	RouteRegex *regexp.Regexp
 	Data       EndpointData

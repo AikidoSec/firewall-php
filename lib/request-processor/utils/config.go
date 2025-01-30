@@ -29,7 +29,7 @@ func GetWildcardEndpointsConfigs(method string, route string) []EndpointData {
 	return matchedEndpointsData
 }
 
-func GetEndpointConfig(method string, route string) (EndpointData, bool) {
+func GetEndpointConfig(method string, route string) *EndpointData {
 	globals.CloudConfigMutex.Lock()
 	defer globals.CloudConfigMutex.Unlock()
 

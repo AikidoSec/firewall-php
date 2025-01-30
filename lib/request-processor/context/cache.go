@@ -3,7 +3,6 @@ package context
 // #include "../../API.h"
 import "C"
 import (
-	. "main/aikido_types"
 	"main/helpers"
 	"main/log"
 	"main/utils"
@@ -129,8 +128,8 @@ func ContextSetEndpointConfig() {
 		return
 	}
 
-	endpointConfig, endpointConfigFound := utils.GetEndpointConfig(GetMethod(), GetParsedRoute())
-	Context.EndpointConfig = &EndpointDataStatus{Data: endpointConfig, Found: endpointConfigFound}
+	endpointConfig := utils.GetEndpointConfig(GetMethod(), GetParsedRoute())
+	Context.EndpointConfig = &endpointConfig
 }
 
 func ContextSetWildcardEndpointsConfigs() {
@@ -149,8 +148,8 @@ func ContextSetIsEndpointProtectionTurnedOff() {
 
 	isEndpointProtectionTurnedOff := false
 
-	endpointConfig, found := GetEndpointConfig()
-	if found {
+	endpointConfig := GetEndpointConfig()
+	if endpointConfig != nil {
 		isEndpointProtectionTurnedOff = endpointConfig.ForceProtectionOff
 	}
 	if !isEndpointProtectionTurnedOff {
@@ -171,8 +170,8 @@ func ContextSetIsEndpointConfigured() {
 
 	IsEndpointConfigured := false
 
-	_, found := GetEndpointConfig()
-	if found {
+	endpointConfig := GetEndpointConfig()
+	if endpointConfig != nil {
 		IsEndpointConfigured = true
 	}
 	if !IsEndpointConfigured {
@@ -190,9 +189,9 @@ func ContextSetIsEndpointRateLimitingEnabled() {
 
 	IsEndpointRateLimitingEnabled := false
 
-	endpointData, found := GetEndpointConfig()
-	if found {
-		IsEndpointRateLimitingEnabled = endpointData.RateLimiting.Enabled
+	endpointConfig := GetEndpointConfig()
+	if endpointConfig != nil {
+		IsEndpointRateLimitingEnabled = endpointConfig.RateLimiting.Enabled
 	}
 	if !IsEndpointRateLimitingEnabled {
 		for _, wildcardEndpointConfig := range GetWildcardEndpointsConfig() {
@@ -214,9 +213,9 @@ func ContextSetIsEndpointIpAllowed() {
 
 	isEndpointIpAllowed := true
 
-	endpointData, found := GetEndpointConfig()
-	if found {
-		isEndpointIpAllowed = utils.IsIpAllowed(endpointData.AllowedIPAddresses, ip)
+	endpointConfig := GetEndpointConfig()
+	if endpointConfig != nil {
+		isEndpointIpAllowed = utils.IsIpAllowed(endpointConfig.AllowedIPAddresses, ip)
 	}
 
 	if isEndpointIpAllowed {
