@@ -130,13 +130,10 @@ func updateRateLimitingCounts(method string, route string, user string, ip strin
 	globals.RateLimitingMutex.Lock()
 	defer globals.RateLimitingMutex.Unlock()
 
-	rateLimitingData, exists := globals.RateLimitingMap[RateLimitingKey{Method: method, Route: route}]
-	if !exists {
-		return
+	for _, rateLimitingDataForRoute := range getMatchingRateLimitingValues(method, route) {
+		incrementRateLimitingCounts(rateLimitingDataForRoute.UserCounts, user)
+		incrementRateLimitingCounts(rateLimitingDataForRoute.IpCounts, ip)
 	}
-
-	incrementRateLimitingCounts(rateLimitingData.UserCounts, user)
-	incrementRateLimitingCounts(rateLimitingData.IpCounts, ip)
 }
 
 func isRateLimitingThresholdExceeded(config *RateLimitingConfig, countsMap map[string]*RateLimitingCounts, key string) bool {
@@ -171,15 +168,18 @@ func getWildcardRateLimitingValues(method, route string) []*RateLimitingValue {
 	return wildcardRatelimitingValues
 }
 
+func getMatchingRateLimitingValues(method, route string) []*RateLimitingValue {
+	rateLimitingDataArray := getRateLimitingValue(method, route)
+	rateLimitingDataArray = append(rateLimitingDataArray, getRateLimitingValue("*", route)...)
+	rateLimitingDataArray = append(rateLimitingDataArray, getWildcardRateLimitingValues(method, route)...)
+	return rateLimitingDataArray
+}
+
 func getRateLimitingStatus(method, route, user, ip string) *protos.RateLimitingStatus {
 	globals.RateLimitingMutex.RLock()
 	defer globals.RateLimitingMutex.RUnlock()
 
-	rateLimitingDataArray := getRateLimitingValue(method, route)
-	rateLimitingDataArray = append(rateLimitingDataArray, getRateLimitingValue("*", route)...)
-	rateLimitingDataArray = append(rateLimitingDataArray, getWildcardRateLimitingValues(method, route)...)
-
-	for _, rateLimitingDataForRoute := range rateLimitingDataArray {
+	for _, rateLimitingDataForRoute := range getMatchingRateLimitingValues(method, route) {
 		if user != "" {
 			// If the user exists, we only try to rate limit by user
 			if isRateLimitingThresholdExceeded(&rateLimitingDataForRoute.Config, rateLimitingDataForRoute.UserCounts, user) {
