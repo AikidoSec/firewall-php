@@ -37,13 +37,13 @@ Prerequisites:
 #### For Red Hat-based Systems (RHEL, CentOS, Fedora)
 
 ```
-rpm -Uvh --oldpackage https://github.com/AikidoSec/firewall-php/releases/download/v1.0.108/aikido-php-firewall.x86_64.rpm
+rpm -Uvh --oldpackage https://github.com/AikidoSec/firewall-php/releases/download/v1.0.109/aikido-php-firewall.x86_64.rpm
 ```
 
 #### For Debian-based Systems (Debian, Ubuntu)
 
 ```
-curl -L -O https://github.com/AikidoSec/firewall-php/releases/download/v1.0.108/aikido-php-firewall.x86_64.deb
+curl -L -O https://github.com/AikidoSec/firewall-php/releases/download/v1.0.109/aikido-php-firewall.x86_64.deb
 dpkg -i -E ./aikido-php-firewall.x86_64.deb
 ```
 
