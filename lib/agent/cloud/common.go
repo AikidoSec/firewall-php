@@ -96,11 +96,12 @@ func UpdateRateLimitingConfig() {
 			if err != nil {
 				log.Warnf("Route regex is not compiling: %s", k.Route)
 			} else {
+				log.Infof("Stored wildcard rate limiting config for: %v", k)
 				globals.RateLimitingWildcardMap[k] = &RateLimitingWildcardValue{RouteRegex: routeRegex, RateLimitingValue: rateLimitingValue}
 			}
-		} else {
-			globals.RateLimitingMap[k] = rateLimitingValue
 		}
+		log.Infof("Stored normal rate limiting config for: %v", k)
+		globals.RateLimitingMap[k] = rateLimitingValue
 	}
 
 	for k := range globals.RateLimitingMap {

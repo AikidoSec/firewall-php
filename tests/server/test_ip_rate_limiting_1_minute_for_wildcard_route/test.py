@@ -18,10 +18,10 @@ def run_test():
     time.sleep(10)
     
     for _ in range(5):
-        response = php_server_get("/myroute/" + + generate_random_string(10))
+        response = php_server_get("/myroute/" + generate_random_string(10))
         
     for _ in range(5):
-        response = php_server_get("/myroute/" + + generate_random_string(10))
+        response = php_server_get("/myroute/" + generate_random_string(10))
         assert_response_code_is(response, 429)
         assert_response_header_contains(response, "Content-Type", "text")
         assert_response_body_contains(response, "Rate limit exceeded")
