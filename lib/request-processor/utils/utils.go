@@ -111,21 +111,21 @@ func isLocalhost(ip string) bool {
 	return parsedIP.IsLoopback()
 }
 
-func IsIpAllowed(allowedIps map[string]bool, ip string) bool {
+func IsIpAllowed(allowedIps map[string]bool, ip string) int {
 	if globals.EnvironmentConfig.LocalhostAllowedByDefault && isLocalhost(ip) {
-		return true
+		return 1
 	}
 
 	if len(allowedIps) == 0 {
 		// No IPs configured in the allow list -> no restrictions
-		return true
+		return -1
 	}
 
 	if KeyExists(allowedIps, ip) {
-		return true
+		return 1
 	}
 
-	return false
+	return 0
 }
 
 func IsIpBypassed(ip string) bool {
