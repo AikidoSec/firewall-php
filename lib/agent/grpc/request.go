@@ -172,6 +172,7 @@ func getMatchingRateLimitingValues(method, route string) []*RateLimitingValue {
 	rateLimitingDataArray := getRateLimitingValue(method, route)
 	rateLimitingDataArray = append(rateLimitingDataArray, getRateLimitingValue("*", route)...)
 	rateLimitingDataArray = append(rateLimitingDataArray, getWildcardRateLimitingValues(method, route)...)
+	rateLimitingDataArray = append(rateLimitingDataArray, getWildcardRateLimitingValues("*", route)...)
 	return rateLimitingDataArray
 }
 

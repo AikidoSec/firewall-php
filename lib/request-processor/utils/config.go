@@ -17,6 +17,7 @@ func GetWildcardEndpointsConfigs(method string, route string) []EndpointData {
 	globals.CloudConfigMutex.Lock()
 	defer globals.CloudConfigMutex.Unlock()
 
+	// We prioritize defined methods over wildcard methods
 	wildcardRoutes := GetWildcardEndpointsConfigsForMethod(method)
 	wildcardRoutes = append(wildcardRoutes, GetWildcardEndpointsConfigsForMethod("*")...)
 

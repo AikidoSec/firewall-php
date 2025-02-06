@@ -92,7 +92,7 @@ func UpdateRateLimitingConfig() {
 		}
 
 		if isWildcardEndpoint(k.Route) {
-			routeRegex, err := regexp.Compile(strings.ReplaceAll(k.Route, "*", ".*"))
+			routeRegex, err := regexp.Compile(strings.ReplaceAll(k.Route, "*", "(.*)") + "/?")
 			if err != nil {
 				log.Warnf("Route regex is not compiling: %s", k.Route)
 			} else {
