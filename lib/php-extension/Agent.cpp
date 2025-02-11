@@ -11,8 +11,8 @@ std::string Agent::GetInitData() {
                      {"blocking", AIKIDO_GLOBAL(blocking)},
                      {"localhost_allowed_by_default", AIKIDO_GLOBAL(localhost_allowed_by_default)},
                      {"collect_api_schema", AIKIDO_GLOBAL(collect_api_schema)}};
-
-    return initData.dump();
+    // Remove invalid UTF8 characters (normalize)
+    return initData.dump(-1, ' ', false, json::error_handler_t::ignore);
 }
 
 bool Agent::Init() {
