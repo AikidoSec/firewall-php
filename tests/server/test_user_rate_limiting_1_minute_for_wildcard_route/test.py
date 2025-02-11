@@ -15,7 +15,7 @@ def run_test():
         response = php_server_get(f"/my/{generate_random_string(10)}/{generate_random_string(10)}")
         assert_response_code_is(response, 200)
         
-    time.sleep(10)
+    time.sleep(5)
     
     for _ in range(5):
         response = php_server_get(f"/my/{generate_random_string(10)}/{generate_random_string(10)}")

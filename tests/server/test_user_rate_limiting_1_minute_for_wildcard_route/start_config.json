@@ -5,7 +5,7 @@
     "endpoints": [
         {
             "method": "*",
-            "route": "\/my/*/*",
+            "route": "/my/*/*",
             "forceProtectionOff": false,
             "graphql": null,
             "allowedIPAddresses": [],
@@ -17,7 +17,7 @@
         },
         {
             "method": "GET",
-            "route": "\/test",
+            "route": "/test",
             "forceProtectionOff": false,
             "graphql": null,
             "allowedIPAddresses": [],
