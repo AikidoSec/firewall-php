@@ -157,7 +157,7 @@ func getWildcardRateLimitingValues(method, route string) []*RateLimitingValue {
 	wildcardRatelimitingValues := []*RateLimitingValue{}
 
 	for key, r := range globals.RateLimitingWildcardMap {
-		if method != "*" && key.Method != method {
+		if key.Method != method {
 			//If method is not '*', it must match exactly
 			continue
 		}
