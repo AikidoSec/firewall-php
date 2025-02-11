@@ -47,7 +47,7 @@ curl -L -O https://github.com/AikidoSec/firewall-php/releases/download/v1.0.109/
 dpkg -i -E ./aikido-php-firewall.x86_64.deb
 ```
 
-- [Caddy & PHP-FPM](./caddy.md)
+- [Caddy & PHP-FPM](./docs/caddy.md)
 
 ### Managed platforms
 

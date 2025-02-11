@@ -185,7 +185,7 @@ jobs:
           echo $AIKIDO_VERSION
           echo "AIKIDO_VERSION=$AIKIDO_VERSION" >> $GITHUB_ENV
           echo "AIKIDO_LIBZEN=libzen_internals_${{ env.ARCH }}-unknown-linux-gnu.so" >> $GITHUB_ENV
-          echo "AIKIDO_LIBZEN_VERSION=0.1.35" >> $GITHUB_ENV
+          echo "AIKIDO_LIBZEN_VERSION=0.1.37" >> $GITHUB_ENV
 
       - name: Download artifacts
         uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4
