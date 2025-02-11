@@ -56,7 +56,10 @@ class AikidoMiddleware implements MiddlewareInterface
                 $message = "Your user is blocked!";
             }
             else if ($decision->trigger == "ip") {
-                $message = "Your IP ({$decision->ip}) is blocked due to: {$decision->description}!";
+                $message = "Your IP ({$decision->data}) is blocked due to: {$decision->description}!";
+            }
+            else if ($decision->trigger == "user-agent") {
+                $message = "Your user agent ({$decision->data}) is blocked due to: {$decision->description}!";
             }
 
             return new Response([
@@ -70,7 +73,7 @@ class AikidoMiddleware implements MiddlewareInterface
                 $message = "Your user exceeded the rate limit for this endpoint!";
             }
             else if ($decision->trigger == "ip") {
-                $message = "Your IP ({$decision->ip}) exceeded the rate limit for this endpoint!";
+                $message = "Your IP ({$decision->data}) exceeded the rate limit for this endpoint!";
             }
             return new Response([
                 'message' => $message,
@@ -133,7 +136,7 @@ class ZenBlockDecision
                     return response('Your user is blocked!', 403);
                 }
                 else if ($decision->trigger == "ip") {
-                    return response("Your IP ({$decision->ip}) is blocked due to: {$decision->description}!", 403);
+                    return response("Your IP ({$decision->data}) is blocked due to: {$decision->description}!", 403);
                 }
             }
             else if ($decision->type == "ratelimited") {
@@ -141,7 +144,7 @@ class ZenBlockDecision
                     return response('Your user exceeded the rate limit for this endpoint!', 429);
                 }
                 else if ($decision->trigger == "ip") {
-                    return response("Your IP ({$decision->ip}) exceeded the rate limit for this endpoint!", 429);
+                    return response("Your IP ({$decision->data}) exceeded the rate limit for this endpoint!", 429);
                 }
             }
         }
