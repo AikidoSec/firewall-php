@@ -1,6 +1,29 @@
 #include "Includes.h"
 #include "include/Stats.h"
 
+ACTION_STATUS aikido_process_event(EVENT_ID& eventId, std::string& sink) {
+    if (eventId == NO_EVENT_ID) {
+        return CONTINUE;
+    }
+
+    std::string outputEvent;
+    requestProcessor.SendEvent(eventId, outputEvent);
+
+    if (action.IsDetection(outputEvent)) {
+        stats[sink].IncrementAttacksDetected();
+    }
+
+    if (!requestProcessor.IsBlockingEnabled()) {
+        return CONTINUE;
+    }
+
+    ACTION_STATUS action_status = action.Execute(outputEvent);
+    if (action_status == BLOCK) {
+        stats[sink].IncrementAttacksBlocked();
+    }
+    return action_status;
+}
+
 ZEND_NAMED_FUNCTION(aikido_generic_handler) {
     ScopedTimer scopedTimer;
 
@@ -72,18 +95,10 @@ ZEND_NAMED_FUNCTION(aikido_generic_handler) {
         */
         handler(INTERNAL_FUNCTION_PARAM_PASSTHRU, eventId);
 
-        if (eventId != NO_EVENT_ID) {
-            std::string outputEvent;
-            requestProcessor.SendEvent(eventId, outputEvent);
-            if (action.IsDetection(outputEvent)) {
-                stats[sink].IncrementAttacksDetected();
-                if (requestProcessor.IsBlockingEnabled() && action.Execute(outputEvent) == BLOCK) {
-                    stats[sink].IncrementAttacksBlocked();
-                    // exit generic handler and do not call the original handler
-                    // thus blocking the execution
-                    return;
-                }
-            }
+        if (aikido_process_event(eventId, sink) == BLOCK) {
+            // exit generic handler and do not call the original handler, thus blocking the execution
+            AIKIDO_LOG_DEBUG("Aikido generic handler ended (block)!\n");
+            return;
         }
     } catch (const std::exception& e) {
         caughtException = true;
@@ -105,16 +120,7 @@ ZEND_NAMED_FUNCTION(aikido_generic_handler) {
                     for the currently hooked function sets it.
             */
             post_handler(INTERNAL_FUNCTION_PARAM_PASSTHRU, eventId);
-            if (eventId != NO_EVENT_ID) {
-                std::string output;
-                requestProcessor.SendEvent(eventId, output);
-                if (action.IsDetection(output)) {
-                    stats[sink].IncrementAttacksDetected();
-                    if (requestProcessor.IsBlockingEnabled() && action.Execute(output) == BLOCK) {
-                        stats[sink].IncrementAttacksBlocked();
-                    }
-                }   
-            }
+            aikido_process_event(eventId, sink);
         }
     }
 

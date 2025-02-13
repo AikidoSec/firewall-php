@@ -8,23 +8,28 @@
     "hostnames": [
         {
             "hostname": "example.com",
-            "port": 443
+            "port": 443,
+            "hits": 10
         },
         {
             "hostname": "httpbin.org",
-            "port": 443
+            "port": 443,
+            "hits": 1
         },
         {
             "hostname": "facebook.com",
-            "port": 443
+            "port": 443,
+            "hits": 2
         },
         {
             "hostname": "www.aikido.dev",
-            "port": 80
+            "port": 80,
+            "hits": 1
         },
         {
             "hostname": "www.aikido.dev",
-            "port": 443
+            "port": 443,
+            "hits": 3
         }
     ],
     "routes": [

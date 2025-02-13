@@ -1,0 +1,30 @@
+{
+    "type": "detected_attack",
+    "request": {
+        "method": "GET",
+        "source": "php",
+        "route": "/testDetection"
+    },
+    "attack": {
+        "kind": "sql_injection",
+        "operation": "execute",
+        "module": "PDOStatement",
+        "blocked": false,
+        "source": "query",
+        "path": ".age",
+        "stack": "",
+        "payload": "3'); DROP TABLE cats; --",
+        "metadata": {
+            "dialect": "sqlite",
+            "sql": "INSERT INTO cats (name, age) VALUES ( :name, '3'); DROP TABLE cats; --')"
+        },
+        "user": {
+            "id": "12345",
+            "name": "Tudor"
+        }
+    },
+    "agent": {
+        "dryMode": true,
+        "library": "firewall-php"
+    }
+}

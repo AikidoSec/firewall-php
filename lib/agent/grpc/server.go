@@ -25,8 +25,9 @@ type server struct {
 
 func (s *server) OnConfig(ctx context.Context, req *protos.Config) (*emptypb.Empty, error) {
 	previousToken := config.GetToken()
-	storeConfig(req.GetToken(), req.GetLogLevel(), req.GetBlocking(), req.GetLocalhostAllowedByDefault(), req.GetCollectApiSchema())
 	if previousToken == "" {
+		storeConfig(req.GetToken(), req.GetLogLevel(), req.GetBlocking(), req.GetLocalhostAllowedByDefault(), req.GetCollectApiSchema())
+
 		// First time the token is set -> we can start reporting things to cloud
 		cloud.SendStartEvent()
 	}
@@ -35,7 +36,7 @@ func (s *server) OnConfig(ctx context.Context, req *protos.Config) (*emptypb.Emp
 
 func (s *server) OnDomain(ctx context.Context, req *protos.Domain) (*emptypb.Empty, error) {
 	log.Debugf("Received domain: %s:%d", req.GetDomain(), req.GetPort())
-	storeDomain(req.GetDomain(), int(req.GetPort()))
+	storeDomain(req.GetDomain(), req.GetPort())
 	return &emptypb.Empty{}, nil
 }
 

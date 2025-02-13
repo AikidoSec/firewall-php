@@ -76,6 +76,51 @@ std::string Request::GetBody() {
     return "";
 }
 
+/**
+ * Converts the current HTTP query parameters (_GET) into a JSON-formatted string.
+ *
+ * This function retrieves the query parameters from the `_GET` global array in PHP 
+ * and constructs a JSON object representation of the parameters. It supports both 
+ * scalar values (e.g., "key=value") and array values (e.g., "key[]=value1&key[]=value2").
+ * This function is implemented by just accessing the query that is already parsed by PHP.
+ * In this way, we interpret the query in the exact same way that the PHP app receives 
+ * the query params.
+*/
+std::string Request::GetQuery() {
+  
+    zval *get_array;
+    get_array = zend_hash_str_find(&EG(symbol_table), "_GET", sizeof("_GET") - 1);
+    if (!get_array) {
+        return "";
+    }
+
+    json query_json;
+    zend_string *key;
+    zval *val;
+    ZEND_HASH_FOREACH_STR_KEY_VAL(Z_ARRVAL_P(get_array), key, val) {
+        if(key && val) {
+            std::string key_str(ZSTR_VAL(key));
+            if (Z_TYPE_P(val) == IS_STRING) {
+                query_json[key_str] = Z_STRVAL_P(val);
+            }
+            else if (Z_TYPE_P(val) == IS_ARRAY){
+                json val_array = json::array();
+                zval *v;
+                ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(val), v) {
+                    if (Z_TYPE_P(v) == IS_STRING) {
+                        val_array.push_back(Z_STRVAL_P(v));
+                    }
+                } 
+                ZEND_HASH_FOREACH_END();
+                query_json[key_str] = val_array;
+            }
+        }
+    }
+    ZEND_HASH_FOREACH_END();
+    
+    return query_json.dump();
+}
+
 std::string Request::GetHeaders() {
     if (!this->server) {
         return "";

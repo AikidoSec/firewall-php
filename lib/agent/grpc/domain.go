@@ -4,7 +4,7 @@ import (
 	"main/globals"
 )
 
-func storeDomain(domain string, port int) {
+func storeDomain(domain string, port uint32) {
 	if port == 0 {
 		return
 	}
@@ -13,8 +13,8 @@ func storeDomain(domain string, port int) {
 	defer globals.HostnamesMutex.Unlock()
 
 	if _, ok := globals.Hostnames[domain]; !ok {
-		globals.Hostnames[domain] = make(map[int]bool)
+		globals.Hostnames[domain] = make(map[uint32]uint64)
 	}
 
-	globals.Hostnames[domain][int(port)] = true
+	globals.Hostnames[domain][port]++
 }

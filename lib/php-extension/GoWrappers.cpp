@@ -48,7 +48,7 @@ char* GoContextCallback(int callbackId) {
             break;
         case CONTEXT_QUERY:
             ctx = "QUERY";
-            ret = request.GetVar("QUERY_STRING");
+            ret = request.GetQuery();
             break;
         case CONTEXT_HTTPS:
             ctx = "HTTPS";

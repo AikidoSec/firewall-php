@@ -29,7 +29,7 @@ Zen for PHP comes as a single package that needs to be installed on the system t
 
 Prerequisites:
 * Ensure you have sudo privileges on your system.
-* Check that you have a supported PHP version installed (PHP version >= 7.3 and test up to 8.3).
+* Check that you have a supported PHP version installed (PHP version >= 7.3 and tested up to 8.4).
 * Make sure to use the appropriate commands for your system or cloud provider.
 
 ### Manual install
@@ -37,19 +37,17 @@ Prerequisites:
 #### For Red Hat-based Systems (RHEL, CentOS, Fedora)
 
 ```
-rpm -Uvh --oldpackage https://github.com/AikidoSec/firewall-php/releases/download/v1.0.104/aikido-php-firewall.x86_64.rpm
+rpm -Uvh --oldpackage https://github.com/AikidoSec/firewall-php/releases/download/v1.0.109/aikido-php-firewall.x86_64.rpm
 ```
 
 #### For Debian-based Systems (Debian, Ubuntu)
 
 ```
-curl -L -O https://github.com/AikidoSec/firewall-php/releases/download/v1.0.104/aikido-php-firewall.x86_64.deb
+curl -L -O https://github.com/AikidoSec/firewall-php/releases/download/v1.0.109/aikido-php-firewall.x86_64.deb
 dpkg -i -E ./aikido-php-firewall.x86_64.deb
 ```
 
-#### Configuration
-
-- [Caddy & PHP-FPM](./caddy.md)
+- [Caddy & PHP-FPM](./docs/caddy.md)
 
 ### Managed platforms
 
@@ -64,7 +62,7 @@ dpkg -i -E ./aikido-php-firewall.x86_64.deb
 ## Supported libraries and frameworks
 
 ### PHP versions
-Zen for PHP supports the following PHP versions: 7.3, 7.4, 8.0, 8.1, 8.2, 8.3.
+Zen for PHP supports the following PHP versions: 7.3, 7.4, 8.0, 8.1, 8.2, 8.3, 8.4.
 
 ### Web frameworks
 

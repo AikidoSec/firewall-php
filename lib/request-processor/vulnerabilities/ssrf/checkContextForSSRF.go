@@ -6,7 +6,7 @@ import (
 )
 
 /* This is called before a request is made to check for SSRF and block the request (not execute it) if SSRF found */
-func CheckContextForSSRF(hostname string, port int, operation string) *utils.InterceptorResult {
+func CheckContextForSSRF(hostname string, port uint32, operation string) *utils.InterceptorResult {
 	for _, source := range context.SOURCES {
 		mapss := source.CacheGet()
 

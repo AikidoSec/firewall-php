@@ -5,10 +5,11 @@ Test PHP shell injection (shell_exec)
 AIKIDO_LOG_LEVEL=INFO
 AIKIDO_BLOCK=1
 
+--POST--
+test=www.example`whoami`.com
+
 --FILE--
 <?php
-
-$_SERVER['HTTP_USER'] = 'www.example`whoami`.com';
 
 $output = shell_exec('binary --domain www.example`whoami`.com');
 echo $output;

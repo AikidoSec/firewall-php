@@ -131,9 +131,9 @@ func ContextSetIsProtectionTurnedOff() {
 	method := GetMethod()
 	route := GetParsedRoute()
 
-	endpointConfig, err := utils.GetEndpointConfig(method, route)
+	endpointConfig := utils.GetEndpointConfig(method, route)
 	isProtectionTurnedOff := false
-	if err == nil {
+	if endpointConfig != nil {
 		isProtectionTurnedOff = endpointConfig.ForceProtectionOff
 	}
 	Context.IsProtectionTurnedOff = &isProtectionTurnedOff

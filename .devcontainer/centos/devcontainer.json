@@ -1,11 +1,22 @@
 {
   "name": "Centos Dev Container",
   "runArgs": [],
+  "mounts": [
+    "source=${localWorkspaceFolder}/.devcontainer/shared,target=/shared,type=bind"
+  ],
   "build": {
-    "platform": "linux/amd64",
+    "platform": "linux/arm64",
     "dockerfile": "Dockerfile",
     "args": {
       "PHP_VERSION": "8.1"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "golang.go",
+        "github.vscode-github-actions"
+      ]
     }
   }
 }

@@ -1,10 +1,12 @@
 rm -rf ~/rpmbuild
 rpmdev-setuptree
 
+arch=$(uname -m)
+
 PHP_VERSION=$(php -v | grep -oP 'PHP \K\d+\.\d+' | head -n 1)
 VERSION=$(grep '#define PHP_AIKIDO_VERSION' lib/php-extension/include/php_aikido.h | awk -F'"' '{print $2}')
 AIKIDO_INTERNALS_REPO=https://api.github.com/repos/AikidoSec/zen-internals
-AIKIDO_INTERNALS_LIB=libzen_internals_x86_64-unknown-linux-gnu.so
+AIKIDO_INTERNALS_LIB=libzen_internals_$arch-unknown-linux-gnu.so
 
 mkdir -p ~/rpmbuild/SOURCES/aikido-php-firewall-$VERSION
 

@@ -4,7 +4,7 @@ import (
 	"main/helpers"
 )
 
-func findHostnameInUserInput(userInput string, hostname string, port int) bool {
+func findHostnameInUserInput(userInput string, hostname string, port uint32) bool {
 
 	if len(userInput) <= 1 {
 		return false

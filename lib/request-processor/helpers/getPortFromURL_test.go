@@ -8,7 +8,7 @@ import (
 func TestGetPortFromURL(t *testing.T) {
 	tests := []struct {
 		input    string
-		expected int
+		expected uint32
 	}{
 		{"http://localhost:4000", 4000},
 		{"http://localhost", 80},

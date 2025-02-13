@@ -2,7 +2,7 @@ package ssrf
 
 import "fmt"
 
-func getMetadataForSSRFAttack(hostname string, port int) map[string]string {
+func getMetadataForSSRFAttack(hostname string, port uint32) map[string]string {
 	metadata := map[string]string{
 		"hostname": hostname,
 	}
