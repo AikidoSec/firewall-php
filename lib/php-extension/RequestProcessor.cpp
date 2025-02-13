@@ -97,7 +97,7 @@ bool RequestProcessor::Init() {
         return true;
     }
 
-    std::string requestProcessorLibPath = "/opt/aikido-" + std::string(PHP_AIKIDO_VERSION) + "/aikido-request-processor.so";
+    std::string requestProcessorLibPath = AIKIDO_INSTALL_DIR "/aikido-request-processor.so";
     this->libHandle = dlopen(requestProcessorLibPath.c_str(), RTLD_LAZY);
     if (!this->libHandle) {
         AIKIDO_LOG_ERROR("Error loading the Aikido Request Processor library from %s: %s!\n", requestProcessorLibPath.c_str(), dlerror());

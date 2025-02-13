@@ -19,7 +19,6 @@ int call_detect_sql_injection(detect_sql_injection_func func, const char* query,
 import "C"
 import (
 	"fmt"
-	"main/globals"
 	"main/log"
 	"main/utils"
 	"unsafe"
@@ -31,7 +30,7 @@ var (
 )
 
 func Init() bool {
-	zenInternalsLibPath := C.CString(fmt.Sprintf("/opt/aikido-%s/libzen_internals_%s-unknown-linux-gnu.so", globals.Version, utils.GetArch()))
+	zenInternalsLibPath := C.CString(fmt.Sprintf("%s/libzen_internals_%s-unknown-linux-gnu.so", utils.GetAikidoInstallDir(), utils.GetArch()))
 	defer C.free(unsafe.Pointer(zenInternalsLibPath))
 
 	handle := C.dlopen(zenInternalsLibPath, C.RTLD_LAZY)

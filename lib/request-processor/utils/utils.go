@@ -270,3 +270,10 @@ func GetArch() string {
 	}
 	panic(fmt.Sprintf("Running on unsupported architecture \"%s\"!", runtime.GOARCH))
 }
+
+func GetAikidoInstallDir() string {
+	if runtime.GOOS == "darwin" {
+		return fmt.Sprintf("/opt/homebrew/Cellar/aikido-php-firewall/%s/aikido-%s-", globals.Version, globals.Version)
+	}
+	return fmt.Sprintf("/opt/aikido-" + globals.Version)
+}

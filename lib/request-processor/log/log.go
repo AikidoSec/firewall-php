@@ -6,6 +6,7 @@ import (
 	"log"
 	"main/globals"
 	"os"
+	"runtime"
 	"time"
 )
 
@@ -129,6 +130,13 @@ func SetLogLevel(level string) error {
 	return nil
 }
 
+func GetAikidoLogDir() string {
+	if runtime.GOOS == "darwin" {
+		return fmt.Sprintf("/opt/homebrew/var/log/aikido-%s", globals.Version)
+	}
+	return fmt.Sprintf("/var/log/aikido-" + globals.Version)
+}
+
 func Init() {
 	if globals.EnvironmentConfig.SAPI == "cli" {
 		cliLogging = true
@@ -136,7 +144,7 @@ func Init() {
 	}
 	currentTime := time.Now()
 	timeStr := currentTime.Format("20060102150405")
-	logFilePath = fmt.Sprintf("/var/log/aikido-"+globals.Version+"/aikido-request-processor-%s-%d.log", timeStr, os.Getpid())
+	logFilePath = fmt.Sprintf("%s/aikido-request-processor-%s-%d.log", GetAikidoLogDir(), timeStr, os.Getpid())
 }
 
 func Uninit() {
