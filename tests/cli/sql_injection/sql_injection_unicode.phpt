@@ -1,12 +1,12 @@
 --TEST--
-Test PDOStatement::execute() method for SQL injection (GET url encoded)
+Test PDOStatement::execute() method for SQL injection (GET url encoded + non valid UTF-8)
 
 --ENV--
 AIKIDO_LOG_LEVEL=DEBUG
 AIKIDO_BLOCK=1
 
 --GET--
-name=ls%F0%28%8C%BC&age[]=3%27%29%3B%20DROP%20TABLE%20cats%3B%20--
+name=aa&age[]=3%27%29%3B%20DROP%20TABLE%20cats%3B%20--s%F0%28%8C%BC
 
 --FILE--
 <?php
