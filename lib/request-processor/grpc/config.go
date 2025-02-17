@@ -5,6 +5,7 @@ import (
 	"main/globals"
 	"main/ipc/protos"
 	"main/log"
+	"regexp"
 	"time"
 
 	"github.com/seancfoley/ipaddress-go/ipaddr"
@@ -86,6 +87,13 @@ func setCloudConfig(cloudConfigFromAgent *protos.CloudConfig) {
 	for ipBlocklistSource, ipBlocklist := range cloudConfigFromAgent.BlockedIps {
 		globals.CloudConfig.BlockedIps[ipBlocklistSource] = buildIpBlocklist(ipBlocklistSource, ipBlocklist.Description, ipBlocklist.Ips)
 	}
+
+	if cloudConfigFromAgent.BlockedUserAgents != "" {
+		globals.CloudConfig.BlockedUserAgents, _ = regexp.Compile("(?i)" + cloudConfigFromAgent.BlockedUserAgents)
+	} else {
+		globals.CloudConfig.BlockedUserAgents = nil
+	}
+
 }
 
 func startCloudConfigRoutine() {

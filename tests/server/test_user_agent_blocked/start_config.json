@@ -1,0 +1,11 @@
+{
+    "success": true,
+    "serviceId": 1,
+    "heartbeatIntervalInMS": 600000,
+    "endpoints": [],
+    "blockedUserIds": [],
+    "allowedIPAddresses": [],
+    "receivedAnyStats": true,
+    "blockedIPAddresses": [],
+    "blockedUserAgents": "Applebot-Extended|archive.org_bot|Arquivo-web-crawler|heritrix|ia_archiver|NiceCrawler|AhrefsBot|AhrefsSiteAudit|Barkrowler|BLEXBot|BrightEdge Crawler|Cocolyzebot|DataForSeoBot|DomainStatsBot|dotbot|hypestat|linkdexbot|MJ12bot|online-webceo-bot|Screaming Frog SEO Spider|SemrushBot|SenutoBot|SeobilityBot|SEOkicks|SEOlizer|serpstatbot|SiteCheckerBotCrawler|SenutoBot|ZoomBot|Seodiver|SEOlyzer|Backlinkcrawler|rogerbot|Siteimprove\\.com|360Spider|AlexandriaOrgBot|Baiduspider|bingbot|coccocbot-web|Daum|DuckDuckBot|DuckDuckGo-Favicons-Bot|Feedfetcher-Google|Google Favicon|Googlebot|GoogleOther|HaoSouSpider|MojeekBot|msnbot|PetalBot|Qwantbot|Qwantify|SemanticScholarBot|SeznamBot|Sogou web spider|teoma|TinEye|yacybot|Yahoo! Slurp|Yandex|Yeti|YisouSpider|ZumBot|AntBot|Amazonbot|Applebot|OAI-SearchBot|PerplexityBot|YouBot|sqlmap|WPScan|feroxbuster|masscan|Fuzz Faster U Fool|gobuster|\\(hydra\\)|absinthe|arachni|bsqlbf|cisco-torch|crimscanner|DirBuster|Grendel-Scan|Mysqloit|Nmap NSE|Nmap Scripting Engine|Nessus|Netsparker|Nikto|Paros|uil2pn|SQL Power Injector|webshag|Teh Forest Lobster|DotDotPwn|Havij|OpenVAS|ZmEu|DominoHunter|domino hunter|FHScan Core|w3af\\.(sf\\.net|sourceforge\\.net|org)|cgichk|webvulnscan|sqlninja|Argus(-Scanner|Crawler|DataLeakChecker|Bot)|ShadowSpray\\.Kerb|OWASP Amass|Argus(-Scanner|Crawler|DataLeakChecker|Bot)|Nuclei|BackDoorBot|HeadlessChrome|HeadlessEdg|facebookexternalhit|facebookcatalog|meta-externalagent|meta-externalfetcher|Twitterbot|Pinterestbot|pinterest\\.com.bot|LinkedInBot|XING-contenttabreceiver|redditbot|Mastodon|Bluesky Cardyb|vkShare|EmailCollector|EmailSiphon|EmailWolf|ExtractorPro|MailSweeper|Email Extractor|WebDataExtractor|MailBait"
+}

@@ -211,6 +211,21 @@ func IsIpBlocked(ip string) (bool, string) {
 	return false, ""
 }
 
+func IsUserAgentBlocked(userAgent string) (bool, string) {
+	globals.CloudConfigMutex.Lock()
+	defer globals.CloudConfigMutex.Unlock()
+
+	if globals.CloudConfig.BlockedUserAgents == nil {
+		return false, ""
+	}
+
+	if globals.CloudConfig.BlockedUserAgents.MatchString(userAgent) {
+		return true, "bot detection"
+	}
+
+	return false, ""
+}
+
 type DatabaseType int
 
 const (

@@ -7,7 +7,7 @@ if (extension_loaded('aikido')) {
 
     if ($decision->block && $decision->type == "blocked" && $decision->trigger == "ip") {
         http_response_code(403);
-        echo "Your IP ({$decision->ip}) is blocked due to: {$decision->description}!";
+        echo "Your IP ({$decision->data}) is blocked due to: {$decision->description}!";
         exit();
     }
 }

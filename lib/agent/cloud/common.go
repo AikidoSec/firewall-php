@@ -118,6 +118,7 @@ func UpdateListsConfig() bool {
 	for _, blockedIpsGroup := range tempListsConfig.BlockedIpAddresses {
 		CloudConfig.BlockedIpsList[blockedIpsGroup.Source] = IpBlocklist{Description: blockedIpsGroup.Description, Ips: blockedIpsGroup.Ips}
 	}
+	CloudConfig.BlockedUserAgents = tempListsConfig.BlockedUserAgents
 	return true
 }
 
