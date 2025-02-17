@@ -16,7 +16,7 @@ func OnPrePathAccessed() string {
 		return ""
 	}
 
-	if context.IsProtectionTurnedOff() {
+	if context.IsEndpointProtectionTurnedOff() {
 		log.Infof("Protection is turned off -> will not run detection logic!")
 		return ""
 	}
