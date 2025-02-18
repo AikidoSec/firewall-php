@@ -16,6 +16,7 @@ class Action {
         std::string trigger;
         std::string description;
         std::string ip;
+        std::string userAgent;
 
     private:
         ACTION_STATUS executeThrow(json &event);
@@ -39,6 +40,7 @@ class Action {
         char* Trigger();
         char* Description();
         char* Ip();
+        char* UserAgent();
 };
 
 extern Action action;

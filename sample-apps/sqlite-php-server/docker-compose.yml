@@ -4,6 +4,7 @@ services:
   sqlite-php-server:
     container_name: php-server
     build: ../../
+    platform: linux/amd64
     ports:
       - "1337:1337"  
     volumes:

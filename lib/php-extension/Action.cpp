@@ -30,6 +30,9 @@ ACTION_STATUS Action::executeStore(json &event) {
     if (event.contains("ip")) {
         ip = event["ip"];
     }
+    if (event.contains("user-agent")) {
+        userAgent = event["user-agent"];
+    }
     return CONTINUE;
 }
 
@@ -65,6 +68,7 @@ void Action::Reset() {
     trigger = "";
     description = "";
     ip = "";
+    userAgent = "";
 }
 
 bool Action::Exit() {
@@ -89,4 +93,8 @@ char *Action::Description() {
 
 char *Action::Ip() {
     return (char *)ip.c_str();
+}
+
+char *Action::UserAgent() {
+    return (char *)userAgent.c_str();
 }

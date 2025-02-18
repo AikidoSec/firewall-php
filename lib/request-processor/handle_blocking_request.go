@@ -10,15 +10,13 @@ import (
 	"time"
 )
 
-func GetStoreAction(actionType, trigger, description, ip string) string {
+func GetStoreAction(actionType, trigger, description, data string) string {
 	actionMap := map[string]interface{}{
 		"action":      "store",
 		"type":        actionType,
 		"trigger":     trigger,
 		"description": html.EscapeString(description),
-	}
-	if trigger == "ip" {
-		actionMap["ip"] = ip
+		trigger:       data,
 	}
 	actionJson, err := json.Marshal(actionMap)
 	if err != nil {
@@ -33,7 +31,7 @@ func OnGetBlockingStatus() string {
 	userId := context.GetUserId()
 	if utils.IsUserBlocked(userId) {
 		log.Infof("User \"%s\" is blocked!", userId)
-		return GetStoreAction("blocked", "user", "user blocked from config", "")
+		return GetStoreAction("blocked", "user", "user blocked from config", userId)
 	}
 
 	method := context.GetMethod()
@@ -43,6 +41,7 @@ func OnGetBlockingStatus() string {
 	}
 
 	ip := context.GetIp()
+	userAgent := context.GetUserAgent()
 
 	if !context.IsEndpointIpAllowed() {
 		log.Infof("IP \"%s\" is not allowd to access this endpoint!", ip)
@@ -57,6 +56,16 @@ func OnGetBlockingStatus() string {
 	if ipBlocked, ipBlockedDescription := utils.IsIpBlocked(ip); ipBlocked {
 		log.Infof("IP \"%s\" blocked due to: %s!", ip, ipBlockedDescription)
 		return GetStoreAction("blocked", "ip", ipBlockedDescription, ip)
+	}
+
+	if userAgentBlocked, userAgentBlockedDescription := utils.IsUserAgentBlocked(userAgent); userAgentBlocked {
+		log.Infof("User Agent \"%s\" blocked due to: %s!", userAgent, userAgentBlockedDescription)
+		return GetStoreAction("blocked", "user-agent", userAgentBlockedDescription, userAgent)
+	}
+
+	if userAgentBlocked, userAgentBlockedDescription := utils.IsUserAgentBlocked(userAgent); userAgentBlocked {
+		log.Infof("User Agent \"%s\" blocked due to: %s!", userAgent, userAgentBlockedDescription)
+		return GetStoreAction("blocked", "user-agent", userAgentBlockedDescription, userAgent)
 	}
 
 	if context.IsEndpointRateLimitingEnabled() {

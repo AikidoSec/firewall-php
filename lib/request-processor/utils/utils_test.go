@@ -7,7 +7,9 @@ import (
 	"crypto/sha256"
 	"crypto/sha512"
 	"encoding/hex"
+	"main/globals"
 	"math/big"
+	"regexp"
 	"testing"
 )
 
@@ -232,5 +234,41 @@ func TestParseFormData(t *testing.T) {
 	}
 	if result["b"] != "2" {
 		t.Errorf("Expected 2, got %v", result["b"])
+	}
+}
+
+func TestIsUserAgentBlocked(t *testing.T) {
+	pattern := "Applebot-Extended|archive.org_bot|Arquivo-web-crawler|heritrix|ia_archiver|NiceCrawler|AhrefsBot|AhrefsSiteAudit|Barkrowler|BLEXBot|BrightEdge Crawler|Cocolyzebot|DataForSeoBot|DomainStatsBot|dotbot|hypestat|linkdexbot|MJ12bot|online-webceo-bot|Screaming Frog SEO Spider|SemrushBot|SenutoBot|SeobilityBot|SEOkicks|SEOlizer|serpstatbot|SiteCheckerBotCrawler|SenutoBot|ZoomBot|Seodiver|SEOlyzer|Backlinkcrawler|rogerbot|Siteimprove\\.com|360Spider|AlexandriaOrgBot|Baiduspider|bingbot|coccocbot-web|Daum|DuckDuckBot|DuckDuckGo-Favicons-Bot|Feedfetcher-Google|Google Favicon|Googlebot|GoogleOther|HaoSouSpider|MojeekBot|msnbot|PetalBot|Qwantbot|Qwantify|SemanticScholarBot|SeznamBot|Sogou web spider|teoma|TinEye|yacybot|Yahoo! Slurp|Yandex|Yeti|YisouSpider|ZumBot|AntBot|Amazonbot|Applebot|OAI-SearchBot|PerplexityBot|YouBot|sqlmap|WPScan|feroxbuster|masscan|Fuzz Faster U Fool|gobuster|\\(hydra\\)|absinthe|arachni|bsqlbf|cisco-torch|crimscanner|DirBuster|Grendel-Scan|Mysqloit|Nmap NSE|Nmap Scripting Engine|Nessus|Netsparker|Nikto|Paros|uil2pn|SQL Power Injector|webshag|Teh Forest Lobster|DotDotPwn|Havij|OpenVAS|ZmEu|DominoHunter|domino hunter|FHScan Core|w3af\\.(sf\\.net|sourceforge\\.net|org)|cgichk|webvulnscan|sqlninja|Argus(-Scanner|Crawler|DataLeakChecker|Bot)|ShadowSpray\\.Kerb|OWASP Amass|Argus(-Scanner|Crawler|DataLeakChecker|Bot)|Nuclei|BackDoorBot|HeadlessChrome|HeadlessEdg|facebookexternalhit|facebookcatalog|meta-externalagent|meta-externalfetcher|Twitterbot|Pinterestbot|pinterest\\.com.bot|LinkedInBot|XING-contenttabreceiver|redditbot|Mastodon|Bluesky Cardyb|vkShare|EmailCollector|EmailSiphon|EmailWolf|ExtractorPro|MailSweeper|Email Extractor|WebDataExtractor|MailBait"
+	globals.CloudConfig.BlockedUserAgents = regexp.MustCompile(pattern)
+
+	tests := []struct {
+		ua       string
+		expected bool
+	}{
+		{"Googlebot", true},
+		{"AhrefsBot", true},
+		{"SemrushBot/7.0", true},
+		{"Mozilla/5.0 (compatible; Bingbot/2.0; +http://www.bing.com/bingbot.htm)", true},
+		{"facebookexternalhit/1.1", true},
+		{"LinkedInBot/1.0", true},
+		{"Twitterbot/1.0", true},
+		{"HeadlessChrome", true},
+		{"Nuclei", true},
+		{"DotDotPwn", true},
+		{"sqlmap", true},
+		{"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36", false},
+		{"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36", false},
+		{"Mozilla/5.0 (iPhone; CPU iPhone OS 14_6 like Mac OS X) AppleWebKit/537.36 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/537.36", false},
+		{"Mozilla/5.0 (Linux; Android 10; SM-G973F) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Mobile Safari/537.36", false},
+		{"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36", false},
+	}
+
+	for _, test := range tests {
+		t.Run(test.ua, func(t *testing.T) {
+			result, _ := IsUserAgentBlocked(test.ua)
+			if result != test.expected {
+				t.Errorf("expected %v, got %v", test.expected, result)
+			}
+		})
 	}
 }

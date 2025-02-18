@@ -58,5 +58,6 @@ type CloudConfigData struct {
 	BlockedUserIds    map[string]bool
 	BypassedIps       map[string]bool
 	BlockedIps        map[string]IpBlockList
+	BlockedUserAgents *regexp.Regexp
 	Block             int
 }

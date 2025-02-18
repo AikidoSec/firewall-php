@@ -58,6 +58,9 @@ class AikidoMiddleware implements MiddlewareInterface
             else if ($decision->trigger == "ip") {
                 $message = "Your IP ({$decision->ip}) is blocked due to: {$decision->description}!";
             }
+            else if ($decision->trigger == "user-agent") {
+                $message = "Your user agent ({$decision->user_agent}) is blocked due to: {$decision->description}!";
+            }
 
             return new Response([
                 'message' => $message,
