@@ -3,7 +3,6 @@ package cloud
 import (
 	. "main/aikido_types"
 	"main/globals"
-	"main/log"
 	"main/utils"
 	"sync/atomic"
 )
@@ -127,7 +126,7 @@ func SendHeartbeatEvent() {
 
 	response, err := SendCloudRequest(globals.EnvironmentConfig.Endpoint, globals.EventsAPI, globals.EventsAPIMethod, heartbeatEvent)
 	if err != nil {
-		log.Warn("Error in sending heartbeat event: ", err)
+		LogCloudRequestError("Error in sending heartbeat event: ", err)
 		return
 	}
 	StoreCloudConfig(response)

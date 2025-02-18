@@ -48,6 +48,7 @@ dpkg -i -E ./aikido-php-firewall.x86_64.deb
 ```
 
 - [Caddy & PHP-FPM](./docs/caddy.md)
+- [Apache mod_php](./docs/apache-mod-php.md)
 
 ### Managed platforms
 

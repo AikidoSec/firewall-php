@@ -93,7 +93,7 @@ func SendAttackDetectedEvent(req *protos.AttackDetected) {
 
 	response, err := SendCloudRequest(globals.EnvironmentConfig.Endpoint, globals.EventsAPI, globals.EventsAPIMethod, detectedAttackEvent)
 	if err != nil {
-		log.Warn("Error in sending detected attack event: ", err)
+		LogCloudRequestError("Error in sending detected attack event: ", err)
 		return
 	}
 

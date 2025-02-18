@@ -58,6 +58,12 @@ var UsersMutex sync.Mutex
 // MiddlewareInstalled boolean value to be reported on heartbeat events
 var MiddlewareInstalled uint32
 
+// Got some request info passed via gRPC to the Agent
+var GotTraffic uint32
+
+// Did we log a token error?
+var LoggedTokenError uint32
+
 // Users map, which holds the current users and their data
 var AttackDetectedEventsSentAt []int64
 

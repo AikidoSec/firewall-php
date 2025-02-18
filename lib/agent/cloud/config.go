@@ -4,13 +4,12 @@ import (
 	"encoding/json"
 	. "main/aikido_types"
 	"main/globals"
-	"main/log"
 )
 
 func CheckConfigUpdatedAt() {
 	response, err := SendCloudRequest(globals.EnvironmentConfig.ConfigEndpoint, globals.ConfigUpdatedAtAPI, globals.ConfigUpdatedAtMethod, nil)
 	if err != nil {
-		log.Warn("Error in sending polling config request: ", err)
+		LogCloudRequestError("Error in sending polling config request: ", err)
 		return
 	}
 
@@ -26,7 +25,7 @@ func CheckConfigUpdatedAt() {
 
 	configResponse, err := SendCloudRequest(globals.EnvironmentConfig.Endpoint, globals.ConfigAPI, globals.ConfigAPIMethod, nil)
 	if err != nil {
-		log.Warn("Error in sending config request: ", err)
+		LogCloudRequestError("Error in sending config request: ", err)
 		return
 	}
 

@@ -25,7 +25,9 @@ type server struct {
 
 func (s *server) OnConfig(ctx context.Context, req *protos.Config) (*emptypb.Empty, error) {
 	previousToken := config.GetToken()
-	if previousToken == "" {
+	if previousToken == "" && req.GetToken() != "" {
+		// Update the config only if the token was not previously set and the new token that we get from gRPC is not empty
+
 		storeConfig(req.GetToken(), req.GetLogLevel(), req.GetBlocking(), req.GetLocalhostAllowedByDefault(), req.GetCollectApiSchema())
 
 		// First time the token is set -> we can start reporting things to cloud
@@ -53,11 +55,12 @@ func (s *server) OnRequestShutdown(ctx context.Context, req *protos.RequestMetad
 	go storeRoute(req.GetMethod(), req.GetRoute(), req.GetApiSpec())
 	go updateRateLimitingCounts(req.GetMethod(), req.GetRoute(), req.GetUser(), req.GetIp())
 
+	atomic.StoreUint32(&globals.GotTraffic, 1)
 	return &emptypb.Empty{}, nil
 }
 
 func (s *server) GetCloudConfig(ctx context.Context, req *protos.CloudConfigUpdatedAt) (*protos.CloudConfig, error) {
-	cloudConfig := getCloudConfig(req.ConfigUpdatedAt)
+	cloudConfig := getCloudConfig(req.GetConfigUpdatedAt())
 	if cloudConfig == nil {
 		return nil, status.Errorf(codes.Canceled, "CloudConfig was not updated")
 	}
