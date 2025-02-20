@@ -16,8 +16,8 @@ const (
 )
 
 var EXCLUDED_METHODS = []string{"OPTIONS", "HEAD"}
-var IGNORE_EXTENSIONS = []string{"properties", "asp", "aspx", "jsp", "config"}
-var ALLOW_EXTENSIONS = []string{"html", "php"}
+var IGNORE_EXTENSIONS = []string{"properties", "config", "webmanifest"}
+var ALLOW_EXTENSIONS = []string{"html", "php", "php3", "php4", "php5", "phtml"}
 var IGNORE_STRINGS = []string{"cgi-bin"}
 
 func ShouldDiscoverRoute(statusCode int, route, method string) bool {
