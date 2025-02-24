@@ -3,6 +3,7 @@ package context
 // #include "../../API.h"
 import "C"
 import (
+	. "main/aikido_types"
 	"main/log"
 )
 
@@ -10,27 +11,32 @@ type CallbackFunction func(int) string
 
 /* Request level context cache (changes on each PHP request) */
 type RequestContextData struct {
-	Callback               CallbackFunction // callback to access data from the PHP layer (C++ extension) about the current request and current event
-	Method                 *string
-	Route                  *string
-	RouteParsed            *string
-	URL                    *string
-	StatusCode             *int
-	IP                     *string
-	IsIpBypassed           *bool
-	IsProtectionTurnedOff  *bool
-	UserAgent              *string
-	UserId                 *string
-	UserName               *string
-	BodyRaw                *string
-	BodyParsed             *map[string]interface{}
-	BodyParsedFlattened    *map[string]string
-	QueryParsed            *map[string]interface{}
-	QueryParsedFlattened   *map[string]string
-	CookiesParsed          *map[string]interface{}
-	CookiesParsedFlattened *map[string]string
-	HeadersParsed          *map[string]interface{}
-	HeadersParsedFlattened *map[string]string
+	Callback                      CallbackFunction // callback to access data from the PHP layer (C++ extension) about the current request and current event
+	Method                        *string
+	Route                         *string
+	RouteParsed                   *string
+	URL                           *string
+	StatusCode                    *int
+	IP                            *string
+	EndpointConfig                **EndpointData
+	WildcardEndpointsConfigs      *[]EndpointData
+	IsIpBypassed                  *bool
+	IsEndpointConfigured          *bool
+	IsEndpointRateLimitingEnabled *bool
+	IsEndpointProtectionTurnedOff *bool
+	IsEndpointIpAllowed           *bool
+	UserAgent                     *string
+	UserId                        *string
+	UserName                      *string
+	BodyRaw                       *string
+	BodyParsed                    *map[string]interface{}
+	BodyParsedFlattened           *map[string]string
+	QueryParsed                   *map[string]interface{}
+	QueryParsedFlattened          *map[string]string
+	CookiesParsed                 *map[string]interface{}
+	CookiesParsedFlattened        *map[string]string
+	HeadersParsed                 *map[string]interface{}
+	HeadersParsedFlattened        *map[string]string
 }
 
 var Context RequestContextData
@@ -137,6 +143,26 @@ func GetUserName() string {
 	return GetFromCache(ContextSetUserName, &Context.UserName)
 }
 
-func IsProtectionTurnedOff() bool {
-	return GetFromCache(ContextSetIsProtectionTurnedOff, &Context.IsProtectionTurnedOff)
+func GetEndpointConfig() *EndpointData {
+	return GetFromCache(ContextSetEndpointConfig, &Context.EndpointConfig)
+}
+
+func GetWildcardEndpointsConfig() []EndpointData {
+	return GetFromCache(ContextSetWildcardEndpointsConfigs, &Context.WildcardEndpointsConfigs)
+}
+
+func IsEndpointConfigured() bool {
+	return GetFromCache(ContextSetIsEndpointConfigured, &Context.IsEndpointConfigured)
+}
+
+func IsEndpointRateLimitingEnabled() bool {
+	return GetFromCache(ContextSetIsEndpointRateLimitingEnabled, &Context.IsEndpointRateLimitingEnabled)
+}
+
+func IsEndpointIpAllowed() bool {
+	return GetFromCache(ContextSetIsEndpointIpAllowed, &Context.IsEndpointIpAllowed)
+}
+
+func IsEndpointProtectionTurnedOff() bool {
+	return GetFromCache(ContextSetIsEndpointProtectionTurnedOff, &Context.IsEndpointProtectionTurnedOff)
 }

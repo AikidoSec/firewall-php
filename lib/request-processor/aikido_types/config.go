@@ -35,6 +35,11 @@ type EndpointData struct {
 	AllowedIPAddresses map[string]bool
 }
 
+type WildcardEndpointData struct {
+	RouteRegex *regexp.Regexp
+	Data       EndpointData
+}
+
 type EndpointKey struct {
 	Method string
 	Route  string
@@ -49,6 +54,7 @@ type IpBlockList struct {
 type CloudConfigData struct {
 	ConfigUpdatedAt   int64
 	Endpoints         map[EndpointKey]EndpointData
+	WildcardEndpoints map[string][]WildcardEndpointData
 	BlockedUserIds    map[string]bool
 	BypassedIps       map[string]bool
 	BlockedIps        map[string]IpBlockList
