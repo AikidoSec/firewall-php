@@ -1,11 +1,11 @@
 #include "Includes.h"
 
 GoString GoCreateString(const std::string& s) {
-    return GoString{s.c_str(), s.length()};
+    return GoString{s.c_str(), (ptrdiff_t)s.length()};
 }
 
 GoSlice GoCreateSlice(const std::vector<int64_t>& v) {
-    return GoSlice{ (void*)v.data(), v.size(), v.capacity() };
+    return GoSlice{ (void*)v.data(), (GoInt)v.size(), (GoInt)v.capacity() };
 }
 /*
     Callback wrapper called by the RequestProcessor (GO) whenever it needs data from PHP (C++ extension).

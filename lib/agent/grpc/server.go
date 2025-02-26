@@ -104,7 +104,7 @@ func StartServer(lis net.Listener) {
 	lis.Close()
 }
 
-// Creates the /run/aikido-* folder if it does not exist, in order for the socket creation to succeed
+// Creates the /var/run/aikido-* folder if it does not exist, in order for the socket creation to succeed
 // For now, this folder has 777 permissions as we don't know under which user the php requests will run under (apache, nginx, www-data, forge, ...)
 func createRunDirFolderIfNotExists() {
 	runDirectory := filepath.Dir(globals.EnvironmentConfig.SocketPath)

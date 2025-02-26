@@ -17,8 +17,7 @@ std::string Agent::GetInitData() {
 }
 
 bool Agent::Init() {
-    std::string aikido_agent_lib_handle_path =
-        "/opt/aikido-" + std::string(PHP_AIKIDO_VERSION) + "/aikido-agent.so";
+    std::string aikido_agent_lib_handle_path = AIKIDO_INSTALL_DIR "/aikido-agent.so";
     this->libHandle = dlopen(aikido_agent_lib_handle_path.c_str(), RTLD_LAZY);
     if (!this->libHandle) {
         AIKIDO_LOG_ERROR("Error loading the Aikido Agent library from %s: %s!\n",
