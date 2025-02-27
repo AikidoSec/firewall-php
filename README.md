@@ -29,7 +29,7 @@ Zen for PHP comes as a single package that needs to be installed on the system t
 
 Prerequisites:
 * Ensure you have sudo privileges on your system.
-* Check that you have a supported PHP version installed (PHP version >= 7.2 and tested up to 8.4).
+* Check that you have a supported PHP version installed (PHP version >= 7.0 and tested up to 8.4).
 * Make sure to use the appropriate commands for your system or cloud provider.
 
 ### Manual install
@@ -67,7 +67,7 @@ You can run on Debian 10, by doing this setup before install: [Debian10 setup](.
 ## Supported libraries and frameworks
 
 ### PHP versions
-Zen for PHP supports the following PHP versions: 7.2, 7.3, 7.4, 8.0, 8.1, 8.2, 8.3, 8.4.
+Zen for PHP supports the following PHP versions: 7.0, 7.1, 7.2, 7.3, 7.4, 8.0, 8.1, 8.2, 8.3, 8.4.
 
 ### Web frameworks
 
