@@ -226,6 +226,14 @@ func TestBuildRouteFromURL(t *testing.T) {
 	}
 }
 
+func TestParseCookie(t *testing.T) {
+	data := "exploit=/etc/passwd;exploit=safevalue;"
+	result := ParseFormData(data, ";")
+	if result["exploit"] != "/etc/passwd" {
+		t.Errorf("Expected /etc/passwd, got %v", result["exploit"])
+	}
+}
+
 func TestParseFormData(t *testing.T) {
 	data := "a=1&b=2"
 	result := ParseFormData(data, "&")
