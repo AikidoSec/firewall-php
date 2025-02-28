@@ -31,16 +31,19 @@ func ShouldDiscoverRoute(statusCode int, route, method string) bool {
 
 	segments := strings.Split(route, "/")
 
-	// e.g. /path/to/.file or /.directory/file
+	isWellKnownURI := IsWellKnownURI(route)
+
 	for _, segment := range segments {
-		if isDotFile(segment) {
+		// Do not discover routes with dot files like `/path/to/.file` or `/.directory/file`
+		// We want to allow discovery of well-known URIs like `/.well-known/acme-challenge`
+		if !isWellKnownURI && isDotFile(segment) {
 			return false
 		}
 
 		if containsIgnoredString(segment) {
 			return false
 		}
-		
+
 		if !isAllowedExtension(segment) {
 			return false
 		}
@@ -72,10 +75,6 @@ func isAllowedExtension(segment string) bool {
 }
 
 func isDotFile(segment string) bool {
-	if segment == ".well-known" {
-		return false
-	}
-
 	return strings.HasPrefix(segment, ".") && len(segment) > 1
 }
 
