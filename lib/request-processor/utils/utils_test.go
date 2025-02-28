@@ -8,6 +8,7 @@ import (
 	"crypto/sha512"
 	"encoding/hex"
 	"main/globals"
+	"encoding/json"
 	"math/big"
 	"regexp"
 	"testing"
@@ -223,6 +224,36 @@ func TestBuildRouteFromURL(t *testing.T) {
 				t.Errorf("expected %s, got %s", test.expected, result)
 			}
 		})
+	}
+}
+
+func TestParseBodyJSON(t *testing.T) {
+	data := "\r\n\r\n\r\n{\r\n\r\n\r\n\"a\":\r\n\r\n\r\n \"1\",\r\n\r\n\"b\":\"2\"\r\n\r\n}\r\n\r\n\r\n\r\n"
+	expected := `{"a":"1","b":"2"}`
+	
+	result := ParseBody(data)
+	resultJSON, err := json.Marshal(result)
+	if err != nil {
+		t.Errorf("Failed to marshal result: %v", err)
+	}
+	
+	if string(resultJSON) != expected {
+		t.Errorf("Expected JSON string %q, got %q", expected, resultJSON)
+	}
+}
+
+func TestParseBodyJSONArray(t *testing.T) {
+	data := `["asd",  "asd"]`
+	expected := `{"array":["asd","asd"]}`
+
+	result := ParseBody(data)
+	resultJSON, err := json.Marshal(result)
+	if err != nil {
+		t.Errorf("Failed to marshal result: %v", err)
+	}
+
+	if string(resultJSON) != expected {
+		t.Errorf("Expected JSON string %q, got %q", expected, string(resultJSON))
 	}
 }
 
