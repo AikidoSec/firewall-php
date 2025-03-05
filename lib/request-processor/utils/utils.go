@@ -6,7 +6,6 @@ import (
 	"main/globals"
 	"main/log"
 	"net"
-	"net/url"
 	"runtime"
 	"strings"
 
@@ -44,6 +43,79 @@ func MustGetFromMap[T any](m map[string]interface{}, key string) T {
 	return *value
 }
 
+func ishex(c byte) bool {
+	switch {
+	case '0' <= c && c <= '9':
+		return true
+	case 'a' <= c && c <= 'f':
+		return true
+	case 'A' <= c && c <= 'F':
+		return true
+	}
+	return false
+}
+
+func unhex(c byte) byte {
+	switch {
+	case '0' <= c && c <= '9':
+		return c - '0'
+	case 'a' <= c && c <= 'f':
+		return c - 'a' + 10
+	case 'A' <= c && c <= 'F':
+		return c - 'A' + 10
+	}
+	return 0
+}
+
+// unescape, ishex and unhex was forked from https://cs.opensource.google/go/go/+/refs/tags/go1.24.1:src/net/url/url.go;l=277.
+// License: https://cs.opensource.google/go/go/+/refs/tags/go1.24.1:LICENSE.
+// Copyright 2009 The Go Authors.
+// What was changed: adjusted to work in Go's encodeQueryComponent mode only, and never throw errors
+func unescape(s string) string {
+	n := 0
+	hasPlus := false
+	for i := 0; i < len(s); {
+		switch s[i] {
+		case '%':
+			n++
+			if i+2 >= len(s) || !ishex(s[i+1]) || !ishex(s[i+2]) {
+				i++
+				continue
+			}
+			i += 3
+		case '+':
+			hasPlus = true
+			i++
+		default:
+			i++
+		}
+	}
+
+	if n == 0 && !hasPlus {
+		return s
+	}
+
+	var t strings.Builder
+	t.Grow(len(s) - 2*n)
+	for i := 0; i < len(s); i++ {
+		switch s[i] {
+		case '%':
+			// ensure we preserve the original characters if invalid
+			if i+2 >= len(s) || !ishex(s[i+1]) || !ishex(s[i+2]) {
+				t.WriteByte(s[i])
+				continue
+			}
+			t.WriteByte(unhex(s[i+1])<<4 | unhex(s[i+2]))
+			i += 2
+		case '+':
+			t.WriteByte(' ')
+		default:
+			t.WriteByte(s[i])
+		}
+	}
+	return t.String()
+}
+
 func ParseFormData(data string, separator string) map[string]interface{} {
 	result := map[string]interface{}{}
 	parts := strings.Split(data, separator)
@@ -53,8 +125,9 @@ func ParseFormData(data string, separator string) map[string]interface{} {
 			continue
 		}
 		result[keyValue[0]] = keyValue[1]
-		decodedValue, err := url.QueryUnescape(keyValue[1])
-		if err == nil && decodedValue != keyValue[1] {
+
+		decodedValue := unescape(keyValue[1])
+		if decodedValue != keyValue[1] {
 			result[keyValue[0]] = decodedValue
 		}
 	}
