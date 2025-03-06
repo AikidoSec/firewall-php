@@ -28,7 +28,7 @@ std::string GetDateTime() {
 }
 
 std::string GenerateSocketPath() {
-    return "/run/aikido-" + std::string(PHP_AIKIDO_VERSION) + "/aikido-" + GetDateTime() + "-" + GetRandomNumber() + ".sock";
+    return AIKIDO_RUN_DIR "/aikido-" + GetDateTime() + "-" + GetRandomNumber() + ".sock";
 }
 
 const char* GetEventName(EVENT_ID event) {
