@@ -43,34 +43,16 @@ func MustGetFromMap[T any](m map[string]interface{}, key string) T {
 	return *value
 }
 
-func ishex(c byte) bool {
-	switch {
-	case '0' <= c && c <= '9':
-		return true
-	case 'a' <= c && c <= 'f':
-		return true
-	case 'A' <= c && c <= 'F':
-		return true
-	}
-	return false
-}
-
-func unhex(c byte) byte {
-	switch {
-	case '0' <= c && c <= '9':
-		return c - '0'
-	case 'a' <= c && c <= 'f':
-		return c - 'a' + 10
-	case 'A' <= c && c <= 'F':
-		return c - 'A' + 10
-	}
-	return 0
-}
-
-// unescape, ishex and unhex was forked from https://cs.opensource.google/go/go/+/refs/tags/go1.24.1:src/net/url/url.go;l=277.
-// License: https://cs.opensource.google/go/go/+/refs/tags/go1.24.1:LICENSE.
-// Copyright 2009 The Go Authors.
-// What was changed: adjusted to work in Go's encodeQueryComponent mode only, and never throw errors
+// The following function (`unescape`) and the helper functions (`ishex` and `unhex`)
+// are derived from the Go standard library's `net/url` package, originally licensed
+// under the following terms:
+//
+// Source: https://cs.opensource.google/go/go/+/refs/tags/go1.24.1:src/net/url/url.go;l=277
+// License: https://cs.opensource.google/go/go/+/refs/tags/go1.24.1:LICENSE
+// Copyright 2009 The Go Authors
+//
+// Modifications: Adjusted to work in Go's encodeQueryComponent mode only, and
+// modified to never throw errors.
 func unescape(s string) string {
 	n := 0
 	hasPlus := false
@@ -114,6 +96,30 @@ func unescape(s string) string {
 		}
 	}
 	return t.String()
+}
+
+func ishex(c byte) bool {
+	switch {
+	case '0' <= c && c <= '9':
+		return true
+	case 'a' <= c && c <= 'f':
+		return true
+	case 'A' <= c && c <= 'F':
+		return true
+	}
+	return false
+}
+
+func unhex(c byte) byte {
+	switch {
+	case '0' <= c && c <= '9':
+		return c - '0'
+	case 'a' <= c && c <= 'f':
+		return c - 'a' + 10
+	case 'A' <= c && c <= 'F':
+		return c - 'A' + 10
+	}
+	return 0
 }
 
 func ParseFormData(data string, separator string) map[string]interface{} {
