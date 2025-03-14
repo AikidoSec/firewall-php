@@ -43,6 +43,7 @@ func SendCloudRequest(endpoint string, route string, method string, payload inte
 	}
 	req.Header.Set("Authorization", token)
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept-Encoding", "gzip")
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
