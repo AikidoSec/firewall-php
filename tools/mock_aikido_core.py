@@ -1,8 +1,10 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response
 import sys
 import os
 import json
 import time
+import gzip
+import io
 
 app = Flask(__name__)
 
@@ -50,7 +52,16 @@ def get_runtime_config():
 
 @app.route('/api/runtime/firewall/lists', methods=['GET'])
 def get_lists_config():
-    return jsonify(responses["lists"])
+    response_data = responses["lists"]
+    if "Accept-Encoding" in request.headers and "gzip" in request.headers["Accept-Encoding"]:
+        # Convert response to JSON string
+        json_str = json.dumps(response_data)
+        # Compress the response
+        gzip_buffer = io.BytesIO()
+        with gzip.GzipFile(mode='wb', fileobj=gzip_buffer) as gz_file:
+            gz_file.write(json_str.encode('utf-8'))
+        return Response(gzip_buffer.getvalue(), mimetype='application/json', headers={'Content-Encoding': 'gzip'})
+    return jsonify(response_data)
 
 
 @app.route('/api/runtime/events', methods=['POST'])
