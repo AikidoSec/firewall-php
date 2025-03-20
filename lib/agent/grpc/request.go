@@ -130,13 +130,10 @@ func updateRateLimitingCounts(method string, route string, user string, ip strin
 	globals.RateLimitingMutex.Lock()
 	defer globals.RateLimitingMutex.Unlock()
 
-	rateLimitingData, exists := globals.RateLimitingMap[RateLimitingKey{Method: method, Route: route}]
-	if !exists {
-		return
+	for _, rateLimitingDataForRoute := range getMatchingRateLimitingValues(method, route) {
+		incrementRateLimitingCounts(rateLimitingDataForRoute.UserCounts, user)
+		incrementRateLimitingCounts(rateLimitingDataForRoute.IpCounts, ip)
 	}
-
-	incrementRateLimitingCounts(rateLimitingData.UserCounts, user)
-	incrementRateLimitingCounts(rateLimitingData.IpCounts, ip)
 }
 
 func isRateLimitingThresholdExceeded(config *RateLimitingConfig, countsMap map[string]*RateLimitingCounts, key string) bool {
@@ -148,26 +145,53 @@ func isRateLimitingThresholdExceeded(config *RateLimitingConfig, countsMap map[s
 	return counts.TotalNumberOfRequests >= config.MaxRequests
 }
 
-func getRateLimitingStatus(method string, route string, user string, ip string) *protos.RateLimitingStatus {
+func getRateLimitingValue(method, route string) []*RateLimitingValue {
+	rateLimitingDataForEndpoint, exists := globals.RateLimitingMap[RateLimitingKey{Method: method, Route: route}]
+	if !exists {
+		return []*RateLimitingValue{}
+	}
+	return []*RateLimitingValue{rateLimitingDataForEndpoint}
+}
+
+func getWildcardRateLimitingValues(method, route string) []*RateLimitingValue {
+	wildcardRatelimitingValues := []*RateLimitingValue{}
+
+	for key, r := range globals.RateLimitingWildcardMap {
+		if key.Method != method {
+			continue
+		}
+		if r.RouteRegex.MatchString(route) {
+			wildcardRatelimitingValues = append(wildcardRatelimitingValues, r.RateLimitingValue)
+		}
+	}
+	return wildcardRatelimitingValues
+}
+
+func getMatchingRateLimitingValues(method, route string) []*RateLimitingValue {
+	rateLimitingDataArray := getRateLimitingValue(method, route)
+	rateLimitingDataArray = append(rateLimitingDataArray, getRateLimitingValue("*", route)...)
+	rateLimitingDataArray = append(rateLimitingDataArray, getWildcardRateLimitingValues(method, route)...)
+	rateLimitingDataArray = append(rateLimitingDataArray, getWildcardRateLimitingValues("*", route)...)
+	return rateLimitingDataArray
+}
+
+func getRateLimitingStatus(method, route, user, ip string) *protos.RateLimitingStatus {
 	globals.RateLimitingMutex.RLock()
 	defer globals.RateLimitingMutex.RUnlock()
 
-	rateLimitingDataForRoute, exists := globals.RateLimitingMap[RateLimitingKey{Method: method, Route: route}]
-	if !exists {
-		return &protos.RateLimitingStatus{Block: false}
-	}
-
-	if user != "" {
-		// If the user exists, we only try to rate limit by user
-		if isRateLimitingThresholdExceeded(&rateLimitingDataForRoute.Config, rateLimitingDataForRoute.UserCounts, user) {
-			log.Infof("Rate limited request for user %s - %s %s - %v", user, method, route, rateLimitingDataForRoute.UserCounts[user])
-			return &protos.RateLimitingStatus{Block: true, Trigger: "user"}
-		}
-	} else {
-		// Otherwise, we rate limit by ip
-		if isRateLimitingThresholdExceeded(&rateLimitingDataForRoute.Config, rateLimitingDataForRoute.IpCounts, ip) {
-			log.Infof("Rate limited request for ip %s - %s %s - %v", ip, method, route, rateLimitingDataForRoute.IpCounts[ip])
-			return &protos.RateLimitingStatus{Block: true, Trigger: "ip"}
+	for _, rateLimitingDataForRoute := range getMatchingRateLimitingValues(method, route) {
+		if user != "" {
+			// If the user exists, we only try to rate limit by user
+			if isRateLimitingThresholdExceeded(&rateLimitingDataForRoute.Config, rateLimitingDataForRoute.UserCounts, user) {
+				log.Infof("Rate limited request for user %s - %s %s - %v", user, method, route, rateLimitingDataForRoute.UserCounts[user])
+				return &protos.RateLimitingStatus{Block: true, Trigger: "user"}
+			}
+		} else {
+			// Otherwise, we rate limit by ip
+			if isRateLimitingThresholdExceeded(&rateLimitingDataForRoute.Config, rateLimitingDataForRoute.IpCounts, ip) {
+				log.Infof("Rate limited request for ip %s - %s %s - %v", ip, method, route, rateLimitingDataForRoute.IpCounts[ip])
+				return &protos.RateLimitingStatus{Block: true, Trigger: "ip"}
+			}
 		}
 	}
 

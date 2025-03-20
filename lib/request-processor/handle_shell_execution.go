@@ -16,7 +16,7 @@ func OnPreShellExecuted() string {
 
 	log.Info("Got shell command: ", cmd)
 
-	if context.IsProtectionTurnedOff() {
+	if context.IsEndpointProtectionTurnedOff() {
 		log.Infof("Protection is turned off -> will not run detection logic!")
 		return ""
 	}
