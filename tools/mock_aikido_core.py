@@ -1,8 +1,9 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response
 import sys
 import os
 import json
 import time
+import gzip
 
 app = Flask(__name__)
 
@@ -31,61 +32,66 @@ def load_config(j):
     responses["configUpdatedAt"] = { "serviceId": 1, "configUpdatedAt": configUpdatedAt }
     print(f"Loaded new runtime config!")
 
+def gzip_response(data):
+    json_str = json.dumps(data)
+    gzipped = gzip.compress(json_str.encode('utf-8'))
+    response = Response(gzipped)
+    response.headers['Content-Encoding'] = 'gzip'
+    response.headers['Content-Type'] = 'application/json'
+    return response
+
 @app.before_request
 def check_server_status():
     global server_down
     if request.endpoint in excluded_routes:
         return None
     if server_down:
-        return jsonify({"error": "Service Unavailable"}), 503
+        return gzip_response({"error": "Service Unavailable"}), 503
 
 @app.route('/config', methods=['GET'])
 def get_config():
-    return jsonify(responses["configUpdatedAt"])
-
+    return gzip_response(responses["configUpdatedAt"])
 
 @app.route('/api/runtime/config', methods=['GET'])
 def get_runtime_config():
-    return jsonify(responses["config"])
+    return gzip_response(responses["config"])
 
 @app.route('/api/runtime/firewall/lists', methods=['GET'])
 def get_lists_config():
-    return jsonify(responses["lists"])
-
+    return gzip_response(responses["lists"])
 
 @app.route('/api/runtime/events', methods=['POST'])
 def post_events():
     print("Got event: ", request.get_json())
     if request.get_json():
         events.append(request.get_json())
-    return jsonify(responses["config"])
-
+    return gzip_response(responses["config"])
 
 @app.route('/mock/config', methods=['POST'])
 def mock_set_config():
     load_config(request.get_json())
-    return jsonify({})
+    return gzip_response({})
 
 @app.route('/mock/down', methods=['POST'])
 def mock_down():
     global server_down
     server_down = True
-    return jsonify({})
+    return gzip_response({})
 
 @app.route('/mock/up', methods=['POST'])
 def mock_up():
     global server_down
     server_down = False
-    return jsonify({})
+    return gzip_response({})
 
 @app.route('/mock/events', methods=['GET'])
 def mock_get_events():
-    return jsonify(events)
+    return gzip_response(events)
 
 @app.route('/tests/simple', methods=['GET'])
 def mock_tests_simple():
     time.sleep(1)
-    return jsonify("{}")
+    return gzip_response("{}")
 
 if __name__ == '__main__':
     if len(sys.argv) < 2 or len(sys.argv) > 3:
