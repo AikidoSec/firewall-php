@@ -15,7 +15,7 @@ You can find their values in the Aikido platform.
 #!/usr/bin/env bash
 cd /tmp
 
-curl -L -O https://github.com/AikidoSec/firewall-php/releases/download/v1.0.113/aikido-php-firewall.x86_64.deb
+curl -L -O https://github.com/AikidoSec/firewall-php/releases/download/v1.0.114/aikido-php-firewall.x86_64.deb
 dpkg -i -E ./aikido-php-firewall.x86_64.deb
 ```
 
