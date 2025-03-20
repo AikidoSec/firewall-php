@@ -11,6 +11,7 @@ var AikidoConfig AikidoConfigData
 
 var CloudConfig CloudConfigData
 var CloudConfigMutex sync.Mutex
+var MiddlewareInstalled bool
 
 const (
 	Version = "1.0.113"
