@@ -129,7 +129,7 @@ func GetCloudConfig() {
 
 	cloudConfig, err := client.GetCloudConfig(ctx, &protos.CloudConfigUpdatedAt{ConfigUpdatedAt: utils.GetCloudConfigUpdatedAt()})
 	if err != nil {
-		log.Infof("Could not get cloud config: %v", err)
+		//log.Infof("Could not get cloud config: %v", err)
 		return
 	}
 
