@@ -19,7 +19,7 @@ cd /tmp
 
 # Install commands from the "Manual install" section below, based on your OS
 
-curl -L -O https://github.com/AikidoSec/firewall-php/releases/download/v1.0.114/aikido-php-firewall.x86_64.deb
+curl -L -O https://github.com/AikidoSec/firewall-php/releases/download/v1.0.115/aikido-php-firewall.x86_64.deb
 dpkg -i -E ./aikido-php-firewall.x86_64.deb
 
 # Restarting the php services in order to load the Aikido PHP Firewall
