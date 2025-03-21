@@ -12,6 +12,7 @@ import (
 	"encoding/json"
 	"math/big"
 	"regexp"
+	"strings"
 	"testing"
 )
 
@@ -217,6 +218,14 @@ func TestBuildRouteFromURL(t *testing.T) {
 		{"/files/" + generateHash("sha256"), "/files/:hash"},
 		{"/files/" + generateHash("sha512"), "/files/:hash"},
 		{"/confirm/CnJ4DunhYfv2db6T1FRfciRBHtlNKOYrjoz", "/confirm/:secret"},
+		{"/posts/01ARZ3NDEKTSV4RRFFQ69G5FAV", "/posts/:ulid"},
+		{"/posts/01arz3ndektsv4rrffq69g5fav", "/posts/:ulid"},
+		{"/posts/66ec29159d00113616fc7184", "/posts/:objectId"},
+		{"/posts/66EC29159D00113616FC7184", "/posts/:objectId"},
+		{"/files/" + strings.ToUpper(generateHash("md5")), "/files/:hash"},
+		{"/files/" + strings.ToUpper(generateHash("sha1")), "/files/:hash"},
+		{"/files/" + strings.ToUpper(generateHash("sha256")), "/files/:hash"},
+		{"/files/" + strings.ToUpper(generateHash("sha512")), "/files/:hash"},
 	}
 
 	for _, test := range tests {
