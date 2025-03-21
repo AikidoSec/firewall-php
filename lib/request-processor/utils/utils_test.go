@@ -201,6 +201,7 @@ func TestBuildRouteFromURL(t *testing.T) {
 		{"/posts/1ef21d2f-1207-6660-8c4f-419efbd44d48", "/posts/:uuid"},
 		{"/posts/017f22e2-79b0-7cc3-98c4-dc0c0c07398f", "/posts/:uuid"},
 		{"/posts/0d8f23a0-697f-83ae-802e-48f3756dd581", "/posts/:uuid"},
+		{"/posts/ECBCDD2C-A441-4846-B5AC-0083D347FDF2", "/posts/:uuid"},
 		{"/posts/00000000-0000-1000-6000-000000000000", "/posts/00000000-0000-1000-6000-000000000000"},
 		{"/posts/abc", "/posts/abc"},
 		{"/login/john.doe@acme.com", "/login/:email"},
