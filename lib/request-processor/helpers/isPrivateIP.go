@@ -53,7 +53,7 @@ func init() {
 		privateIPNets = append(privateIPNets, ipNet)
 	}
 
-	// Add all IPv4 ranges as IPv4-mapped IPv6 addresses
+	// Add all the private IPv4 ranges as IPv4-mapped IPv6 addresses
 	for _, cidr := range privateIPv4Ranges {
 		ipv6Cidr := MapIPv4ToIPv6(cidr)
 		_, ipNet, _ := net.ParseCIDR(ipv6Cidr)
