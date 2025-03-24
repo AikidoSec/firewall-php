@@ -17,7 +17,9 @@ func MapIPv4ToIPv6(ip string) string {
 	parts := strings.Split(ip, "/")
 	suffix, err := strconv.Atoi(parts[1])
 	if err != nil {
-		return fmt.Sprintf("::ffff:%s/128", parts[0])
+		// Throw an error if the suffix is not a number
+		// Because the input is statically defined in the code, this should never happen to a end user
+		panic(fmt.Sprintf("Invalid CIDR suffix: %s", parts[1]))
 	}
 
 	// we add 96 to the suffix, since ::ffff: already is 96 bits, so the 32 remaining bits are decided by the IPv4 address
