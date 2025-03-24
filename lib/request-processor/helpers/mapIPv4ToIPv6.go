@@ -17,7 +17,7 @@ func MapIPv4ToIPv6(ip string) string {
 	parts := strings.Split(ip, "/")
 	suffix, err := strconv.Atoi(parts[1])
 	if err != nil {
-		// handle error
+		return fmt.Sprintf("::ffff:%s/128", parts[0])
 	}
 
 	// we add 96 to the suffix, since ::ffff: already is 96 bits, so the 32 remaining bits are decided by the IPv4 address
