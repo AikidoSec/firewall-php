@@ -7,7 +7,9 @@ There are two ways to install Aikido in Laravel forge.
 
 ## Portal
 
-1. In Forge go to `[server_name] -> [site_name] -> Environment`, add the `AIKIDO_TOKEN` and `AIKIDO_BLOCKING` environment values and save. You can find their values in the Aikido platform.
+1. In Forge go to `[server_name] -> [site_name] -> Environment`, add the `AIKIDO_TOKEN` and `AIKIDO_BLOCKING` environment values and save. 
+
+You can get your token from the [Aikido Security Dashboard](https://help.aikido.dev/doc/creating-an-aikido-zen-firewall-token/doc6vRJNzC4u).
 
 2. In Forge go to "Recipes" and create a new recipe called "Install Aikido Firewall".
 
