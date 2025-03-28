@@ -4,7 +4,7 @@
     "heartbeatIntervalInMS": 600000,
     "endpoints": [],
     "blockedUserIds": [],
-    "allowedIPAddresses": ["::1", "127.0.0.1"],
+    "allowedIPAddresses": ["::1/128", "127.0.0.1/32"],
     "receivedAnyStats": true,
     "blockedIPAddresses": [
         {
