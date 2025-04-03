@@ -33,7 +33,7 @@ type RateLimiting struct {
 type EndpointData struct {
 	ForceProtectionOff bool
 	RateLimiting       RateLimiting
-	AllowedIPAddresses map[string]bool
+	AllowedIPAddresses *netipx.IPSet
 }
 
 type EndpointKey struct {
@@ -50,7 +50,7 @@ type CloudConfigData struct {
 	ConfigUpdatedAt   int64
 	Endpoints         map[EndpointKey]EndpointData
 	BlockedUserIds    map[string]bool
-	BypassedIps       map[string]bool
+	BypassedIps       *netipx.IPSet
 	BlockedIps        map[string]IpBlockList
 	BlockedUserAgents *regexp.Regexp
 	Block             int
