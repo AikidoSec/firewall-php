@@ -2,11 +2,11 @@
 
 # Zen, in-app firewall for PHP | by Aikido
 
-Zen, your in-app firewall for peace of mind – at runtime.
+Zen, your in-app firewall for peace of mind– at runtime.
 
-Zen is an embedded Web Application Firewall that autonomously protects your PHP apps against common and critical attacks.
+Zen is an embedded Web Application Firewall that autonomously protects your apps against attacks and provides advanced access controls features.
 
-Zen protects your PHP apps by preventing user input containing dangerous strings, thus protecting agains attacks like SQL injection. It runs on the same server as your PHP app for simple [install](#Install) and zero maintenance.
+Zen protects your PHP apps by blocking malicious user input that could lead to security vulnerabilities. It guards against SQL injections, command injections, path traversal attacks, and more. Running directly on your PHP app's server, it offers seamless installation and low maintenance.
 
 ## Features
 
