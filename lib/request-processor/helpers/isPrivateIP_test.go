@@ -22,6 +22,10 @@ func TestIsPrivateIP(t *testing.T) {
 		{"2001:4860:4860::8888", false}, // Public IPv6 (Google DNS)
 		{"240.0.0.1", true},             // Reserved IPv4 (240.0.0.0/4)
 		{"255.255.255.255", true},       // Broadcast IPv4 (255.255.255.255/32)
+		{"::ffff:10.0.0.1", true},       // IPv4-mapped IPv6
+		{"::ffff:192.168.2.1", true},    // IPv4-mapped IPv6
+		{"::ffff:1.2.3.4", false},       // IPv4-mapped IPv6
+		{"::ffff:192.145.45.45", false}, // IPv4-mapped IPv6
 	}
 
 	for _, test := range tests {
