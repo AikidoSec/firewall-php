@@ -11,6 +11,9 @@ There are two ways to install Aikido in Laravel forge.
 
 You can get your token from the [Aikido Security Dashboard](https://help.aikido.dev/doc/creating-an-aikido-zen-firewall-token/doc6vRJNzC4u).
 
+> [!IMPORTANT]
+> Don't run `php artisan config:cache` as Aikido Zen will not be able to find the `AIKIDO_TOKEN`. `config:cache` will clear the environment variables that Aikido Zen uses to fetch configuration.
+
 2. In Forge go to "Recipes" and create a new recipe called "Install Aikido Firewall".
 
 3. Based on the running OS, use the [Manual install](../README.md#Manual-install) commands to configure the new recipe and select "root" as user.
@@ -32,10 +35,17 @@ done
 
 4. Run the created recipes to install the Aikido PHP Firewall.
 
+5. Run `php artisan config:clear` when using the Laravel framework
+
 ## SSH
 
 1. In Forge go to `[server_name] -> [site_name] -> Environment`, add the `AIKIDO_TOKEN` and `AIKIDO_BLOCKING` environment values and save. You can find their values in the Aikido platform.
 
+> [!IMPORTANT]
+> Don't run `php artisan config:cache` as Aikido Zen will not be able to find the `AIKIDO_TOKEN`. `config:cache` will clear the environment variables that Aikido Zen uses to fetch configuration.
+
 2. Use ssh to connect to the Forge server that you want to be protected by Aikido and, based on the running OS, execute the install commands from the [Manual install](../README.md#Manual-install) section.
 
 3. Go to `[server_name] -> [site_name] -> Restart` and click `Restart PHP <version>`.
+
+4. Run `php artisan config:clear` when using the Laravel framework
