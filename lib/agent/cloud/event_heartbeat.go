@@ -3,6 +3,7 @@ package cloud
 import (
 	. "main/aikido_types"
 	"main/globals"
+	"main/ipc/protos"
 	"main/utils"
 	"sync/atomic"
 )
@@ -22,18 +23,75 @@ func GetHostnamesAndClear() []Hostname {
 	return hostnames
 }
 
-func GetRoutesAndClear() []Route {
+func GetFirstType(types []string) string {
+	if len(types) == 0 {
+		return ""
+	}
+	return types[0]
+}
+
+func GetApiBodyDataSchemaForCore(schema *protos.DataSchema) *ApiBodyDataSchemaForCore {
+	if schema == nil {
+		return nil
+	}
+	return &ApiBodyDataSchemaForCore{
+		Type:       GetFirstType(schema.Type),
+		Properties: schema.Properties,
+		Items:      schema.Items,
+		Optional:   schema.Optional,
+	}
+}
+
+func GetApiBodyInfoForCore(body *protos.APIBodyInfo) *ApiBodyInfoForCore {
+	if body == nil {
+		return nil
+	}
+	return &ApiBodyInfoForCore{
+		Type:   body.Type,
+		Schema: GetApiBodyDataSchemaForCore(body.Schema),
+	}
+}
+
+func GetApiQueryForCore(query *protos.DataSchema) *ApiQueryForCore {
+	if query == nil {
+		return nil
+	}
+
+	return &ApiQueryForCore{
+		Type:       GetFirstType(query.Type),
+		Properties: query.Properties,
+		Items:      query.Items,
+		Optional:   query.Optional,
+	}
+}
+
+func GetApiSpecForCore(apiSpec *protos.APISpec) *ApiSpecForCore {
+	if apiSpec == nil {
+		return nil
+	}
+	return &ApiSpecForCore{
+		Body:  GetApiBodyInfoForCore(apiSpec.Body),
+		Query: GetApiQueryForCore(apiSpec.Query),
+		Auth:  apiSpec.Auth,
+	}
+}
+
+func GetRoutesAndClear() []RouteForCore {
 	globals.RoutesMutex.Lock()
 	defer globals.RoutesMutex.Unlock()
 
-	var routes []Route
+	var routes []RouteForCore
 	for _, methodsMap := range globals.Routes {
 		for _, routeData := range methodsMap {
 			if routeData.Hits == 0 {
 				continue
 			}
-			routes = append(routes, *routeData)
-			routeData.Hits = 0
+			routes = append(routes, RouteForCore{
+				Path:    routeData.Path,
+				Method:  routeData.Method,
+				Hits:    routeData.Hits,
+				ApiSpec: GetApiSpecForCore(routeData.ApiSpec),
+			})
 		}
 	}
 

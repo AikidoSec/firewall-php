@@ -18,6 +18,38 @@ type Hostname struct {
 	Hits uint64 `json:"hits"`
 }
 
+type ApiBodyDataSchemaForCore struct {
+	Type       string                        `json:"type,omitempty"`
+	Properties map[string]*protos.DataSchema `json:"properties,omitempty"`
+	Items      *protos.DataSchema            `json:"items,omitempty"`
+	Optional   bool                          `json:"optional,omitempty"`
+}
+
+type ApiBodyInfoForCore struct {
+	Type   string                    `json:"type,omitempty"`
+	Schema *ApiBodyDataSchemaForCore `json:"schema,omitempty"`
+}
+
+type ApiQueryForCore struct {
+	Type       string                        `json:"type,omitempty"`
+	Properties map[string]*protos.DataSchema `json:"properties,omitempty"`
+	Items      *protos.DataSchema            `json:"items,omitempty"`
+	Optional   bool                          `json:"optional,omitempty"`
+}
+
+type ApiSpecForCore struct {
+	Body  *ApiBodyInfoForCore   `json:"body,omitempty"`
+	Query *ApiQueryForCore      `json:"query,omitempty"`
+	Auth  []*protos.APIAuthType `json:"auth,omitempty"`
+}
+
+type RouteForCore struct {
+	Path    string          `json:"path"`
+	Method  string          `json:"method"`
+	Hits    int64           `json:"hits"`
+	ApiSpec *ApiSpecForCore `json:"apispec"`
+}
+
 type Route struct {
 	Path    string          `json:"path"`
 	Method  string          `json:"method"`
@@ -85,14 +117,14 @@ type Started struct {
 }
 
 type Heartbeat struct {
-	Type                string     `json:"type"`
-	Stats               Stats      `json:"stats"`
-	Hostnames           []Hostname `json:"hostnames"`
-	Routes              []Route    `json:"routes"`
-	Users               []User     `json:"users"`
-	Agent               AgentInfo  `json:"agent"`
-	Time                int64      `json:"time"`
-	MiddlewareInstalled bool       `json:"middlewareInstalled"`
+	Type                string         `json:"type"`
+	Stats               Stats          `json:"stats"`
+	Hostnames           []Hostname     `json:"hostnames"`
+	Routes              []RouteForCore `json:"routes"`
+	Users               []User         `json:"users"`
+	Agent               AgentInfo      `json:"agent"`
+	Time                int64          `json:"time"`
+	MiddlewareInstalled bool           `json:"middlewareInstalled"`
 }
 
 type RequestInfo struct {
