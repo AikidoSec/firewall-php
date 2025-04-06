@@ -174,6 +174,7 @@ void RequestProcessor::RequestShutdown() {
     // Unload the server variable at each request shutdown to force re-initialization
     // as PHP may change this between RINIT and RSHUTDOWN
     request.UnloadServerVar();
+    request.LoadServerVar();
     
     LoadConfigOnce();
     SendPostRequestEvent();

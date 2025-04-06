@@ -7,6 +7,8 @@ class Request {
    public:
     Request() = default;
 
+    bool IsServerVarLoaded();
+
     bool LoadServerVar();
 
     void UnloadServerVar();
