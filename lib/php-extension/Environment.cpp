@@ -90,6 +90,12 @@ std::string GetLaravelEnvVariable(const std::string& env_key) {
     return "";
 }
 
+/*
+    Load env variables from the following sources (in this order):
+    - System environment variables
+    - PHP environment variables
+    - Laravel environment variables
+*/
 using EnvGetterFn = std::string(*)(const std::string&);
 EnvGetterFn envGetters[] = {
     &GetSystemEnvVariable,
