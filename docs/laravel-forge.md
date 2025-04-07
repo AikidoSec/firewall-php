@@ -38,4 +38,10 @@ done
 
 2. Use ssh to connect to the Forge server that you want to be protected by Aikido and, based on the running OS, execute the install commands from the [Manual install](../README.md#Manual-install) section.
 
-3. Go to `[server_name] -> [site_name] -> Restart` and click `Restart PHP <version>`.
+3. Run these bash lines to restart php-fpm:
+```
+# Restarting the php services in order to load the Aikido PHP Firewall
+for service in $(systemctl list-units | grep php | awk '{print $1}'); do
+    sudo systemctl restart $service
+done
+```
