@@ -20,16 +20,97 @@ std::string GetPhpEnvVariable(const std::string& env_key) {
 std::string GetSystemEnvVariable(const std::string& env_key) {
     const char* env_value = getenv(env_key.c_str());
     if (!env_value) return "";
-    AIKIDO_LOG_DEBUG("env[%s] = %s\n", env_key.c_str(), env_value);
+    AIKIDO_LOG_DEBUG("sys_env[%s] = %s\n", env_key.c_str(), env_value);
     return env_value;
 }
 
-std::string GetEnvVariable(const std::string& env_key) {
-    std::string env_value = GetSystemEnvVariable(env_key);
-    if (env_value.empty()) {
-        return GetPhpEnvVariable(env_key);
+std::unordered_map<std::string, std::string> laravelEnv;
+bool laravelEnvLoaded = false;
+
+bool LoadLaravelEnvFileOnce() {
+    if (laravelEnvLoaded) {
+        return true;
     }
-    return env_value;
+
+    if (!request.IsServerVarLoaded()) {
+        return false;
+    }
+    std::string docRoot = request.GetVar("DOCUMENT_ROOT");
+    if (docRoot.empty()) {
+        return false;
+    }
+    std::string laravelEnvPath = docRoot + "/../.env";
+    std::ifstream envFile(laravelEnvPath);
+
+    if (!envFile.is_open()) {
+        return false;
+    }
+
+    std::string line;
+    while (std::getline(envFile, line)) {
+        // Skip empty lines and comments
+        if (line.empty() || line[0] == '#') {
+            continue;
+        }
+
+        // Check if line starts with env_key
+        if (line.substr(0, 6) == "AIKIDO") {
+            size_t pos = line.find('=');
+            if (pos != std::string::npos) {
+                std::string key = line.substr(0, pos);
+                std::string value = line.substr(pos + 1);
+                
+                // Trim whitespace from key and value
+                key.erase(0, key.find_first_not_of(" "));
+                key.erase(key.find_last_not_of(" ") + 1);
+                value.erase(0, value.find_first_not_of(" "));
+                value.erase(value.find_last_not_of(" ") + 1);
+                
+                // Remove quotes if present
+                if (value.length() >= 2 && 
+                    ((value.front() == '"' && value.back() == '"') ||
+                     (value.front() == '\'' && value.back() == '\''))) {
+                    value = value.substr(1, value.length() - 2);
+                }
+                laravelEnv[key] = value;
+            }
+        }
+    }
+    laravelEnvLoaded = true;
+    AIKIDO_LOG_DEBUG("Loaded Laravel env file: %s\n", laravelEnvPath.c_str());
+    return true;
+}
+
+std::string GetLaravelEnvVariable(const std::string& env_key) {
+    LoadLaravelEnvFileOnce();
+    if (laravelEnv.find(env_key) != laravelEnv.end()) {
+        AIKIDO_LOG_DEBUG("laravel_env[%s] = %s\n", env_key.c_str(), laravelEnv[env_key].c_str());
+        return laravelEnv[env_key];
+    }
+    return "";
+}
+
+/*
+    Load env variables from the following sources (in this order):
+    - System environment variables
+    - PHP environment variables
+    - Laravel environment variables
+*/
+using EnvGetterFn = std::string(*)(const std::string&);
+EnvGetterFn envGetters[] = {
+    &GetSystemEnvVariable,
+    &GetPhpEnvVariable,
+    &GetLaravelEnvVariable
+};
+
+std::string GetEnvVariable(const std::string& env_key) {
+    for (EnvGetterFn envGetter : envGetters) {
+        std::string env_value = envGetter(env_key);
+        if (!env_value.empty()) {
+            return env_value;
+        }
+    }
+    return "";
 }
 
 std::string GetEnvString(const std::string& env_key, const std::string default_value) {

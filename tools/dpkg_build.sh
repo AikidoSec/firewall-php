@@ -8,3 +8,5 @@ mkdir deb-temp
 dpkg-deb -R temp-aikido-php-firewall-$VERSION-1.$arch.deb deb-temp/
 dpkg-deb -Zgzip -b deb-temp aikido-php-firewall-$VERSION-1.$arch.deb
 rm -rf deb-temp
+
+cp aikido-php-firewall-$VERSION-1.$arch.deb .devcontainer/shared/

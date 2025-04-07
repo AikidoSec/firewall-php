@@ -2,6 +2,10 @@
 
 Request request;
 
+bool Request::IsServerVarLoaded() {
+    return this->server != NULL;
+}
+
 bool Request::LoadServerVar() {
     if (this->server != NULL) {
         return true;
