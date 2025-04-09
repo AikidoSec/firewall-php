@@ -28,16 +28,20 @@ func setCloudConfig(cloudConfigFromAgent *protos.CloudConfig) {
 
 	globals.CloudConfig.Endpoints = map[EndpointKey]EndpointData{}
 	for _, ep := range cloudConfigFromAgent.Endpoints {
+
+		allowedIPSet, allowedIPSetErr := utils.BuildIpSet(ep.AllowedIPAddresses)
+		if allowedIPSet == nil {
+			log.Errorf("Error building allowed IP set: %s\n", allowedIPSetErr)
+		}
+
 		endpointData := EndpointData{
 			ForceProtectionOff: ep.ForceProtectionOff,
 			RateLimiting: RateLimiting{
 				Enabled: ep.RateLimiting.Enabled,
 			},
-			AllowedIPAddresses: map[string]bool{},
+			AllowedIPAddresses: allowedIPSet,
 		}
-		for _, ip := range ep.AllowedIPAddresses {
-			endpointData.AllowedIPAddresses[ip] = true
-		}
+
 		globals.CloudConfig.Endpoints[EndpointKey{Method: ep.Method, Route: ep.Route}] = endpointData
 	}
 
@@ -46,9 +50,10 @@ func setCloudConfig(cloudConfigFromAgent *protos.CloudConfig) {
 		globals.CloudConfig.BlockedUserIds[userId] = true
 	}
 
-	globals.CloudConfig.BypassedIps = map[string]bool{}
-	for _, ip := range cloudConfigFromAgent.BypassedIps {
-		globals.CloudConfig.BypassedIps[ip] = true
+	bypassedIPSet, bypassedIPSetErr := utils.BuildIpSet(cloudConfigFromAgent.BypassedIps)
+	globals.CloudConfig.BypassedIps = bypassedIPSet
+	if bypassedIPSet == nil {
+		log.Errorf("Error building bypassed IP set: %s\n", bypassedIPSetErr)
 	}
 
 	if cloudConfigFromAgent.Block {
