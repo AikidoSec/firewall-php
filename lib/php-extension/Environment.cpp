@@ -32,10 +32,7 @@ bool LoadLaravelEnvFileOnce() {
         return true;
     }
 
-    if (!request.IsServerVarLoaded()) {
-        return false;
-    }
-    std::string docRoot = request.GetVar("DOCUMENT_ROOT");
+    std::string docRoot = server.GetVar("DOCUMENT_ROOT");
     if (docRoot.empty()) {
         return false;
     }

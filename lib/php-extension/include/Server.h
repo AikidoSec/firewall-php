@@ -1,17 +1,13 @@
 #pragma once
 
-class Request {
+class Server {
    private:
-    zval* server = nullptr;
+    zend_string* serverString = nullptr;
+
+    zval* GetServerVar();
 
    public:
-    Request() = default;
-
-    bool IsServerVarLoaded();
-
-    bool LoadServerVar();
-
-    void UnloadServerVar();
+    Server();
 
     std::string GetVar(const char* var);
 
@@ -29,7 +25,7 @@ class Request {
 
     bool IsHttps();
 
-    ~Request() = default;
+    ~Server();
 };
 
-extern Request request;
+extern Server server;
