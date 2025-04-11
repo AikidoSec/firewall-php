@@ -18,51 +18,51 @@ char* GoContextCallback(int callbackId) {
         switch (callbackId) {
             case CONTEXT_REMOTE_ADDRESS:
                 ctx = "REMOTE_ADDRESS";
-                ret = request.GetVar("REMOTE_ADDR");
+                ret = server.GetVar("REMOTE_ADDR");
                 break;
             case CONTEXT_METHOD:
                 ctx = "METHOD";
-                ret = request.GetVar("REQUEST_METHOD");
+                ret = server.GetVar("REQUEST_METHOD");
                 break;
             case CONTEXT_ROUTE:
                 ctx = "ROUTE";
-                ret = request.GetRoute();
+                ret = server.GetRoute();
                 break;
             case CONTEXT_STATUS_CODE:
                 ctx = "STATUS_CODE";
-                ret = request.GetStatusCode();
+                ret = server.GetStatusCode();
                 break;
             case CONTEXT_BODY:
                 ctx = "BODY";
-                ret = request.GetBody();
+                ret = server.GetBody();
                 break;
             case CONTEXT_HEADER_X_FORWARDED_FOR:
                 ctx = "HEADER_X_FORWARDED_FOR";
-                ret = request.GetVar("HTTP_X_FORWARDED_FOR");
+                ret = server.GetVar("HTTP_X_FORWARDED_FOR");
                 break;
             case CONTEXT_COOKIES:
                 ctx = "COOKIES";
-                ret = request.GetVar("HTTP_COOKIE");
+                ret = server.GetVar("HTTP_COOKIE");
                 break;
             case CONTEXT_QUERY:
                 ctx = "QUERY";
-                ret = request.GetQuery();
+                ret = server.GetQuery();
                 break;
             case CONTEXT_HTTPS:
                 ctx = "HTTPS";
-                ret = request.GetVar("HTTPS");
+                ret = server.GetVar("HTTPS");
                 break;
             case CONTEXT_URL:
                 ctx = "URL";
-                ret = request.GetUrl();
+                ret = server.GetUrl();
                 break;
             case CONTEXT_HEADERS:
                 ctx = "HEADERS";
-                ret = request.GetHeaders();
+                ret = server.GetHeaders();
                 break;
             case CONTEXT_HEADER_USER_AGENT:
                 ctx = "USER_AGENT";
-                ret = request.GetVar("HTTP_USER_AGENT");
+                ret = server.GetVar("HTTP_USER_AGENT");
                 break;
             case CONTEXT_USER_ID:
                 ctx = "USER_ID";

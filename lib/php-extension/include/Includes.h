@@ -44,7 +44,7 @@ using json = nlohmann::json;
 #include "Cache.h"
 #include "Hooks.h"
 #include "PhpWrappers.h"
-#include "Request.h"
+#include "Server.h"
 #include "RequestProcessor.h"
 #include "PhpLifecycle.h"
 #include "Stats.h"
