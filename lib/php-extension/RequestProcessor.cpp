@@ -3,6 +3,7 @@
 RequestProcessor requestProcessor;
 
 std::string RequestProcessor::GetInitData() {
+    LoadLaravelEnvFile();
     LoadEnvironment();
 
     json initData = {

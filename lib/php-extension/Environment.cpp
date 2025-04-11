@@ -27,7 +27,7 @@ std::string GetSystemEnvVariable(const std::string& env_key) {
 std::unordered_map<std::string, std::string> laravelEnv;
 bool laravelEnvLoaded = false;
 
-bool LoadLaravelEnvFileOnce() {
+bool LoadLaravelEnvFile() {
     if (laravelEnvLoaded) {
         return true;
     }
@@ -79,7 +79,6 @@ bool LoadLaravelEnvFileOnce() {
 }
 
 std::string GetLaravelEnvVariable(const std::string& env_key) {
-    LoadLaravelEnvFileOnce();
     if (laravelEnv.find(env_key) != laravelEnv.end()) {
         AIKIDO_LOG_DEBUG("laravel_env[%s] = %s\n", env_key.c_str(), laravelEnv[env_key].c_str());
         return laravelEnv[env_key];
