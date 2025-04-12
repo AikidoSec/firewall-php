@@ -8,6 +8,8 @@
 
 Server server;
 
+/* Always load the current "_SERVER" variable from PHP, 
+so we make sure it's always available and it's the correct one */
 zval* Server::GetServerVar() {
     if (!this->serverString) {
         return nullptr;
