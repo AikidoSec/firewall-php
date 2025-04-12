@@ -3,6 +3,7 @@
 RequestProcessor requestProcessor;
 
 std::string RequestProcessor::GetInitData() {
+    LoadLaravelEnvFile();
     LoadEnvironment();
 
     json initData = {
@@ -142,10 +143,6 @@ bool RequestProcessor::RequestInit() {
         AIKIDO_LOG_ERROR("Failed to initialize the request processor!\n");
         return false;
     }
-    
-    // Unload the server variable at each request shutdown to force re-initialization
-    // as PHP may change this between RINIT and the first hooked function call
-    request.UnloadServerVar();
 
     this->requestInitialized = true;
     this->numberOfRequests++;
@@ -171,11 +168,6 @@ void RequestProcessor::LoadConfigOnce() {
 }
 
 void RequestProcessor::RequestShutdown() {
-    // Unload the server variable at each request shutdown to force re-initialization
-    // as PHP may change this between RINIT and RSHUTDOWN
-    request.UnloadServerVar();
-    request.LoadServerVar();
-    
     LoadConfigOnce();
     SendPostRequestEvent();
     this->requestInitialized = false;
