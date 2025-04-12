@@ -30,11 +30,7 @@ Server::Server() {
     }
 }
 
-Server::~Server() {
-    if (this->serverString) {
-        zend_string_release(this->serverString);
-    }
-}
+Server::~Server() {}
 
 std::string Server::GetVar(const char* var) {
     GET_SERVER_VAR();
