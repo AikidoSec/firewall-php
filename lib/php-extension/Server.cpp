@@ -25,14 +25,13 @@ zval* Server::GetServerVar() {
     return zend_hash_str_find(&EG(symbol_table), "_SERVER", sizeof("_SERVER") - 1);
 }
 
-Server::Server() {
+void Server::Init() {
     this->serverString = zend_string_init("_SERVER", sizeof("_SERVER") - 1, 0);
     if (!this->serverString) {
         AIKIDO_LOG_WARN("Error allocating the '_SERVER' zend string!");
     }
 }
 
-Server::~Server() {}
 
 std::string Server::GetVar(const char* var) {
     GET_SERVER_VAR();
