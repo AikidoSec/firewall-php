@@ -7,7 +7,6 @@ import (
 	"main/log"
 	"net"
 	"net/netip"
-	"net/url"
 	"runtime"
 	"strings"
 
