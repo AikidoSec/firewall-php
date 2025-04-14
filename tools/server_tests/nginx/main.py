@@ -195,7 +195,7 @@ def nginx_php_fpm_start_server(test_data, test_lib_dir, valgrind):
 
     env_tmp = {}
     for e in test_data["env"]:
-        if e in [ "AIKIDO_ENDPOINT", "AIKIDO_REALTIME_ENDPOINT", "AIKIDO_DISABLE" ]:
+        if e in [ "AIKIDO_ENDPOINT", "AIKIDO_REALTIME_ENDPOINT", "AIKIDO_DISABLE", "AIKIDO_DISK_LOGS" ]:
             env_tmp[e] = test_data["env"][e]
     return subprocess.Popen(php_fpm_command, env=env_tmp)
 

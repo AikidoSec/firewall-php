@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"html"
 	"main/context"
+	"main/globals"
 	"main/grpc"
 	"main/log"
 	"main/utils"
@@ -26,7 +27,10 @@ func GetStoreAction(actionType, trigger, description, data string) string {
 }
 
 func OnGetBlockingStatus() string {
-	go grpc.OnMiddlewareInstalled()
+	if !globals.MiddlewareInstalled {
+		go grpc.OnMiddlewareInstalled()
+		globals.MiddlewareInstalled = true
+	}
 
 	userId := context.GetUserId()
 	if utils.IsUserBlocked(userId) {

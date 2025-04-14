@@ -1,6 +1,6 @@
 # Docker container used for building Zen for PHP from source on Centos
 
-FROM --platform=linux/amd64 centos:latest
+FROM --platform=linux/amd64 centos:8
 
 ARG PHP_VERSION=8.1
 

@@ -23,11 +23,10 @@ protoc --go_out=request-processor --go-grpc_out=request-processor ipc.proto
 cd agent
 go get google.golang.org/grpc
 go mod tidy
-go build -ldflags "-s -w" -buildmode=c-shared  -o ../../build/aikido-agent.so
+go build -ldflags "-s -w" -o ../../build/aikido-agent
 cd ../request-processor
 go get google.golang.org/grpc
 go get github.com/stretchr/testify/assert
-go get github.com/seancfoley/ipaddress-go/ipaddr
 go mod tidy
 go build -ldflags "-s -w" -buildmode=c-shared  -o ../../build/aikido-request-processor.so
 cd ../../build
@@ -43,7 +42,7 @@ cd ../..
 
 AIKIDO_INSTALL_PATH="/opt/aikido-$AIKIDO_VERSION"
 mkdir -p $AIKIDO_INSTALL_PATH
-cp build/aikido-agent.so $AIKIDO_INSTALL_PATH/
+cp build/aikido-agent $AIKIDO_INSTALL_PATH/
 cp build/aikido-request-processor.so $AIKIDO_INSTALL_PATH/
 cp build/modules/$AIKIDO_EXTENSION $(php -r 'echo ini_get("extension_dir");')/aikido.so
 
@@ -51,7 +50,7 @@ curl -L -o $AIKIDO_INTERNALS_LIB $(curl -s $AIKIDO_INTERNALS_REPO/releases/lates
 mv $AIKIDO_INTERNALS_LIB $AIKIDO_INSTALL_PATH/$AIKIDO_INTERNALS_LIB
 
 chmod 755 $AIKIDO_INSTALL_PATH
-chmod 644 $AIKIDO_INSTALL_PATH/aikido-agent.so
+chmod 644 $AIKIDO_INSTALL_PATH/aikido-agent
 chmod 644 $AIKIDO_INSTALL_PATH/aikido-request-processor.so
 chmod 644 $(php -r 'echo ini_get("extension_dir");')/aikido.so
 

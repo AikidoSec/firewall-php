@@ -92,7 +92,7 @@ def handle_test_scenario(data, root_tests_dir, test_lib_dir, server, benchmark, 
         server_start = servers[server][START_SERVER]
         server_process = server_start(data, test_lib_dir, valgrind)
 
-        time.sleep(5)
+        time.sleep(20)
 
         test_script_name = "test.py"
         test_script_cwd = data["test_dir"]
@@ -159,6 +159,7 @@ def main(root_tests_dir, test_lib_dir, specific_test=None, server="php-built-in"
 
         env = {
             "AIKIDO_LOG_LEVEL": "DEBUG" if debug else "ERROR",
+            "AIKIDO_DISK_LOGS": "1" if debug else "0",
             "AIKIDO_TOKEN": "AIK_RUNTIME_MOCK",
             "AIKIDO_ENDPOINT": f"http://localhost:{mock_port}/",
             "AIKIDO_REALTIME_ENDPOINT": f"http://localhost:{mock_port}/",

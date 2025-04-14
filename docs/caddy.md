@@ -19,6 +19,8 @@ example.com {
 }
 ```
 
+You can get your token from the [Aikido Security Dashboard](https://help.aikido.dev/doc/creating-an-aikido-zen-firewall-token/doc6vRJNzC4u).
+
 2. Configure `PHP-FPM` to pass through the environment variables to PHP
 
 `/etc/php/8.2/fpm/pool.d/www.conf`

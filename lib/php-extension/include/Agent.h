@@ -5,9 +5,7 @@ typedef void (*AgentUninitFn)();
 
 class Agent {
    private:
-    void* libHandle = nullptr;
-
-   private:
+    pid_t agentPid = 0;
     std::string GetInitData();
 
    public:

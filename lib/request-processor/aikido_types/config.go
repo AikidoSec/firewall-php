@@ -3,7 +3,7 @@ package aikido_types
 import (
 	"regexp"
 
-	"github.com/seancfoley/ipaddress-go/ipaddr"
+	"go4.org/netipx"
 )
 
 type EnvironmentConfigData struct {
@@ -21,6 +21,7 @@ type AikidoConfigData struct {
 	TrustProxy                bool   `json:"trust_proxy"`                  // default: true
 	LocalhostAllowedByDefault bool   `json:"localhost_allowed_by_default"` // default: true
 	CollectApiSchema          bool   `json:"collect_api_schema"`           // default: true
+	DiskLogs                  bool   `json:"disk_logs"`                    // default: false
 }
 
 type RateLimiting struct {
@@ -32,7 +33,7 @@ type RateLimiting struct {
 type EndpointData struct {
 	ForceProtectionOff bool
 	RateLimiting       RateLimiting
-	AllowedIPAddresses map[string]bool
+	AllowedIPAddresses *netipx.IPSet
 }
 
 type EndpointKey struct {
@@ -42,15 +43,14 @@ type EndpointKey struct {
 
 type IpBlockList struct {
 	Description string
-	TrieV4      *ipaddr.IPv4AddressTrie
-	TrieV6      *ipaddr.IPv6AddressTrie
+	IpSet       netipx.IPSet
 }
 
 type CloudConfigData struct {
 	ConfigUpdatedAt   int64
 	Endpoints         map[EndpointKey]EndpointData
 	BlockedUserIds    map[string]bool
-	BypassedIps       map[string]bool
+	BypassedIps       *netipx.IPSet
 	BlockedIps        map[string]IpBlockList
 	BlockedUserAgents *regexp.Regexp
 	Block             int

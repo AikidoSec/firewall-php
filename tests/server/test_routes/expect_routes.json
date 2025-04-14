@@ -37,6 +37,11 @@
             "hits": 30
         },
         {
+            "path": "/posts/:uuid",
+            "method": "GET",
+            "hits": 10
+        },
+        {
             "path": "/api/info/:number",
             "method": "GET",
             "hits": 20

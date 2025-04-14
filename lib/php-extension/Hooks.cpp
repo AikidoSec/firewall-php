@@ -147,8 +147,9 @@ void UnhookFileCompilation() {
         AIKIDO_LOG_WARN("Cannot unhook \"zend_compile_file\" without an original handler (was not previously hooked)!\n");
         return;
     }
-    zend_compile_file = original_file_compilation_handler;
-    original_file_compilation_handler = nullptr;
 
     AIKIDO_LOG_INFO("Unhooked \"zend_compile_file\" (original handler %p)!\n", original_file_compilation_handler);
+
+    zend_compile_file = original_file_compilation_handler;
+    original_file_compilation_handler = nullptr;
 }

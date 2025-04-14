@@ -181,7 +181,6 @@ func getCloudConfig(configUpdatedAt int64) *protos.CloudConfig {
 	defer globals.CloudConfigMutex.Unlock()
 
 	if globals.CloudConfig.ConfigUpdatedAt <= configUpdatedAt {
-		log.Debugf("CloudConfig.ConfigUpdatedAt was not updated... Returning nil!")
 		return nil
 	}
 

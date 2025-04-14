@@ -26,6 +26,7 @@ routes = {
     "/block/2001:2:ffff:ffff:ffff:ffff:ffff:ffff",
     "/files/098f6bcd4621d373cade4e832627b4f6",
     "/files/a94a8fe5ccb19ba61c4c0873d391e987982fbbd3",
+    "/posts/ECBCDD2C-A441-4846-B5AC-0083D347FDF2"
 }
 
 def run_test():

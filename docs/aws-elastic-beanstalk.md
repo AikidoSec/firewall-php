@@ -4,7 +4,7 @@
 ```
 commands:
   aikido-php-firewall:
-    command: "rpm -Uvh --oldpackage https://github.com/AikidoSec/firewall-php/releases/download/v1.0.111/aikido-php-firewall.x86_64.rpm"
+    command: "rpm -Uvh --oldpackage https://github.com/AikidoSec/firewall-php/releases/download/v1.0.118/aikido-php-firewall.x86_64.rpm"
     ignoreErrors: true
 
 files:
@@ -23,4 +23,6 @@ files:
       /var/log/aikido-*/*.log
 ```
 
-2. Go to `AWS EB enviroment -> Configuration -> Updates, monitoring, and logging -> Edit`. add the `AIKIDO_TOKEN` and `AIKIDO_BLOCKING` environment values and save. You can find their values in the Aikido platform.
+2. Go to `AWS EB enviroment -> Configuration -> Updates, monitoring, and logging -> Edit`. add the `AIKIDO_TOKEN` and `AIKIDO_BLOCKING` environment values and save.
+
+You can get your token from the [Aikido Security Dashboard](https://help.aikido.dev/doc/creating-an-aikido-zen-firewall-token/doc6vRJNzC4u).

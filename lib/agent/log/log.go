@@ -92,7 +92,6 @@ func Warnf(format string, args ...interface{}) {
 
 func Errorf(format string, args ...interface{}) {
 	logMessagef(ErrorLevel, format, args...)
-
 }
 
 func SetLogLevel(level string) error {
@@ -114,6 +113,9 @@ func SetLogLevel(level string) error {
 }
 
 func Init() {
+	if !globals.EnvironmentConfig.DiskLogs {
+		return
+	}
 	currentTime := time.Now()
 	timeStr := currentTime.Format("20060102150405")
 	logFilePath := fmt.Sprintf("/var/log/aikido-%s/aikido-agent-%s-%d.log", globals.Version, timeStr, os.Getpid())
@@ -127,6 +129,9 @@ func Init() {
 }
 
 func Uninit() {
+	if !globals.EnvironmentConfig.DiskLogs {
+		return
+	}
 	logger.SetOutput(os.Stdout)
 	logFile.Close()
 }

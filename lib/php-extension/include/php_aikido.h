@@ -3,7 +3,7 @@
 extern zend_module_entry aikido_module_entry;
 #define phpext_aikido_ptr &aikido_module_entry
 
-#define PHP_AIKIDO_VERSION "1.0.111"
+#define PHP_AIKIDO_VERSION "1.0.118"
 
 #if defined(ZTS) && defined(COMPILE_DL_AIKIDO)
 ZEND_TSRMLS_CACHE_EXTERN()
@@ -14,6 +14,7 @@ bool environment_loaded;
 long log_level;
 bool blocking;
 bool disable;
+bool disk_logs; // When enabled, it writes logs to disk instead of stdout. It's usefull when debugging to have the logs grouped by PHP process.
 bool collect_api_schema;
 bool trust_proxy;
 bool localhost_allowed_by_default;

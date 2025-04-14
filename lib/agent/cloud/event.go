@@ -2,6 +2,7 @@ package cloud
 
 import (
 	"bytes"
+	"compress/gzip"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -43,7 +44,7 @@ func SendCloudRequest(endpoint string, route string, method string, payload inte
 	}
 	req.Header.Set("Authorization", token)
 	req.Header.Set("Content-Type", "application/json")
-
+	req.Header.Set("Accept-Encoding", "gzip")
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -55,11 +56,22 @@ func SendCloudRequest(endpoint string, route string, method string, payload inte
 		return nil, fmt.Errorf("received non-OK response: %s", resp.Status)
 	}
 
-	body, err := io.ReadAll(resp.Body)
+	// Check if response is Gzip-encoded
+	var reader io.Reader = resp.Body
+	if resp.Header.Get("Content-Encoding") == "gzip" {
+		gzipReader, err := gzip.NewReader(resp.Body)
+		if err != nil {
+			return nil, fmt.Errorf("error creating gzip reader: %v", err)
+		}
+		defer gzipReader.Close()
+		reader = gzipReader
+	}
+
+	body, err := io.ReadAll(reader)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read response body: %v", err)
 	}
 
-	log.Info("Got response: ", string(body))
+	log.Debugf("Got response: %s", body)
 	return body, nil
 }

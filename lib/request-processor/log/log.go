@@ -21,7 +21,7 @@ const (
 var (
 	currentLogLevel = ErrorLevel
 	Logger          = log.New(os.Stdout, "", 0)
-	cliLogging      = false
+	cliLogging      = true
 	logFilePath     = ""
 )
 var LogFile *os.File
@@ -50,6 +50,9 @@ func (f *AikidoFormatter) Format(level LogLevel, message string) string {
 }
 
 func initLogFile() {
+	if cliLogging {
+		return
+	}
 	if LogFile != nil {
 		return
 	}
@@ -73,6 +76,7 @@ func logMessage(level LogLevel, args ...interface{}) {
 
 func logMessagef(level LogLevel, format string, args ...interface{}) {
 	if level >= currentLogLevel {
+		initLogFile()
 		formatter := &AikidoFormatter{}
 		message := fmt.Sprintf(format, args...)
 		formattedMessage := formatter.Format(level, message)
@@ -130,10 +134,10 @@ func SetLogLevel(level string) error {
 }
 
 func Init() {
-	if globals.EnvironmentConfig.SAPI == "cli" {
-		cliLogging = true
+	if !globals.AikidoConfig.DiskLogs {
 		return
 	}
+	cliLogging = false
 	currentTime := time.Now()
 	timeStr := currentTime.Format("20060102150405")
 	logFilePath = fmt.Sprintf("/var/log/aikido-"+globals.Version+"/aikido-request-processor-%s-%d.log", timeStr, os.Getpid())

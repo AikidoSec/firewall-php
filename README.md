@@ -2,11 +2,11 @@
 
 # Zen, in-app firewall for PHP | by Aikido
 
-Zen, your in-app firewall for peace of mind – at runtime.
+Zen, your in-app firewall for peace of mind– at runtime.
 
-Zen is an embedded Web Application Firewall that autonomously protects your PHP apps against common and critical attacks.
+Zen is an embedded Web Application Firewall that autonomously protects your apps against attacks and provides advanced access controls features.
 
-Zen protects your PHP apps by preventing user input containing dangerous strings, thus protecting agains attacks like SQL injection. It runs on the same server as your PHP app for simple [install](#Install) and zero maintenance.
+Zen protects your PHP apps by blocking malicious user input that could lead to security vulnerabilities. It guards against SQL injections, command injections, path traversal attacks, and more. Running directly on your PHP app's server, it offers seamless installation and low maintenance.
 
 ## Features
 
@@ -29,7 +29,7 @@ Zen for PHP comes as a single package that needs to be installed on the system t
 
 Prerequisites:
 * Ensure you have sudo privileges on your system.
-* Check that you have a supported PHP version installed (PHP version >= 7.3 and tested up to 8.4).
+* Check that you have a supported PHP version installed (PHP version >= 7.2 and tested up to 8.4).
 * Make sure to use the appropriate commands for your system or cloud provider.
 
 ### Manual install
@@ -37,16 +37,20 @@ Prerequisites:
 #### For Red Hat-based Systems (RHEL, CentOS, Fedora)
 
 ```
-rpm -Uvh --oldpackage https://github.com/AikidoSec/firewall-php/releases/download/v1.0.111/aikido-php-firewall.x86_64.rpm
+rpm -Uvh --oldpackage https://github.com/AikidoSec/firewall-php/releases/download/v1.0.118/aikido-php-firewall.x86_64.rpm
 ```
 
 #### For Debian-based Systems (Debian, Ubuntu)
 
 ```
-curl -L -O https://github.com/AikidoSec/firewall-php/releases/download/v1.0.111/aikido-php-firewall.x86_64.deb
+curl -L -O https://github.com/AikidoSec/firewall-php/releases/download/v1.0.118/aikido-php-firewall.x86_64.deb
 dpkg -i -E ./aikido-php-firewall.x86_64.deb
 ```
 
+We support Debian >= 11 and Ubuntu >= 20.04.
+You can run on Debian 10, by doing this setup before install: [Debian10 setup](./docs/debian10.md)
+
+#### Deployment setup
 - [Caddy & PHP-FPM](./docs/caddy.md)
 - [Apache mod_php](./docs/apache-mod-php.md)
 
@@ -63,7 +67,7 @@ dpkg -i -E ./aikido-php-firewall.x86_64.deb
 ## Supported libraries and frameworks
 
 ### PHP versions
-Zen for PHP supports the following PHP versions: 7.3, 7.4, 8.0, 8.1, 8.2, 8.3, 8.4.
+Zen for PHP supports the following PHP versions: 7.2, 7.3, 7.4, 8.0, 8.1, 8.2, 8.3, 8.4.
 
 ### Web frameworks
 
