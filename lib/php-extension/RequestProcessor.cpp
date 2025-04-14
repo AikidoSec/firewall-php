@@ -144,6 +144,7 @@ bool RequestProcessor::RequestInit() {
         return false;
     }
 
+    server.Init();
     this->requestInitialized = true;
     this->numberOfRequests++;
 

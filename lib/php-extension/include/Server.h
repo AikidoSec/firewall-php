@@ -9,7 +9,9 @@ class Server {
     zval* GetServerVar();
 
    public:
-    Server();
+    Server() = default;
+
+    void Init();
 
     std::string GetVar(const char* var);
 
@@ -27,7 +29,7 @@ class Server {
 
     bool IsHttps();
 
-    ~Server();
+    ~Server() = default;
 };
 
 extern Server server;
