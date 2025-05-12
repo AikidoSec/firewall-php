@@ -45,7 +45,7 @@ void insert_call_to_ast(zend_ast *ast) {
     }
     
     // Create our function call
-    zend_ast *call = create_ast_call("aikido\\should_block_request");
+    zend_ast *call = create_ast_call("aikido\\auto_block_request");
     
     // Create a new statement list with 2 elements
     zend_ast_list *block = (zend_ast_list*)emalloc(sizeof(zend_ast_list) + 2 * sizeof(zend_ast*));

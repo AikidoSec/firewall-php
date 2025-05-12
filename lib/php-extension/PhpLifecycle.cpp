@@ -14,7 +14,8 @@ void PhpLifecycle::RequestInit() {
     action.Reset();
     requestCache.Reset();
     requestProcessor.RequestInit();
-    checkedAutoBlocking = false;
+    checkedAutoBlock = false;
+    checkedShouldBlockRequest = false;
 }
 
 void PhpLifecycle::RequestShutdown() {

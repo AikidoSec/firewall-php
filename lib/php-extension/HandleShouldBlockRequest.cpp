@@ -1,18 +1,19 @@
 #include "Includes.h"
 
 zend_class_entry *blockingStatusClass = nullptr;
-bool checkedAutoBlocking = false;
+bool checkedAutoBlock = false;
+bool checkedShouldBlockRequest = false;
 
-bool CheckAutoBlocking() {
-    if (checkedAutoBlocking) {
+bool CheckBlocking(EVENT_ID eventId, bool& checkedBlocking) {
+    if (checkedBlocking) {
         return true;
     }
 
     try {
         std::string output;
-        requestProcessor.SendEvent(EVENT_GET_BLOCKING_STATUS, output);
+        requestProcessor.SendEvent(eventId, output);
         action.Execute(output);
-        checkedAutoBlocking = true;
+        checkedBlocking = true;
         return true;
     } catch (const std::exception &e) {
         AIKIDO_LOG_ERROR("Exception encountered in processing get blocking status event: %s\n", e.what());
@@ -33,7 +34,7 @@ ZEND_FUNCTION(should_block_request) {
 
     requestProcessor.LoadConfigOnce();
 
-    if (!CheckAutoBlocking()) {
+    if (!CheckBlocking(EVENT_GET_BLOCKING_STATUS, checkedShouldBlockRequest)) {
         return;
     }
 
@@ -57,15 +58,15 @@ ZEND_FUNCTION(should_block_request) {
 ZEND_FUNCTION(auto_block_request) {
     ScopedTimer scopedTimer("auto_block_request");
 
+    AIKIDO_LOG_DEBUG("auto_block_request called!\n");
+
     if (AIKIDO_GLOBAL(disable) == true) {
         return;
     }
 
     requestProcessor.LoadConfigOnce();
 
-    if (!CheckAutoBlocking()) {
-        return;
-    }
+    CheckBlocking(EVENT_GET_AUTO_BLOCKING_STATUS, checkedAutoBlock);
 }
 
 void RegisterAikidoBlockRequestStatusClass() {

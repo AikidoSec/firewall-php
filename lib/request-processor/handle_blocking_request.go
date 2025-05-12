@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"html"
 	"main/context"
 	"main/globals"
@@ -17,6 +18,7 @@ func GetAction(actionHandling, actionType, trigger, description, data string, re
 		"type":          actionType,
 		"trigger":       trigger,
 		"description":   html.EscapeString(description),
+		"message":       fmt.Sprintf("Your %s (%s) is blocked due to: %s!", trigger, data, description),
 		"data":          data,
 		"response_code": responseCode,
 	}
@@ -28,6 +30,8 @@ func GetAction(actionHandling, actionType, trigger, description, data string, re
 }
 
 func OnGetBlockingStatus() string {
+	log.Debugf("OnGetBlockingStatus called!")
+
 	if !globals.MiddlewareInstalled {
 		go grpc.OnMiddlewareInstalled()
 		globals.MiddlewareInstalled = true
@@ -36,8 +40,14 @@ func OnGetBlockingStatus() string {
 	userId := context.GetUserId()
 	if utils.IsUserBlocked(userId) {
 		log.Infof("User \"%s\" is blocked!", userId)
-		return GetAction("store", "blocked", "user", "user blocked from config", userId)
+		return GetAction("store", "blocked", "user", "user blocked from config", userId, 403)
 	}
+
+	return OnGetAutoBlockingStatus()
+}
+
+func OnGetAutoBlockingStatus() string {
+	log.Debugf("OnGetAutoBlockingStatus called!")
 
 	method := context.GetMethod()
 	route := context.GetParsedRoute()
@@ -69,6 +79,7 @@ func OnGetBlockingStatus() string {
 		return GetAction("exit", "blocked", "user-agent", userAgentBlockedDescription, userAgent, 429)
 	}
 
+	userId := context.GetUserId()
 	if endpointData != nil && endpointData.RateLimiting.Enabled {
 		// If request is monitored for rate limiting,
 		// do a sync call via gRPC to see if the request should be blocked or not
