@@ -76,7 +76,7 @@ func OnGetAutoBlockingStatus() string {
 
 	if userAgentBlocked, userAgentBlockedDescription := utils.IsUserAgentBlocked(userAgent); userAgentBlocked {
 		log.Infof("User Agent \"%s\" blocked due to: %s!", userAgent, userAgentBlockedDescription)
-		return GetAction("exit", "blocked", "user-agent", userAgentBlockedDescription, userAgent, 429)
+		return GetAction("exit", "blocked", "user-agent", userAgentBlockedDescription, userAgent, 403)
 	}
 
 	userId := context.GetUserId()
