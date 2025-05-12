@@ -20,7 +20,7 @@ PHP_MINIT_FUNCTION(aikido) {
     HookFunctions();
     HookMethods();
     HookFileCompilation();
-
+    HookZendAstProcess();
     /* If SAPI name is "cli" run in "simple" mode */
     if (AIKIDO_GLOBAL(sapi_name) == "cli") {
         AIKIDO_LOG_INFO("MINIT finished earlier because we run in CLI mode!\n");
@@ -48,6 +48,7 @@ PHP_MSHUTDOWN_FUNCTION(aikido) {
         return SUCCESS;
     }
 
+    UnhookZendAstProcess();
     phpLifecycle.ModuleShutdown();
     AIKIDO_LOG_DEBUG("MSHUTDOWN finished!\n");
     return SUCCESS;
@@ -63,6 +64,7 @@ PHP_RINIT_FUNCTION(aikido) {
         return SUCCESS;
     }
 
+    InitAstToClean();
     phpLifecycle.RequestInit();
     AIKIDO_LOG_DEBUG("RINIT finished!\n");
     return SUCCESS;
@@ -78,6 +80,7 @@ PHP_RSHUTDOWN_FUNCTION(aikido) {
         return SUCCESS;
     }
 
+    DestroyAstToClean();
     phpLifecycle.RequestShutdown();
     AIKIDO_LOG_DEBUG("RSHUTDOWN finished!\n");
     return SUCCESS;
@@ -91,8 +94,10 @@ PHP_MINFO_FUNCTION(aikido) {
 
 static const zend_function_entry ext_functions[] = {
     ZEND_NS_FE("aikido", set_user, arginfo_aikido_set_user)
-        ZEND_NS_FE("aikido", should_block_request, arginfo_aikido_should_block_request)
-            ZEND_FE_END};
+    ZEND_NS_FE("aikido", should_block_request, arginfo_aikido_should_block_request)
+    ZEND_NS_FE("aikido", auto_block_request, arginfo_aikido_auto_block_request)
+    ZEND_FE_END
+};
 
 zend_module_entry aikido_module_entry = {
     STANDARD_MODULE_HEADER,

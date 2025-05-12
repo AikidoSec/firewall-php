@@ -11,13 +11,14 @@ import (
 	"time"
 )
 
-func GetStoreAction(actionType, trigger, description, data string) string {
+func GetAction(actionHandling, actionType, trigger, description, data string, responseCode int) string {
 	actionMap := map[string]interface{}{
-		"action":      "store",
-		"type":        actionType,
-		"trigger":     trigger,
-		"description": html.EscapeString(description),
-		trigger:       data,
+		"action":        actionHandling,
+		"type":          actionType,
+		"trigger":       trigger,
+		"description":   html.EscapeString(description),
+		"data":          data,
+		"response_code": responseCode,
 	}
 	actionJson, err := json.Marshal(actionMap)
 	if err != nil {
@@ -35,7 +36,7 @@ func OnGetBlockingStatus() string {
 	userId := context.GetUserId()
 	if utils.IsUserBlocked(userId) {
 		log.Infof("User \"%s\" is blocked!", userId)
-		return GetStoreAction("blocked", "user", "user blocked from config", userId)
+		return GetAction("store", "blocked", "user", "user blocked from config", userId)
 	}
 
 	method := context.GetMethod()
@@ -50,7 +51,7 @@ func OnGetBlockingStatus() string {
 
 	if endpointData != nil && !utils.IsIpAllowed(endpointData.AllowedIPAddresses, ip) {
 		log.Infof("IP \"%s\" is not allowd to access this endpoint!", ip)
-		return GetStoreAction("blocked", "ip", "not allowed by config to access this endpoint", ip)
+		return GetAction("exit", "blocked", "ip", "not allowed by config to access this endpoint", ip, 403)
 	}
 
 	if context.IsIpBypassed() {
@@ -60,12 +61,12 @@ func OnGetBlockingStatus() string {
 
 	if ipBlocked, ipBlockedDescription := utils.IsIpBlocked(ip); ipBlocked {
 		log.Infof("IP \"%s\" blocked due to: %s!", ip, ipBlockedDescription)
-		return GetStoreAction("blocked", "ip", ipBlockedDescription, ip)
+		return GetAction("exit", "blocked", "ip", ipBlockedDescription, ip, 403)
 	}
 
 	if userAgentBlocked, userAgentBlockedDescription := utils.IsUserAgentBlocked(userAgent); userAgentBlocked {
 		log.Infof("User Agent \"%s\" blocked due to: %s!", userAgent, userAgentBlockedDescription)
-		return GetStoreAction("blocked", "user-agent", userAgentBlockedDescription, userAgent)
+		return GetAction("exit", "blocked", "user-agent", userAgentBlockedDescription, userAgent, 429)
 	}
 
 	if endpointData != nil && endpointData.RateLimiting.Enabled {
@@ -74,7 +75,7 @@ func OnGetBlockingStatus() string {
 		rateLimitingStatus := grpc.GetRateLimitingStatus(method, route, userId, ip, 10*time.Millisecond)
 		if rateLimitingStatus != nil && rateLimitingStatus.Block {
 			log.Infof("Request made from IP \"%s\" is ratelimited by \"%s\"!", ip, rateLimitingStatus.Trigger)
-			return GetStoreAction("ratelimited", rateLimitingStatus.Trigger, "configured rate limit exceeded by current ip", ip)
+			return GetAction("exit", "ratelimited", rateLimitingStatus.Trigger, "configured rate limit exceeded by current ip", ip, 429)
 		}
 	}
 

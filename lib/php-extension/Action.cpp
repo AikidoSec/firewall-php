@@ -18,7 +18,8 @@ ACTION_STATUS Action::executeExit(json &event) {
     CallPhpFunctionWithOneParam("http_response_code", _response_code);
     CallPhpFunctionWithOneParam("header", "Content-Type: text/plain");
     CallPhpEcho(_message);
-    exit = true;
+
+    zend_bailout();
     return EXIT;
 }
 
