@@ -1,7 +1,7 @@
 #include "Includes.h"
 
 HashTable *global_ast_to_clean;
-ZEND_API void (*original_ast_process)(zend_ast *ast);
+ZEND_API void (*original_ast_process)(zend_ast *ast) = nullptr;
 
 zend_ast *create_ast_call(const char *name)
 {
@@ -83,11 +83,25 @@ void ast_to_clean_dtor(zval *zv)
 } 
 
 void HookZendAstProcess() {
+    if (original_ast_process) {
+        AIKIDO_LOG_WARN("\"zend_ast_process\" already hooked (original handler %p)!\n", original_ast_process);
+        return;
+    }
+
     original_ast_process = zend_ast_process;
     zend_ast_process = aikido_ast_process;
+
+    AIKIDO_LOG_INFO("Hooked \"zend_ast_process\" (original handler %p)!\n", original_ast_process);
 }
 
 void UnhookZendAstProcess() {
+    if (!original_ast_process) {
+        AIKIDO_LOG_WARN("Cannot unhook \"zend_ast_process\" without an original handler (was not previously hooked)!\n");
+        return;
+    }
+
+    AIKIDO_LOG_INFO("Unhooked \"zend_ast_process\" (original handler %p)!\n", original_ast_process);
+
     zend_ast_process = original_ast_process;
     original_ast_process = nullptr;
 }
