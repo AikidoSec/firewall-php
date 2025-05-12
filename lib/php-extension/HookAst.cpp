@@ -3,8 +3,21 @@
 HashTable *global_ast_to_clean;
 ZEND_API void (*original_ast_process)(zend_ast *ast) = nullptr;
 
-zend_ast *create_ast_call(const char *name)
-{
+void ast_to_clean_dtor(zval *zv){
+    zend_ast *ast = (zend_ast *)Z_PTR_P(zv);
+    efree(ast);
+} 
+
+void ensure_ast_hashtable_initialized() {
+    if (!global_ast_to_clean) {
+        ALLOC_HASHTABLE(global_ast_to_clean);
+        zend_hash_init(global_ast_to_clean, 8, NULL, ast_to_clean_dtor, 1);
+    }
+}
+
+zend_ast *create_ast_call(const char *name){
+    ensure_ast_hashtable_initialized();
+
     zend_ast *call;
     zend_ast_zval *name_var;
     zend_ast_list *arg_list;
@@ -76,11 +89,6 @@ void aikido_ast_process(zend_ast *ast)
     }
 }
 
-void ast_to_clean_dtor(zval *zv)
-{
-    zend_ast *ast = (zend_ast *)Z_PTR_P(zv);
-    efree(ast);
-} 
 
 void HookZendAstProcess() {
     if (original_ast_process) {
@@ -106,12 +114,10 @@ void UnhookZendAstProcess() {
     original_ast_process = nullptr;
 }
 
-void InitAstToClean() {
-    ALLOC_HASHTABLE(global_ast_to_clean);
-    zend_hash_init(global_ast_to_clean, 8, NULL, ast_to_clean_dtor, 1);
-}
-
 void DestroyAstToClean() {
-    zend_hash_destroy(global_ast_to_clean);
-    FREE_HASHTABLE(global_ast_to_clean);
+    if (global_ast_to_clean) {
+        zend_hash_destroy(global_ast_to_clean);
+        FREE_HASHTABLE(global_ast_to_clean);
+        global_ast_to_clean = nullptr;
+    }
 }

@@ -12,28 +12,28 @@ from testlib import *
 '''
 
 def run_test():
-    response = php_server_get("/test")
+    response = php_server_get("/test", headers={"X-Forwarded-For": "5.2.190.71"})
     time.sleep(5)
 
     mock_server_down()
 
     for _ in range(5):
-        response = php_server_get("/")
+        response = php_server_get("/", headers={"X-Forwarded-For": "5.2.190.71"})
         assert_response_code_is(response, 200)
         
     time.sleep(10)
     
     for _ in range(5):
-        response = php_server_get("/")
+        response = php_server_get("/", headers={"X-Forwarded-For": "5.2.190.71"})
         
     for _ in range(5):
-        response = php_server_get("/")
+        response = php_server_get("/", headers={"X-Forwarded-For": "5.2.190.71"})
         assert_response_code_is(response, 429)
         assert_response_header_contains(response, "Content-Type", "text")
-        assert_response_body_contains(response, "Rate limit exceeded")
+        assert_response_body_contains(response, "is blocked due to: configured rate limit exceeded by current ip")
     
     for _ in range(100):
-        response = php_server_get("/test")
+        response = php_server_get("/test", headers={"X-Forwarded-For": "5.2.190.71"})
         assert_response_code_is(response, 200)
         
     

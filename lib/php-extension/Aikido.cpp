@@ -64,7 +64,6 @@ PHP_RINIT_FUNCTION(aikido) {
         return SUCCESS;
     }
 
-    InitAstToClean();
     phpLifecycle.RequestInit();
     AIKIDO_LOG_DEBUG("RINIT finished!\n");
     return SUCCESS;

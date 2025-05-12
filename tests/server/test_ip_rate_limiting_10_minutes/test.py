@@ -11,7 +11,7 @@ from testlib import *
 
 def run_test():
     for i in range(30):
-        response = php_server_get("/test")
+        response = php_server_get("/test", headers={"X-Forwarded-For": "5.2.190.71"})
         assert_response_code_is(response, 200)
         assert_response_body_contains(response, "Request successful")
         
@@ -19,10 +19,10 @@ def run_test():
             time.sleep(60)
         
     for _ in range(10):
-        response = php_server_get("/test")
+        response = php_server_get("/test", headers={"X-Forwarded-For": "5.2.190.71"})
         assert_response_code_is(response, 429)
         assert_response_header_contains(response, "Content-Type", "text")
-        assert_response_body_contains(response, "Rate limit exceeded")
+        assert_response_body_contains(response, "is blocked due to: configured rate limit exceeded by current ip")
     
     
 if __name__ == "__main__":

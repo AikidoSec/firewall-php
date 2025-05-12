@@ -9,5 +9,4 @@ extern bool checkedShouldBlockRequest;
 
 void HookZendAstProcess();
 void UnhookZendAstProcess();
-void InitAstToClean();
 void DestroyAstToClean();
