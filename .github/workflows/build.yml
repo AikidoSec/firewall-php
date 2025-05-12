@@ -11,10 +11,12 @@ on:
 
 jobs:
   build_libs:
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-24.04
+    container:
+      image: ${{ matrix.container }}
     strategy:
       matrix:
-        os: [	ubuntu-22.04, ubuntu-22.04-arm ]
+        container: [ ubuntu-20.04, ubuntu-22.04-arm ]
       fail-fast: true
 
     steps:
@@ -26,9 +28,9 @@ jobs:
 
     - name: Install dependencies
       run: |
-        sudo add-apt-repository ppa:longsleep/golang-backports
-        sudo apt-get update
-        sudo apt-get install -y golang-go protobuf-compiler protobuf-compiler-grpc
+        add-apt-repository ppa:longsleep/golang-backports
+        apt-get update
+        apt-get install -y golang-go protobuf-compiler protobuf-compiler-grpc
 
     - name: GO setup
       run: |
@@ -88,11 +90,12 @@ jobs:
           ${{ github.workspace }}/build/aikido-request-processor.so
 
   build_php_extension:
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-24.04
+    container: ${{ matrix.container }}
     strategy:
       matrix:
         php_version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4']
-        os: [	ubuntu-22.04, ubuntu-22.04-arm ]
+        container: [ ubuntu-20.04, ubuntu-22.04-arm ]
       fail-fast: true
 
     steps:
@@ -101,8 +104,8 @@ jobs:
 
     - name: Install dependencies
       run: |
-        sudo apt-get update
-        sudo apt-get install -y autoconf bison re2c libxml2-dev libssl-dev libcurl4-gnutls-dev
+        apt-get update
+        apt-get install -y autoconf bison re2c libxml2-dev libssl-dev libcurl4-gnutls-dev
 
     - name: Get Arch
       run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
@@ -250,10 +253,12 @@ jobs:
             ~/rpmbuild/RPMS/${{ env.ARCH }}/${{ env.AIKIDO_ARTIFACT_RELEASE }}
 
   build_deb:
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-24.04
+    container:
+      image: ${{ matrix.container }}
     strategy:
       matrix:
-        os: ['ubuntu-22.04', 'ubuntu-24.04-arm']
+        container: [ ubuntu-20.04, ubuntu-22.04-arm ]
       fail-fast: true
     needs: [ build_rpm ]
     steps:
@@ -281,8 +286,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y alien
+          apt-get update
+          apt-get install -y alien
 
       - name: Get Aikido version
         run: |
@@ -294,7 +299,7 @@ jobs:
       
       - name: Build deb
         run: |
-          sudo alien --to-deb --scripts --keep-version ${{ env.AIKIDO_RPM }}/${{ env.AIKIDO_RPM }}
+          alien --to-deb --scripts --keep-version ${{ env.AIKIDO_RPM }}/${{ env.AIKIDO_RPM }}
           mv aikido-php-firewall_${{ env.AIKIDO_VERSION }}-1_${{ env.DEB_ARCH }}.deb temp-${{ env.AIKIDO_ARTIFACT }}
           
           # Package contents into deb with gzip compression (because default zstd compression is not supported by older versions of dpkg)
@@ -385,11 +390,13 @@ jobs:
           python3 run_server_tests.py ../tests/server ../tests/testlib --server=${{ matrix.server }}
 
   test_php_ubuntu:
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-24.04
+    container:
+      image: ${{ matrix.container }}
     needs: [ build_deb ]
     strategy:
       matrix:
-        os: ['ubuntu-24.04', 'ubuntu-22.04', 'ubuntu-22.04-arm', 'ubuntu-24.04-arm']
+        container: ['ubuntu-24.04', 'ubuntu-22.04', 'ubuntu-20.04', 'ubuntu-22.04-arm', 'ubuntu-24.04-arm']
         php_version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4']
         server: ['nginx-php-fpm', 'apache-mod-php', 'php-built-in']
       fail-fast: false
@@ -415,16 +422,16 @@ jobs:
 
       - name: Setup nginx & php-fpm
         run: |
-          sudo apt-get install -y nginx php-fpm
+          apt-get install -y nginx php-fpm
 
       - name: Setup Apache (mod_php)
         run: |
-          sudo apt-get install -y nginx php-fpm
-          sudo apt-get install -y apache2
-          sudo a2dismod mpm_event
-          sudo a2dismod mpm_worker
-          sudo a2enmod mpm_prefork
-          sudo a2enmod rewrite
+          apt-get install -y nginx php-fpm
+          apt-get install -y apache2
+          a2dismod mpm_event
+          a2dismod mpm_worker
+          a2enmod mpm_prefork
+          a2enmod rewrite
 
       - name: Setup PHP
         uses: shivammathur/setup-php@9e72090525849c5e82e596468b86eb55e9cc5401 # v2
@@ -439,24 +446,24 @@ jobs:
           for version in "${php_versions[@]}"; do
               if a2query -m "$version" > /dev/null 2>&1; then
                   echo "Disabling $version..."
-                  sudo a2dismod "$version"
+                  a2dismod "$version"
               else
                   echo "$version is not installed."
               fi
           done
-          sudo apt-get update
-          sudo apt install libapache2-mod-php${{ matrix.php_version }}
-          sudo a2enmod php${{ matrix.php_version }}
+          apt-get update
+          apt install libapache2-mod-php${{ matrix.php_version }}
+          a2enmod php${{ matrix.php_version }}
           php -i
 
       - name: Setup Python
         run: |
-          sudo apt-get install -y python3-flask python3-pandas python3-psutil
+          apt-get install -y python3-flask python3-pandas python3-psutil
           python --version
 
       - name: Install DEB
         run: |
-          sudo dpkg -i -E ${{ env.AIKIDO_DEB }}/${{ env.AIKIDO_DEB }}
+          dpkg -i -E ${{ env.AIKIDO_DEB }}/${{ env.AIKIDO_DEB }}
 
       - name: Run CLI tests
         if: matrix.os == 'ubuntu-24.04' || matrix.os == 'ubuntu-24.04-arm'
@@ -467,7 +474,7 @@ jobs:
       - name: Run ${{ matrix.server }} server tests
         run: |
           cd tools
-          sudo python3 run_server_tests.py ../tests/server ../tests/testlib --server=${{ matrix.server }}
+          python3 run_server_tests.py ../tests/server ../tests/testlib --server=${{ matrix.server }}
 
       - name: Archive test artifacts
         uses: actions/upload-artifact@v4
