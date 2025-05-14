@@ -11,12 +11,12 @@ on:
 
 jobs:
   build_libs:
-    runs-on: ubuntu-24.04
+    runs-on: ${{ matrix.os }}
     container:
-      image: ${{ matrix.container }}
+      image: ubuntu:20.04
     strategy:
       matrix:
-        container: [ ubuntu-20.04, ubuntu-22.04-arm ]
+        os: [ ubuntu-24.04, ubuntu-24.04-arm ]
       fail-fast: true
 
     steps:
@@ -90,12 +90,12 @@ jobs:
           ${{ github.workspace }}/build/aikido-request-processor.so
 
   build_php_extension:
-    runs-on: ubuntu-24.04
-    container: ${{ matrix.container }}
+    runs-on: ${{ matrix.os }}
+    container: ubuntu:20.04
     strategy:
       matrix:
         php_version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4']
-        container: [ ubuntu-20.04, ubuntu-22.04-arm ]
+        os: [ ubuntu-24.04, ubuntu-24.04-arm ]
       fail-fast: true
 
     steps:
@@ -162,7 +162,7 @@ jobs:
       image: centos:8
     strategy:
       matrix:
-        os: ['ubuntu-22.04', 'ubuntu-24.04-arm']
+        os: ['ubuntu-24.04', 'ubuntu-24.04-arm']
       fail-fast: true
     needs: [ build_libs, build_php_extension ]
     steps:
@@ -253,12 +253,12 @@ jobs:
             ~/rpmbuild/RPMS/${{ env.ARCH }}/${{ env.AIKIDO_ARTIFACT_RELEASE }}
 
   build_deb:
-    runs-on: ubuntu-24.04
+    runs-on: ${{ matrix.os }}
     container:
-      image: ${{ matrix.container }}
+      image: ubuntu:20.04
     strategy:
       matrix:
-        container: [ ubuntu-20.04, ubuntu-22.04-arm ]
+        os: [ ubuntu-24.04, ubuntu-24.04-arm ]
       fail-fast: true
     needs: [ build_rpm ]
     steps:
@@ -390,13 +390,14 @@ jobs:
           python3 run_server_tests.py ../tests/server ../tests/testlib --server=${{ matrix.server }}
 
   test_php_ubuntu:
-    runs-on: ubuntu-24.04
+    runs-on: ${{ matrix.os }}
     container:
       image: ${{ matrix.container }}
     needs: [ build_deb ]
     strategy:
       matrix:
-        container: ['ubuntu-24.04', 'ubuntu-22.04', 'ubuntu-20.04', 'ubuntu-22.04-arm', 'ubuntu-24.04-arm']
+        container: ['ubuntu:24.04', 'ubuntu:22.04', 'ubuntu:20.04']
+        os: ['ubuntu-24.04', 'ubuntu-24.04-arm']
         php_version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4']
         server: ['nginx-php-fpm', 'apache-mod-php', 'php-built-in']
       fail-fast: false

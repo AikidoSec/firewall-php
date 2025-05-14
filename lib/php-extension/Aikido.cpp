@@ -17,10 +17,7 @@ PHP_MINIT_FUNCTION(aikido) {
         return SUCCESS;
     }
 
-    HookFunctions();
-    HookMethods();
-    HookFileCompilation();
-    HookZendAstProcess();
+    phpLifecycle.HookAll();
     /* If SAPI name is "cli" run in "simple" mode */
     if (AIKIDO_GLOBAL(sapi_name) == "cli") {
         AIKIDO_LOG_INFO("MINIT finished earlier because we run in CLI mode!\n");
@@ -45,10 +42,10 @@ PHP_MSHUTDOWN_FUNCTION(aikido) {
     /* If SAPI name is "cli" run in "simple" mode */
     if (AIKIDO_GLOBAL(sapi_name) == "cli") {
         AIKIDO_LOG_INFO("MSHUTDOWN finished earlier because we run in CLI mode!\n");
+        phpLifecycle.UnhookAll();
         return SUCCESS;
     }
 
-    UnhookZendAstProcess();
     phpLifecycle.ModuleShutdown();
     AIKIDO_LOG_DEBUG("MSHUTDOWN finished!\n");
     return SUCCESS;

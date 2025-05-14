@@ -7,6 +7,6 @@ extern ZEND_API void (*original_ast_process)(zend_ast *ast);
 extern bool checkedAutoBlock;
 extern bool checkedShouldBlockRequest;
 
-void HookZendAstProcess();
-void UnhookZendAstProcess();
+void HookAstProcess();
+void UnhookAstProcess();
 void DestroyAstToClean();

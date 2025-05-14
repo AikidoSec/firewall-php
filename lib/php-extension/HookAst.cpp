@@ -3,7 +3,7 @@
 HashTable *global_ast_to_clean;
 ZEND_API void (*original_ast_process)(zend_ast *ast) = nullptr;
 
-void ast_to_clean_dtor(zval *zv){
+void ast_to_clean_dtor(zval *zv) {
     zend_ast *ast = (zend_ast *)Z_PTR_P(zv);
     efree(ast);
 } 
@@ -15,7 +15,7 @@ void ensure_ast_hashtable_initialized() {
     }
 }
 
-zend_ast *create_ast_call(const char *name){
+zend_ast *create_ast_call(const char *name) {
     ensure_ast_hashtable_initialized();
 
     zend_ast *call;
@@ -80,8 +80,7 @@ void insert_call_to_ast(zend_ast *ast) {
     }
 }
 
-void aikido_ast_process(zend_ast *ast)
-{
+void aikido_ast_process(zend_ast *ast) {
     insert_call_to_ast(ast);
 
     if(original_ast_process){
@@ -90,7 +89,7 @@ void aikido_ast_process(zend_ast *ast)
 }
 
 
-void HookZendAstProcess() {
+void HookAstProcess() {
     if (original_ast_process) {
         AIKIDO_LOG_WARN("\"zend_ast_process\" already hooked (original handler %p)!\n", original_ast_process);
         return;
@@ -102,7 +101,7 @@ void HookZendAstProcess() {
     AIKIDO_LOG_INFO("Hooked \"zend_ast_process\" (original handler %p)!\n", original_ast_process);
 }
 
-void UnhookZendAstProcess() {
+void UnhookAstProcess() {
     if (!original_ast_process) {
         AIKIDO_LOG_WARN("Cannot unhook \"zend_ast_process\" without an original handler (was not previously hooked)!\n");
         return;
