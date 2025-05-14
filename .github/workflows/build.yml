@@ -95,7 +95,7 @@ jobs:
     container: ubuntu:20.04
     strategy:
       matrix:
-        php_version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4']
+        php_version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3']
         os: [ ubuntu-24.04, ubuntu-24.04-arm ]
       fail-fast: true
 
@@ -327,7 +327,7 @@ jobs:
     needs: [ build_rpm ]
     strategy:
       matrix:
-        php_version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4']
+        php_version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3']
         server: ['nginx-php-fpm', 'apache-mod-php', 'php-built-in']
         os: ['ubuntu-24.04']
       fail-fast: false
@@ -402,7 +402,7 @@ jobs:
       matrix:
         container: ['ubuntu:24.04', 'ubuntu:22.04', 'ubuntu:20.04']
         os: ['ubuntu-24.04', 'ubuntu-24.04-arm']
-        php_version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4']
+        php_version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3']
         server: ['nginx-php-fpm', 'apache-mod-php', 'php-built-in']
       fail-fast: false
     steps:
