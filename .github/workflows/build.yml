@@ -61,7 +61,6 @@ jobs:
 
     - name: Build Aikido Request Processor
       run: |
-        ls -l ${{ github.workspace }}/build/
         cd lib
         protoc --go_out=request-processor --go-grpc_out=request-processor ipc.proto
         cd request-processor
