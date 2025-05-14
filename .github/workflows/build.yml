@@ -105,8 +105,11 @@ jobs:
 
     - name: Install dependencies
       run: |
-        apt-get install -y tzdata
         DEBIAN_FRONTEND=noninteractive apt-get update
+        DEBIAN_FRONTEND=noninteractive apt-get install -y tzdata
+        ln -fs /usr/share/zoneinfo/Etc/UTC /etc/localtime
+        echo "Etc/UTC" > /etc/timezone
+        DEBIAN_FRONTEND=noninteractive dpkg-reconfigure -f noninteractive tzdata
         apt-get install -y autoconf bison re2c libxml2-dev libssl-dev libcurl4-gnutls-dev
 
     - name: Get Arch
@@ -134,7 +137,6 @@ jobs:
 
     - name: Build extension
       run: |
-        cd ${{ github.workspace }}
         rm -rf build
         mkdir build
         cd lib/php-extension
@@ -145,7 +147,7 @@ jobs:
 
     - name: Version Aikido extension
       run: |
-        cd ${{ github.workspace }}/build/modules
+        cd ./build/modules
         mv aikido.so ${{ env.AIKIDO_ARTIFACT }}.so
         
     - name: Archive build artifacts
@@ -471,7 +473,6 @@ jobs:
       - name: Run CLI tests
         if: matrix.os == 'ubuntu-24.04' || matrix.os == 'ubuntu-24.04-arm'
         run: |
-          cd ${{ github.workspace }}
           php lib/php-extension/run-tests.php ./tests/cli
 
       - name: Run ${{ matrix.server }} server tests
