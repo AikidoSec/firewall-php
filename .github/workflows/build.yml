@@ -123,7 +123,7 @@ jobs:
         echo "AIKIDO_ARTIFACT=aikido-extension-php-${{ matrix.php_version }}" >> $GITHUB_ENV
 
     - name: Setup PHP
-      uses: AikidoSec/setup-php@fc14643b0a99ee9db10a3c025a33d76544fa3761 # v2
+      uses: shivammathur/setup-php@v2 # v2
       with:
         php-version: ${{ matrix.php_version }}
         extensions: curl
