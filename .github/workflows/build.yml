@@ -17,7 +17,7 @@ jobs:
     strategy:
       matrix:
         os: [ ubuntu-24.04, ubuntu-24.04-arm ]
-      fail-fast: true
+      fail-fast: false
 
     steps:
     - name: Checkout repository
@@ -97,7 +97,7 @@ jobs:
       matrix:
         php_version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4']
         os: [ ubuntu-24.04, ubuntu-22.04-arm ]
-      fail-fast: true
+      fail-fast: false
 
     steps:
     - name: Checkout repository
@@ -167,7 +167,7 @@ jobs:
     strategy:
       matrix:
         os: ['ubuntu-24.04', 'ubuntu-24.04-arm']
-      fail-fast: true
+      fail-fast: false
     needs: [ build_libs, build_php_extension ]
     steps:
       - name: Checkout repository
@@ -263,7 +263,7 @@ jobs:
     strategy:
       matrix:
         os: [ ubuntu-24.04, ubuntu-24.04-arm ]
-      fail-fast: true
+      fail-fast: false
     needs: [ build_rpm ]
     steps:
       - name: Checkout repository
