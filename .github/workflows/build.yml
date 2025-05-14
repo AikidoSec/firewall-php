@@ -105,8 +105,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        echo "tzdata tzdata/Areas select Europe" | debconf-set-selections
-        echo "tzdata tzdata/Zones/Europe select London" | debconf-set-selections
+        apt-get install -y tzdata
         DEBIAN_FRONTEND=noninteractive apt-get update
         apt-get install -y autoconf bison re2c libxml2-dev libssl-dev libcurl4-gnutls-dev
 
