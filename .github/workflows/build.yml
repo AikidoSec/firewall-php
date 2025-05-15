@@ -432,11 +432,15 @@ jobs:
 
       - name: Setup nginx & php-fpm
         run: |
+          DEBIAN_FRONTEND=noninteractive apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y tzdata
+          ln -fs /usr/share/zoneinfo/Etc/UTC /etc/localtime
+          echo "Etc/UTC" > /etc/timezone
+          DEBIAN_FRONTEND=noninteractive dpkg-reconfigure -f noninteractive tzdata
           apt-get install -y nginx php-fpm
 
       - name: Setup Apache (mod_php)
         run: |
-          apt-get install -y nginx php-fpm
           apt-get install -y apache2
           a2dismod mpm_event
           a2dismod mpm_worker
