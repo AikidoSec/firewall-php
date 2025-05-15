@@ -470,7 +470,7 @@ jobs:
           ln -fs /usr/share/zoneinfo/Etc/UTC /etc/localtime
           echo "Etc/UTC" > /etc/timezone
           DEBIAN_FRONTEND=noninteractive dpkg-reconfigure -f noninteractive tzdata
-          apt install libapache2-mod-php${{ matrix.php_version }}
+          apt-get install -y libapache2-mod-php${{ matrix.php_version }}
           a2enmod php${{ matrix.php_version }}
           php -i
 
