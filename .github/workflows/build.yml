@@ -221,7 +221,7 @@ jobs:
           mv aikido-request-processor-${{ env.ARCH }}/aikido-request-processor.so package/rpm/opt/aikido/aikido-request-processor.so
           mv ${{ env.AIKIDO_LIBZEN }} package/rpm/opt/aikido/${{ env.AIKIDO_LIBZEN }}
           ls -lR aikido-extension-php-*
-          mv aikido-extension-php-*/build/modules/aikido-extension-php-* package/rpm/opt/aikido/
+          mv aikido-extension-php-*/__w/firewall-php/firewall-php/build/modules/aikido-extension-php-* package/rpm/opt/aikido/
           mv package/rpm/opt/aikido package/rpm/opt/aikido-${{ env.AIKIDO_VERSION }}
           chmod 777 package/rpm/opt/aikido-${{ env.AIKIDO_VERSION }}/*
           rpmdev-setuptree
