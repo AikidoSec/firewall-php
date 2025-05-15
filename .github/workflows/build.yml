@@ -477,7 +477,6 @@ jobs:
       - name: Setup Python
         run: |
           apt-get install -y python3 python3-flask python3-pandas python3-psutil
-          python --version
 
       - name: Install DEB
         run: |
