@@ -24,7 +24,7 @@ def run_test():
         response = php_server_get("/")
         assert_response_code_is(response, 429)
         assert_response_header_contains(response, "Content-Type", "text")
-        assert_response_body_contains(response, "Rate limit exceeded")
+        assert_response_body_contains(response, "is blocked due to: configured rate limit exceeded by current ip!")
     
     for _ in range(100):
         response = php_server_get("/test")
