@@ -456,9 +456,8 @@ jobs:
 
       - name: Check PHP setup
         run: |
-          #!/bin/bash
-          php_versions=("php7.3" "php7.4" "php8.0" "php8.1" "php8.2" "php8.3" "php8.4")
-          for version in "${php_versions[@]}"; do
+          php_versions="php7.3 php7.4 php8.0 php8.1 php8.2 php8.3"
+          for version in $php_versions; do
               if a2query -m "$version" > /dev/null 2>&1; then
                   echo "Disabling $version..."
                   a2dismod "$version"
