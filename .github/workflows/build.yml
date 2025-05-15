@@ -291,7 +291,11 @@ jobs:
 
       - name: Install dependencies
         run: |
-          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y tzdata
+          ln -fs /usr/share/zoneinfo/Etc/UTC /etc/localtime
+          echo "Etc/UTC" > /etc/timezone
+          DEBIAN_FRONTEND=noninteractive dpkg-reconfigure -f noninteractive tzdata
           apt-get install -y alien
 
       - name: Get Aikido version
@@ -457,7 +461,11 @@ jobs:
                   echo "$version is not installed."
               fi
           done
-          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y tzdata
+          ln -fs /usr/share/zoneinfo/Etc/UTC /etc/localtime
+          echo "Etc/UTC" > /etc/timezone
+          DEBIAN_FRONTEND=noninteractive dpkg-reconfigure -f noninteractive tzdata
           apt install libapache2-mod-php${{ matrix.php_version }}
           a2enmod php${{ matrix.php_version }}
           php -i
