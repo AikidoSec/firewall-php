@@ -98,6 +98,11 @@ func storeRoute(method string, route string, apiSpec *protos.APISpec) {
 	globals.RoutesMutex.Lock()
 	defer globals.RoutesMutex.Unlock()
 
+	if len(globals.Routes) >= globals.MaxNumberOfStoredRoutes {
+		log.Warnf("Max number of stored routes reached, skipping route %s %s", method, route)
+		return
+	}
+
 	if _, ok := globals.Routes[route]; !ok {
 		globals.Routes[route] = make(map[string]*Route)
 	}
@@ -227,6 +232,11 @@ func onUserEvent(id string, username string, ip string) {
 			FirstSeenAt:   globals.Users[id].FirstSeenAt,
 			LastSeenAt:    utils.GetTime(),
 		}
+		return
+	}
+
+	if len(globals.Users) >= globals.MaxNumberOfStoredUsers {
+		log.Warnf("Max number of stored users reached, skipping user %s", id)
 		return
 	}
 
