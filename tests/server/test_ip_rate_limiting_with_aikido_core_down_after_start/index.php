@@ -17,6 +17,3 @@ if (extension_loaded('aikido')) {
 echo "Request successful!";
 
 ?>
-
-
-?>

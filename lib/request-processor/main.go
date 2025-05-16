@@ -16,15 +16,16 @@ import (
 )
 
 var eventHandlers = map[int]HandlerFunction{
-	C.EVENT_PRE_REQUEST:            OnPreRequest,
-	C.EVENT_POST_REQUEST:           OnPostRequest,
-	C.EVENT_SET_USER:               OnUserEvent,
-	C.EVENT_GET_BLOCKING_STATUS:    OnGetBlockingStatus,
-	C.EVENT_PRE_OUTGOING_REQUEST:   OnPreOutgoingRequest,
-	C.EVENT_POST_OUTGOING_REQUEST:  OnPostOutgoingRequest,
-	C.EVENT_PRE_SHELL_EXECUTED:     OnPreShellExecuted,
-	C.EVENT_PRE_PATH_ACCESSED:      OnPrePathAccessed,
-	C.EVENT_PRE_SQL_QUERY_EXECUTED: OnPreSqlQueryExecuted,
+	C.EVENT_PRE_REQUEST:              OnPreRequest,
+	C.EVENT_POST_REQUEST:             OnPostRequest,
+	C.EVENT_SET_USER:                 OnUserEvent,
+	C.EVENT_GET_AUTO_BLOCKING_STATUS: OnGetAutoBlockingStatus,
+	C.EVENT_GET_BLOCKING_STATUS:      OnGetBlockingStatus,
+	C.EVENT_PRE_OUTGOING_REQUEST:     OnPreOutgoingRequest,
+	C.EVENT_POST_OUTGOING_REQUEST:    OnPostOutgoingRequest,
+	C.EVENT_PRE_SHELL_EXECUTED:       OnPreShellExecuted,
+	C.EVENT_PRE_PATH_ACCESSED:        OnPrePathAccessed,
+	C.EVENT_PRE_SQL_QUERY_EXECUTED:   OnPreSqlQueryExecuted,
 }
 
 //export RequestProcessorInit

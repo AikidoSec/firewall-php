@@ -18,7 +18,9 @@ ACTION_STATUS Action::executeExit(json &event) {
     CallPhpFunctionWithOneParam("http_response_code", _response_code);
     CallPhpFunctionWithOneParam("header", "Content-Type: text/plain");
     CallPhpEcho(_message);
-    exit = true;
+
+    // Exit the current request using the PHP engine internal function: zend_bailout()
+    zend_bailout();
     return EXIT;
 }
 
@@ -62,7 +64,6 @@ bool Action::IsDetection(std::string &event) {
 }
 
 void Action::Reset() {
-    exit = false;
     block = false;
     type = "";
     trigger = "";

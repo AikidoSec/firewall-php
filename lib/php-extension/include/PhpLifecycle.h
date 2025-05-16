@@ -15,6 +15,10 @@ class PhpLifecycle {
     void RequestShutdown();
 
     void ModuleShutdown();
+
+    void HookAll();
+
+    void UnhookAll();
 };
 
 extern PhpLifecycle phpLifecycle;
