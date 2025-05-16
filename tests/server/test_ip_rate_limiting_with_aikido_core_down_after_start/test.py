@@ -35,7 +35,7 @@ def run_test():
     for _ in range(100):
         response = php_server_get("/test")
         assert_response_code_is(response, 200)
-        
+        assert_response_body_contains(response, "Request successful")
     
 if __name__ == "__main__":
     load_test_args()

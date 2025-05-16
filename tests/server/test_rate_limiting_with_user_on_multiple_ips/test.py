@@ -22,7 +22,7 @@ def run_test():
             response = php_server_post("/", { "ip": ip })
             assert_response_code_is(response, 429)
             assert_response_header_contains(response, "Content-Type", "text")
-            assert_response_body_contains(response, "is blocked due to: configured rate limit exceeded by current ip!")
+            assert_response_body_contains(response, "Rate limit exceeded")
                 
     
 if __name__ == "__main__":

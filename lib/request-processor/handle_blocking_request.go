@@ -52,6 +52,13 @@ func OnGetBlockingStatus() string {
 	ip := context.GetIp()
 	endpointData := utils.GetEndpointConfig(method, route)
 
+	autoBlockingStatus := OnGetAutoBlockingStatus()
+
+	if context.IsIpBypassed() {
+		log.Infof("IP \"%s\" is bypassed! Skipping additional checks...", ip)
+		return ""
+	}
+
 	if endpointData != nil && endpointData.RateLimiting.Enabled {
 		// If request is monitored for rate limiting,
 		// do a sync call via gRPC to see if the request should be blocked or not
@@ -62,7 +69,7 @@ func OnGetBlockingStatus() string {
 		}
 	}
 
-	return OnGetAutoBlockingStatus()
+	return autoBlockingStatus
 }
 
 func OnGetAutoBlockingStatus() string {
