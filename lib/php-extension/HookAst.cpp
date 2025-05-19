@@ -3,6 +3,10 @@
 HashTable *global_ast_to_clean;
 ZEND_API void (*original_ast_process)(zend_ast *ast) = nullptr;
 
+/*
+    This is a custom destructor, used for cleaning the allocated ast hashtable.
+    This is needed because the ast hashtable is not cleaned by the zend_ast_process function.
+*/
 void ast_to_clean_dtor(zval *zv) {
     zend_ast *ast = (zend_ast *)Z_PTR_P(zv);
     efree(ast);
