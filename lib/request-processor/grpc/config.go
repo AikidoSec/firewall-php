@@ -5,79 +5,16 @@ import (
 	"main/globals"
 	"main/ipc/protos"
 	"main/log"
+	"main/utils"
 	"regexp"
-	"strings"
+	"runtime"
 	"time"
-
-	"github.com/seancfoley/ipaddress-go/ipaddr"
 )
 
 var (
 	stopChan          chan struct{}
 	cloudConfigTicker = time.NewTicker(1 * time.Minute)
 )
-
-func buildIpBlocklist(name, description string, ipsList []string) IpBlockList {
-	ipBlocklist := IpBlockList{
-		Description: description,
-		TrieV4:      &ipaddr.IPv4AddressTrie{},
-		TrieV6:      &ipaddr.IPv6AddressTrie{},
-	}
-
-	for _, ip := range ipsList {
-		ipAddress, err := ipaddr.NewIPAddressString(ip).ToAddress()
-		if err != nil {
-			log.Infof("Invalid address for %s: %s\n", name, ip)
-			continue
-		}
-
-		if ipAddress.IsIPv4() {
-			ipBlocklist.TrieV4.Add(ipAddress.ToIPv4())
-		} else if ipAddress.IsIPv6() {
-			ipBlocklist.TrieV6.Add(ipAddress.ToIPv6())
-		}
-	}
-
-	log.Debugf("%s (v4): %v", name, ipBlocklist.TrieV4)
-	log.Debugf("%s (v6): %v", name, ipBlocklist.TrieV6)
-	return ipBlocklist
-}
-
-func getEndpointData(ep *protos.Endpoint) EndpointData {
-	endpointData := EndpointData{
-		ForceProtectionOff: ep.ForceProtectionOff,
-		RateLimiting: RateLimiting{
-			Enabled: ep.RateLimiting.Enabled,
-		},
-		AllowedIPAddresses: map[string]bool{},
-	}
-	for _, ip := range ep.AllowedIPAddresses {
-		endpointData.AllowedIPAddresses[ip] = true
-	}
-	return endpointData
-}
-
-func storeEndpointConfig(ep *protos.Endpoint) {
-	globals.CloudConfig.Endpoints[EndpointKey{Method: ep.Method, Route: ep.Route}] = getEndpointData(ep)
-}
-
-func storeWildcardEndpointConfig(ep *protos.Endpoint) {
-	wildcardRouteCompiled, err := regexp.Compile(strings.ReplaceAll(ep.Route, "*", ".*"))
-	if err != nil {
-		return
-	}
-
-	wildcardRoutes, exists := globals.CloudConfig.WildcardEndpoints[ep.Method]
-	if !exists {
-		globals.CloudConfig.WildcardEndpoints[ep.Method] = []WildcardEndpointData{}
-	}
-
-	globals.CloudConfig.WildcardEndpoints[ep.Method] = append(wildcardRoutes, WildcardEndpointData{RouteRegex: wildcardRouteCompiled, Data: getEndpointData(ep)})
-}
-
-func isWildcardEndpoint(method, route string) bool {
-	return method == "*" || strings.Contains(route, "*")
-}
 
 func setCloudConfig(cloudConfigFromAgent *protos.CloudConfig) {
 	if cloudConfigFromAgent == nil {
@@ -105,9 +42,10 @@ func setCloudConfig(cloudConfigFromAgent *protos.CloudConfig) {
 		globals.CloudConfig.BlockedUserIds[userId] = true
 	}
 
-	globals.CloudConfig.BypassedIps = map[string]bool{}
-	for _, ip := range cloudConfigFromAgent.BypassedIps {
-		globals.CloudConfig.BypassedIps[ip] = true
+	bypassedIPSet, bypassedIPSetErr := utils.BuildIpSet(cloudConfigFromAgent.BypassedIps)
+	globals.CloudConfig.BypassedIps = bypassedIPSet
+	if bypassedIPSet == nil {
+		log.Errorf("Error building bypassed IP set: %s\n", bypassedIPSetErr)
 	}
 
 	if cloudConfigFromAgent.Block {
@@ -118,7 +56,12 @@ func setCloudConfig(cloudConfigFromAgent *protos.CloudConfig) {
 
 	globals.CloudConfig.BlockedIps = map[string]IpBlockList{}
 	for ipBlocklistSource, ipBlocklist := range cloudConfigFromAgent.BlockedIps {
-		globals.CloudConfig.BlockedIps[ipBlocklistSource] = buildIpBlocklist(ipBlocklistSource, ipBlocklist.Description, ipBlocklist.Ips)
+		ipBlocklist, err := utils.BuildIpBlocklist(ipBlocklistSource, ipBlocklist.Description, ipBlocklist.Ips)
+		if err != nil {
+			log.Errorf("Error building IP blocklist: %s\n", err)
+			continue
+		}
+		globals.CloudConfig.BlockedIps[ipBlocklistSource] = *ipBlocklist
 	}
 
 	if cloudConfigFromAgent.BlockedUserAgents != "" {
@@ -127,6 +70,8 @@ func setCloudConfig(cloudConfigFromAgent *protos.CloudConfig) {
 		globals.CloudConfig.BlockedUserAgents = nil
 	}
 
+	// Force garbage collection to ensure that the IP blocklists temporary memory is released ASAP
+	runtime.GC()
 }
 
 func startCloudConfigRoutine() {

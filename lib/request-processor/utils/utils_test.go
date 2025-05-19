@@ -7,9 +7,12 @@ import (
 	"crypto/sha256"
 	"crypto/sha512"
 	"encoding/hex"
+	"main/aikido_types"
 	"main/globals"
+	"encoding/json"
 	"math/big"
 	"regexp"
+	"strings"
 	"testing"
 )
 
@@ -199,6 +202,7 @@ func TestBuildRouteFromURL(t *testing.T) {
 		{"/posts/1ef21d2f-1207-6660-8c4f-419efbd44d48", "/posts/:uuid"},
 		{"/posts/017f22e2-79b0-7cc3-98c4-dc0c0c07398f", "/posts/:uuid"},
 		{"/posts/0d8f23a0-697f-83ae-802e-48f3756dd581", "/posts/:uuid"},
+		{"/posts/ECBCDD2C-A441-4846-B5AC-0083D347FDF2", "/posts/:uuid"},
 		{"/posts/00000000-0000-1000-6000-000000000000", "/posts/00000000-0000-1000-6000-000000000000"},
 		{"/posts/abc", "/posts/abc"},
 		{"/login/john.doe@acme.com", "/login/:email"},
@@ -214,6 +218,14 @@ func TestBuildRouteFromURL(t *testing.T) {
 		{"/files/" + generateHash("sha256"), "/files/:hash"},
 		{"/files/" + generateHash("sha512"), "/files/:hash"},
 		{"/confirm/CnJ4DunhYfv2db6T1FRfciRBHtlNKOYrjoz", "/confirm/:secret"},
+		{"/posts/01ARZ3NDEKTSV4RRFFQ69G5FAV", "/posts/:ulid"},
+		{"/posts/01arz3ndektsv4rrffq69g5fav", "/posts/:ulid"},
+		{"/posts/66ec29159d00113616fc7184", "/posts/:objectId"},
+		{"/posts/66EC29159D00113616FC7184", "/posts/:objectId"},
+		{"/files/" + strings.ToUpper(generateHash("md5")), "/files/:hash"},
+		{"/files/" + strings.ToUpper(generateHash("sha1")), "/files/:hash"},
+		{"/files/" + strings.ToUpper(generateHash("sha256")), "/files/:hash"},
+		{"/files/" + strings.ToUpper(generateHash("sha512")), "/files/:hash"},
 	}
 
 	for _, test := range tests {
@@ -223,6 +235,44 @@ func TestBuildRouteFromURL(t *testing.T) {
 				t.Errorf("expected %s, got %s", test.expected, result)
 			}
 		})
+	}
+}
+
+func TestParseBodyJSON(t *testing.T) {
+	data := "\r\n\r\n\r\n{\r\n\r\n\r\n\"a\":\r\n\r\n\r\n \"1\",\r\n\r\n\"b\":\"2\"\r\n\r\n}\r\n\r\n\r\n\r\n"
+	expected := `{"a":"1","b":"2"}`
+	
+	result := ParseBody(data)
+	resultJSON, err := json.Marshal(result)
+	if err != nil {
+		t.Errorf("Failed to marshal result: %v", err)
+	}
+	
+	if string(resultJSON) != expected {
+		t.Errorf("Expected JSON string %q, got %q", expected, resultJSON)
+	}
+}
+
+func TestParseBodyJSONArray(t *testing.T) {
+	data := `["asd",  "asd"]`
+	expected := `{"array":["asd","asd"]}`
+
+	result := ParseBody(data)
+	resultJSON, err := json.Marshal(result)
+	if err != nil {
+		t.Errorf("Failed to marshal result: %v", err)
+	}
+
+	if string(resultJSON) != expected {
+		t.Errorf("Expected JSON string %q, got %q", expected, string(resultJSON))
+  }
+}
+
+func TestParseCookie(t *testing.T) {
+	data := "exploit=/etc/passwd;exploit=safevalue;"
+	result := ParseFormData(data, ";")
+	if result["exploit"] != "/etc/passwd" {
+		t.Errorf("Expected /etc/passwd, got %v", result["exploit"])
 	}
 }
 
@@ -270,5 +320,92 @@ func TestIsUserAgentBlocked(t *testing.T) {
 				t.Errorf("expected %v, got %v", test.expected, result)
 			}
 		})
+	}
+}
+
+func TestIsIpBlockedByPrefix(t *testing.T) {
+	globals.CloudConfig.BlockedIps = map[string]aikido_types.IpBlockList{}
+	ipBlocklist, _ := BuildIpBlocklist("test", "test description", []string{"1.2.0.0/16"})
+	globals.CloudConfig.BlockedIps["test"] = *ipBlocklist
+	ip := "1.2.3.4"
+	result, _ := IsIpBlocked(ip)
+	if result != true {
+		t.Errorf("expected true, got %v", result)
+	}
+}
+
+func TestIsIpBlockedByIp(t *testing.T) {
+	globals.CloudConfig.BlockedIps = map[string]aikido_types.IpBlockList{}
+	ipBlocklist, _ := BuildIpBlocklist("test", "test description", []string{"1.2.3.4"})
+	globals.CloudConfig.BlockedIps["test"] = *ipBlocklist
+	ip := "1.2.3.4"
+	result, _ := IsIpBlocked(ip)
+	if result != true {
+		t.Errorf("expected true, got %v", result)
+	}
+}
+
+func TestIsIpNotBlockedByPrefix(t *testing.T) {
+	globals.CloudConfig.BlockedIps = map[string]aikido_types.IpBlockList{}
+	ipBlocklist, _ := BuildIpBlocklist("test", "test description", []string{"1.2.0.0/16"})
+	globals.CloudConfig.BlockedIps["test"] = *ipBlocklist
+	ip := "2.3.4.5"
+	result, _ := IsIpBlocked(ip)
+	if result != false {
+		t.Errorf("expected false, got %v", result)
+	}
+}
+
+func TestIsIpNotBlockedByIp(t *testing.T) {
+	globals.CloudConfig.BlockedIps = map[string]aikido_types.IpBlockList{}
+	ipBlocklist, _ := BuildIpBlocklist("test", "test description", []string{"1.2.3.4"})
+	globals.CloudConfig.BlockedIps["test"] = *ipBlocklist
+	ip := "2.3.4.5"
+	result, _ := IsIpBlocked(ip)
+	if result != false {
+		t.Errorf("expected false, got %v", result)
+	}
+}
+func TestIsIpv6BlockedByPrefix(t *testing.T) {
+	globals.CloudConfig.BlockedIps = map[string]aikido_types.IpBlockList{}
+	ipBlocklist, _ := BuildIpBlocklist("test", "test description", []string{"2001:db8::/32"})
+	globals.CloudConfig.BlockedIps["test"] = *ipBlocklist
+	ip := "2001:db8:1234:5678:90ab:cdef:1234:5678"
+	result, _ := IsIpBlocked(ip)
+	if result != true {
+		t.Errorf("expected true, got %v", result)
+	}
+}
+
+func TestIsIpv6BlockedByIp(t *testing.T) {
+	globals.CloudConfig.BlockedIps = map[string]aikido_types.IpBlockList{}
+	ipBlocklist, _ := BuildIpBlocklist("test", "test description", []string{"2001:db8::1"})
+	globals.CloudConfig.BlockedIps["test"] = *ipBlocklist
+	ip := "2001:db8::1"
+	result, _ := IsIpBlocked(ip)
+	if result != true {
+		t.Errorf("expected true, got %v", result)
+	}
+}
+
+func TestIsIpv6NotBlockedByPrefix(t *testing.T) {
+	globals.CloudConfig.BlockedIps = map[string]aikido_types.IpBlockList{}
+	ipBlocklist, _ := BuildIpBlocklist("test", "test description", []string{"2001:db8::/32"})
+	globals.CloudConfig.BlockedIps["test"] = *ipBlocklist
+	ip := "2001:db9::1"
+	result, _ := IsIpBlocked(ip)
+	if result != false {
+		t.Errorf("expected false, got %v", result)
+	}
+}
+
+func TestIsIpv6NotBlockedByIp(t *testing.T) {
+	globals.CloudConfig.BlockedIps = map[string]aikido_types.IpBlockList{}
+	ipBlocklist, _ := BuildIpBlocklist("test", "test description", []string{"2001:db8::1"})
+	globals.CloudConfig.BlockedIps["test"] = *ipBlocklist
+	ip := "2001:db8::2"
+	result, _ := IsIpBlocked(ip)
+	if result != false {
+		t.Errorf("expected false, got %v", result)
 	}
 }

@@ -54,3 +54,9 @@ const char* GetEventName(EVENT_ID event) {
     }
     return "Unknown";
 }
+
+std::string NormalizeAndDumpJson(const json& jsonObj) {
+    // Remove invalid UTF8 characters (normalize)
+    // https://json.nlohmann.me/api/basic_json/dump/
+    return jsonObj.dump(-1, ' ', false, json::error_handler_t::ignore);
+}

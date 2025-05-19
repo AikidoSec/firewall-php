@@ -70,6 +70,8 @@ func GoContextCallback(contextId int) string {
 		This buffer needs to be freed by the RequestProcessor (Go) once it has finished copying the data.
 	*/
 	C.free(unsafe.Pointer(contextData))
+	// Remove invalid UTF8 characters (normalize)
+	goContextData = strings.ToValidUTF8(goContextData, "")
 	return goContextData
 }
 

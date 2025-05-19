@@ -52,7 +52,7 @@ jobs:
         go get google.golang.org/grpc
         go get github.com/stretchr/testify/assert
         go test ./...
-        go build -ldflags "-s -w" -buildmode=c-shared -o ../../build/aikido-agent.so
+        go build -ldflags "-s -w" -o ../../build/aikido-agent
         ls -l ../../build
 
     - name: Build Aikido Request Processor
@@ -64,7 +64,6 @@ jobs:
         go mod tidy
         go get google.golang.org/grpc
         go get github.com/stretchr/testify/assert
-        go get github.com/seancfoley/ipaddress-go/ipaddr
         go get main/ipc/protos
         go test ./...
         go build -ldflags "-s -w" -buildmode=c-shared -o ../../build/aikido-request-processor.so
@@ -77,7 +76,7 @@ jobs:
         name: aikido-agent-${{ env.ARCH }}
         if-no-files-found: error
         path: |
-          ${{ github.workspace }}/build/aikido-agent.so
+          ${{ github.workspace }}/build/aikido-agent
 
     - name: Archive request processor
       uses: actions/upload-artifact@v4
@@ -92,7 +91,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        php_version: ['7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4']
+        php_version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4']
         os: [	ubuntu-20.04, ubuntu-22.04-arm ]
       fail-fast: true
 
@@ -157,7 +156,7 @@ jobs:
   build_rpm:
     runs-on: ${{ matrix.os }}
     container:
-      image: centos:latest
+      image: centos:8
     strategy:
       matrix:
         os: ['ubuntu-22.04', 'ubuntu-24.04-arm']
@@ -211,7 +210,7 @@ jobs:
 
       - name: Prepare rpm package
         run: |
-          mv aikido-agent-${{ env.ARCH }}/aikido-agent.so package/rpm/opt/aikido/aikido-agent.so
+          mv aikido-agent-${{ env.ARCH }}/aikido-agent package/rpm/opt/aikido/aikido-agent
           mv aikido-request-processor-${{ env.ARCH }}/aikido-request-processor.so package/rpm/opt/aikido/aikido-request-processor.so
           mv ${{ env.AIKIDO_LIBZEN }} package/rpm/opt/aikido/${{ env.AIKIDO_LIBZEN }}
           mv aikido-extension-php-*/build/modules/aikido-extension-php-* package/rpm/opt/aikido/
@@ -296,8 +295,13 @@ jobs:
       - name: Build deb
         run: |
           sudo alien --to-deb --scripts --keep-version ${{ env.AIKIDO_RPM }}/${{ env.AIKIDO_RPM }}
-          ls -R
-          mv aikido-php-firewall_${{ env.AIKIDO_VERSION }}-1_${{ env.DEB_ARCH }}.deb ${{ env.AIKIDO_ARTIFACT }}
+          mv aikido-php-firewall_${{ env.AIKIDO_VERSION }}-1_${{ env.DEB_ARCH }}.deb temp-${{ env.AIKIDO_ARTIFACT }}
+          
+          # Package contents into deb with gzip compression (because default zstd compression is not supported by older versions of dpkg)
+          mkdir deb-temp
+          dpkg-deb -R temp-${{ env.AIKIDO_ARTIFACT }} deb-temp/
+          dpkg-deb -Zgzip -b deb-temp ${{ env.AIKIDO_ARTIFACT }}
+          rm -rf deb-temp
   
       - name: Archive deb package
         uses: actions/upload-artifact@v4
@@ -310,11 +314,11 @@ jobs:
   test_php_centos:
     runs-on: ${{ matrix.os }}
     container:
-      image: centos:latest
+      image: centos:8
     needs: [ build_rpm ]
     strategy:
       matrix:
-        php_version: ['7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4']
+        php_version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4']
         server: ['nginx-php-fpm', 'apache-mod-php', 'php-built-in']
         os: ['ubuntu-20.04', 'ubuntu-22.04', 'ubuntu-24.04']
       fail-fast: false
@@ -386,7 +390,7 @@ jobs:
     strategy:
       matrix:
         os: ['ubuntu-24.04', 'ubuntu-22.04', 'ubuntu-20.04', 'ubuntu-22.04-arm', 'ubuntu-24.04-arm']
-        php_version: ['7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4']
+        php_version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4']
         server: ['nginx-php-fpm', 'apache-mod-php', 'php-built-in']
       fail-fast: false
     steps:

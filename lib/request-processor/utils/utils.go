@@ -6,11 +6,12 @@ import (
 	"main/globals"
 	"main/log"
 	"net"
+	"net/netip"
 	"net/url"
 	"runtime"
 	"strings"
 
-	"github.com/seancfoley/ipaddress-go/ipaddr"
+	"go4.org/netipx"
 )
 
 func KeyExists[K comparable, V any](m map[K]V, key K) bool {
@@ -52,6 +53,15 @@ func ParseFormData(data string, separator string) map[string]interface{} {
 		if len(keyValue) != 2 {
 			continue
 		}
+
+		// See: https://github.com/php/php-src/blob/master/main/php_variables.c#L313. PHP ignores duplicate cookie names per rfc2965
+		// If the user supplies 2 cookies with the same key, we should not overwrite it to ensure our parsing is similar to PHP
+		// Form and query parameters could potentially support ; as a separator (via PHP config `arg_separator.input`).
+		// We assume that the user of this function wants to parse a cookie however.
+		if separator == ";" && KeyExists(result, keyValue[0]) {
+			continue
+		}
+
 		result[keyValue[0]] = keyValue[1]
 		decodedValue, err := url.QueryUnescape(keyValue[1])
 		if err == nil && decodedValue != keyValue[1] {
@@ -64,15 +74,21 @@ func ParseFormData(data string, separator string) map[string]interface{} {
 func ParseBody(body string) map[string]interface{} {
 	// first we check if the body is a string, and if it is, we try to parse it as JSON
 	// if it fails, we parse it as form data
-
-	if strings.HasPrefix(body, "{") && strings.HasSuffix(body, "}") {
-		// if the body is a JSON object, we parse it as JSON
-		jsonBody := map[string]interface{}{}
-		err := json.Unmarshal([]byte(body), &jsonBody)
+	trimmedBody := strings.TrimSpace(body)
+	if strings.HasPrefix(trimmedBody, "[") || strings.HasPrefix(trimmedBody, "{") {
+		var jsonBody interface{}
+		err := json.Unmarshal([]byte(trimmedBody), &jsonBody)
 		if err == nil {
-			return jsonBody
+			if array, ok := jsonBody.([]interface{}); ok {
+				return map[string]interface{}{"array": array}
+			}
+
+			if jsonObject, ok := jsonBody.(map[string]interface{}); ok {
+				return jsonObject
+			}
 		}
 	}
+
 	return ParseFormData(body, "&")
 }
 
@@ -111,18 +127,24 @@ func isLocalhost(ip string) bool {
 	return parsedIP.IsLoopback()
 }
 
-func IsIpAllowed(allowedIps map[string]bool, ip string) int {
+func IsIpAllowed(allowedIps *netipx.IPSet, ip string) bool {
 	if globals.EnvironmentConfig.LocalhostAllowedByDefault && isLocalhost(ip) {
 		return 1
 	}
 
-	if len(allowedIps) == 0 {
+	if allowedIps == nil || allowedIps.Equal(&netipx.IPSet{}) {
 		// No IPs configured in the allow list -> no restrictions
 		return -1
 	}
 
-	if KeyExists(allowedIps, ip) {
-		return 1
+	ipAddress, err := netip.ParseAddr(ip)
+	if err != nil {
+		log.Infof("Invalid ip address: %s\n", ip)
+		return false
+	}
+
+	if allowedIps.Contains(ipAddress) {
+		return true
 	}
 
 	return 0
@@ -132,11 +154,17 @@ func IsIpBypassed(ip string) bool {
 	globals.CloudConfigMutex.Lock()
 	defer globals.CloudConfigMutex.Unlock()
 
-	if globals.EnvironmentConfig.LocalhostAllowedByDefault && isLocalhost(ip) {
-		return true
+	if globals.CloudConfig.BypassedIps == nil || globals.CloudConfig.BypassedIps.Equal(&netipx.IPSet{}) {
+		return false
 	}
 
-	if KeyExists(globals.CloudConfig.BypassedIps, ip) {
+	ipAddress, err := netip.ParseAddr(ip)
+	if err != nil {
+		log.Infof("Invalid ip address: %s\n", ip)
+		return false
+	}
+
+	if globals.CloudConfig.BypassedIps.Contains(ipAddress) {
 		return true
 	}
 
@@ -195,15 +223,14 @@ func IsIpBlocked(ip string) (bool, string) {
 	globals.CloudConfigMutex.Lock()
 	defer globals.CloudConfigMutex.Unlock()
 
-	ipAddress, err := ipaddr.NewIPAddressString(ip).ToAddress()
+	ipAddress, err := netip.ParseAddr(ip)
 	if err != nil {
 		log.Infof("Invalid ip address: %s\n", ip)
 		return false, ""
 	}
 
 	for _, ipBlocklist := range globals.CloudConfig.BlockedIps {
-		if (ipAddress.IsIPv4() && ipBlocklist.TrieV4.ElementContains(ipAddress.ToIPv4())) ||
-			(ipAddress.IsIPv6() && ipBlocklist.TrieV6.ElementContains(ipAddress.ToIPv6())) {
+		if ipBlocklist.IpSet.Contains(ipAddress) {
 			return true, ipBlocklist.Description
 		}
 	}

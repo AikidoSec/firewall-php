@@ -1,52 +1,49 @@
 #include "Includes.h"
 
-Request request;
-
-bool Request::Init() {
-    zend_string* serverString = zend_string_init("_SERVER", sizeof("_SERVER") - 1, 0);
-    if (!serverString) {
-        AIKIDO_LOG_WARN("Error allocating the '_SERVER' zend string!");
-        return false;
+#define GET_SERVER_VAR() \
+    zval* server = this->GetServerVar(); \
+    if (!server) { \
+        return ""; \
     }
 
+Server server;
+
+/* Always load the current "_SERVER" variable from PHP, 
+so we make sure it's always available and it's the correct one */
+zval* Server::GetServerVar() {
+    if (!this->serverString) {
+        return nullptr;
+    }
+    
     /* Guarantee that "_SERVER" PHP global variable is initialized for the current request */
-    if (!zend_is_auto_global(serverString)) {
+    if (!zend_is_auto_global(this->serverString)) {
         AIKIDO_LOG_WARN("'_SERVER' is not initialized!");
-        zend_string_release(serverString);
-        return false;
+        return nullptr;
     }
 
-    zend_string_release(serverString);
-
-    /* Search for the "_SERVER" PHP global variable and store it */
-    this->server = zend_hash_str_find(&EG(symbol_table), "_SERVER", sizeof("_SERVER") - 1);
-    if (this->server == NULL) {
-        AIKIDO_LOG_WARN("'_SERVER' was not found in the global symbol table!");
-        return false;
-    }
-    return true;
+    /* Get the "_SERVER" PHP global variable */
+    return zend_hash_str_find(&EG(symbol_table), "_SERVER", sizeof("_SERVER") - 1);
 }
 
-bool Request::Ok() {
-    return this->server != NULL;
+void Server::Init() {
+    this->serverString = zend_string_init("_SERVER", sizeof("_SERVER") - 1, 0);
+    if (!this->serverString) {
+        AIKIDO_LOG_WARN("Error allocating the '_SERVER' zend string!");
+    }
 }
 
-std::string Request::GetVar(const char* var) {
-    if (!this->server) {
-        return "";
-    }
-    zval* data = zend_hash_str_find(Z_ARRVAL_P(this->server), var, strlen(var));
+
+std::string Server::GetVar(const char* var) {
+    GET_SERVER_VAR();
+    zval* data = zend_hash_str_find(Z_ARRVAL_P(server), var, strlen(var));
     if (!data) {
         return "";
     }
     return Z_STRVAL_P(data);
 }
 
-std::string Request::GetRoute() {
-    if (!this->server) {
-        return "";
-    }
-    std::string route = GetVar("REQUEST_URI");
+std::string Server::GetRoute() {
+    std::string route = this->GetVar("REQUEST_URI");
     size_t pos = route.find("?");
     if (pos != std::string::npos) {
         route = route.substr(0, pos);
@@ -54,15 +51,15 @@ std::string Request::GetRoute() {
     return route;
 }
 
-std::string Request::GetStatusCode() {
+std::string Server::GetStatusCode() {
     return std::to_string(SG(sapi_headers).http_response_code);
 }
 
-std::string Request::GetUrl() {
+std::string Server::GetUrl() {
     return (IsHttps() ? "https://" : "http://") + GetVar("HTTP_HOST") + GetVar("REQUEST_URI");
 }
 
-std::string Request::GetBody() {
+std::string Server::GetBody() {
     long maxlen = PHP_STREAM_COPY_ALL;
     zend_string* contents;
     php_stream* stream;
@@ -86,7 +83,7 @@ std::string Request::GetBody() {
  * In this way, we interpret the query in the exact same way that the PHP app receives 
  * the query params.
 */
-std::string Request::GetQuery() {
+std::string Server::GetQuery() {
   
     zval *get_array;
     get_array = zend_hash_str_find(&EG(symbol_table), "_GET", sizeof("_GET") - 1);
@@ -117,18 +114,16 @@ std::string Request::GetQuery() {
         }
     }
     ZEND_HASH_FOREACH_END();
-    
-    return query_json.dump();
+
+    return NormalizeAndDumpJson(query_json);
 }
 
-std::string Request::GetHeaders() {
-    if (!this->server) {
-        return "";
-    }
+std::string Server::GetHeaders() {
+    GET_SERVER_VAR();
     std::map<std::string, std::string> headers;
     zend_string* key;
     zval* val;
-    ZEND_HASH_FOREACH_STR_KEY_VAL(Z_ARRVAL_P(this->server), key, val) {
+    ZEND_HASH_FOREACH_STR_KEY_VAL(Z_ARRVAL_P(server), key, val) {
         if (key && Z_TYPE_P(val) == IS_STRING) {
             std::string header_name(ZSTR_VAL(key));
             std::string http_header_key;
@@ -152,9 +147,9 @@ std::string Request::GetHeaders() {
     for (auto const& [key, val] : headers) {
         headers_json[key] = val;
     }
-    return headers_json.dump();
+    return NormalizeAndDumpJson(headers_json);
 }
 
-bool Request::IsHttps() {
+bool Server::IsHttps() {
     return GetVar("HTTPS") != "" ? true : false;
 }

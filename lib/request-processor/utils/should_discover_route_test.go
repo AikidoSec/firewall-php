@@ -2,6 +2,7 @@ package utils
 
 import (
 	"testing"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestShouldDiscoverRoute(t *testing.T) {
@@ -63,6 +64,12 @@ func TestShouldDiscoverRoute(t *testing.T) {
 		if ShouldDiscoverRoute(200, "/fonts/icomoon.ttf", "GET") != false {
 			t.Errorf("Expected false, got true")
 		}
+		if ShouldDiscoverRoute(200, "/fonts/icomoon.woff2", "GET") != false {
+			t.Errorf("Expected false, got true")
+		}
+		if ShouldDiscoverRoute(200, "/test.asp", "GET") != false {
+			t.Errorf("Expected false, got true")
+		}
 	})
 
 	t.Run("it allows html and php files", func(t *testing.T) {
@@ -76,6 +83,9 @@ func TestShouldDiscoverRoute(t *testing.T) {
 			t.Errorf("Expected true, got false")
 		}
 		if ShouldDiscoverRoute(200, "/contact.php", "GET") != true {
+			t.Errorf("Expected true, got false")
+		}
+		if ShouldDiscoverRoute(200, "/contact.php5", "GET") != true {
 			t.Errorf("Expected true, got false")
 		}
 	})
@@ -129,15 +139,10 @@ func TestShouldDiscoverRoute(t *testing.T) {
 	// })
 
 	t.Run("it allows .well-known directory", func(t *testing.T) {
-		if ShouldDiscoverRoute(200, "/.well-known", "GET") != true {
-			t.Errorf("Expected true, got false")
-		}
-		if ShouldDiscoverRoute(200, "/.well-known/change-password", "GET") != true {
-			t.Errorf("Expected true, got false")
-		}
-		if ShouldDiscoverRoute(200, "/.well-known/security.txt", "GET") != false {
-			t.Errorf("Expected false, got true")
-		}
+		assert.Equal(t, false, ShouldDiscoverRoute(200, "/.well-known", "GET"))
+		assert.Equal(t, false, ShouldDiscoverRoute(200, "/.well-known/html/admin.php", "GET"))
+		assert.Equal(t, true, ShouldDiscoverRoute(200, "/.well-known/change-password", "GET"))
+		assert.Equal(t, false, ShouldDiscoverRoute(200, "/.well-known/security.txt", "GET"))
 	})
 
 	t.Run("it ignores certain strings", func(t *testing.T) {

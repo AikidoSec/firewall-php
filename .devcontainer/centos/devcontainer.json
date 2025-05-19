@@ -5,17 +5,22 @@
     "source=${localWorkspaceFolder}/.devcontainer/shared,target=/shared,type=bind"
   ],
   "build": {
-    "platform": "linux/arm64",
+    "platform": "linux/amd64",
     "dockerfile": "Dockerfile",
     "args": {
-      "PHP_VERSION": "8.1"
+      "PHP_VERSION": "8.2"
     }
   },
   "customizations": {
     "vscode": {
       "extensions": [
         "golang.go",
-        "github.vscode-github-actions"
+        "github.vscode-github-actions",
+        "ms-vscode.cpptools-extension-pack",
+        "ms-vscode.cpptools",
+        "ms-vscode.cpptools-themes",
+        "austin.code-gnu-global",
+        "ms-vscode.makefile-tools"
       ]
     }
   }

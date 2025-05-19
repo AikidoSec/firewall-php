@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"main/globals"
 	"main/log"
+	"os"
 )
 
 func setConfigFromJson(jsonString []byte) bool {
@@ -22,13 +23,12 @@ func setConfigFromJson(jsonString []byte) bool {
 		}
 	}
 
-	log.Infof("Loaded local config: %+v", globals.EnvironmentConfig)
-
 	if globals.EnvironmentConfig.SocketPath == "" {
 		log.Errorf("No socket path set! Aikido agent will not load!")
 		return false
 	}
 
+	globals.AikidoConfig.Token = os.Getenv("AIKIDO_TOKEN")
 	if globals.AikidoConfig.Token == "" {
 		log.Infof("No token set! Aikido agent will load and wait for the token to be passed via gRPC!")
 	}

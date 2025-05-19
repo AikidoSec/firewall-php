@@ -2,12 +2,16 @@ package main
 
 import (
 	"main/context"
+	"main/globals"
 	"main/grpc"
 	"main/log"
 )
 
 func OnUserEvent() string {
-	go grpc.OnMiddlewareInstalled()
+	if !globals.MiddlewareInstalled {
+		go grpc.OnMiddlewareInstalled()
+		globals.MiddlewareInstalled = true
+	}
 
 	id := context.GetUserId()
 	username := context.GetUserName()

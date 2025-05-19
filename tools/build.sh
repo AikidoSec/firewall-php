@@ -15,11 +15,10 @@ protoc --go_out=request-processor --go-grpc_out=request-processor ipc.proto
 cd agent
 go get google.golang.org/grpc
 go test ./...
-go build -ldflags "-s -w" -buildmode=c-shared  -o ../../build/aikido-agent.so
+go build -ldflags "-s -w" -o ../../build/aikido-agent
 cd ../request-processor
 go get google.golang.org/grpc
 go get github.com/stretchr/testify/assert
-go get github.com/seancfoley/ipaddress-go/ipaddr
 go test ./...
 go build -ldflags "-s -w" -buildmode=c-shared  -o ../../build/aikido-request-processor.so
 cd ../../build

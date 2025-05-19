@@ -16,6 +16,7 @@ type EnvironmentConfigData struct {
 	PlatformVersion string `json:"platform_version"`          // PHP version
 	Endpoint        string `json:"endpoint,omitempty"`        // default: 'https://guard.aikido.dev/'
 	ConfigEndpoint  string `json:"config_endpoint,omitempty"` // default: 'https://runtime.aikido.dev/'
+	DiskLogs        bool   `json:"disk_logs,omitempty"`       // default: false
 }
 
 type AikidoConfigData struct {

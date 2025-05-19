@@ -1,6 +1,10 @@
 #include "Includes.h"
 
 void Log::Init() {
+    if (!AIKIDO_GLOBAL(disk_logs)) {
+        return;
+    }
+
     this->logFilePath = "/var/log/aikido-" + std::string(PHP_AIKIDO_VERSION) + "/aikido-extension-php-" + GetDateTime() + "-" + std::to_string(getpid()) + ".log";
     this->logFile = fopen(this->logFilePath.c_str(), "w");
     AIKIDO_LOG_INFO("Opened log file %s!\n", this->logFilePath.c_str());
@@ -16,7 +20,16 @@ void Log::Uninit() {
 }
 
 void Log::Write(AIKIDO_LOG_LEVEL level, const char* format, ...) {
-    if (!logFile || level < AIKIDO_GLOBAL(log_level)) {
+    if (level < AIKIDO_GLOBAL(log_level)) {
+        return;
+    }
+
+    FILE* logFile = stdout;
+    if (AIKIDO_GLOBAL(disk_logs)) {
+        logFile = this->logFile;
+    }
+
+    if (!this->logFile) {
         return;
     }
 

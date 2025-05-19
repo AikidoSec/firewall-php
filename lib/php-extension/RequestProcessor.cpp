@@ -3,6 +3,7 @@
 RequestProcessor requestProcessor;
 
 std::string RequestProcessor::GetInitData() {
+    LoadLaravelEnvFile();
     LoadEnvironment();
 
     json initData = {
@@ -11,11 +12,11 @@ std::string RequestProcessor::GetInitData() {
         {"socket_path", AIKIDO_GLOBAL(socket_path)},
         {"blocking", AIKIDO_GLOBAL(blocking)},
         {"trust_proxy", AIKIDO_GLOBAL(trust_proxy)},
+        {"disk_logs", AIKIDO_GLOBAL(disk_logs)},
         {"localhost_allowed_by_default", AIKIDO_GLOBAL(localhost_allowed_by_default)},
         {"collect_api_schema", AIKIDO_GLOBAL(collect_api_schema)},
         {"sapi", AIKIDO_GLOBAL(sapi_name)}};
-
-    return initData.dump();
+    return NormalizeAndDumpJson(initData);
 }
 
 bool RequestProcessor::ContextInit() {
@@ -143,11 +144,7 @@ bool RequestProcessor::RequestInit() {
         return false;
     }
 
-    if (!request.Init()) {
-        AIKIDO_LOG_WARN("Failed to initialize the current request!\n");
-        return false;
-    }
-
+    server.Init();
     this->requestInitialized = true;
     this->numberOfRequests++;
 
@@ -172,11 +169,6 @@ void RequestProcessor::LoadConfigOnce() {
 }
 
 void RequestProcessor::RequestShutdown() {
-    if (!request.Init()) {
-        AIKIDO_LOG_WARN("Failed to initialize the current request!\n");
-        return;
-    }
-    
     LoadConfigOnce();
     SendPostRequestEvent();
     this->requestInitialized = false;

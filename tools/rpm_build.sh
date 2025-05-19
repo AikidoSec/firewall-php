@@ -14,7 +14,7 @@ cp -rf package/rpm/opt ~/rpmbuild/SOURCES/aikido-php-firewall-$VERSION/
 
 cp -f package/rpm/aikido.spec ~/rpmbuild/SPECS/
 
-cp build/aikido-agent.so ~/rpmbuild/SOURCES/aikido-php-firewall-$VERSION/opt/aikido/aikido-agent.so
+cp build/aikido-agent ~/rpmbuild/SOURCES/aikido-php-firewall-$VERSION/opt/aikido/aikido-agent
 cp build/aikido-request-processor.so ~/rpmbuild/SOURCES/aikido-php-firewall-$VERSION/opt/aikido/aikido-request-processor.so
 cp build/modules/aikido-extension-php-$PHP_VERSION.so ~/rpmbuild/SOURCES/aikido-php-firewall-$VERSION/opt/aikido/aikido-extension-php-$PHP_VERSION.so
 

@@ -1,0 +1,27 @@
+{
+  "name": "Centos (arm64)",
+  "runArgs": [],
+  "mounts": [
+    "source=${localWorkspaceFolder}/.devcontainer/shared,target=/shared,type=bind"
+  ],
+  "build": {
+    "platform": "linux/arm64",
+    "dockerfile": "Dockerfile",
+    "args": {
+      "PHP_VERSION": "8.2"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "golang.go",
+        "github.vscode-github-actions",
+        "ms-vscode.cpptools-extension-pack",
+        "ms-vscode.cpptools",
+        "ms-vscode.cpptools-themes",
+        "austin.code-gnu-global",
+        "ms-vscode.makefile-tools"
+      ]
+    }
+  }
+}

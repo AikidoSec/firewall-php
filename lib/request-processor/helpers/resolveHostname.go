@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"context"
+	"main/log"
 	"net"
 	"time"
 )
@@ -16,6 +17,7 @@ func ResolveHostname(hostname string) []string {
 
 	resolvedIps, err := net.DefaultResolver.LookupHost(ctx, hostname)
 	if err != nil {
+		log.Errorf("Failed to resolve hostname %s: %v", hostname, err)
 		// If timeout is reached or the OS lookup fail, return an emtpy list of resolved IPs
 		return []string{}
 	}
