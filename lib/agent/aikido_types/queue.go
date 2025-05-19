@@ -1,33 +1,45 @@
 package aikido_types
 
-type Queue struct {
-	items []int
+type Queue[T any] struct {
+	items   []T
+	maxSize int
 }
 
-func (q *Queue) Push(item int) {
+func NewQueue[T any](maxSize int) Queue[T] {
+	return Queue[T]{
+		items:   []T{},
+		maxSize: maxSize,
+	}
+}
+
+func (q *Queue[T]) Clear() {
+	q.items = []T{}
+}
+
+func (q *Queue[T]) PushAndGetRemovedItem(item T) *T {
+	var oldest *T
+	if q.maxSize > 0 && q.Length() > q.maxSize {
+		temp := q.Pop()
+		oldest = &temp
+	}
 	q.items = append(q.items, item)
+	return oldest
 }
 
-func (q *Queue) Pop() int {
+func (q *Queue[T]) Pop() T {
+	var zero T
 	if len(q.items) == 0 {
-		return -1
+		return zero
 	}
 	item := q.items[0]
 	q.items = q.items[1:]
 	return item
 }
 
-func (q *Queue) IsEmpty() bool {
+func (q *Queue[T]) IsEmpty() bool {
 	return q.Length() == 0
 }
 
-func (q *Queue) IncrementLast() {
-	if q.IsEmpty() {
-		return
-	}
-	q.items[q.Length()-1] += 1
-}
-
-func (q *Queue) Length() int {
+func (q *Queue[T]) Length() int {
 	return len(q.items)
 }
