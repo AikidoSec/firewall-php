@@ -233,5 +233,4 @@ func ContextSetIsEndpointIpAllowed() {
 	}
 
 	Context.IsEndpointIpAllowed = &isEndpointIpAllowedBool
-
 }

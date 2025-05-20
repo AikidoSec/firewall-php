@@ -44,7 +44,6 @@ func ResetHeartbeatTicker() {
 		}
 	}
 }
-
 func isWildcardEndpoint(route string) bool {
 	return strings.Contains(route, "*")
 }

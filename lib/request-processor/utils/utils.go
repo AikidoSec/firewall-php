@@ -127,7 +127,7 @@ func isLocalhost(ip string) bool {
 	return parsedIP.IsLoopback()
 }
 
-func IsIpAllowed(allowedIps *netipx.IPSet, ip string) bool {
+func IsIpAllowed(allowedIps *netipx.IPSet, ip string) int {
 	if globals.EnvironmentConfig.LocalhostAllowedByDefault && isLocalhost(ip) {
 		return 1
 	}
@@ -140,11 +140,10 @@ func IsIpAllowed(allowedIps *netipx.IPSet, ip string) bool {
 	ipAddress, err := netip.ParseAddr(ip)
 	if err != nil {
 		log.Infof("Invalid ip address: %s\n", ip)
-		return false
+		return -1
 	}
-
 	if allowedIps.Contains(ipAddress) {
-		return true
+		return 1
 	}
 
 	return 0
@@ -311,4 +310,8 @@ func GetArch() string {
 		return "aarch64"
 	}
 	panic(fmt.Sprintf("Running on unsupported architecture \"%s\"!", runtime.GOARCH))
+}
+
+func IsWildcardEndpoint(route string) bool {
+	return strings.Contains(route, "*")
 }
