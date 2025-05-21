@@ -152,7 +152,7 @@ func isRateLimitingThresholdExceeded(config *RateLimitingConfig, countsMap map[s
 func getRateLimitingValue(method, route string) *RateLimitingValue {
 	rateLimitingDataForEndpoint, exists := globals.RateLimitingMap[RateLimitingKey{Method: method, Route: route}]
 	if !exists {
-		return &RateLimitingValue{}
+		return nil
 	}
 	return rateLimitingDataForEndpoint
 }
@@ -173,7 +173,10 @@ func getWildcardRateLimitingValues(method, route string) []*RateLimitingValue {
 
 func getWildcardMatchingRateLimitingValues(method, route string) []*RateLimitingValue {
 	rateLimitingDataArray := []*RateLimitingValue{}
-	rateLimitingDataArray = append(rateLimitingDataArray, []*RateLimitingValue{getRateLimitingValue("*", route)}...)
+	wildcardMethodRateLimitingData := getRateLimitingValue("*", route)
+	if wildcardMethodRateLimitingData != nil {
+		rateLimitingDataArray = append(rateLimitingDataArray, wildcardMethodRateLimitingData)
+	}
 	rateLimitingDataArray = append(rateLimitingDataArray, getWildcardRateLimitingValues(method, route)...)
 	rateLimitingDataArray = append(rateLimitingDataArray, getWildcardRateLimitingValues("*", route)...)
 	return rateLimitingDataArray
