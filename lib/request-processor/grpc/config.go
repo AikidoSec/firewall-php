@@ -16,6 +16,19 @@ var (
 	cloudConfigTicker = time.NewTicker(1 * time.Minute)
 )
 
+func buildIpList(cloudIpList map[string]*protos.IpList) map[string]IpList {
+	ipList := map[string]IpList{}
+	for ipListSource, protoIpList := range cloudIpList {
+		ipSet, err := utils.BuildIpList(ipListSource, protoIpList.Description, protoIpList.Ips)
+		if err != nil {
+			log.Errorf("Error building IP list: %s\n", err)
+			continue
+		}
+		ipList[ipListSource] = *ipSet
+	}
+	return ipList
+}
+
 func setCloudConfig(cloudConfigFromAgent *protos.CloudConfig) {
 	if cloudConfigFromAgent == nil {
 		return
@@ -62,15 +75,8 @@ func setCloudConfig(cloudConfigFromAgent *protos.CloudConfig) {
 		globals.CloudConfig.Block = 0
 	}
 
-	globals.CloudConfig.BlockedIps = map[string]IpBlockList{}
-	for ipBlocklistSource, ipBlocklist := range cloudConfigFromAgent.BlockedIps {
-		ipBlocklist, err := utils.BuildIpBlocklist(ipBlocklistSource, ipBlocklist.Description, ipBlocklist.Ips)
-		if err != nil {
-			log.Errorf("Error building IP blocklist: %s\n", err)
-			continue
-		}
-		globals.CloudConfig.BlockedIps[ipBlocklistSource] = *ipBlocklist
-	}
+	globals.CloudConfig.BlockedIps = buildIpList(cloudConfigFromAgent.BlockedIps)
+	globals.CloudConfig.AllowedIps = buildIpList(cloudConfigFromAgent.AllowedIps)
 
 	if cloudConfigFromAgent.BlockedUserAgents != "" {
 		globals.CloudConfig.BlockedUserAgents, _ = regexp.Compile("(?i)" + cloudConfigFromAgent.BlockedUserAgents)

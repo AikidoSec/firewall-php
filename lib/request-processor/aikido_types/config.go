@@ -41,7 +41,7 @@ type EndpointKey struct {
 	Route  string
 }
 
-type IpBlockList struct {
+type IpList struct {
 	Description string
 	IpSet       netipx.IPSet
 }
@@ -51,7 +51,8 @@ type CloudConfigData struct {
 	Endpoints         map[EndpointKey]EndpointData
 	BlockedUserIds    map[string]bool
 	BypassedIps       *netipx.IPSet
-	BlockedIps        map[string]IpBlockList
+	BlockedIps        map[string]IpList
+	AllowedIps        map[string]IpList
 	BlockedUserAgents *regexp.Regexp
 	Block             int
 }

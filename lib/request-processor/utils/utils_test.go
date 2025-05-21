@@ -7,9 +7,9 @@ import (
 	"crypto/sha256"
 	"crypto/sha512"
 	"encoding/hex"
+	"encoding/json"
 	"main/aikido_types"
 	"main/globals"
-	"encoding/json"
 	"math/big"
 	"regexp"
 	"strings"
@@ -241,13 +241,13 @@ func TestBuildRouteFromURL(t *testing.T) {
 func TestParseBodyJSON(t *testing.T) {
 	data := "\r\n\r\n\r\n{\r\n\r\n\r\n\"a\":\r\n\r\n\r\n \"1\",\r\n\r\n\"b\":\"2\"\r\n\r\n}\r\n\r\n\r\n\r\n"
 	expected := `{"a":"1","b":"2"}`
-	
+
 	result := ParseBody(data)
 	resultJSON, err := json.Marshal(result)
 	if err != nil {
 		t.Errorf("Failed to marshal result: %v", err)
 	}
-	
+
 	if string(resultJSON) != expected {
 		t.Errorf("Expected JSON string %q, got %q", expected, resultJSON)
 	}
@@ -265,7 +265,7 @@ func TestParseBodyJSONArray(t *testing.T) {
 
 	if string(resultJSON) != expected {
 		t.Errorf("Expected JSON string %q, got %q", expected, string(resultJSON))
-  }
+	}
 }
 
 func TestParseCookie(t *testing.T) {
@@ -324,9 +324,9 @@ func TestIsUserAgentBlocked(t *testing.T) {
 }
 
 func TestIsIpBlockedByPrefix(t *testing.T) {
-	globals.CloudConfig.BlockedIps = map[string]aikido_types.IpBlockList{}
-	ipBlocklist, _ := BuildIpBlocklist("test", "test description", []string{"1.2.0.0/16"})
-	globals.CloudConfig.BlockedIps["test"] = *ipBlocklist
+	globals.CloudConfig.BlockedIps = map[string]aikido_types.IpList{}
+	IpList, _ := BuildIpList("test", "test description", []string{"1.2.0.0/16"})
+	globals.CloudConfig.BlockedIps["test"] = *IpList
 	ip := "1.2.3.4"
 	result, _ := IsIpBlocked(ip)
 	if result != true {
@@ -335,9 +335,9 @@ func TestIsIpBlockedByPrefix(t *testing.T) {
 }
 
 func TestIsIpBlockedByIp(t *testing.T) {
-	globals.CloudConfig.BlockedIps = map[string]aikido_types.IpBlockList{}
-	ipBlocklist, _ := BuildIpBlocklist("test", "test description", []string{"1.2.3.4"})
-	globals.CloudConfig.BlockedIps["test"] = *ipBlocklist
+	globals.CloudConfig.BlockedIps = map[string]aikido_types.IpList{}
+	IpList, _ := BuildIpList("test", "test description", []string{"1.2.3.4"})
+	globals.CloudConfig.BlockedIps["test"] = *IpList
 	ip := "1.2.3.4"
 	result, _ := IsIpBlocked(ip)
 	if result != true {
@@ -346,9 +346,9 @@ func TestIsIpBlockedByIp(t *testing.T) {
 }
 
 func TestIsIpNotBlockedByPrefix(t *testing.T) {
-	globals.CloudConfig.BlockedIps = map[string]aikido_types.IpBlockList{}
-	ipBlocklist, _ := BuildIpBlocklist("test", "test description", []string{"1.2.0.0/16"})
-	globals.CloudConfig.BlockedIps["test"] = *ipBlocklist
+	globals.CloudConfig.BlockedIps = map[string]aikido_types.IpList{}
+	IpList, _ := BuildIpList("test", "test description", []string{"1.2.0.0/16"})
+	globals.CloudConfig.BlockedIps["test"] = *IpList
 	ip := "2.3.4.5"
 	result, _ := IsIpBlocked(ip)
 	if result != false {
@@ -357,9 +357,9 @@ func TestIsIpNotBlockedByPrefix(t *testing.T) {
 }
 
 func TestIsIpNotBlockedByIp(t *testing.T) {
-	globals.CloudConfig.BlockedIps = map[string]aikido_types.IpBlockList{}
-	ipBlocklist, _ := BuildIpBlocklist("test", "test description", []string{"1.2.3.4"})
-	globals.CloudConfig.BlockedIps["test"] = *ipBlocklist
+	globals.CloudConfig.BlockedIps = map[string]aikido_types.IpList{}
+	IpList, _ := BuildIpList("test", "test description", []string{"1.2.3.4"})
+	globals.CloudConfig.BlockedIps["test"] = *IpList
 	ip := "2.3.4.5"
 	result, _ := IsIpBlocked(ip)
 	if result != false {
@@ -367,9 +367,9 @@ func TestIsIpNotBlockedByIp(t *testing.T) {
 	}
 }
 func TestIsIpv6BlockedByPrefix(t *testing.T) {
-	globals.CloudConfig.BlockedIps = map[string]aikido_types.IpBlockList{}
-	ipBlocklist, _ := BuildIpBlocklist("test", "test description", []string{"2001:db8::/32"})
-	globals.CloudConfig.BlockedIps["test"] = *ipBlocklist
+	globals.CloudConfig.BlockedIps = map[string]aikido_types.IpList{}
+	IpList, _ := BuildIpList("test", "test description", []string{"2001:db8::/32"})
+	globals.CloudConfig.BlockedIps["test"] = *IpList
 	ip := "2001:db8:1234:5678:90ab:cdef:1234:5678"
 	result, _ := IsIpBlocked(ip)
 	if result != true {
@@ -378,9 +378,9 @@ func TestIsIpv6BlockedByPrefix(t *testing.T) {
 }
 
 func TestIsIpv6BlockedByIp(t *testing.T) {
-	globals.CloudConfig.BlockedIps = map[string]aikido_types.IpBlockList{}
-	ipBlocklist, _ := BuildIpBlocklist("test", "test description", []string{"2001:db8::1"})
-	globals.CloudConfig.BlockedIps["test"] = *ipBlocklist
+	globals.CloudConfig.BlockedIps = map[string]aikido_types.IpList{}
+	IpList, _ := BuildIpList("test", "test description", []string{"2001:db8::1"})
+	globals.CloudConfig.BlockedIps["test"] = *IpList
 	ip := "2001:db8::1"
 	result, _ := IsIpBlocked(ip)
 	if result != true {
@@ -389,9 +389,9 @@ func TestIsIpv6BlockedByIp(t *testing.T) {
 }
 
 func TestIsIpv6NotBlockedByPrefix(t *testing.T) {
-	globals.CloudConfig.BlockedIps = map[string]aikido_types.IpBlockList{}
-	ipBlocklist, _ := BuildIpBlocklist("test", "test description", []string{"2001:db8::/32"})
-	globals.CloudConfig.BlockedIps["test"] = *ipBlocklist
+	globals.CloudConfig.BlockedIps = map[string]aikido_types.IpList{}
+	IpList, _ := BuildIpList("test", "test description", []string{"2001:db8::/32"})
+	globals.CloudConfig.BlockedIps["test"] = *IpList
 	ip := "2001:db9::1"
 	result, _ := IsIpBlocked(ip)
 	if result != false {
@@ -400,9 +400,9 @@ func TestIsIpv6NotBlockedByPrefix(t *testing.T) {
 }
 
 func TestIsIpv6NotBlockedByIp(t *testing.T) {
-	globals.CloudConfig.BlockedIps = map[string]aikido_types.IpBlockList{}
-	ipBlocklist, _ := BuildIpBlocklist("test", "test description", []string{"2001:db8::1"})
-	globals.CloudConfig.BlockedIps["test"] = *ipBlocklist
+	globals.CloudConfig.BlockedIps = map[string]aikido_types.IpList{}
+	IpList, _ := BuildIpList("test", "test description", []string{"2001:db8::1"})
+	globals.CloudConfig.BlockedIps["test"] = *IpList
 	ip := "2001:db8::2"
 	result, _ := IsIpBlocked(ip)
 	if result != false {

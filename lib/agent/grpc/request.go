@@ -188,15 +188,23 @@ func getCloudConfig(configUpdatedAt int64) *protos.CloudConfig {
 		ConfigUpdatedAt:   globals.CloudConfig.ConfigUpdatedAt,
 		BlockedUserIds:    globals.CloudConfig.BlockedUserIds,
 		BypassedIps:       globals.CloudConfig.BypassedIps,
-		BlockedIps:        map[string]*protos.IpBlockList{},
+		BlockedIps:        map[string]*protos.IpList{},
+		AllowedIps:        map[string]*protos.IpList{},
 		BlockedUserAgents: globals.CloudConfig.BlockedUserAgents,
 		Block:             isBlockingEnabled,
 	}
 
 	for ipBlocklistSource, ipBlocklist := range globals.CloudConfig.BlockedIpsList {
-		cloudConfig.BlockedIps[ipBlocklistSource] = &protos.IpBlockList{
+		cloudConfig.BlockedIps[ipBlocklistSource] = &protos.IpList{
 			Description: ipBlocklist.Description,
 			Ips:         ipBlocklist.Ips,
+		}
+	}
+
+	for ipAllowlistSource, ipAllowlist := range globals.CloudConfig.AllowedIpsList {
+		cloudConfig.AllowedIps[ipAllowlistSource] = &protos.IpList{
+			Description: ipAllowlist.Description,
+			Ips:         ipAllowlist.Ips,
 		}
 	}
 

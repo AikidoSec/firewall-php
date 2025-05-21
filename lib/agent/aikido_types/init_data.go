@@ -59,20 +59,22 @@ type CloudConfigData struct {
 	ReceivedAnyStats      bool       `json:"receivedAnyStats"`
 	Block                 *bool      `json:"block,omitempty"`
 	BlockedIpsList        map[string]IpBlocklist
+	AllowedIpsList        map[string]IpBlocklist
 	BlockedUserAgents     string
 }
 
-type BlockedIpsData struct {
+type IpsData struct {
 	Source      string   `json:"source"`
 	Description string   `json:"description"`
 	Ips         []string `json:"ips"`
 }
 
 type ListsConfigData struct {
-	Success            bool             `json:"success"`
-	ServiceId          int              `json:"serviceId"`
-	BlockedIpAddresses []BlockedIpsData `json:"blockedIPAddresses"`
-	BlockedUserAgents  string           `json:"blockedUserAgents"`
+	Success            bool      `json:"success"`
+	ServiceId          int       `json:"serviceId"`
+	BlockedIpAddresses []IpsData `json:"blockedIPAddresses"`
+	AllowedIpAddresses []IpsData `json:"allowedIPAddresses"`
+	BlockedUserAgents  string    `json:"blockedUserAgents"`
 }
 
 type CloudConfigUpdatedAt struct {
