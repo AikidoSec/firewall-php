@@ -33,13 +33,6 @@ func OnGetBlockingStatus() string {
 	}
 
 	ip := context.GetIp()
-
-	if context.IsIpBypassed() {
-		// IP is bypassed
-		log.Infof("IP \"%s\" is bypassed! Skipping additional checks...", ip)
-		return ""
-	}
-
 	method := context.GetMethod()
 	route := context.GetParsedRoute()
 	if method == "" || route == "" {
@@ -73,6 +66,12 @@ func OnGetBlockingStatus() string {
 		// User is blocked
 		log.Infof("User \"%s\" is blocked!", userId)
 		return GetStoreAction("blocked", "user", "user blocked from config", userId)
+	}
+
+	if context.IsIpBypassed() {
+		// IP is bypassed
+		log.Infof("IP \"%s\" is bypassed! Skipping additional checks...", ip)
+		return ""
 	}
 
 	if endpointData != nil && !utils.IsIpAllowedOnEndpoint(endpointData.AllowedIPAddresses, ip) {
