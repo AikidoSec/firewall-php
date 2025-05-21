@@ -129,16 +129,16 @@ func isLocalhost(ip string) bool {
 	return parsedIP.IsLoopback()
 }
 
-func IsIpInSet(ipSet *netipx.IPSet, ip string) bool {
+func IsIpInSet(ipSet *netipx.IPSet, ip string, defaultVal bool) bool {
 	if ipSet == nil || ipSet.Equal(&netipx.IPSet{}) {
-		// No IPs configured in the allow list -> no restrictions
-		return true
+		// No IPs configured in the list -> return default value
+		return defaultVal
 	}
 
 	ipAddress, err := netip.ParseAddr(ip)
 	if err != nil {
 		log.Infof("Invalid ip address: %s\n", ip)
-		return false
+		return defaultVal
 	}
 
 	if ipSet.Contains(ipAddress) {
@@ -153,14 +153,14 @@ func IsIpAllowedOnEndpoint(allowedIps *netipx.IPSet, ip string) bool {
 		return true
 	}
 
-	return IsIpInSet(allowedIps, ip)
+	return IsIpInSet(allowedIps, ip, true)
 }
 
 func IsIpBypassed(ip string) bool {
 	globals.CloudConfigMutex.Lock()
 	defer globals.CloudConfigMutex.Unlock()
 
-	return IsIpInSet(globals.CloudConfig.BypassedIps, ip)
+	return IsIpInSet(globals.CloudConfig.BypassedIps, ip, false)
 }
 
 func getIpFromXForwardedFor(value string) string {
@@ -211,14 +211,18 @@ func IsUserBlocked(userID string) bool {
 	return KeyExists(globals.CloudConfig.BlockedUserIds, userID)
 }
 
-func IsIpInSetList(ipList map[string]IpList, ip string) (bool, string) {
+func IsIpInSetList(ipList map[string]IpList, ip string, defaultVal bool) (bool, string) {
 	globals.CloudConfigMutex.Lock()
 	defer globals.CloudConfigMutex.Unlock()
+
+	if len(ipList) == 0 {
+		return defaultVal, ""
+	}
 
 	ipAddress, err := netip.ParseAddr(ip)
 	if err != nil {
 		log.Infof("Invalid ip address: %s\n", ip)
-		return false, ""
+		return defaultVal, ""
 	}
 
 	for _, l := range ipList {
@@ -231,11 +235,11 @@ func IsIpInSetList(ipList map[string]IpList, ip string) (bool, string) {
 }
 
 func IsIpBlocked(ip string) (bool, string) {
-	return IsIpInSetList(globals.CloudConfig.BlockedIps, ip)
+	return IsIpInSetList(globals.CloudConfig.BlockedIps, ip, false)
 }
 
 func IsIpAllowed(ip string) (bool, string) {
-	return IsIpInSetList(globals.CloudConfig.AllowedIps, ip)
+	return IsIpInSetList(globals.CloudConfig.AllowedIps, ip, true)
 }
 
 func IsUserAgentBlocked(userAgent string) (bool, string) {
