@@ -5,7 +5,7 @@
     "endpoints": [
         {
             "method": "GET",
-            "route": "\/test",
+            "route": "\/zralalalala",
             "forceProtectionOff": false,
             "graphql": null,
             "allowedIPAddresses": [],
