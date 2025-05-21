@@ -70,11 +70,13 @@ func OnGetBlockingStatus() string {
 	}
 
 	if utils.IsUserBlocked(userId) {
+		// User is blocked
 		log.Infof("User \"%s\" is blocked!", userId)
 		return GetStoreAction("blocked", "user", "user blocked from config", userId)
 	}
 
 	if endpointData != nil && !utils.IsIpAllowedOnEndpoint(endpointData.AllowedIPAddresses, ip) {
+		// IP is not allowed to access this endpoint
 		log.Infof("IP \"%s\" is not allowed to access this endpoint!", ip)
 		return GetStoreAction("blocked", "ip", "not allowed by config to access this endpoint", ip)
 	}
