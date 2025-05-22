@@ -11,7 +11,15 @@ import (
 	"runtime"
 	"strings"
 
+	. "main/aikido_types"
+
 	"go4.org/netipx"
+)
+
+const (
+	NoConfig = -1
+	NotFound = 0
+	Found    = 1
 )
 
 func KeyExists[K comparable, V any](m map[K]V, key K) bool {
@@ -127,48 +135,38 @@ func isLocalhost(ip string) bool {
 	return parsedIP.IsLoopback()
 }
 
-func IsIpAllowed(allowedIps *netipx.IPSet, ip string) bool {
-	if globals.EnvironmentConfig.LocalhostAllowedByDefault && isLocalhost(ip) {
-		return true
-	}
-
-	if allowedIps == nil || allowedIps.Equal(&netipx.IPSet{}) {
-		// No IPs configured in the allow list -> no restrictions
-		return true
+func IsIpInSet(ipSet *netipx.IPSet, ip string) int {
+	if ipSet == nil || ipSet.Equal(&netipx.IPSet{}) {
+		// No IPs configured in the list -> return default value
+		return NoConfig
 	}
 
 	ipAddress, err := netip.ParseAddr(ip)
 	if err != nil {
 		log.Infof("Invalid ip address: %s\n", ip)
-		return false
+		return NoConfig
 	}
 
-	if allowedIps.Contains(ipAddress) {
-		return true
+	if ipSet.Contains(ipAddress) {
+		return Found
 	}
 
-	return false
+	return NotFound
+}
+
+func IsIpAllowedOnEndpoint(allowedIps *netipx.IPSet, ip string) int {
+	if globals.EnvironmentConfig.LocalhostAllowedByDefault && isLocalhost(ip) {
+		return Found
+	}
+
+	return IsIpInSet(allowedIps, ip)
 }
 
 func IsIpBypassed(ip string) bool {
 	globals.CloudConfigMutex.Lock()
 	defer globals.CloudConfigMutex.Unlock()
 
-	if globals.CloudConfig.BypassedIps == nil || globals.CloudConfig.BypassedIps.Equal(&netipx.IPSet{}) {
-		return false
-	}
-
-	ipAddress, err := netip.ParseAddr(ip)
-	if err != nil {
-		log.Infof("Invalid ip address: %s\n", ip)
-		return false
-	}
-
-	if globals.CloudConfig.BypassedIps.Contains(ipAddress) {
-		return true
-	}
-
-	return false
+	return IsIpInSet(globals.CloudConfig.BypassedIps, ip) == Found
 }
 
 func getIpFromXForwardedFor(value string) string {
@@ -219,23 +217,35 @@ func IsUserBlocked(userID string) bool {
 	return KeyExists(globals.CloudConfig.BlockedUserIds, userID)
 }
 
-func IsIpBlocked(ip string) (bool, string) {
+func IsIpInSetList(ipList map[string]IpList, ip string, defaultVal bool) (bool, string) {
 	globals.CloudConfigMutex.Lock()
 	defer globals.CloudConfigMutex.Unlock()
+
+	if len(ipList) == 0 {
+		return defaultVal, ""
+	}
 
 	ipAddress, err := netip.ParseAddr(ip)
 	if err != nil {
 		log.Infof("Invalid ip address: %s\n", ip)
-		return false, ""
+		return defaultVal, ""
 	}
 
-	for _, ipBlocklist := range globals.CloudConfig.BlockedIps {
-		if ipBlocklist.IpSet.Contains(ipAddress) {
-			return true, ipBlocklist.Description
+	for _, l := range ipList {
+		if l.IpSet.Contains(ipAddress) {
+			return true, l.Description
 		}
 	}
 
 	return false, ""
+}
+
+func IsIpBlocked(ip string) (bool, string) {
+	return IsIpInSetList(globals.CloudConfig.BlockedIps, ip, false)
+}
+
+func IsIpAllowed(ip string) (bool, string) {
+	return IsIpInSetList(globals.CloudConfig.AllowedIps, ip, true)
 }
 
 func IsUserAgentBlocked(userAgent string) (bool, string) {
@@ -311,4 +321,8 @@ func GetArch() string {
 		return "aarch64"
 	}
 	panic(fmt.Sprintf("Running on unsupported architecture \"%s\"!", runtime.GOARCH))
+}
+
+func IsWildcardEndpoint(route string) bool {
+	return strings.Contains(route, "*")
 }
