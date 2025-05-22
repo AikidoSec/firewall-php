@@ -41,6 +41,8 @@ type RateLimitingKey struct {
 }
 
 type RateLimitingValue struct {
+	Method     string
+	Route      string
 	Config     RateLimitingConfig
 	UserCounts map[string]*RateLimitingCounts
 	IpCounts   map[string]*RateLimitingCounts

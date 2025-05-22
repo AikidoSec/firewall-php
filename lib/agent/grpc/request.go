@@ -7,7 +7,8 @@ import (
 	"main/ipc/protos"
 	"main/log"
 	"main/utils"
-	"sort"
+	"slices"
+	"strings"
 )
 
 func storeStats() {
@@ -179,6 +180,11 @@ func getWildcardMatchingRateLimitingValues(method, route string) []*RateLimiting
 	}
 	rateLimitingDataArray = append(rateLimitingDataArray, getWildcardRateLimitingValues(method, route)...)
 	rateLimitingDataArray = append(rateLimitingDataArray, getWildcardRateLimitingValues("*", route)...)
+
+	slices.SortFunc(rateLimitingDataArray, func(i, j *RateLimitingValue) int {
+		// Sort endpoints based on the amount of * in the route
+		return strings.Count(j.Route, "*") - strings.Count(i.Route, "*")
+	})
 	return rateLimitingDataArray
 }
 
@@ -196,10 +202,10 @@ func getRateLimitingDataForEndpoint(method, route string) *RateLimitingValue {
 		return nil
 	}
 
-	sort.Slice(wildcardMatches, func(i, j int) bool {
-		aRate := float64(wildcardMatches[i].Config.MaxRequests) / float64(wildcardMatches[i].Config.WindowSizeInMinutes)
-		bRate := float64(wildcardMatches[j].Config.MaxRequests) / float64(wildcardMatches[j].Config.WindowSizeInMinutes)
-		return aRate < bRate
+	slices.SortFunc(wildcardMatches, func(i, j *RateLimitingValue) int {
+		aRate := float64(i.Config.MaxRequests) / float64(i.Config.WindowSizeInMinutes)
+		bRate := float64(j.Config.MaxRequests) / float64(j.Config.WindowSizeInMinutes)
+		return int(bRate - aRate)
 	})
 
 	return wildcardMatches[0]
@@ -210,6 +216,9 @@ func getRateLimitingStatus(method, route, user, ip string) *protos.RateLimitingS
 	defer globals.RateLimitingMutex.RUnlock()
 
 	rateLimitingDataMatch := getRateLimitingDataForEndpoint(method, route)
+	if rateLimitingDataMatch == nil {
+		return &protos.RateLimitingStatus{Block: false}
+	}
 
 	if user != "" {
 		// If the user exists, we only try to rate limit by user

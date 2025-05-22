@@ -67,11 +67,6 @@ func OnGetBlockingStatus() string {
 		return GetStoreAction("blocked", "user-agent", userAgentBlockedDescription, userAgent)
 	}
 
-	if userAgentBlocked, userAgentBlockedDescription := utils.IsUserAgentBlocked(userAgent); userAgentBlocked {
-		log.Infof("User Agent \"%s\" blocked due to: %s!", userAgent, userAgentBlockedDescription)
-		return GetStoreAction("blocked", "user-agent", userAgentBlockedDescription, userAgent)
-	}
-
 	if context.IsEndpointRateLimitingEnabled() {
 		// If request is monitored for rate limiting,
 		// do a sync call via gRPC to see if the request should be blocked or not
