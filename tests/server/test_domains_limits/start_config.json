@@ -1,0 +1,10 @@
+{
+    "success": true,
+    "serviceId": 1,
+    "heartbeatIntervalInMS": 300000,
+    "endpoints": [],
+    "blockedUserIds": [],
+    "allowedIPAddresses": [],
+    "receivedAnyStats": true,
+    "block": false
+}

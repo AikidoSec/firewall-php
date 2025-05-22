@@ -19,6 +19,7 @@ func GetHostnamesAndClear() []Hostname {
 	}
 
 	globals.Hostnames = make(map[string]map[uint32]uint64)
+	globals.HostnamesQueue.Clear()
 	return hostnames
 }
 
@@ -39,6 +40,7 @@ func GetRoutesAndClear() []Route {
 
 	// Clear routes data
 	globals.Routes = make(map[string]map[string]*Route)
+	globals.RoutesQueue.Clear()
 	return routes
 }
 
@@ -52,6 +54,7 @@ func GetUsersAndClear() []User {
 	}
 
 	globals.Users = make(map[string]User)
+	globals.UsersQueue.Clear()
 	return users
 }
 

@@ -133,3 +133,10 @@ func ComputePercentiles(times []int64) map[string]float64 {
 
 	return percentiles
 }
+
+func RemoveOldestFromMapIfMaxExceeded[V any](m *map[string]V, queue *Queue[string], key string) {
+	removedItem := queue.PushAndGetRemovedItemIfMaxExceeded(key)
+	if removedItem != nil {
+		delete(*m, *removedItem)
+	}
+}
