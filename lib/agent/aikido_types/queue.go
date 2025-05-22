@@ -16,7 +16,7 @@ func (q *Queue[T]) Clear() {
 	q.items = []T{}
 }
 
-func (q *Queue[T]) PushAndGetRemovedItem(item T) *T {
+func (q *Queue[T]) PushAndGetRemovedItemIfMaxExceeded(item T) *T {
 	var oldest *T
 	if q.maxSize > 0 && q.Length() >= q.maxSize {
 		temp := q.Pop()
