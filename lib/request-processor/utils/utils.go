@@ -16,6 +16,12 @@ import (
 	"go4.org/netipx"
 )
 
+const (
+	NoConfig = -1
+	NotFound = 0
+	Found    = 1
+)
+
 func KeyExists[K comparable, V any](m map[K]V, key K) bool {
 	_, exists := m[key]
 	return exists
@@ -129,38 +135,38 @@ func isLocalhost(ip string) bool {
 	return parsedIP.IsLoopback()
 }
 
-func IsIpInSet(ipSet *netipx.IPSet, ip string, defaultVal bool) bool {
+func IsIpInSet(ipSet *netipx.IPSet, ip string) int {
 	if ipSet == nil || ipSet.Equal(&netipx.IPSet{}) {
 		// No IPs configured in the list -> return default value
-		return defaultVal
+		return NoConfig
 	}
 
 	ipAddress, err := netip.ParseAddr(ip)
 	if err != nil {
 		log.Infof("Invalid ip address: %s\n", ip)
-		return defaultVal
+		return NoConfig
 	}
 
 	if ipSet.Contains(ipAddress) {
-		return true
+		return Found
 	}
 
-	return false
+	return NotFound
 }
 
-func IsIpAllowedOnEndpoint(allowedIps *netipx.IPSet, ip string) bool {
+func IsIpAllowedOnEndpoint(allowedIps *netipx.IPSet, ip string) int {
 	if globals.EnvironmentConfig.LocalhostAllowedByDefault && isLocalhost(ip) {
-		return true
+		return Found
 	}
 
-	return IsIpInSet(allowedIps, ip, true)
+	return IsIpInSet(allowedIps, ip)
 }
 
 func IsIpBypassed(ip string) bool {
 	globals.CloudConfigMutex.Lock()
 	defer globals.CloudConfigMutex.Unlock()
 
-	return IsIpInSet(globals.CloudConfig.BypassedIps, ip, false)
+	return IsIpInSet(globals.CloudConfig.BypassedIps, ip) == Found
 }
 
 func getIpFromXForwardedFor(value string) string {
