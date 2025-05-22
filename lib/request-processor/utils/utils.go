@@ -316,3 +316,7 @@ func GetArch() string {
 	}
 	panic(fmt.Sprintf("Running on unsupported architecture \"%s\"!", runtime.GOARCH))
 }
+
+func IsWildcardEndpoint(route string) bool {
+	return strings.Contains(route, "*")
+}

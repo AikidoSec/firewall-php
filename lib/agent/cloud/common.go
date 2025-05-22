@@ -7,6 +7,8 @@ import (
 	. "main/globals"
 	"main/log"
 	"main/utils"
+	"regexp"
+	"strings"
 	"sync/atomic"
 	"time"
 )
@@ -42,6 +44,9 @@ func ResetHeartbeatTicker() {
 		}
 	}
 }
+func isWildcardEndpoint(route string) bool {
+	return strings.Contains(route, "*")
+}
 
 func UpdateRateLimitingConfig() {
 	globals.RateLimitingMutex.Lock()
@@ -63,6 +68,7 @@ func UpdateRateLimitingConfig() {
 
 			log.Infof("Rate limiting endpoint config has changed: %v", newEndpointConfig)
 			delete(globals.RateLimitingMap, k)
+			delete(globals.RateLimitingWildcardMap, k)
 		}
 
 		if !newEndpointConfig.RateLimiting.Enabled {
@@ -77,13 +83,25 @@ func UpdateRateLimitingConfig() {
 		}
 
 		log.Infof("Got new rate limiting endpoint config and storing to map: %v", newEndpointConfig)
-		globals.RateLimitingMap[k] = &RateLimitingValue{
+		rateLimitingValue := &RateLimitingValue{
 			Config: RateLimitingConfig{
 				MaxRequests:         newEndpointConfig.RateLimiting.MaxRequests,
 				WindowSizeInMinutes: newEndpointConfig.RateLimiting.WindowSizeInMS / MinRateLimitingIntervalInMs},
 			UserCounts: make(map[string]*RateLimitingCounts),
 			IpCounts:   make(map[string]*RateLimitingCounts),
 		}
+
+		if isWildcardEndpoint(k.Route) {
+			routeRegex, err := regexp.Compile(strings.ReplaceAll(k.Route, "*", "(.*)") + "/?")
+			if err != nil {
+				log.Warnf("Route regex is not compiling: %s", k.Route)
+			} else {
+				log.Infof("Stored wildcard rate limiting config for: %v", k)
+				globals.RateLimitingWildcardMap[k] = &RateLimitingWildcardValue{RouteRegex: routeRegex, RateLimitingValue: rateLimitingValue}
+			}
+		}
+		log.Infof("Stored normal rate limiting config for: %v", k)
+		globals.RateLimitingMap[k] = rateLimitingValue
 	}
 
 	for k := range globals.RateLimitingMap {
@@ -91,6 +109,7 @@ func UpdateRateLimitingConfig() {
 		if !exists {
 			log.Infof("Removed rate limiting entry as it is no longer part of the config: %v", k)
 			delete(globals.RateLimitingMap, k)
+			delete(globals.RateLimitingWildcardMap, k)
 		}
 	}
 }

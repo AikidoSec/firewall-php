@@ -36,6 +36,11 @@ type EndpointData struct {
 	AllowedIPAddresses *netipx.IPSet
 }
 
+type WildcardEndpointData struct {
+	RouteRegex *regexp.Regexp
+	Data       EndpointData
+}
+
 type EndpointKey struct {
 	Method string
 	Route  string
@@ -49,6 +54,7 @@ type IpList struct {
 type CloudConfigData struct {
 	ConfigUpdatedAt   int64
 	Endpoints         map[EndpointKey]EndpointData
+	WildcardEndpoints map[string][]WildcardEndpointData
 	BlockedUserIds    map[string]bool
 	BypassedIps       *netipx.IPSet
 	BlockedIps        map[string]IpList
