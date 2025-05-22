@@ -32,16 +32,27 @@ func OnGetBlockingStatus() string {
 		globals.MiddlewareInstalled = true
 	}
 
-	ip := context.GetIp()
 	method := context.GetMethod()
 	route := context.GetParsedRoute()
 	if method == "" || route == "" {
 		return ""
 	}
 
+	ip := context.GetIp()
 	userId := context.GetUserId()
-
 	userAgent := context.GetUserAgent()
+
+	if !context.IsEndpointIpAllowed() {
+		// IP is not allowed to access this endpoint
+		log.Infof("IP \"%s\" is not allowed to access this endpoint!", ip)
+		return GetStoreAction("blocked", "ip", "not allowed by config to access this endpoint", ip)
+	}
+
+	if context.IsIpBypassed() {
+		// IP is bypassed
+		log.Infof("IP \"%s\" is bypassed! Skipping additional checks...", ip)
+		return ""
+	}
 
 	if ipAllowed, ipAllowedDescription := utils.IsIpAllowed(ip); !ipAllowed {
 		// IP is NOT in the allowed IPs list
@@ -65,18 +76,6 @@ func OnGetBlockingStatus() string {
 		// User is blocked
 		log.Infof("User \"%s\" is blocked!", userId)
 		return GetStoreAction("blocked", "user", "user blocked from config", userId)
-	}
-
-	if context.IsIpBypassed() {
-		// IP is bypassed
-		log.Infof("IP \"%s\" is bypassed! Skipping additional checks...", ip)
-		return ""
-	}
-
-	if !context.IsEndpointIpAllowed() {
-		// IP is not allowed to access this endpoint
-		log.Infof("IP \"%s\" is not allowed to access this endpoint!", ip)
-		return GetStoreAction("blocked", "ip", "not allowed by config to access this endpoint", ip)
 	}
 
 	if context.IsEndpointRateLimitingEnabled() {
