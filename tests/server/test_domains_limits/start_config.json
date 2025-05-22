@@ -1,7 +1,7 @@
 {
     "success": true,
     "serviceId": 1,
-    "heartbeatIntervalInMS": 600000,
+    "heartbeatIntervalInMS": 300000,
     "endpoints": [],
     "blockedUserIds": [],
     "allowedIPAddresses": [],
