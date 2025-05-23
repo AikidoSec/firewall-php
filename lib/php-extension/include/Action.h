@@ -10,7 +10,6 @@ enum ACTION_STATUS {
 
 class Action {
     private:
-        bool exit = false;
         bool block = false;
         std::string type;
         std::string trigger;
