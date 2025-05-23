@@ -222,13 +222,13 @@ func getRateLimitingStatus(method, route, routeParsed, user, ip string) *protos.
 	if user != "" {
 		// If the user exists, we only try to rate limit by user
 		if isRateLimitingThresholdExceeded(&rateLimitingDataMatch.Config, rateLimitingDataMatch.UserCounts, user) {
-			log.Infof("Rate limited request for user %s - %s %s - %v", user, method, route, rateLimitingDataMatch.UserCounts[user])
+			log.Infof("Rate limited request for user %s - %s %s - %v", user, method, routeParsed, rateLimitingDataMatch.UserCounts[user])
 			return &protos.RateLimitingStatus{Block: true, Trigger: "user"}
 		}
 	} else {
 		// Otherwise, we rate limit by ip
 		if isRateLimitingThresholdExceeded(&rateLimitingDataMatch.Config, rateLimitingDataMatch.IpCounts, ip) {
-			log.Infof("Rate limited request for ip %s - %s %s - %v", ip, method, route, rateLimitingDataMatch.IpCounts[ip])
+			log.Infof("Rate limited request for ip %s - %s %s - %v", ip, method, routeParsed, rateLimitingDataMatch.IpCounts[ip])
 			return &protos.RateLimitingStatus{Block: true, Trigger: "ip"}
 		}
 	}
