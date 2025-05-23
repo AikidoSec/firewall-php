@@ -90,7 +90,7 @@ func GetRateLimitingStatus(method string, route string, routeParsed string, user
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	RateLimitingStatus, err := client.GetRateLimitingStatus(ctx, &protos.RateLimitingInfo{Method: method, Route: route, User: user, Ip: ip})
+	RateLimitingStatus, err := client.GetRateLimitingStatus(ctx, &protos.RateLimitingInfo{Method: method, Route: route, RouteParsed: routeParsed, User: user, Ip: ip})
 	if err != nil {
 		log.Warnf("Cannot get rate limiting status %v %v: %v", method, route, err)
 		return nil
