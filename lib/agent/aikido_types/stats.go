@@ -1,6 +1,9 @@
 package aikido_types
 
-import "sync"
+import (
+	"regexp"
+	"sync"
+)
 
 type MonitoredSinkTimings struct {
 	AttacksDetected       AttacksDetected
@@ -38,7 +41,14 @@ type RateLimitingKey struct {
 }
 
 type RateLimitingValue struct {
+	Method     string
+	Route      string
 	Config     RateLimitingConfig
 	UserCounts map[string]*RateLimitingCounts
 	IpCounts   map[string]*RateLimitingCounts
+}
+
+type RateLimitingWildcardValue struct {
+	RouteRegex        *regexp.Regexp
+	RateLimitingValue *RateLimitingValue
 }
