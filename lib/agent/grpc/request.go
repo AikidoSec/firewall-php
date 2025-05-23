@@ -128,11 +128,11 @@ func incrementRateLimitingCounts(m map[string]*RateLimitingCounts, key string) {
 	rateLimitingData.NumberOfRequestsPerWindow.IncrementLast()
 }
 
-func updateRateLimitingCounts(method string, route string, user string, ip string) {
+func updateRateLimitingCounts(method string, route string, routeParsed string, user string, ip string) {
 	globals.RateLimitingMutex.Lock()
 	defer globals.RateLimitingMutex.Unlock()
 
-	rateLimitingDataForEndpoint := getRateLimitingDataForEndpoint(method, route)
+	rateLimitingDataForEndpoint := getRateLimitingDataForEndpoint(method, route, routeParsed)
 	if rateLimitingDataForEndpoint == nil {
 		return
 	}
@@ -214,7 +214,7 @@ func getRateLimitingStatus(method, route, routeParsed, user, ip string) *protos.
 	globals.RateLimitingMutex.RLock()
 	defer globals.RateLimitingMutex.RUnlock()
 
-	rateLimitingDataMatch := getRateLimitingDataForEndpoint(method, route)
+	rateLimitingDataMatch := getRateLimitingDataForEndpoint(method, route, routeParsed)
 	if rateLimitingDataMatch == nil {
 		return &protos.RateLimitingStatus{Block: false}
 	}

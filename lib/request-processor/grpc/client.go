@@ -101,7 +101,7 @@ func GetRateLimitingStatus(method string, route string, routeParsed string, user
 }
 
 /* Send request metadata (route, method & status code) to Aikido Agent via gRPC */
-func OnRequestShutdown(method string, route string, statusCode int, user string, ip string, apiSpec *protos.APISpec) {
+func OnRequestShutdown(method string, route string, routeParsed string, statusCode int, user string, ip string, apiSpec *protos.APISpec) {
 	if client == nil {
 		return
 	}
@@ -109,7 +109,7 @@ func OnRequestShutdown(method string, route string, statusCode int, user string,
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	_, err := client.OnRequestShutdown(ctx, &protos.RequestMetadataShutdown{Method: method, Route: route, StatusCode: int32(statusCode), User: user, Ip: ip, ApiSpec: apiSpec})
+	_, err := client.OnRequestShutdown(ctx, &protos.RequestMetadataShutdown{Method: method, Route: route, RouteParsed: routeParsed, StatusCode: int32(statusCode), User: user, Ip: ip, ApiSpec: apiSpec})
 	if err != nil {
 		log.Warnf("Could not send request metadata %v %v %v: %v", method, route, statusCode, err)
 		return
