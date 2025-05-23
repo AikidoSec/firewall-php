@@ -1,7 +1,13 @@
 #include "Includes.h"
 
 zend_class_entry *blockingStatusClass = nullptr;
+
+// This variable is used to check if auto_block_request function has already been called,
+// in order to avoid multiple calls to this function.
 bool checkedAutoBlock = false;
+
+// This variable is used to check if should_block_request function has already been called,
+// in order to avoid multiple calls to this function.
 bool checkedShouldBlockRequest = false;
 
 bool CheckBlocking(EVENT_ID eventId, bool& checkedBlocking) {
