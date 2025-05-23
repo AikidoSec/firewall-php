@@ -196,7 +196,6 @@ func getRateLimitingDataForEndpoint(method, route string) *RateLimitingValue {
 	}
 
 	// If no exact match, check for the most restrictive wildcard match
-
 	wildcardMatches := getWildcardMatchingRateLimitingValues(method, route)
 	if len(wildcardMatches) == 0 {
 		return nil
@@ -205,7 +204,7 @@ func getRateLimitingDataForEndpoint(method, route string) *RateLimitingValue {
 	slices.SortFunc(wildcardMatches, func(i, j *RateLimitingValue) int {
 		aRate := float64(i.Config.MaxRequests) / float64(i.Config.WindowSizeInMinutes)
 		bRate := float64(j.Config.MaxRequests) / float64(j.Config.WindowSizeInMinutes)
-		return int(bRate - aRate)
+		return int(aRate - bRate)
 	})
 
 	return wildcardMatches[0]
