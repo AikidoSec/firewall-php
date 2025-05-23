@@ -82,7 +82,7 @@ func OnDomain(domain string, port uint32) {
 }
 
 /* Send request metadata (route & method) to Aikido Agent via gRPC */
-func GetRateLimitingStatus(method string, route string, user string, ip string, timeout time.Duration) *protos.RateLimitingStatus {
+func GetRateLimitingStatus(method string, route string, routeParsed string, user string, ip string, timeout time.Duration) *protos.RateLimitingStatus {
 	if client == nil {
 		return nil
 	}

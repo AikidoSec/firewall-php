@@ -45,7 +45,7 @@ func (s *server) OnDomain(ctx context.Context, req *protos.Domain) (*emptypb.Emp
 func (s *server) GetRateLimitingStatus(ctx context.Context, req *protos.RateLimitingInfo) (*protos.RateLimitingStatus, error) {
 	log.Debugf("Received rate limiting info: %s %s %s %s", req.GetMethod(), req.GetRoute(), req.GetUser(), req.GetIp())
 
-	return getRateLimitingStatus(req.GetMethod(), req.GetRoute(), req.GetUser(), req.GetIp()), nil
+	return getRateLimitingStatus(req.GetMethod(), req.GetRoute(), req.GetRouteParsed(), req.GetUser(), req.GetIp()), nil
 }
 
 func (s *server) OnRequestShutdown(ctx context.Context, req *protos.RequestMetadataShutdown) (*emptypb.Empty, error) {

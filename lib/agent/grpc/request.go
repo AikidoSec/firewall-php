@@ -172,9 +172,9 @@ func getWildcardRateLimitingValues(method, route string) []*RateLimitingValue {
 	return wildcardRatelimitingValues
 }
 
-func getWildcardMatchingRateLimitingValues(method, route string) []*RateLimitingValue {
+func getWildcardMatchingRateLimitingValues(method, route, routeParsed string) []*RateLimitingValue {
 	rateLimitingDataArray := []*RateLimitingValue{}
-	wildcardMethodRateLimitingData := getRateLimitingValue("*", route)
+	wildcardMethodRateLimitingData := getRateLimitingValue("*", routeParsed)
 	if wildcardMethodRateLimitingData != nil {
 		rateLimitingDataArray = append(rateLimitingDataArray, wildcardMethodRateLimitingData)
 	}
@@ -188,15 +188,15 @@ func getWildcardMatchingRateLimitingValues(method, route string) []*RateLimiting
 	return rateLimitingDataArray
 }
 
-func getRateLimitingDataForEndpoint(method, route string) *RateLimitingValue {
+func getRateLimitingDataForEndpoint(method, route, routeParsed string) *RateLimitingValue {
 	// Check for exact match first
-	rateLimitingDataMatch := getRateLimitingValue(method, route)
+	rateLimitingDataMatch := getRateLimitingValue(method, routeParsed)
 	if rateLimitingDataMatch != nil {
 		return rateLimitingDataMatch
 	}
 
 	// If no exact match, check for the most restrictive wildcard match
-	wildcardMatches := getWildcardMatchingRateLimitingValues(method, route)
+	wildcardMatches := getWildcardMatchingRateLimitingValues(method, route, routeParsed)
 	if len(wildcardMatches) == 0 {
 		return nil
 	}
@@ -210,7 +210,7 @@ func getRateLimitingDataForEndpoint(method, route string) *RateLimitingValue {
 	return wildcardMatches[0]
 }
 
-func getRateLimitingStatus(method, route, user, ip string) *protos.RateLimitingStatus {
+func getRateLimitingStatus(method, route, routeParsed, user, ip string) *protos.RateLimitingStatus {
 	globals.RateLimitingMutex.RLock()
 	defer globals.RateLimitingMutex.RUnlock()
 
