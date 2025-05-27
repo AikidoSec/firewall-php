@@ -16,6 +16,31 @@ var (
 	cloudConfigTicker = time.NewTicker(1 * time.Minute)
 )
 
+func buildIpListFromProto(monitoredIpsList map[string]*protos.IpBlockList) map[string]IpBlockList {
+	m := map[string]IpBlockList{}
+	for ipBlocklistSource, ipBlocklist := range monitoredIpsList {
+		ipBlocklist, err := utils.BuildIpBlocklist(ipBlocklistSource, ipBlocklist.Description, ipBlocklist.Ips)
+		if err != nil {
+			log.Errorf("Error building IP blocklist: %s\n", err)
+			continue
+		}
+		m[ipBlocklistSource] = *ipBlocklist
+	}
+	return m
+}
+
+func buildUserAgentsRegexpFromProto(userAgents string) *regexp.Regexp {
+	if userAgents == "" {
+		return nil
+	}
+	userAgentsRegexp, err := regexp.Compile("(?i)" + userAgents)
+	if err != nil {
+		log.Errorf("Error compiling user agents regex: %s\n", err)
+		return nil
+	}
+	return userAgentsRegexp
+}
+
 func setCloudConfig(cloudConfigFromAgent *protos.CloudConfig) {
 	if cloudConfigFromAgent == nil {
 		return
@@ -62,21 +87,11 @@ func setCloudConfig(cloudConfigFromAgent *protos.CloudConfig) {
 		globals.CloudConfig.Block = 0
 	}
 
-	globals.CloudConfig.BlockedIps = map[string]IpBlockList{}
-	for ipBlocklistSource, ipBlocklist := range cloudConfigFromAgent.BlockedIps {
-		ipBlocklist, err := utils.BuildIpBlocklist(ipBlocklistSource, ipBlocklist.Description, ipBlocklist.Ips)
-		if err != nil {
-			log.Errorf("Error building IP blocklist: %s\n", err)
-			continue
-		}
-		globals.CloudConfig.BlockedIps[ipBlocklistSource] = *ipBlocklist
-	}
+	globals.CloudConfig.BlockedIps = buildIpListFromProto(cloudConfigFromAgent.BlockedIps)
+	globals.CloudConfig.MonitoredIps = buildIpListFromProto(cloudConfigFromAgent.MonitoredIps)
 
-	if cloudConfigFromAgent.BlockedUserAgents != "" {
-		globals.CloudConfig.BlockedUserAgents, _ = regexp.Compile("(?i)" + cloudConfigFromAgent.BlockedUserAgents)
-	} else {
-		globals.CloudConfig.BlockedUserAgents = nil
-	}
+	globals.CloudConfig.BlockedUserAgents = buildUserAgentsRegexpFromProto(cloudConfigFromAgent.BlockedUserAgents)
+	globals.CloudConfig.MonitoredUserAgents = buildUserAgentsRegexpFromProto(cloudConfigFromAgent.MonitoredUserAgents)
 
 	// Force garbage collection to ensure that the IP blocklists temporary memory is released ASAP
 	runtime.GC()

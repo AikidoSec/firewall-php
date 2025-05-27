@@ -3,6 +3,7 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
+	. "main/aikido_types"
 	"main/globals"
 	"main/log"
 	"net"
@@ -219,7 +220,7 @@ func IsUserBlocked(userID string) bool {
 	return KeyExists(globals.CloudConfig.BlockedUserIds, userID)
 }
 
-func IsIpBlocked(ip string) (bool, string) {
+func IsIpInBlocklist(ip string, ipBlocklist map[string]IpBlockList) (bool, string) {
 	globals.CloudConfigMutex.Lock()
 	defer globals.CloudConfigMutex.Unlock()
 
@@ -229,13 +230,21 @@ func IsIpBlocked(ip string) (bool, string) {
 		return false, ""
 	}
 
-	for _, ipBlocklist := range globals.CloudConfig.BlockedIps {
+	for _, ipBlocklist := range ipBlocklist {
 		if ipBlocklist.IpSet.Contains(ipAddress) {
 			return true, ipBlocklist.Description
 		}
 	}
 
 	return false, ""
+}
+
+func IsIpBlocked(ip string) (bool, string) {
+	return IsIpInBlocklist(ip, globals.CloudConfig.BlockedIps)
+}
+
+func IsIpMonitored(ip string) (bool, string) {
+	return IsIpInBlocklist(ip, globals.CloudConfig.MonitoredIps)
 }
 
 func IsUserAgentBlocked(userAgent string) (bool, string) {

@@ -47,11 +47,13 @@ type IpBlockList struct {
 }
 
 type CloudConfigData struct {
-	ConfigUpdatedAt   int64
-	Endpoints         map[EndpointKey]EndpointData
-	BlockedUserIds    map[string]bool
-	BypassedIps       *netipx.IPSet
-	BlockedIps        map[string]IpBlockList
-	BlockedUserAgents *regexp.Regexp
-	Block             int
+	ConfigUpdatedAt     int64
+	Endpoints           map[EndpointKey]EndpointData
+	BlockedUserIds      map[string]bool
+	BypassedIps         *netipx.IPSet
+	BlockedIps          map[string]IpBlockList
+	BlockedUserAgents   *regexp.Regexp
+	MonitoredIps        map[string]IpBlockList
+	MonitoredUserAgents *regexp.Regexp
+	Block               int
 }

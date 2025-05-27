@@ -85,7 +85,9 @@ message CloudConfig {
   repeated string bypassedIps = 4;
   map<string, IpBlockList> blockedIps = 5;
   string blockedUserAgents = 6;
-  bool block = 7;
+  map<string, IpBlockList> monitoredIps = 7;
+  string monitoredUserAgents = 8;
+  bool block = 9;
 }
 
 message RateLimitingStatus {

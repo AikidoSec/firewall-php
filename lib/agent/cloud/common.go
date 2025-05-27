@@ -101,6 +101,14 @@ func ApplyCloudConfig() {
 	UpdateRateLimitingConfig()
 }
 
+func UpdateIpsLists(BlockedIps []BlockedIpsData) map[string]IpBlocklist {
+	m := make(map[string]IpBlocklist)
+	for _, blockedIpsGroup := range BlockedIps {
+		m[blockedIpsGroup.Source] = IpBlocklist{Description: blockedIpsGroup.Description, Ips: blockedIpsGroup.Ips}
+	}
+	return m
+}
+
 func UpdateListsConfig() bool {
 	response, err := SendCloudRequest(globals.EnvironmentConfig.Endpoint, globals.ListsAPI, globals.ListsAPIMethod, nil)
 	if err != nil {
@@ -115,11 +123,11 @@ func UpdateListsConfig() bool {
 		return false
 	}
 
-	CloudConfig.BlockedIpsList = make(map[string]IpBlocklist)
-	for _, blockedIpsGroup := range tempListsConfig.BlockedIpAddresses {
-		CloudConfig.BlockedIpsList[blockedIpsGroup.Source] = IpBlocklist{Description: blockedIpsGroup.Description, Ips: blockedIpsGroup.Ips}
-	}
+	CloudConfig.BlockedIpsList = UpdateIpsLists(tempListsConfig.BlockedIpAddresses)
+	CloudConfig.MonitoredIpsList = UpdateIpsLists(tempListsConfig.MonitoredIpAddresses)
+
 	CloudConfig.BlockedUserAgents = tempListsConfig.BlockedUserAgents
+	CloudConfig.MonitoredUserAgents = tempListsConfig.MonitoredUserAgents
 	return true
 }
 
