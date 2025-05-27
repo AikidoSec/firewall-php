@@ -20,75 +20,75 @@ jobs:
       fail-fast: false
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+    - name: Checkout repository
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
 
-      - name: Get Arch
-        run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
+    - name: Get Arch
+      run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
 
-      - name: Install dependencies
-        run: |
-          apt-get update
-          apt-get install -y software-properties-common
-          add-apt-repository ppa:longsleep/golang-backports
-          apt-get update
-          apt-get install -y golang-go protobuf-compiler protobuf-compiler-grpc
+    - name: Install dependencies
+      run: |
+        apt-get update
+        apt-get install -y software-properties-common
+        add-apt-repository ppa:longsleep/golang-backports
+        apt-get update
+        apt-get install -y golang-go protobuf-compiler protobuf-compiler-grpc
 
-      - name: GO setup
-        run: |
-          go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
-          go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
-          echo "$HOME/go/bin" >> $GITHUB_PATH
+    - name: GO setup
+      run: |
+        go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+        go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+        echo "$HOME/go/bin" >> $GITHUB_PATH
 
-      - name: Get Aikido version
-        run: |
-          AIKIDO_VERSION=$(grep '#define PHP_AIKIDO_VERSION' lib/php-extension/include/php_aikido.h | awk -F'"' '{print $2}')
-          echo $AIKIDO_VERSION
-          echo "AIKIDO_VERSION=$AIKIDO_VERSION" >> $GITHUB_ENV
-          echo "AIKIDO_INTERNALS_REPO=https://api.github.com/repos/AikidoSec/zen-internals" >> $GITHUB_ENV
+    - name: Get Aikido version
+      run: |
+        AIKIDO_VERSION=$(grep '#define PHP_AIKIDO_VERSION' lib/php-extension/include/php_aikido.h | awk -F'"' '{print $2}')
+        echo $AIKIDO_VERSION
+        echo "AIKIDO_VERSION=$AIKIDO_VERSION" >> $GITHUB_ENV
+        echo "AIKIDO_INTERNALS_REPO=https://api.github.com/repos/AikidoSec/zen-internals" >> $GITHUB_ENV
 
-      - name: Build Aikido Agent
-        run: |
-          cd lib
-          protoc --go_out=agent --go-grpc_out=agent ipc.proto
-          cd agent
-          go get main/ipc/protos
-          go get google.golang.org/grpc
-          go get github.com/stretchr/testify/assert
-          go test ./...
-          go build -ldflags "-s -w" -o ../../build/aikido-agent
-          ls -l ../../build
+    - name: Build Aikido Agent
+      run: |
+        cd lib
+        protoc --go_out=agent --go-grpc_out=agent ipc.proto
+        cd agent
+        go get main/ipc/protos
+        go get google.golang.org/grpc
+        go get github.com/stretchr/testify/assert
+        go test ./...
+        go build -ldflags "-s -w" -o ../../build/aikido-agent
+        ls -l ../../build
 
-      - name: Build Aikido Request Processor
-        run: |
-          cd lib
-          protoc --go_out=request-processor --go-grpc_out=request-processor ipc.proto
-          cd request-processor
-          go mod tidy
-          go get google.golang.org/grpc
-          go get github.com/stretchr/testify/assert
-          go get main/ipc/protos
-          go test ./...
-          go build -ldflags "-s -w" -buildmode=c-shared -o ../../build/aikido-request-processor.so
-          ls -l ../../build
+    - name: Build Aikido Request Processor
+      run: |
+        cd lib
+        protoc --go_out=request-processor --go-grpc_out=request-processor ipc.proto
+        cd request-processor
+        go mod tidy
+        go get google.golang.org/grpc
+        go get github.com/stretchr/testify/assert
+        go get main/ipc/protos
+        go test ./...
+        go build -ldflags "-s -w" -buildmode=c-shared -o ../../build/aikido-request-processor.so
+        ls -l ../../build
 
-      - name: Archive agent
-        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4
-        if: always()
-        with:
-          name: aikido-agent-${{ env.ARCH }}
-          if-no-files-found: error
-          path: |
-            ${{ github.workspace }}/build/aikido-agent
+    - name: Archive agent 
+      uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4
+      if: always()
+      with:
+        name: aikido-agent-${{ env.ARCH }}
+        if-no-files-found: error
+        path: |
+          ${{ github.workspace }}/build/aikido-agent
 
-      - name: Archive request processor
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: aikido-request-processor-${{ env.ARCH }}
-          if-no-files-found: error
-          path: |
-            ${{ github.workspace }}/build/aikido-request-processor.so
+    - name: Archive request processor
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: aikido-request-processor-${{ env.ARCH }}
+        if-no-files-found: error
+        path: |
+          ${{ github.workspace }}/build/aikido-request-processor.so
 
   build_php_extension:
     runs-on: ${{ matrix.os }}
@@ -100,65 +100,65 @@ jobs:
       fail-fast: false
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
-      - name: Install dependencies
-        run: |
-          DEBIAN_FRONTEND=noninteractive apt-get update
-          DEBIAN_FRONTEND=noninteractive apt-get install -y tzdata
-          ln -fs /usr/share/zoneinfo/Etc/UTC /etc/localtime
-          echo "Etc/UTC" > /etc/timezone
-          DEBIAN_FRONTEND=noninteractive dpkg-reconfigure -f noninteractive tzdata
-          apt-get install -y autoconf bison re2c libxml2-dev libssl-dev libcurl4-gnutls-dev
+    - name: Install dependencies
+      run: |
+        DEBIAN_FRONTEND=noninteractive apt-get update
+        DEBIAN_FRONTEND=noninteractive apt-get install -y tzdata
+        ln -fs /usr/share/zoneinfo/Etc/UTC /etc/localtime
+        echo "Etc/UTC" > /etc/timezone
+        DEBIAN_FRONTEND=noninteractive dpkg-reconfigure -f noninteractive tzdata
+        apt-get install -y autoconf bison re2c libxml2-dev libssl-dev libcurl4-gnutls-dev
 
-      - name: Get Arch
-        run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
+    - name: Get Arch
+      run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
 
-      - name: Get Aikido version
-        run: |
-          AIKIDO_VERSION=$(grep '#define PHP_AIKIDO_VERSION' lib/php-extension/include/php_aikido.h | awk -F'"' '{print $2}')
-          echo $AIKIDO_VERSION
-          echo "AIKIDO_VERSION=$AIKIDO_VERSION" >> $GITHUB_ENV
-          echo "AIKIDO_ARTIFACT=aikido-extension-php-${{ matrix.php_version }}" >> $GITHUB_ENV
+    - name: Get Aikido version
+      run: |
+        AIKIDO_VERSION=$(grep '#define PHP_AIKIDO_VERSION' lib/php-extension/include/php_aikido.h | awk -F'"' '{print $2}')
+        echo $AIKIDO_VERSION
+        echo "AIKIDO_VERSION=$AIKIDO_VERSION" >> $GITHUB_ENV
+        echo "AIKIDO_ARTIFACT=aikido-extension-php-${{ matrix.php_version }}" >> $GITHUB_ENV
 
-      - name: Setup PHP
-        uses: shivammathur/setup-php@cf4cade2721270509d5b1c766ab3549210a39a2a # v2 # v2
-        with:
-          php-version: ${{ matrix.php_version }}
-          extensions: curl
-          coverage: none
+    - name: Setup PHP
+      uses: shivammathur/setup-php@cf4cade2721270509d5b1c766ab3549210a39a2a # v2 # v2
+      with:
+        php-version: ${{ matrix.php_version }}
+        extensions: curl
+        coverage: none
 
-      - name: Check PHP setup
-        run: |
-          which php
-          php -v
-          php -i
+    - name: Check PHP setup
+      run: |
+        which php
+        php -v
+        php -i
 
-      - name: Build extension
-        run: |
-          rm -rf build
-          mkdir build
-          cd lib/php-extension
-          phpize
-          cd ../../build
-          CXX=g++ CXXFLAGS="-fPIC -O2 -I../lib/php-extension/include" LDFLAGS="-lstdc++" ../lib/php-extension/configure
-          make
+    - name: Build extension
+      run: |
+        rm -rf build
+        mkdir build
+        cd lib/php-extension
+        phpize
+        cd ../../build
+        CXX=g++ CXXFLAGS="-fPIC -O2 -I../lib/php-extension/include" LDFLAGS="-lstdc++" ../lib/php-extension/configure
+        make
 
-      - name: Version Aikido extension
-        run: |
-          cd ./build/modules
-          mv aikido.so ${{ env.AIKIDO_ARTIFACT }}.so
-
-      - name: Archive build artifacts
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: ${{ env.AIKIDO_ARTIFACT }}-${{ env.ARCH }}
-          if-no-files-found: error
-          path: |
-            ${{ github.workspace }}/build/modules/${{ env.AIKIDO_ARTIFACT }}.so
-            ${{ github.workspace }}/tests/*.diff
+    - name: Version Aikido extension
+      run: |
+        cd ./build/modules
+        mv aikido.so ${{ env.AIKIDO_ARTIFACT }}.so
+        
+    - name: Archive build artifacts
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: ${{ env.AIKIDO_ARTIFACT }}-${{ env.ARCH }}
+        if-no-files-found: error
+        path: |
+          ${{ github.workspace }}/build/modules/${{ env.AIKIDO_ARTIFACT }}.so
+          ${{ github.workspace }}/tests/*.diff
 
   build_rpm:
     runs-on: ${{ matrix.os }}
@@ -248,7 +248,7 @@ jobs:
         if: matrix.os == 'ubuntu-22.04'
         run: |
           yum deplist ~/rpmbuild/RPMS/${{ env.ARCH }}/${{ env.AIKIDO_ARTIFACT_RELEASE }} | grep -E "GLIBC_2.32|GLIBC_2.34|GLIBCXX_3.4.29" && exit 1 || exit 0
-
+      
       - name: Archive rpm package
         uses: actions/upload-artifact@v4
         with:
@@ -305,7 +305,7 @@ jobs:
           echo "AIKIDO_VERSION=$AIKIDO_VERSION" >> $GITHUB_ENV
           echo "AIKIDO_RPM=aikido-php-firewall.${{ env.ARCH }}.rpm" >> $GITHUB_ENV
           echo "AIKIDO_ARTIFACT=aikido-php-firewall.${{ env.ARCH }}.deb" >> $GITHUB_ENV    
-
+      
       - name: Build deb
         run: |
           alien --to-deb --scripts --keep-version ${{ env.AIKIDO_RPM }}/${{ env.AIKIDO_RPM }}
@@ -316,7 +316,7 @@ jobs:
           dpkg-deb -R temp-${{ env.AIKIDO_ARTIFACT }} deb-temp/
           dpkg-deb -Zgzip -b deb-temp ${{ env.AIKIDO_ARTIFACT }}
           rm -rf deb-temp
-
+  
       - name: Archive deb package
         uses: actions/upload-artifact@v4
         with:
@@ -377,7 +377,7 @@ jobs:
           echo $AIKIDO_VERSION
           echo "AIKIDO_VERSION=$AIKIDO_VERSION" >> $GITHUB_ENV
           echo "AIKIDO_RPM=aikido-php-firewall.${{ env.ARCH }}.rpm" >> $GITHUB_ENV
-
+      
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
