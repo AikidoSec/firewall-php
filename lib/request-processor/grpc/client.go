@@ -210,3 +210,35 @@ func OnMiddlewareInstalled() {
 	}
 	log.Debugf("OnMiddlewareInstalled sent via socket")
 }
+
+func OnMonitoredIpMatch(lists []string) {
+	if client == nil {
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	_, err := client.OnMonitoredIpMatch(ctx, &protos.MonitoredIpMatch{Lists: lists})
+	if err != nil {
+		log.Warnf("Could not call OnMonitoredIpMatch")
+		return
+	}
+	log.Debugf("OnMonitoredIpMatch sent via socket")
+}
+
+func OnMonitoredUserAgentMatch(lists []string) {
+	if client == nil {
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	_, err := client.OnMonitoredUserAgentMatch(ctx, &protos.MonitoredUserAgentMatch{Lists: lists})
+	if err != nil {
+		log.Warnf("Could not call OnMonitoredUserAgentMatch")
+		return
+	}
+	log.Debugf("OnMonitoredUserAgentMatch sent via socket")
+}

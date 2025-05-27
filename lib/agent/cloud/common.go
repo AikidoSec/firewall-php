@@ -128,6 +128,12 @@ func UpdateListsConfig() bool {
 
 	CloudConfig.BlockedUserAgents = tempListsConfig.BlockedUserAgents
 	CloudConfig.MonitoredUserAgents = tempListsConfig.MonitoredUserAgents
+
+	CloudConfig.UserAgentDetails = make(map[string]string)
+	for _, userAgentDetail := range tempListsConfig.UserAgentDetails {
+		CloudConfig.UserAgentDetails[userAgentDetail.Key] = userAgentDetail.Pattern
+	}
+
 	return true
 }
 

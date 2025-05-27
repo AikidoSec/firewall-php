@@ -41,6 +41,14 @@ func buildUserAgentsRegexpFromProto(userAgents string) *regexp.Regexp {
 	return userAgentsRegexp
 }
 
+func buildUserAgentDetailsFromProto(userAgentDetails map[string]string) map[string]*regexp.Regexp {
+	m := map[string]*regexp.Regexp{}
+	for key, value := range userAgentDetails {
+		m[key] = buildUserAgentsRegexpFromProto(value)
+	}
+	return m
+}
+
 func setCloudConfig(cloudConfigFromAgent *protos.CloudConfig) {
 	if cloudConfigFromAgent == nil {
 		return
@@ -92,6 +100,8 @@ func setCloudConfig(cloudConfigFromAgent *protos.CloudConfig) {
 
 	globals.CloudConfig.BlockedUserAgents = buildUserAgentsRegexpFromProto(cloudConfigFromAgent.BlockedUserAgents)
 	globals.CloudConfig.MonitoredUserAgents = buildUserAgentsRegexpFromProto(cloudConfigFromAgent.MonitoredUserAgents)
+
+	globals.CloudConfig.UserAgentDetails = buildUserAgentDetailsFromProto(cloudConfigFromAgent.UserAgentDetails)
 
 	// Force garbage collection to ensure that the IP blocklists temporary memory is released ASAP
 	runtime.GC()

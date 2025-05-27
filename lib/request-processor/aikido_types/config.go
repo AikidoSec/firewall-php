@@ -55,5 +55,6 @@ type CloudConfigData struct {
 	BlockedUserAgents   *regexp.Regexp
 	MonitoredIps        map[string]IpBlockList
 	MonitoredUserAgents *regexp.Regexp
+	UserAgentDetails    map[string]*regexp.Regexp
 	Block               int
 }

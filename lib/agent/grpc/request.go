@@ -26,6 +26,15 @@ func storeAttackStats(req *protos.AttackDetected) {
 	}
 }
 
+func storeMonitoredListsMatches(m *map[string]int, lists []string) {
+	for _, list := range lists {
+		if _, exists := (*m)[list]; !exists {
+			(*m)[list] = 0
+		}
+		(*m)[list] += 1
+	}
+}
+
 func storeSinkStats(protoSinkStats *protos.MonitoredSinkStats) {
 	globals.StatsData.StatsMutex.Lock()
 	defer globals.StatsData.StatsMutex.Unlock()
@@ -200,6 +209,7 @@ func getCloudConfig(configUpdatedAt int64) *protos.CloudConfig {
 		BlockedUserAgents:   globals.CloudConfig.BlockedUserAgents,
 		MonitoredIps:        getIpsList(globals.CloudConfig.MonitoredIpsList),
 		MonitoredUserAgents: globals.CloudConfig.MonitoredUserAgents,
+		UserAgentDetails:    globals.CloudConfig.UserAgentDetails,
 		Block:               isBlockingEnabled,
 	}
 

@@ -81,6 +81,22 @@ func GetMonitoredSinkStatsAndClear() map[string]MonitoredSinkStats {
 	return monitoredSinkStats
 }
 
+func GetIpsBreakdownAndClear() MonitoredListsBreakdown {
+	m := MonitoredListsBreakdown{
+		Breakdown: globals.StatsData.IpAddressesMatches,
+	}
+	globals.StatsData.IpAddressesMatches = make(map[string]int)
+	return m
+}
+
+func GetUserAgentsBreakdownAndClear() MonitoredListsBreakdown {
+	m := MonitoredListsBreakdown{
+		Breakdown: globals.StatsData.UserAgentsMatches,
+	}
+	globals.StatsData.UserAgentsMatches = make(map[string]int)
+	return m
+}
+
 func GetStatsAndClear() Stats {
 	globals.StatsData.StatsMutex.Lock()
 	defer globals.StatsData.StatsMutex.Unlock()
@@ -97,6 +113,8 @@ func GetStatsAndClear() Stats {
 				Blocked: globals.StatsData.AttacksBlocked,
 			},
 		},
+		UserAgents:  GetUserAgentsBreakdownAndClear(),
+		IpAddresses: GetIpsBreakdownAndClear(),
 	}
 
 	globals.StatsData.StartedAt = utils.GetTime()

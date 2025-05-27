@@ -62,6 +62,7 @@ type CloudConfigData struct {
 	BlockedUserAgents     string
 	MonitoredIpsList      map[string]IpBlocklist
 	MonitoredUserAgents   string
+	UserAgentDetails      map[string]string
 }
 
 type BlockedIpsData struct {
