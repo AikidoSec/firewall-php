@@ -27,6 +27,10 @@ func storeAttackStats(req *protos.AttackDetected) {
 }
 
 func storeMonitoredListsMatches(m *map[string]int, lists []string) {
+	if *m == nil {
+		*m = make(map[string]int)
+	}
+
 	for _, list := range lists {
 		if _, exists := (*m)[list]; !exists {
 			(*m)[list] = 0
