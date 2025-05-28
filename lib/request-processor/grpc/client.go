@@ -212,7 +212,7 @@ func OnMiddlewareInstalled() {
 }
 
 func OnMonitoredIpMatch(lists []string) {
-	if client == nil {
+	if client == nil || len(lists) == 0 {
 		return
 	}
 
@@ -228,7 +228,7 @@ func OnMonitoredIpMatch(lists []string) {
 }
 
 func OnMonitoredUserAgentMatch(lists []string) {
-	if client == nil {
+	if client == nil || len(lists) == 0 {
 		return
 	}
 

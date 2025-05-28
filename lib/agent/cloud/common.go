@@ -119,7 +119,7 @@ func UpdateListsConfig() bool {
 	tempListsConfig := ListsConfigData{}
 	err = json.Unmarshal(response, &tempListsConfig)
 	if err != nil {
-		log.Warnf("Failed to unmarshal lists config!")
+		log.Warnf("Failed to unmarshal lists config: %v", err)
 		return false
 	}
 

@@ -259,6 +259,7 @@ func IsUserAgentInBlocklist(userAgent string, blocklist *regexp.Regexp) (bool, [
 	if blocklist.MatchString(userAgent) {
 		log.Debugf("User agent '%s' matches blocklist pattern", userAgent)
 		matchedDetails := []string{}
+		log.Debugf("User agent details: %v", globals.CloudConfig.UserAgentDetails)
 		for key, valueRegex := range globals.CloudConfig.UserAgentDetails {
 			if valueRegex != nil && valueRegex.MatchString(userAgent) {
 				log.Debugf("User agent '%s' matches pattern for key '%s'", userAgent, key)

@@ -1,0 +1,10 @@
+{
+    "type": "heartbeat",
+    "users": [
+        {
+            "id": "12345",
+            "name": "Tudor"
+        }
+    ],
+    "middlewareInstalled": true
+}
