@@ -267,11 +267,6 @@ func IsUserAgentInBlocklist(userAgent string, blocklist *regexp.Regexp) (bool, [
 			}
 		}
 
-		if len(matchedDetails) == 0 {
-			log.Debugf("No specific pattern matches found for user agent '%s', using 'unknown'", userAgent)
-			matchedDetails = append(matchedDetails, "unknown")
-		}
-
 		return true, matchedDetails
 	}
 

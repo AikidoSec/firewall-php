@@ -77,7 +77,12 @@ func OnGetBlockingStatus() string {
 	if userAgentBlocked, userAgentBlockedDescriptions := utils.IsUserAgentBlocked(userAgent); userAgentBlocked {
 		log.Infof("User Agent \"%s\" found in blocked lists: %v!", userAgent, userAgentBlockedDescriptions)
 		go grpc.OnMonitoredUserAgentMatch(userAgentBlockedDescriptions)
-		return GetStoreAction("blocked", "user-agent", userAgentBlockedDescriptions[0], userAgent)
+
+		description := "unknown"
+		if len(userAgentBlockedDescriptions) > 0 {
+			description = userAgentBlockedDescriptions[0]
+		}
+		return GetStoreAction("blocked", "user-agent", description, userAgent)
 	}
 
 	if endpointData != nil && endpointData.RateLimiting.Enabled {
