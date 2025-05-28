@@ -27,6 +27,9 @@ def load_config(j):
     if "blockedUserAgents" in j:
         responses["lists"]["blockedUserAgents"] = j["blockedUserAgents"]
         del j["blockedUserAgents"]
+    if "userAgentDetails" in j:
+        responses["lists"]["userAgentDetails"] = j["userAgentDetails"]
+        del j["userAgentDetails"]
     responses["config"] = j
     responses["config"]["configUpdatedAt"] = configUpdatedAt
     responses["configUpdatedAt"] = { "serviceId": 1, "configUpdatedAt": configUpdatedAt }

@@ -14,7 +14,7 @@ def run_test():
     response = php_server_get("/test", headers={"User-Agent": "1234googlebot1234"})
     assert_response_code_is(response, 403)
     assert_response_header_contains(response, "Content-Type", "text")
-    assert_response_body_contains(response, "Your user agent (1234googlebot1234) is blocked due to: bot detection!")
+    assert_response_body_contains(response, "Your user agent (1234googlebot1234) is blocked due to: Googlebot!")
 
     apply_config("change_config_remove_tor_blocked_ua.json")
         
@@ -27,7 +27,7 @@ def run_test():
     response = php_server_get("/test", headers={"User-Agent": "1234googlebot1234"})
     assert_response_code_is(response, 403)
     assert_response_header_contains(response, "Content-Type", "text")
-    assert_response_body_contains(response, "Your user agent (1234googlebot1234) is blocked due to: bot detection!")
+    assert_response_body_contains(response, "Your user agent (1234googlebot1234) is blocked due to: Googlebot!")
     
     
 if __name__ == "__main__":
