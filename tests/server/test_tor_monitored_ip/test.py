@@ -11,7 +11,7 @@ from testlib import *
 
 
 def run_test():
-    response = php_server_get("/test")
+    response = php_server_get("/test", headers={"X-Forwarded-For": "192.42.116.197"})
     assert_response_code_is(response, 200)
     assert_response_header_contains(response, "Content-Type", "text")
     assert_response_body_contains(response, "Something")

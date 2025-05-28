@@ -6,7 +6,7 @@
             "name": "Tudor"
         }
     ],
-    "middlewareInstalled": true,
+    "middlewareInstalled": false,
     "stats": {
         "userAgents":{
            "breakdown":{
