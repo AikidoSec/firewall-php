@@ -29,4 +29,4 @@ func TestRateLimitingQueue(t *testing.T) {
 		q.IncrementLast()
 		assert.Equal(t, 0, q.Length())
 	})
-} 
+}
