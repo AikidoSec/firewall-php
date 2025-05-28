@@ -46,6 +46,13 @@ PHP_MSHUTDOWN_FUNCTION(aikido) {
         return SUCCESS;
     }
 
+    /*
+        In the case of Apache mod-php servers, the MSHUTDOWN can be called multiple times.
+        As a consequence, we need to do the unhooking / uninitialization logic based on the current 
+        PID for which the MSHUTDOWN is called. This logic is part of phpLifecycle.ModuleShutdown().
+        The same does not apply for CLI mode, where the MSHUTDOWN is called only once.
+    */
+
     phpLifecycle.ModuleShutdown();
     AIKIDO_LOG_DEBUG("MSHUTDOWN finished!\n");
     return SUCCESS;
