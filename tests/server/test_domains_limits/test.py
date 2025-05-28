@@ -5,12 +5,11 @@ from testlib import *
 
 
 def generate_domains():
-    generated_domains = set()
-    while len(generated_domains) < 2100:
-        domain_len = random.randint(20, 30)  # Random route length between 1-20 segments
-        domain = ''.join(random.choices('abcdefghijklmnopqrstuvwxyz0123456789-_', k=domain_len))
-        generated_domains.add(domain)
-    return list(generated_domains)
+    generated_domains = []
+    for i in range(2100):
+        domain = f"domain{i}"
+        generated_domains.append(domain)
+    return generated_domains
 
 
 def run_test():

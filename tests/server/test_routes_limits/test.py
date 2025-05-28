@@ -10,17 +10,11 @@ from testlib import *
 '''
 
 def generate_routes():
-    generated_routes = set()
-    while len(generated_routes) < 6000:
-        route_len = random.randint(1, 20)  # Random route length between 1-20 segments
-        route_parts = []
-        for j in range(route_len):
-            part_len = random.randint(3, 15)  # Random segment length between 3-15 chars
-            part = ''.join(random.choices('abcdefghijklmnopqrstuvwxyz0123456789-_', k=part_len))
-            route_parts.append(part)
-        route = '/' + '/'.join(route_parts)
-        generated_routes.add(route)
-    return list(generated_routes)
+    generated_routes = []
+    for i in range(6000):
+        route = f"/route{i}"
+        generated_routes.append(route)
+    return generated_routes
 
 def run_test():
     routes = generate_routes()

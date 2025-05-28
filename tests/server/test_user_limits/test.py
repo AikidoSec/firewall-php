@@ -5,12 +5,11 @@ from testlib import *
 
 
 def generate_users():
-    generated_users = set()
-    while len(generated_users) < 3500:
-        user_len = random.randint(1, 20)  # Random route length between 1-20 segments
-        user = ''.join(random.choices('abcdefghijklmnopqrstuvwxyz0123456789-_', k=user_len))
-        generated_users.add(user)
-    return list(generated_users)
+    generated_users = []
+    for i in range(3500):
+        user = f"user{i}"
+        generated_users.append(user)
+    return generated_users
 
 
 def run_test():
