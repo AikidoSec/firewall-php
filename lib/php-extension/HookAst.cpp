@@ -51,6 +51,36 @@ zend_ast *create_ast_call(const char *name) {
     return call;
 }
 
+int find_insertion_point(zend_ast_list *stmt_list) {
+    int insertion_point = 0;
+    
+    // Skip declare statements and namespace declarations
+    for (int i = 0; i < stmt_list->children; i++) {
+        zend_ast *stmt = stmt_list->child[i];
+        
+        if (!stmt) {
+            continue;
+        }
+        
+        // Skip declare statements
+        if (stmt->kind == ZEND_AST_DECLARE) {
+            insertion_point = i + 1;
+            continue;
+        }
+        
+        // Skip namespace declarations
+        if (stmt->kind == ZEND_AST_NAMESPACE) {
+            insertion_point = i + 1;
+            continue;
+        }
+        
+        // Found first non-declare, non-namespace statement
+        break;
+    }
+    
+    return insertion_point;
+}
+
 void insert_call_to_ast(zend_ast *ast) {
     if (!ast || ast->kind != ZEND_AST_STMT_LIST) {
         return; // Only operate on valid statement lists
@@ -60,28 +90,27 @@ void insert_call_to_ast(zend_ast *ast) {
     if (!stmt_list || stmt_list->children == 0) {
         return;
     }
+    // Find the correct insertion point after namespace/declare statements
+    int insertion_point = find_insertion_point(stmt_list);
+    
+    // If insertion point is at the end, there's nothing to inject before
+    if (insertion_point >= stmt_list->children) {
+        return;
+    }
     
     // Create our function call
-    zend_ast *call = create_ast_call("aikido\\auto_block_request");
+    zend_ast *call = create_ast_call("\\aikido\\auto_block_request");
     
     // Create a new statement list with 2 elements
     zend_ast_list *block = (zend_ast_list*)emalloc(sizeof(zend_ast_list) + 2 * sizeof(zend_ast*));
     block->kind = ZEND_AST_STMT_LIST;
     block->lineno = stmt_list->lineno;
     block->children = 2;
-    
-    // First statement is our call
     block->child[0] = call;
-    // Second statement is the original
-    block->child[1] = stmt_list->child[0];
-    
-    // Track the new block for cleanup
+    block->child[1] = stmt_list->child[insertion_point];
     zend_hash_next_index_insert_ptr(global_ast_to_clean, block);
-    
-    // Replace the first statement with our block
-    if (stmt_list->children > 0) {
-        stmt_list->child[0] = (zend_ast*)block;
-    }
+
+    stmt_list->child[insertion_point] = (zend_ast*)block;
 }
 
 void aikido_ast_process(zend_ast *ast) {
@@ -91,7 +120,6 @@ void aikido_ast_process(zend_ast *ast) {
         original_ast_process(ast);
     }
 }
-
 
 void HookAstProcess() {
     if (original_ast_process) {
