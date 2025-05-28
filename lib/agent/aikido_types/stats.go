@@ -31,7 +31,7 @@ type RateLimitingConfig struct {
 }
 
 type RateLimitingCounts struct {
-	NumberOfRequestsPerWindow Queue
+	NumberOfRequestsPerWindow RateLimitingQueue
 	TotalNumberOfRequests     int
 }
 

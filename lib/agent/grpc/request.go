@@ -113,7 +113,9 @@ func storeRoute(method string, route string, apiSpec *protos.APISpec) {
 
 	if _, ok := globals.Routes[route]; !ok {
 		globals.Routes[route] = make(map[string]*Route)
+		utils.RemoveOldestFromMapIfMaxExceeded(&globals.Routes, &globals.RoutesQueue, route)
 	}
+
 	routeData, ok := globals.Routes[route][method]
 	if !ok {
 		routeData = &Route{Path: route, Method: method}
@@ -246,6 +248,8 @@ func onUserEvent(id string, username string, ip string) {
 		}
 		return
 	}
+
+	utils.RemoveOldestFromMapIfMaxExceeded(&globals.Users, &globals.UsersQueue, id)
 
 	globals.Users[id] = User{
 		ID:            id,
