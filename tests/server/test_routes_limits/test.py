@@ -37,7 +37,7 @@ def run_test():
     paths = [p["path"] for p in events[1]["routes"]]
     assert len(paths) == 5000, f"Expected 5000 routes, got {len(paths)}"
     assert routes[0] not in paths, f"Route {routes[0]} should not be in reported paths"
-    assert routes[-1] in paths, f"Route {routes[1]} should be in reported paths"
+    assert routes[-1] in paths, f"Route {routes[-1]} should be in reported paths"
     
 if __name__ == "__main__":
     load_test_args()
