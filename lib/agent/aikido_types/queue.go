@@ -6,6 +6,7 @@ type Queue[T any] struct {
 }
 
 func NewQueue[T any](maxSize int) Queue[T] {
+	// Passing 0 as maxSize means no limit on the queue size.
 	return Queue[T]{
 		items:   []T{},
 		maxSize: maxSize,
