@@ -12,7 +12,7 @@
             "rateLimiting": {
                 "enabled": true,
                 "maxRequests": 10,
-                "windowSizeInMS": 60000
+                "windowSizeInMS": 600000
             }
         }
     ],

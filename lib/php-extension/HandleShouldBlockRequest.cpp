@@ -2,11 +2,24 @@
 
 zend_class_entry *blockingStatusClass = nullptr;
 
-bool GetBlockingStatus() {
+// This variable is used to check if auto_block_request function has already been called,
+// in order to avoid multiple calls to this function.
+bool checkedAutoBlock = false;
+
+// This variable is used to check if should_block_request function has already been called,
+// in order to avoid multiple calls to this function.
+bool checkedShouldBlockRequest = false;
+
+bool CheckBlocking(EVENT_ID eventId, bool& checkedBlocking) {
+    if (checkedBlocking) {
+        return true;
+    }
+
     try {
         std::string output;
-        requestProcessor.SendEvent(EVENT_GET_BLOCKING_STATUS, output);
+        requestProcessor.SendEvent(eventId, output);
         action.Execute(output);
+        checkedBlocking = true;
         return true;
     } catch (const std::exception &e) {
         AIKIDO_LOG_ERROR("Exception encountered in processing get blocking status event: %s\n", e.what());
@@ -27,7 +40,7 @@ ZEND_FUNCTION(should_block_request) {
 
     requestProcessor.LoadConfigOnce();
 
-    if (!GetBlockingStatus()) {
+    if (!CheckBlocking(EVENT_GET_BLOCKING_STATUS, checkedShouldBlockRequest)) {
         return;
     }
 
@@ -46,6 +59,20 @@ ZEND_FUNCTION(should_block_request) {
     zend_update_property_string(blockingStatusClass, obj, "description", sizeof("description") - 1, action.Description());
     zend_update_property_string(blockingStatusClass, obj, "ip", sizeof("ip") - 1, action.Ip());
     zend_update_property_string(blockingStatusClass, obj, "user_agent", sizeof("user_agent") - 1, action.UserAgent());
+}
+
+ZEND_FUNCTION(auto_block_request) {
+    ScopedTimer scopedTimer("auto_block_request");
+
+    AIKIDO_LOG_DEBUG("auto_block_request called!\n");
+
+    if (AIKIDO_GLOBAL(disable) == true) {
+        return;
+    }
+
+    requestProcessor.LoadConfigOnce();
+
+    CheckBlocking(EVENT_GET_AUTO_BLOCKING_STATUS, checkedAutoBlock);
 }
 
 void RegisterAikidoBlockRequestStatusClass() {

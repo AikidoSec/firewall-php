@@ -24,7 +24,7 @@ def run_test():
         else:
             assert_response_code_is(response, 429)
             assert_response_header_contains(response, "Content-Type", "text")
-            assert_response_body_contains(response, "This request was rate limited by Aikido Security!")
+            assert_response_body_contains(response, "Rate limit exceeded")
 
     apply_config("start_config.json")
     
