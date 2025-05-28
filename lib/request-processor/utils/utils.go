@@ -263,6 +263,10 @@ func IsUserAgentInBlocklist(userAgent string, blocklist *regexp.Regexp) (bool, [
 			}
 		}
 
+		if len(matchedDetails) == 0 {
+			matchedDetails = append(matchedDetails, "unknown")
+		}
+
 		return true, matchedDetails
 	}
 
