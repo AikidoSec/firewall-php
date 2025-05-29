@@ -31,7 +31,7 @@ def get_mock_port():
 
 def localhost_get_request(port, route="", headers={}, benchmark=False):
     global benchmarks, s
-    
+
     start_time = datetime.datetime.now()
 
     r = s.get(f"http://localhost:{port}{route}", headers=headers)
@@ -45,14 +45,12 @@ def localhost_get_request(port, route="", headers={}, benchmark=False):
         
     time.sleep(0.001)
     return r
-
 def localhost_post_request(port, route, data, headers={}, benchmark=False):
     global benchmarks, s
     
     start_time = datetime.datetime.now()
     
     r = s.post(f"http://localhost:{port}{route}", json=data, headers=headers)
-
     end_time = datetime.datetime.now()    
     delta = end_time - start_time
     elapsed_ms = delta.total_seconds() * 1000

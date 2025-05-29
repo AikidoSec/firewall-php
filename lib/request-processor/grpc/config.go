@@ -50,6 +50,39 @@ func storeWildcardEndpointConfig(ep *protos.Endpoint) {
 	globals.CloudConfig.WildcardEndpoints[ep.Method] = append(wildcardRoutes, WildcardEndpointData{RouteRegex: wildcardRouteCompiled, Data: getEndpointData(ep)})
 }
 
+func buildIpListFromProto(monitoredIpsList map[string]*protos.IpBlockList) map[string]IpBlockList {
+	m := map[string]IpBlockList{}
+	for ipBlocklistSource, ipBlocklist := range monitoredIpsList {
+		ipBlocklist, err := utils.BuildIpBlocklist(ipBlocklistSource, ipBlocklist.Description, ipBlocklist.Ips)
+		if err != nil {
+			log.Errorf("Error building IP blocklist: %s\n", err)
+			continue
+		}
+		m[ipBlocklistSource] = *ipBlocklist
+	}
+	return m
+}
+
+func buildUserAgentsRegexpFromProto(userAgents string) *regexp.Regexp {
+	if userAgents == "" {
+		return nil
+	}
+	userAgentsRegexp, err := regexp.Compile("(?i)" + userAgents)
+	if err != nil {
+		log.Errorf("Error compiling user agents regex: %s\n", err)
+		return nil
+	}
+	return userAgentsRegexp
+}
+
+func buildUserAgentDetailsFromProto(userAgentDetails map[string]string) map[string]*regexp.Regexp {
+	m := map[string]*regexp.Regexp{}
+	for key, value := range userAgentDetails {
+		m[key] = buildUserAgentsRegexpFromProto(value)
+	}
+	return m
+}
+
 func setCloudConfig(cloudConfigFromAgent *protos.CloudConfig) {
 	if cloudConfigFromAgent == nil {
 		return
@@ -88,21 +121,13 @@ func setCloudConfig(cloudConfigFromAgent *protos.CloudConfig) {
 		globals.CloudConfig.Block = 0
 	}
 
-	globals.CloudConfig.BlockedIps = map[string]IpBlockList{}
-	for ipBlocklistSource, ipBlocklist := range cloudConfigFromAgent.BlockedIps {
-		ipBlocklist, err := utils.BuildIpBlocklist(ipBlocklistSource, ipBlocklist.Description, ipBlocklist.Ips)
-		if err != nil {
-			log.Errorf("Error building IP blocklist: %s\n", err)
-			continue
-		}
-		globals.CloudConfig.BlockedIps[ipBlocklistSource] = *ipBlocklist
-	}
+	globals.CloudConfig.BlockedIps = buildIpListFromProto(cloudConfigFromAgent.BlockedIps)
+	globals.CloudConfig.MonitoredIps = buildIpListFromProto(cloudConfigFromAgent.MonitoredIps)
 
-	if cloudConfigFromAgent.BlockedUserAgents != "" {
-		globals.CloudConfig.BlockedUserAgents, _ = regexp.Compile("(?i)" + cloudConfigFromAgent.BlockedUserAgents)
-	} else {
-		globals.CloudConfig.BlockedUserAgents = nil
-	}
+	globals.CloudConfig.BlockedUserAgents = buildUserAgentsRegexpFromProto(cloudConfigFromAgent.BlockedUserAgents)
+	globals.CloudConfig.MonitoredUserAgents = buildUserAgentsRegexpFromProto(cloudConfigFromAgent.MonitoredUserAgents)
+
+	globals.CloudConfig.UserAgentDetails = buildUserAgentDetailsFromProto(cloudConfigFromAgent.UserAgentDetails)
 
 	// Force garbage collection to ensure that the IP blocklists temporary memory is released ASAP
 	runtime.GC()

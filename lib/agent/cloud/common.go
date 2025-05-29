@@ -123,6 +123,14 @@ func ApplyCloudConfig() {
 	UpdateRateLimitingConfig()
 }
 
+func UpdateIpsLists(BlockedIps []BlockedIpsData) map[string]IpBlocklist {
+	m := make(map[string]IpBlocklist)
+	for _, blockedIpsGroup := range BlockedIps {
+		m[blockedIpsGroup.Source] = IpBlocklist{Description: blockedIpsGroup.Description, Ips: blockedIpsGroup.Ips}
+	}
+	return m
+}
+
 func UpdateListsConfig() bool {
 	response, err := SendCloudRequest(globals.EnvironmentConfig.Endpoint, globals.ListsAPI, globals.ListsAPIMethod, nil)
 	if err != nil {
@@ -133,15 +141,21 @@ func UpdateListsConfig() bool {
 	tempListsConfig := ListsConfigData{}
 	err = json.Unmarshal(response, &tempListsConfig)
 	if err != nil {
-		log.Warnf("Failed to unmarshal lists config!")
+		log.Warnf("Failed to unmarshal lists config: %v", err)
 		return false
 	}
 
-	CloudConfig.BlockedIpsList = make(map[string]IpBlocklist)
-	for _, blockedIpsGroup := range tempListsConfig.BlockedIpAddresses {
-		CloudConfig.BlockedIpsList[blockedIpsGroup.Source] = IpBlocklist{Description: blockedIpsGroup.Description, Ips: blockedIpsGroup.Ips}
-	}
+	CloudConfig.BlockedIpsList = UpdateIpsLists(tempListsConfig.BlockedIpAddresses)
+	CloudConfig.MonitoredIpsList = UpdateIpsLists(tempListsConfig.MonitoredIpAddresses)
+
 	CloudConfig.BlockedUserAgents = tempListsConfig.BlockedUserAgents
+	CloudConfig.MonitoredUserAgents = tempListsConfig.MonitoredUserAgents
+
+	CloudConfig.UserAgentDetails = make(map[string]string)
+	for _, userAgentDetail := range tempListsConfig.UserAgentDetails {
+		CloudConfig.UserAgentDetails[userAgentDetail.Key] = userAgentDetail.Pattern
+	}
+
 	return true
 }
 
