@@ -26,6 +26,19 @@ func storeAttackStats(req *protos.AttackDetected) {
 	}
 }
 
+func storeMonitoredListsMatches(m *map[string]int, lists []string) {
+	if *m == nil {
+		*m = make(map[string]int)
+	}
+
+	for _, list := range lists {
+		if _, exists := (*m)[list]; !exists {
+			(*m)[list] = 0
+		}
+		(*m)[list] += 1
+	}
+}
+
 func storeSinkStats(protoSinkStats *protos.MonitoredSinkStats) {
 	globals.StatsData.StatsMutex.Lock()
 	defer globals.StatsData.StatsMutex.Unlock()
@@ -176,6 +189,14 @@ func getRateLimitingStatus(method string, route string, user string, ip string) 
 	return &protos.RateLimitingStatus{Block: false}
 }
 
+func getIpsList(ipsList map[string]IpBlocklist) map[string]*protos.IpBlockList {
+	m := make(map[string]*protos.IpBlockList)
+	for ipBlocklistSource, ipBlocklist := range ipsList {
+		m[ipBlocklistSource] = &protos.IpBlockList{Description: ipBlocklist.Description, Ips: ipBlocklist.Ips}
+	}
+	return m
+}
+
 func getCloudConfig(configUpdatedAt int64) *protos.CloudConfig {
 	isBlockingEnabled := utils.IsBlockingEnabled()
 
@@ -187,19 +208,15 @@ func getCloudConfig(configUpdatedAt int64) *protos.CloudConfig {
 	}
 
 	cloudConfig := &protos.CloudConfig{
-		ConfigUpdatedAt:   globals.CloudConfig.ConfigUpdatedAt,
-		BlockedUserIds:    globals.CloudConfig.BlockedUserIds,
-		BypassedIps:       globals.CloudConfig.BypassedIps,
-		BlockedIps:        map[string]*protos.IpBlockList{},
-		BlockedUserAgents: globals.CloudConfig.BlockedUserAgents,
-		Block:             isBlockingEnabled,
-	}
-
-	for ipBlocklistSource, ipBlocklist := range globals.CloudConfig.BlockedIpsList {
-		cloudConfig.BlockedIps[ipBlocklistSource] = &protos.IpBlockList{
-			Description: ipBlocklist.Description,
-			Ips:         ipBlocklist.Ips,
-		}
+		ConfigUpdatedAt:     globals.CloudConfig.ConfigUpdatedAt,
+		BlockedUserIds:      globals.CloudConfig.BlockedUserIds,
+		BypassedIps:         globals.CloudConfig.BypassedIps,
+		BlockedIps:          getIpsList(globals.CloudConfig.BlockedIpsList),
+		BlockedUserAgents:   globals.CloudConfig.BlockedUserAgents,
+		MonitoredIps:        getIpsList(globals.CloudConfig.MonitoredIpsList),
+		MonitoredUserAgents: globals.CloudConfig.MonitoredUserAgents,
+		UserAgentDetails:    globals.CloudConfig.UserAgentDetails,
+		Block:               isBlockingEnabled,
 	}
 
 	for _, endpoint := range globals.CloudConfig.Endpoints {

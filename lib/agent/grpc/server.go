@@ -90,6 +90,24 @@ func (s *server) OnMiddlewareInstalled(ctx context.Context, req *emptypb.Empty) 
 	return &emptypb.Empty{}, nil
 }
 
+func (s *server) OnMonitoredIpMatch(ctx context.Context, req *protos.MonitoredIpMatch) (*emptypb.Empty, error) {
+	log.Debugf("Received MonitoredIpMatch: %v", req.GetLists())
+	globals.StatsData.StatsMutex.Lock()
+	defer globals.StatsData.StatsMutex.Unlock()
+
+	storeMonitoredListsMatches(&globals.StatsData.IpAddressesMatches, req.GetLists())
+	return &emptypb.Empty{}, nil
+}
+
+func (s *server) OnMonitoredUserAgentMatch(ctx context.Context, req *protos.MonitoredUserAgentMatch) (*emptypb.Empty, error) {
+	log.Debugf("Received MonitoredUserAgentMatch: %v", req.GetLists())
+	globals.StatsData.StatsMutex.Lock()
+	defer globals.StatsData.StatsMutex.Unlock()
+
+	storeMonitoredListsMatches(&globals.StatsData.UserAgentsMatches, req.GetLists())
+	return &emptypb.Empty{}, nil
+}
+
 var grpcServer *grpc.Server
 
 func StartServer(lis net.Listener) {
