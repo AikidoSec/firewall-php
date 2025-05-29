@@ -1,7 +1,7 @@
 package globals
 
 const (
-	Version                             = "1.0.118"
+	Version                             = "1.0.119"
 	ConfigUpdatedAtMethod               = "GET"
 	ConfigUpdatedAtAPI                  = "/config"
 	ConfigAPIMethod                     = "GET"
@@ -16,4 +16,7 @@ const (
 	MaxAttackDetectedEventsPerInterval  = 100
 	AttackDetectedEventsIntervalInMs    = 60 * 60 * 1000 // 1 hour
 	MinStatsCollectedForRelevantMetrics = 10000
+	MaxNumberOfStoredUsers              = 2000
+	MaxNumberOfStoredRoutes             = 5000
+	MaxNumberOfStoredHostnames          = 2000
 )

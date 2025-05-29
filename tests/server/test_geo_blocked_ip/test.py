@@ -11,23 +11,23 @@ from testlib import *
 
 
 def run_test():
-    response = php_server_get("/test")
+    response = php_server_get("/test", headers={"X-Forwarded-For": "5.8.19.22"})
     assert_response_code_is(response, 403)
     assert_response_header_contains(response, "Content-Type", "text")
-    assert_response_body_contains(response, "Your IP (5.8.19.22) is blocked due to: geo restrictions!")
+    assert_response_body_contains(response, "Your ip (5.8.19.22) is blocked due to: geo restrictions!")
 
     apply_config("change_config_remove_geo_blocked_ips.json")
         
-    response = php_server_get("/test")
+    response = php_server_get("/test", headers={"X-Forwarded-For": "5.8.19.22"})
     assert_response_code_is(response, 200)
     assert_response_body_contains(response, "Something")
     
     apply_config("start_config.json")
         
-    response = php_server_get("/test")
+    response = php_server_get("/test", headers={"X-Forwarded-For": "5.8.19.22"})
     assert_response_code_is(response, 403)
     assert_response_header_contains(response, "Content-Type", "text")
-    assert_response_body_contains(response, "Your IP (5.8.19.22) is blocked due to: geo restrictions!")
+    assert_response_body_contains(response, "Your ip (5.8.19.22) is blocked due to: geo restrictions!")
     
     
 if __name__ == "__main__":
