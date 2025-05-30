@@ -56,7 +56,7 @@ dpkg -i -E ./aikido-php-firewall.x86_64.deb
 
 ##### arm64 / aarch64
 ```
-curl -L -O https://github.com/AikidoSec/firewall-php/releases/download/v1.0.118/aikido-php-firewall.aarch64.deb
+curl -L -O https://github.com/AikidoSec/firewall-php/releases/download/v1.0.119/aikido-php-firewall.aarch64.deb
 dpkg -i -E ./aikido-php-firewall.aarch64.deb
 ```
 

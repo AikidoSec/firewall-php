@@ -101,7 +101,7 @@ func setCloudConfig(cloudConfigFromAgent *protos.CloudConfig) {
 	globals.CloudConfig.WildcardEndpoints = map[string][]WildcardEndpointData{}
 
 	for _, ep := range cloudConfigFromAgent.Endpoints {
-		if isWildcardEndpoint(ep.Method, ep.Route) {
+		if utils.IsWildcardEndpoint(ep.Method, ep.Route) {
 			storeWildcardEndpointConfig(ep)
 		} else {
 			storeEndpointConfig(ep)

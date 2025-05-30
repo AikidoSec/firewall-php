@@ -38,6 +38,30 @@
                 "maxRequests": 1000,
                 "windowSizeInMS": 60000
             }
+        },
+        {
+            "method": "POST",
+            "route": "/api/*",
+            "forceProtectionOff": false,
+            "graphql": null,
+            "allowedIPAddresses": [],
+            "rateLimiting": {
+                "enabled": true,
+                "maxRequests": 50,
+                "windowSizeInMS": 60000
+            }
+        },
+        {
+            "method": "POST",
+            "route": "/api/*/auth/*",
+            "forceProtectionOff": false,
+            "graphql": null,
+            "allowedIPAddresses": [],
+            "rateLimiting": {
+                "enabled": true,
+                "maxRequests": 3,
+                "windowSizeInMS": 60000
+            }
         }
     ],
     "blockedUserIds": [],

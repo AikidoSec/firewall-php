@@ -44,6 +44,7 @@ func ResetHeartbeatTicker() {
 		}
 	}
 }
+
 func isWildcardEndpoint(route string) bool {
 	return strings.Contains(route, "*")
 }
@@ -84,6 +85,8 @@ func UpdateRateLimitingConfig() {
 
 		log.Infof("Got new rate limiting endpoint config and storing to map: %v", newEndpointConfig)
 		rateLimitingValue := &RateLimitingValue{
+			Method: k.Method,
+			Route:  k.Route,
 			Config: RateLimitingConfig{
 				MaxRequests:         newEndpointConfig.RateLimiting.MaxRequests,
 				WindowSizeInMinutes: newEndpointConfig.RateLimiting.WindowSizeInMS / MinRateLimitingIntervalInMs},

@@ -36,17 +36,19 @@ message Domain {
 message RateLimitingInfo {
   string method = 1;
   string route = 2;
-  string user = 3;
-  string ip = 4;
+  string routeParsed = 3;
+  string user = 4;
+  string ip = 5;
 }
 
 message RequestMetadataShutdown {
   string method = 1;
   string route = 2;
-  int32 statusCode = 3;
-  string user = 4;
-  string ip = 5;
-  APISpec apiSpec = 6;
+  string routeParsed = 3;
+  int32 statusCode = 4;
+  string user = 5;
+  string ip = 6;
+  APISpec apiSpec = 7;
 }
 
 message MonitoredSinkStats {

@@ -8,6 +8,7 @@ from testlib import *
 2. Sends 5 requests to '/'. Checks that those requests are not blocked.
 3. Send another more 5 request to '/'. Checks that they all are rate limited.
 4. Sends 100 requests to another route '/tests'. Checks that those requests are not blocked.
+5. Sends requests to '/login' route with mixed HTTP method to check rate limiting.
 '''
 
 def run_test():
@@ -30,7 +31,23 @@ def run_test():
         response = php_server_get("/test")
         assert_response_code_is(response, 200)
         assert_response_body_contains(response, "Request successful")
-        
+
+    for _ in range(2):
+        response = php_server_get("/login")
+        assert_response_code_is(response, 200)
+
+    response = php_server_post("/login", data={})
+    assert_response_code_is(response, 200)
+
+    response = php_server_get("/login")
+    assert_response_code_is(response, 429)
+    assert_response_header_contains(response, "Content-Type", "text")
+    assert_response_body_contains(response, "Rate limit exceeded")
+
+    response = php_server_post("/login", data={})
+    assert_response_code_is(response, 429)
+    assert_response_header_contains(response, "Content-Type", "text")
+    assert_response_body_contains(response, "Rate limit exceeded")
     
 if __name__ == "__main__":
     load_test_args()
