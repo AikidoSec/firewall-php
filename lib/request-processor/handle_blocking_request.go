@@ -86,9 +86,9 @@ func OnGetAutoBlockingStatus() string {
 		return GetAction("exit", "blocked", "ip", "not allowed by config to access this endpoint", ip, 403)
 	}
 
-	if ipAllowed, ipAllowedDescriptions := utils.IsIpAllowed(ip); !ipAllowed {
-		log.Infof("IP \"%s\" is not found in allow lists: %v!", ip, ipAllowedDescriptions)
-		return GetAction("exit", "blocked", "ip", ipAllowedDescriptions[0], ip, 403)
+	if ipAllowed, ipAllowedKeys := utils.IsIpAllowed(ip); !ipAllowed {
+		log.Infof("IP \"%s\" is not found in allow lists: %v!", ip, ipAllowedKeys)
+		return GetAction("exit", "blocked", "ip", ipAllowedKeys[0], ip, 403)
 	}
 
 	if context.IsIpBypassed() {
@@ -96,15 +96,15 @@ func OnGetAutoBlockingStatus() string {
 		return ""
 	}
 
-	if ipMonitored, ipMonitoredDescriptions := utils.IsIpMonitored(ip); ipMonitored {
-		log.Infof("IP \"%s\" found in monitored lists: %v!", ip, ipMonitoredDescriptions)
-		go grpc.OnMonitoredIpMatch(ipMonitoredDescriptions)
+	if ipMonitored, ipMonitoredKeys := utils.IsIpMonitored(ip); ipMonitored {
+		log.Infof("IP \"%s\" found in monitored lists: %v!", ip, ipMonitoredKeys)
+		go grpc.OnMonitoredIpMatch(ipMonitoredKeys)
 	}
 
-	if ipBlocked, ipBlockedDescriptions := utils.IsIpBlocked(ip); ipBlocked {
-		log.Infof("IP \"%s\" found in blocked lists: %v!", ip, ipBlockedDescriptions)
-		go grpc.OnMonitoredIpMatch(ipBlockedDescriptions)
-		return GetAction("exit", "blocked", "ip", ipBlockedDescriptions[0], ip, 403)
+	if ipBlocked, ipBlockedKeys := utils.IsIpBlocked(ip); ipBlocked {
+		log.Infof("IP \"%s\" found in blocked lists: %v!", ip, ipBlockedKeys)
+		go grpc.OnMonitoredIpMatch(ipBlockedKeys)
+		return GetAction("exit", "blocked", "ip", ipBlockedKeys[0], ip, 403)
 	}
 
 	if userAgentMonitored, userAgentMonitoredDescriptions := utils.IsUserAgentMonitored(userAgent); userAgentMonitored {

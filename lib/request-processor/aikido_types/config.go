@@ -47,6 +47,7 @@ type EndpointKey struct {
 }
 
 type IpList struct {
+	Key         string
 	Description string
 	IpSet       netipx.IPSet
 }

@@ -78,8 +78,9 @@ message CloudConfigUpdatedAt {
 }
 
 message IpList {
-  string description = 1;
-  repeated string ips = 2;
+  string key = 1;
+  string description = 2;
+  repeated string ips = 3;
 }
 
 message CloudConfig {

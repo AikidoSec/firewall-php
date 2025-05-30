@@ -229,14 +229,14 @@ func IsIpInList(ipList map[string]IpList, ip string, defaultVal bool) (bool, []s
 		return defaultVal, []string{}
 	}
 
-	matchedDescriptions := []string{}
-	for _, l := range ipList {
-		if l.IpSet.Contains(ipAddress) {
-			matchedDescriptions = append(matchedDescriptions, l.Description)
+	matchedKeys := []string{}
+	for listKey, list := range ipList {
+		if list.IpSet.Contains(ipAddress) {
+			matchedKeys = append(matchedKeys, listKey)
 		}
 	}
 
-	return len(matchedDescriptions) > 0, matchedDescriptions
+	return len(matchedKeys) > 0, matchedKeys
 }
 
 func IsIpAllowed(ip string) (bool, []string) {

@@ -67,6 +67,7 @@ type CloudConfigData struct {
 }
 
 type IpsData struct {
+	Key         string   `json:"key"`
 	Source      string   `json:"source"`
 	Description string   `json:"description"`
 	Ips         []string `json:"ips"`

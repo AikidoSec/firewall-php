@@ -126,7 +126,7 @@ func ApplyCloudConfig() {
 func UpdateIpsLists(ipLists []IpsData) map[string]IpBlocklist {
 	m := make(map[string]IpBlocklist)
 	for _, ipList := range ipLists {
-		m[ipList.Source] = IpBlocklist{Description: ipList.Description, Ips: ipList.Ips}
+		m[ipList.Key] = IpBlocklist{Description: ipList.Description, Ips: ipList.Ips}
 	}
 	return m
 }

@@ -19,13 +19,13 @@ var (
 
 func buildIpList(cloudIpList map[string]*protos.IpList) map[string]IpList {
 	ipList := map[string]IpList{}
-	for ipListSource, protoIpList := range cloudIpList {
-		ipSet, err := utils.BuildIpList(ipListSource, protoIpList.Description, protoIpList.Ips)
+	for ipListKey, protoIpList := range cloudIpList {
+		ipSet, err := utils.BuildIpList(protoIpList.Description, protoIpList.Ips)
 		if err != nil {
 			log.Errorf("Error building IP list: %s\n", err)
 			continue
 		}
-		ipList[ipListSource] = *ipSet
+		ipList[ipListKey] = *ipSet
 	}
 	return ipList
 }

@@ -7,7 +7,7 @@ import (
 	"go4.org/netipx"
 )
 
-func BuildIpList(name, description string, ipsList []string) (*aikido_types.IpList, error) {
+func BuildIpList(description string, ipsList []string) (*aikido_types.IpList, error) {
 	ipSet, err := BuildIpSet(ipsList)
 	if err != nil {
 		return nil, err
