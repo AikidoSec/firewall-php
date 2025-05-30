@@ -17,10 +17,7 @@ PHP_MINIT_FUNCTION(aikido) {
         return SUCCESS;
     }
 
-    HookFunctions();
-    HookMethods();
-    HookFileCompilation();
-
+    phpLifecycle.HookAll();
     /* If SAPI name is "cli" run in "simple" mode */
     if (AIKIDO_GLOBAL(sapi_name) == "cli") {
         AIKIDO_LOG_INFO("MINIT finished earlier because we run in CLI mode!\n");
@@ -45,8 +42,16 @@ PHP_MSHUTDOWN_FUNCTION(aikido) {
     /* If SAPI name is "cli" run in "simple" mode */
     if (AIKIDO_GLOBAL(sapi_name) == "cli") {
         AIKIDO_LOG_INFO("MSHUTDOWN finished earlier because we run in CLI mode!\n");
+        phpLifecycle.UnhookAll();
         return SUCCESS;
     }
+
+    /*
+        In the case of Apache mod-php servers, the MSHUTDOWN can be called multiple times.
+        As a consequence, we need to do the unhooking / uninitialization logic based on the current 
+        PID for which the MSHUTDOWN is called. This logic is part of phpLifecycle.ModuleShutdown().
+        The same does not apply for CLI mode, where the MSHUTDOWN is called only once.
+    */
 
     phpLifecycle.ModuleShutdown();
     AIKIDO_LOG_DEBUG("MSHUTDOWN finished!\n");
@@ -78,6 +83,7 @@ PHP_RSHUTDOWN_FUNCTION(aikido) {
         return SUCCESS;
     }
 
+    DestroyAstToClean();
     phpLifecycle.RequestShutdown();
     AIKIDO_LOG_DEBUG("RSHUTDOWN finished!\n");
     return SUCCESS;
@@ -91,8 +97,10 @@ PHP_MINFO_FUNCTION(aikido) {
 
 static const zend_function_entry ext_functions[] = {
     ZEND_NS_FE("aikido", set_user, arginfo_aikido_set_user)
-        ZEND_NS_FE("aikido", should_block_request, arginfo_aikido_should_block_request)
-            ZEND_FE_END};
+    ZEND_NS_FE("aikido", should_block_request, arginfo_aikido_should_block_request)
+    ZEND_NS_FE("aikido", auto_block_request, arginfo_aikido_auto_block_request)
+    ZEND_FE_END
+};
 
 zend_module_entry aikido_module_entry = {
     STANDARD_MODULE_HEADER,

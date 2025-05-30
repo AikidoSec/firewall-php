@@ -36,15 +36,28 @@ Prerequisites:
 
 #### For Red Hat-based Systems (RHEL, CentOS, Fedora)
 
+##### x86_64
 ```
 rpm -Uvh --oldpackage https://github.com/AikidoSec/firewall-php/releases/download/v1.0.119/aikido-php-firewall.x86_64.rpm
 ```
 
+##### arm64 / aarch64
+```
+rpm -Uvh --oldpackage https://github.com/AikidoSec/firewall-php/releases/download/v1.0.119/aikido-php-firewall.aarch64.rpm
+```
+
 #### For Debian-based Systems (Debian, Ubuntu)
 
+##### x86_64
 ```
 curl -L -O https://github.com/AikidoSec/firewall-php/releases/download/v1.0.119/aikido-php-firewall.x86_64.deb
 dpkg -i -E ./aikido-php-firewall.x86_64.deb
+```
+
+##### arm64 / aarch64
+```
+curl -L -O https://github.com/AikidoSec/firewall-php/releases/download/v1.0.118/aikido-php-firewall.aarch64.deb
+dpkg -i -E ./aikido-php-firewall.aarch64.deb
 ```
 
 We support Debian >= 11 and Ubuntu >= 20.04.

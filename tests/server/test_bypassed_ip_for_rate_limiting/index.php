@@ -6,7 +6,7 @@ if (extension_loaded('aikido')) {
     // If the rate limit is exceeded, return a 429 status code
     if ($decision->block && $decision->type == "ratelimited" && $decision->trigger == "ip") {
         http_response_code(429);
-        echo "This request was rate limited by Aikido Security!";
+        echo "Rate limit exceeded";
         exit();
     }
 }

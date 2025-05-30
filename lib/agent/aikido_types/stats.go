@@ -20,6 +20,9 @@ type StatsDataType struct {
 	AttacksBlocked  int
 
 	MonitoredSinkTimings map[string]MonitoredSinkTimings
+
+	UserAgentsMatches  map[string]int
+	IpAddressesMatches map[string]int
 }
 
 type RateLimitingConfig struct {
@@ -28,7 +31,7 @@ type RateLimitingConfig struct {
 }
 
 type RateLimitingCounts struct {
-	NumberOfRequestsPerWindow Queue
+	NumberOfRequestsPerWindow RateLimitingQueue
 	TotalNumberOfRequests     int
 }
 

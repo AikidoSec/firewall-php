@@ -52,6 +52,10 @@ type MonitoredSinkStats struct {
 	CompressedTimings     []CompressedTiming `json:"compressedTimings"`
 }
 
+type MonitoredListsBreakdown struct {
+	Breakdown map[string]int `json:"breakdown"`
+}
+
 type Requests struct {
 	Total           int             `json:"total"`
 	Aborted         int             `json:"aborted"`
@@ -59,10 +63,12 @@ type Requests struct {
 }
 
 type Stats struct {
-	Sinks     map[string]MonitoredSinkStats `json:"sinks"`
-	StartedAt int64                         `json:"startedAt"`
-	EndedAt   int64                         `json:"endedAt"`
-	Requests  Requests                      `json:"requests"`
+	Sinks       map[string]MonitoredSinkStats `json:"sinks"`
+	StartedAt   int64                         `json:"startedAt"`
+	EndedAt     int64                         `json:"endedAt"`
+	Requests    Requests                      `json:"requests"`
+	UserAgents  MonitoredListsBreakdown       `json:"userAgents"`
+	IpAddresses MonitoredListsBreakdown       `json:"ipAddresses"`
 }
 
 type AgentInfo struct {
