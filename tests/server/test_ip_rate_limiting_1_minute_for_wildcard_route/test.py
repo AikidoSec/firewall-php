@@ -36,7 +36,7 @@ def run_test():
         response = php_server_get("/login")
         assert_response_code_is(response, 200)
 
-    response = php_server_post("/login")
+    response = php_server_post("/login", data={})
     assert_response_code_is(response, 200)
 
     response = php_server_get("/login")
@@ -44,7 +44,7 @@ def run_test():
     assert_response_header_contains(response, "Content-Type", "text")
     assert_response_body_contains(response, "Rate limit exceeded")
 
-    response = php_server_post("/login")
+    response = php_server_post("/login", data={})
     assert_response_code_is(response, 429)
     assert_response_header_contains(response, "Content-Type", "text")
     assert_response_body_contains(response, "Rate limit exceeded")
