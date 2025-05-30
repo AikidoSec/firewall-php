@@ -86,6 +86,11 @@ func OnGetAutoBlockingStatus() string {
 		return GetAction("exit", "blocked", "ip", "not allowed by config to access this endpoint", ip, 403)
 	}
 
+	if ipAllowed, ipAllowedDescriptions := utils.IsIpAllowed(ip); !ipAllowed {
+		log.Infof("IP \"%s\" is not found in allow lists: %v!", ip, ipAllowedDescriptions)
+		return GetAction("exit", "blocked", "ip", ipAllowedDescriptions[0], ip, 403)
+	}
+
 	if context.IsIpBypassed() {
 		log.Infof("IP \"%s\" is bypassed! Skipping additional checks...", ip)
 		return ""

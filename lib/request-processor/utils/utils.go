@@ -218,33 +218,43 @@ func IsUserBlocked(userID string) bool {
 	return KeyExists(globals.CloudConfig.BlockedUserIds, userID)
 }
 
-func IsIpInBlocklist(ip string, ipBlocklist map[string]IpList) (bool, []string) {
+func IsIpInList(ipList map[string]IpList, ip string, defaultVal bool) (bool, []string) {
+	if len(ipList) == 0 {
+		return defaultVal, []string{}
+	}
+
 	ipAddress, err := netip.ParseAddr(ip)
 	if err != nil {
 		log.Infof("Invalid ip address: %s\n", ip)
-		return false, []string{}
+		return defaultVal, []string{}
 	}
 
 	matchedDescriptions := []string{}
-	for _, ipBlocklist := range ipBlocklist {
-		if ipBlocklist.IpSet.Contains(ipAddress) {
-			matchedDescriptions = append(matchedDescriptions, ipBlocklist.Description)
+	for _, l := range ipList {
+		if l.IpSet.Contains(ipAddress) {
+			matchedDescriptions = append(matchedDescriptions, l.Description)
 		}
 	}
 
 	return len(matchedDescriptions) > 0, matchedDescriptions
 }
 
+func IsIpAllowed(ip string) (bool, []string) {
+	globals.CloudConfigMutex.Lock()
+	defer globals.CloudConfigMutex.Unlock()
+	return IsIpInList(globals.CloudConfig.AllowedIps, ip, true)
+}
+
 func IsIpBlocked(ip string) (bool, []string) {
 	globals.CloudConfigMutex.Lock()
 	defer globals.CloudConfigMutex.Unlock()
-	return IsIpInBlocklist(ip, globals.CloudConfig.BlockedIps)
+	return IsIpInList(globals.CloudConfig.BlockedIps, ip, false)
 }
 
 func IsIpMonitored(ip string) (bool, []string) {
 	globals.CloudConfigMutex.Lock()
 	defer globals.CloudConfigMutex.Unlock()
-	return IsIpInBlocklist(ip, globals.CloudConfig.MonitoredIps)
+	return IsIpInList(globals.CloudConfig.MonitoredIps, ip, false)
 }
 
 func IsUserAgentInBlocklist(userAgent string, blocklist *regexp.Regexp) (bool, []string) {
