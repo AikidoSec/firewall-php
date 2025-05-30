@@ -222,7 +222,7 @@ func IsIpInBlocklist(ip string, ipBlocklist map[string]IpList) (bool, []string) 
 	ipAddress, err := netip.ParseAddr(ip)
 	if err != nil {
 		log.Infof("Invalid ip address: %s\n", ip)
-		return defaultVal, []string{}
+		return false, []string{}
 	}
 
 	matchedDescriptions := []string{}

@@ -85,7 +85,7 @@ func OnGetAutoBlockingStatus() string {
 	userAgent := context.GetUserAgent()
 	endpointData := utils.GetEndpointConfig(method, route)
 
-	if endpointData != nil && !utils.IsIpAllowed(endpointData.AllowedIPAddresses, ip) {
+	if endpointData != nil && !context.IsEndpointIpAllowed() {
 		log.Infof("IP \"%s\" is not allowd to access this endpoint!", ip)
 		return GetAction("exit", "blocked", "ip", "not allowed by config to access this endpoint", ip, 403)
 	}
