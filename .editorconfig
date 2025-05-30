@@ -53,10 +53,6 @@ trim_trailing_whitespace = false
 indent_style = space
 indent_size = 2
 
-[*.{ac,m4}]
-indent_style = space
-indent_size = 2
-
 [*.proto]
 indent_style = space
 indent_size = 2
