@@ -282,13 +282,6 @@ func getCloudConfig(configUpdatedAt int64) *protos.CloudConfig {
 		Block:               isBlockingEnabled,
 	}
 
-	for ipAllowlistSource, ipAllowlist := range globals.CloudConfig.AllowedIpsList {
-		cloudConfig.AllowedIps[ipAllowlistSource] = &protos.IpList{
-			Description: ipAllowlist.Description,
-			Ips:         ipAllowlist.Ips,
-		}
-	}
-
 	for _, endpoint := range globals.CloudConfig.Endpoints {
 		cloudConfig.Endpoints = append(cloudConfig.Endpoints, &protos.Endpoint{
 			Method:             endpoint.Method,
