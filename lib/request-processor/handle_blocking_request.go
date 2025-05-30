@@ -55,18 +55,11 @@ func OnGetBlockingStatus() string {
 	autoBlockingStatus := OnGetAutoBlockingStatus()
 
 	if context.IsIpBypassed() {
-		// IP is bypassed
 		log.Infof("IP \"%s\" is bypassed! Skipping additional checks...", ip)
 		return ""
 	}
 
-	if utils.IsUserBlocked(userId) {
-		// User is blocked
-		log.Infof("User \"%s\" is blocked!", userId)
-		return GetStoreAction("blocked", "user", "user blocked from config", userId)
-	}
-
-	if context.IsEndpointRateLimitingEnabled() {
+	if endpointData != nil && endpointData.RateLimiting.Enabled {
 		// If request is monitored for rate limiting,
 		// do a sync call via gRPC to see if the request should be blocked or not
 		rateLimitingStatus := grpc.GetRateLimitingStatus(method, route, userId, ip, 10*time.Millisecond)
