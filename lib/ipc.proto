@@ -88,7 +88,7 @@ message CloudConfig {
   map<string, IpList> blockedIps = 5;
   map<string, IpList> allowedIps = 6;
   string blockedUserAgents = 7;
-  map<string, IpBlockList> monitoredIps = 8;
+  map<string, IpList> monitoredIps = 8;
   string monitoredUserAgents = 9;
   map<string, string> userAgentDetails = 10;
   bool block = 11;

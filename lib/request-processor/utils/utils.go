@@ -3,7 +3,6 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
-	. "main/aikido_types"
 	"main/globals"
 	"main/log"
 	"net"
@@ -219,7 +218,7 @@ func IsUserBlocked(userID string) bool {
 	return KeyExists(globals.CloudConfig.BlockedUserIds, userID)
 }
 
-func IsIpInBlocklist(ip string, ipBlocklist map[string]IpBlockList) (bool, []string) {
+func IsIpInBlocklist(ip string, ipBlocklist map[string]IpList) (bool, []string) {
 	ipAddress, err := netip.ParseAddr(ip)
 	if err != nil {
 		log.Infof("Invalid ip address: %s\n", ip)

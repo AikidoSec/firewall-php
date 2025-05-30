@@ -243,10 +243,10 @@ func getRateLimitingStatus(method, route, user, ip string) *protos.RateLimitingS
 	return &protos.RateLimitingStatus{Block: false}
 }
 
-func getIpsList(ipsList map[string]IpBlocklist) map[string]*protos.IpBlockList {
-	m := make(map[string]*protos.IpBlockList)
+func getIpsList(ipsList map[string]IpBlocklist) map[string]*protos.IpList {
+	m := make(map[string]*protos.IpList)
 	for ipBlocklistSource, ipBlocklist := range ipsList {
-		m[ipBlocklistSource] = &protos.IpBlockList{Description: ipBlocklist.Description, Ips: ipBlocklist.Ips}
+		m[ipBlocklistSource] = &protos.IpList{Description: ipBlocklist.Description, Ips: ipBlocklist.Ips}
 	}
 	return m
 }

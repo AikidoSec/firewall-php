@@ -120,10 +120,10 @@ func ApplyCloudConfig() {
 	UpdateRateLimitingConfig()
 }
 
-func UpdateIpsLists(BlockedIps []BlockedIpsData) map[string]IpBlocklist {
+func UpdateIpsLists(ipLists []IpsData) map[string]IpBlocklist {
 	m := make(map[string]IpBlocklist)
-	for _, blockedIpsGroup := range BlockedIps {
-		m[blockedIpsGroup.Source] = IpBlocklist{Description: blockedIpsGroup.Description, Ips: blockedIpsGroup.Ips}
+	for _, ipList := range ipLists {
+		m[ipList.Source] = IpBlocklist{Description: ipList.Description, Ips: ipList.Ips}
 	}
 	return m
 }
