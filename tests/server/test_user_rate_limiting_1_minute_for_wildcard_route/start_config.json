@@ -1,0 +1,34 @@
+{
+    "success": true,
+    "serviceId": 1,
+    "heartbeatIntervalInMS": 600000,
+    "endpoints": [
+        {
+            "method": "*",
+            "route": "/my/*/*",
+            "forceProtectionOff": false,
+            "graphql": null,
+            "allowedIPAddresses": [],
+            "rateLimiting": {
+                "enabled": true,
+                "maxRequests": 5,
+                "windowSizeInMS": 60000
+            }
+        },
+        {
+            "method": "GET",
+            "route": "/test",
+            "forceProtectionOff": false,
+            "graphql": null,
+            "allowedIPAddresses": [],
+            "rateLimiting": {
+                "enabled": false,
+                "maxRequests": 100,
+                "windowSizeInMS": 60000
+            }
+        }
+    ],
+    "blockedUserIds": [],
+    "allowedIPAddresses": [],
+    "receivedAnyStats": true
+}

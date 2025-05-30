@@ -16,6 +16,14 @@ import (
 	"go4.org/netipx"
 )
 
+type ConfigStatus int
+
+const (
+	NoConfig   ConfigStatus = -1
+	NotAllowed ConfigStatus = 0
+	Allowed    ConfigStatus = 1
+)
+
 func KeyExists[K comparable, V any](m map[K]V, key K) bool {
 	_, exists := m[key]
 	return exists
@@ -129,27 +137,26 @@ func isLocalhost(ip string) bool {
 	return parsedIP.IsLoopback()
 }
 
-func IsIpAllowed(allowedIps *netipx.IPSet, ip string) bool {
+func IsIpAllowed(allowedIps *netipx.IPSet, ip string) ConfigStatus {
 	if globals.EnvironmentConfig.LocalhostAllowedByDefault && isLocalhost(ip) {
-		return true
+		return Allowed
 	}
 
 	if allowedIps == nil || allowedIps.Equal(&netipx.IPSet{}) {
 		// No IPs configured in the allow list -> no restrictions
-		return true
+		return NoConfig
 	}
 
 	ipAddress, err := netip.ParseAddr(ip)
 	if err != nil {
 		log.Infof("Invalid ip address: %s\n", ip)
-		return false
+		return NoConfig
 	}
-
 	if allowedIps.Contains(ipAddress) {
-		return true
+		return Allowed
 	}
 
-	return false
+	return NotAllowed
 }
 
 func IsIpBypassed(ip string) bool {
@@ -339,4 +346,8 @@ func GetArch() string {
 		return "aarch64"
 	}
 	panic(fmt.Sprintf("Running on unsupported architecture \"%s\"!", runtime.GOARCH))
+}
+
+func IsWildcardEndpoint(method, route string) bool {
+	return method == "*" || strings.Contains(route, "*")
 }

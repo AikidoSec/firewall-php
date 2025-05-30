@@ -8,6 +8,7 @@ import (
 	"main/utils"
 	"regexp"
 	"runtime"
+	"strings"
 	"time"
 )
 
@@ -15,6 +16,39 @@ var (
 	stopChan          chan struct{}
 	cloudConfigTicker = time.NewTicker(1 * time.Minute)
 )
+
+func getEndpointData(ep *protos.Endpoint) EndpointData {
+	allowedIPSet, err := utils.BuildIpSet(ep.AllowedIPAddresses)
+	if err != nil {
+		log.Errorf("Error building allowed IP set: %s\n", err)
+	}
+	endpointData := EndpointData{
+		ForceProtectionOff: ep.ForceProtectionOff,
+		RateLimiting: RateLimiting{
+			Enabled: ep.RateLimiting.Enabled,
+		},
+		AllowedIPAddresses: allowedIPSet,
+	}
+	return endpointData
+}
+
+func storeEndpointConfig(ep *protos.Endpoint) {
+	globals.CloudConfig.Endpoints[EndpointKey{Method: ep.Method, Route: ep.Route}] = getEndpointData(ep)
+}
+
+func storeWildcardEndpointConfig(ep *protos.Endpoint) {
+	wildcardRouteCompiled, err := regexp.Compile(strings.ReplaceAll(ep.Route, "*", ".*"))
+	if err != nil {
+		return
+	}
+
+	wildcardRoutes, exists := globals.CloudConfig.WildcardEndpoints[ep.Method]
+	if !exists {
+		globals.CloudConfig.WildcardEndpoints[ep.Method] = []WildcardEndpointData{}
+	}
+
+	globals.CloudConfig.WildcardEndpoints[ep.Method] = append(wildcardRoutes, WildcardEndpointData{RouteRegex: wildcardRouteCompiled, Data: getEndpointData(ep)})
+}
 
 func buildIpListFromProto(monitoredIpsList map[string]*protos.IpBlockList) map[string]IpBlockList {
 	m := map[string]IpBlockList{}
@@ -60,22 +94,14 @@ func setCloudConfig(cloudConfigFromAgent *protos.CloudConfig) {
 	globals.CloudConfig.ConfigUpdatedAt = cloudConfigFromAgent.ConfigUpdatedAt
 
 	globals.CloudConfig.Endpoints = map[EndpointKey]EndpointData{}
+	globals.CloudConfig.WildcardEndpoints = map[string][]WildcardEndpointData{}
+
 	for _, ep := range cloudConfigFromAgent.Endpoints {
-
-		allowedIPSet, allowedIPSetErr := utils.BuildIpSet(ep.AllowedIPAddresses)
-		if allowedIPSet == nil {
-			log.Errorf("Error building allowed IP set: %s\n", allowedIPSetErr)
+		if utils.IsWildcardEndpoint(ep.Method, ep.Route) {
+			storeWildcardEndpointConfig(ep)
+		} else {
+			storeEndpointConfig(ep)
 		}
-
-		endpointData := EndpointData{
-			ForceProtectionOff: ep.ForceProtectionOff,
-			RateLimiting: RateLimiting{
-				Enabled: ep.RateLimiting.Enabled,
-			},
-			AllowedIPAddresses: allowedIPSet,
-		}
-
-		globals.CloudConfig.Endpoints[EndpointKey{Method: ep.Method, Route: ep.Route}] = endpointData
 	}
 
 	globals.CloudConfig.BlockedUserIds = map[string]bool{}

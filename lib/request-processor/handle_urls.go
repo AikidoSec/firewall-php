@@ -21,7 +21,7 @@ Protects both curl and fopen wrapper functions (file_get_contents, etc...).
 func OnPreOutgoingRequest() string {
 	defer context.ResetEventContext()
 
-	if context.IsProtectionTurnedOff() {
+	if context.IsEndpointProtectionTurnedOff() {
 		log.Infof("Protection is turned off -> will not run detection logic!")
 		return ""
 	}
@@ -72,7 +72,7 @@ func OnPostOutgoingRequest() string {
 		go grpc.OnDomain(effectiveHostname, effectivePort)
 	}
 
-	if context.IsProtectionTurnedOff() {
+	if context.IsEndpointProtectionTurnedOff() {
 		log.Infof("Protection is turned off -> will not run detection logic!")
 		return ""
 	}
