@@ -61,6 +61,9 @@ type CloudConfigData struct {
 	BlockedIpsList        map[string]IpBlocklist
 	AllowedIpsList        map[string]IpBlocklist
 	BlockedUserAgents     string
+	MonitoredIpsList      map[string]IpBlocklist
+	MonitoredUserAgents   string
+	UserAgentDetails      map[string]string
 }
 
 type IpsData struct {
@@ -69,12 +72,20 @@ type IpsData struct {
 	Ips         []string `json:"ips"`
 }
 
+type UserAgentDetails struct {
+	Key     string `json:"key"`
+	Pattern string `json:"pattern"`
+}
+
 type ListsConfigData struct {
-	Success            bool      `json:"success"`
-	ServiceId          int       `json:"serviceId"`
-	BlockedIpAddresses []IpsData `json:"blockedIPAddresses"`
-	AllowedIpAddresses []IpsData `json:"allowedIPAddresses"`
-	BlockedUserAgents  string    `json:"blockedUserAgents"`
+	Success              bool               `json:"success"`
+	ServiceId            int                `json:"serviceId"`
+	BlockedIpAddresses   []IpsData          `json:"blockedIPAddresses"`
+	AllowedIpAddresses   []IpsData          `json:"allowedIPAddresses"`
+	BlockedUserAgents    string             `json:"blockedUserAgents"`
+	MonitoredIpAddresses []IpsData          `json:"monitoredIpAddresses"`
+	MonitoredUserAgents  string             `json:"monitoredUserAgents"`
+	UserAgentDetails     []UserAgentDetails `json:"userAgentDetails"`
 }
 
 type CloudConfigUpdatedAt struct {

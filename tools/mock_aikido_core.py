@@ -24,9 +24,18 @@ def load_config(j):
     if "blockedIPAddresses" in j:
         responses["lists"]["blockedIPAddresses"] = j["blockedIPAddresses"]
         del j["blockedIPAddresses"]
+    if "monitoredIPAddresses" in j:
+        responses["lists"]["monitoredIPAddresses"] = j["monitoredIPAddresses"]
+        del j["monitoredIPAddresses"]
+    if "monitoredUserAgents" in j:
+        responses["lists"]["monitoredUserAgents"] = j["monitoredUserAgents"]
+        del j["monitoredUserAgents"]
     if "blockedUserAgents" in j:
         responses["lists"]["blockedUserAgents"] = j["blockedUserAgents"]
         del j["blockedUserAgents"]
+    if "userAgentDetails" in j:
+        responses["lists"]["userAgentDetails"] = j["userAgentDetails"]
+        del j["userAgentDetails"]
     responses["config"] = j
     responses["config"]["configUpdatedAt"] = configUpdatedAt
     responses["configUpdatedAt"] = { "serviceId": 1, "configUpdatedAt": configUpdatedAt }

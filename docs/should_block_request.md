@@ -55,12 +55,6 @@ class AikidoMiddleware implements MiddlewareInterface
             if ($decision->trigger == "user") {
                 $message = "Your user is blocked!";
             }
-            else if ($decision->trigger == "ip") {
-                $message = "Your IP ({$decision->ip}) is blocked due to: {$decision->description}!";
-            }
-            else if ($decision->trigger == "user-agent") {
-                $message = "Your user agent ({$decision->user_agent}) is blocked due to: {$decision->description}!";
-            }
 
             return new Response([
                 'message' => $message,
@@ -118,14 +112,14 @@ class ZenBlockDecision
             return $next($request);
         }
 		
-	// Get the authenticated user's ID from Laravel's Auth system
-	$userId = Auth::id();
+        // Get the authenticated user's ID from Laravel's Auth system
+        $userId = Auth::id();
 
-	// If a user is authenticated, set the user in Aikido's firewall context
-	if ($userId) {
-	    // If username is available, you can set it as the second parameter in the \aikido\set_user function call
-	    \aikido\set_user($userId);
-	}
+        // If a user is authenticated, set the user in Aikido's firewall context
+        if ($userId) {
+            // If username is available, you can set it as the second parameter in the \aikido\set_user function call
+            \aikido\set_user($userId);
+        }
 
         // Check blocking decision from Aikido
         $decision = \aikido\should_block_request();
@@ -134,9 +128,6 @@ class ZenBlockDecision
             if ($decision->type == "blocked") {
                 if ($decision->trigger == "user") {
                     return response('Your user is blocked!', 403);
-                }
-                else if ($decision->trigger == "ip") {
-                    return response("Your IP ({$decision->ip}) is blocked due to: {$decision->description}!", 403);
                 }
             }
             else if ($decision->type == "ratelimited") {

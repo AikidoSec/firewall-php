@@ -11,7 +11,6 @@ if (extension_loaded('aikido')) {
     }
 }
 
-// Continue handling the request
 echo "Request successful";
 
 ?>

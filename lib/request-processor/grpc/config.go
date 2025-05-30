@@ -67,6 +67,26 @@ func isWildcardEndpoint(method, route string) bool {
 	return method == "*" || strings.Contains(route, "*")
 }
 
+func buildUserAgentsRegexpFromProto(userAgents string) *regexp.Regexp {
+	if userAgents == "" {
+		return nil
+	}
+	userAgentsRegexp, err := regexp.Compile("(?i)" + userAgents)
+	if err != nil {
+		log.Errorf("Error compiling user agents regex: %s\n", err)
+		return nil
+	}
+	return userAgentsRegexp
+}
+
+func buildUserAgentDetailsFromProto(userAgentDetails map[string]string) map[string]*regexp.Regexp {
+	m := map[string]*regexp.Regexp{}
+	for key, value := range userAgentDetails {
+		m[key] = buildUserAgentsRegexpFromProto(value)
+	}
+	return m
+}
+
 func setCloudConfig(cloudConfigFromAgent *protos.CloudConfig) {
 	if cloudConfigFromAgent == nil {
 		return
@@ -106,13 +126,12 @@ func setCloudConfig(cloudConfigFromAgent *protos.CloudConfig) {
 	}
 
 	globals.CloudConfig.BlockedIps = buildIpList(cloudConfigFromAgent.BlockedIps)
-	globals.CloudConfig.AllowedIps = buildIpList(cloudConfigFromAgent.AllowedIps)
+	globals.CloudConfig.MonitoredIps = buildIpList(cloudConfigFromAgent.MonitoredIps)
 
-	if cloudConfigFromAgent.BlockedUserAgents != "" {
-		globals.CloudConfig.BlockedUserAgents, _ = regexp.Compile("(?i)" + cloudConfigFromAgent.BlockedUserAgents)
-	} else {
-		globals.CloudConfig.BlockedUserAgents = nil
-	}
+	globals.CloudConfig.BlockedUserAgents = buildUserAgentsRegexpFromProto(cloudConfigFromAgent.BlockedUserAgents)
+	globals.CloudConfig.MonitoredUserAgents = buildUserAgentsRegexpFromProto(cloudConfigFromAgent.MonitoredUserAgents)
+
+	globals.CloudConfig.UserAgentDetails = buildUserAgentDetailsFromProto(cloudConfigFromAgent.UserAgentDetails)
 
 	// Force garbage collection to ensure that the IP blocklists temporary memory is released ASAP
 	runtime.GC()

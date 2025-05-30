@@ -19,6 +19,7 @@ func GetHostnamesAndClear() []Hostname {
 	}
 
 	globals.Hostnames = make(map[string]map[uint32]uint64)
+	globals.HostnamesQueue.Clear()
 	return hostnames
 }
 
@@ -39,6 +40,7 @@ func GetRoutesAndClear() []Route {
 
 	// Clear routes data
 	globals.Routes = make(map[string]map[string]*Route)
+	globals.RoutesQueue.Clear()
 	return routes
 }
 
@@ -52,6 +54,7 @@ func GetUsersAndClear() []User {
 	}
 
 	globals.Users = make(map[string]User)
+	globals.UsersQueue.Clear()
 	return users
 }
 
@@ -81,6 +84,22 @@ func GetMonitoredSinkStatsAndClear() map[string]MonitoredSinkStats {
 	return monitoredSinkStats
 }
 
+func GetIpsBreakdownAndClear() MonitoredListsBreakdown {
+	m := MonitoredListsBreakdown{
+		Breakdown: globals.StatsData.IpAddressesMatches,
+	}
+	globals.StatsData.IpAddressesMatches = make(map[string]int)
+	return m
+}
+
+func GetUserAgentsBreakdownAndClear() MonitoredListsBreakdown {
+	m := MonitoredListsBreakdown{
+		Breakdown: globals.StatsData.UserAgentsMatches,
+	}
+	globals.StatsData.UserAgentsMatches = make(map[string]int)
+	return m
+}
+
 func GetStatsAndClear() Stats {
 	globals.StatsData.StatsMutex.Lock()
 	defer globals.StatsData.StatsMutex.Unlock()
@@ -97,6 +116,8 @@ func GetStatsAndClear() Stats {
 				Blocked: globals.StatsData.AttacksBlocked,
 			},
 		},
+		UserAgents:  GetUserAgentsBreakdownAndClear(),
+		IpAddresses: GetIpsBreakdownAndClear(),
 	}
 
 	globals.StatsData.StartedAt = utils.GetTime()

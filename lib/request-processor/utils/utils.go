@@ -3,11 +3,13 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
+	. "main/aikido_types"
 	"main/globals"
 	"main/log"
 	"net"
 	"net/netip"
 	"net/url"
+	"regexp"
 	"runtime"
 	"strings"
 
@@ -217,50 +219,64 @@ func IsUserBlocked(userID string) bool {
 	return KeyExists(globals.CloudConfig.BlockedUserIds, userID)
 }
 
-func IsIpInSetList(ipList map[string]IpList, ip string, defaultVal bool) (bool, string) {
-	globals.CloudConfigMutex.Lock()
-	defer globals.CloudConfigMutex.Unlock()
-
-	if len(ipList) == 0 {
-		return defaultVal, ""
-	}
-
+func IsIpInBlocklist(ip string, ipBlocklist map[string]IpBlockList) (bool, []string) {
 	ipAddress, err := netip.ParseAddr(ip)
 	if err != nil {
 		log.Infof("Invalid ip address: %s\n", ip)
-		return defaultVal, ""
+		return defaultVal, []string{}
 	}
 
-	for _, l := range ipList {
-		if l.IpSet.Contains(ipAddress) {
-			return true, l.Description
+	matchedDescriptions := []string{}
+	for _, ipBlocklist := range ipBlocklist {
+		if ipBlocklist.IpSet.Contains(ipAddress) {
+			matchedDescriptions = append(matchedDescriptions, ipBlocklist.Description)
 		}
 	}
 
-	return false, ""
+	return len(matchedDescriptions) > 0, matchedDescriptions
 }
 
-func IsIpBlocked(ip string) (bool, string) {
-	return IsIpInSetList(globals.CloudConfig.BlockedIps, ip, false)
-}
-
-func IsIpAllowed(ip string) (bool, string) {
-	return IsIpInSetList(globals.CloudConfig.AllowedIps, ip, true)
-}
-
-func IsUserAgentBlocked(userAgent string) (bool, string) {
+func IsIpBlocked(ip string) (bool, []string) {
 	globals.CloudConfigMutex.Lock()
 	defer globals.CloudConfigMutex.Unlock()
+	return IsIpInBlocklist(ip, globals.CloudConfig.BlockedIps)
+}
 
-	if globals.CloudConfig.BlockedUserAgents == nil {
-		return false, ""
+func IsIpMonitored(ip string) (bool, []string) {
+	globals.CloudConfigMutex.Lock()
+	defer globals.CloudConfigMutex.Unlock()
+	return IsIpInBlocklist(ip, globals.CloudConfig.MonitoredIps)
+}
+
+func IsUserAgentInBlocklist(userAgent string, blocklist *regexp.Regexp) (bool, []string) {
+	if blocklist == nil {
+		return false, []string{}
 	}
 
-	if globals.CloudConfig.BlockedUserAgents.MatchString(userAgent) {
-		return true, "bot detection"
+	if blocklist.MatchString(userAgent) {
+		matchedDetails := []string{}
+		for key, valueRegex := range globals.CloudConfig.UserAgentDetails {
+			if valueRegex != nil && valueRegex.MatchString(userAgent) {
+				matchedDetails = append(matchedDetails, key)
+			}
+		}
+
+		return true, matchedDetails
 	}
 
-	return false, ""
+	return false, []string{}
+}
+
+func IsUserAgentBlocked(userAgent string) (bool, []string) {
+	globals.CloudConfigMutex.Lock()
+	defer globals.CloudConfigMutex.Unlock()
+	return IsUserAgentInBlocklist(userAgent, globals.CloudConfig.BlockedUserAgents)
+}
+
+func IsUserAgentMonitored(userAgent string) (bool, []string) {
+	globals.CloudConfigMutex.Lock()
+	defer globals.CloudConfigMutex.Unlock()
+	return IsUserAgentInBlocklist(userAgent, globals.CloudConfig.MonitoredUserAgents)
 }
 
 type DatabaseType int

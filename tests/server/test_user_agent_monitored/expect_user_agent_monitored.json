@@ -1,0 +1,17 @@
+{
+    "type": "heartbeat",
+    "users": [
+        {
+            "id": "12345",
+            "name": "Tudor"
+        }
+    ],
+    "middlewareInstalled": false,
+    "stats": {
+        "userAgents":{
+           "breakdown":{
+              "Googlebot":1
+           }
+        }
+    }
+}
