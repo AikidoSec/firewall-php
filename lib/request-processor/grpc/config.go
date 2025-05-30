@@ -131,6 +131,8 @@ func setCloudConfig(cloudConfigFromAgent *protos.CloudConfig) {
 	globals.CloudConfig.BlockedUserAgents = buildUserAgentsRegexpFromProto(cloudConfigFromAgent.BlockedUserAgents)
 	globals.CloudConfig.MonitoredUserAgents = buildUserAgentsRegexpFromProto(cloudConfigFromAgent.MonitoredUserAgents)
 
+	globals.CloudConfig.AllowedIps = buildIpList(cloudConfigFromAgent.AllowedIps)
+
 	globals.CloudConfig.UserAgentDetails = buildUserAgentDetailsFromProto(cloudConfigFromAgent.UserAgentDetails)
 
 	// Force garbage collection to ensure that the IP blocklists temporary memory is released ASAP

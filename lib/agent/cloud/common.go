@@ -167,7 +167,7 @@ func StoreCloudConfig(configReponse []byte) bool {
 	tempCloudConfig := CloudConfigData{}
 	err := json.Unmarshal(configReponse, &tempCloudConfig)
 	if err != nil {
-		log.Warnf("Failed to unmarshal cloud config!")
+		log.Warnf("Failed to unmarshal cloud config: %v", err)
 		return false
 	}
 	if tempCloudConfig.ConfigUpdatedAt <= globals.CloudConfig.ConfigUpdatedAt {
