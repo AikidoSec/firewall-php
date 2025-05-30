@@ -39,6 +39,8 @@ const char* GetEventName(EVENT_ID event) {
             return "PostRequest";
         case EVENT_SET_USER:
             return "SetUser";
+        case EVENT_GET_AUTO_BLOCKING_STATUS:
+            return "GetAutoBlockingStatus";
         case EVENT_GET_BLOCKING_STATUS:
             return "GetBlockingStatus";
         case EVENT_PRE_OUTGOING_REQUEST:

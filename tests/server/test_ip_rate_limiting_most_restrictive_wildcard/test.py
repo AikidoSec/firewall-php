@@ -29,10 +29,10 @@ def run_test():
     # - /api/*/auth/* (3 requests/minute)
     # The more specific /api/*/auth/* should take precedence
     for i in range(3):
-        response = php_server_get("/api/v2/auth/login")
+        response = php_server_post("/api/v2/auth/login", {})
         assert_response_code_is(response, 200)
 
-    response = php_server_get("/api/v2/auth/login")
+    response = php_server_post("/api/v2/auth/login", {})
     assert_response_code_is(response, 429)
     assert_response_header_contains(response, "Content-Type", "text")
     assert_response_body_contains(response, "Rate limit exceeded")

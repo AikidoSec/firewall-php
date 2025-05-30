@@ -28,6 +28,19 @@ func storeAttackStats(req *protos.AttackDetected) {
 	}
 }
 
+func storeMonitoredListsMatches(m *map[string]int, lists []string) {
+	if *m == nil {
+		*m = make(map[string]int)
+	}
+
+	for _, list := range lists {
+		if _, exists := (*m)[list]; !exists {
+			(*m)[list] = 0
+		}
+		(*m)[list] += 1
+	}
+}
+
 func storeSinkStats(protoSinkStats *protos.MonitoredSinkStats) {
 	globals.StatsData.StatsMutex.Lock()
 	defer globals.StatsData.StatsMutex.Unlock()
@@ -102,7 +115,9 @@ func storeRoute(method string, route string, apiSpec *protos.APISpec) {
 
 	if _, ok := globals.Routes[route]; !ok {
 		globals.Routes[route] = make(map[string]*Route)
+		utils.RemoveOldestFromMapIfMaxExceeded(&globals.Routes, &globals.RoutesQueue, route)
 	}
+
 	routeData, ok := globals.Routes[route][method]
 	if !ok {
 		routeData = &Route{Path: route, Method: method}
@@ -236,6 +251,14 @@ func getRateLimitingStatus(method, route, routeParsed, user, ip string) *protos.
 	return &protos.RateLimitingStatus{Block: false}
 }
 
+func getIpsList(ipsList map[string]IpBlocklist) map[string]*protos.IpBlockList {
+	m := make(map[string]*protos.IpBlockList)
+	for ipBlocklistSource, ipBlocklist := range ipsList {
+		m[ipBlocklistSource] = &protos.IpBlockList{Description: ipBlocklist.Description, Ips: ipBlocklist.Ips}
+	}
+	return m
+}
+
 func getCloudConfig(configUpdatedAt int64) *protos.CloudConfig {
 	isBlockingEnabled := utils.IsBlockingEnabled()
 
@@ -247,19 +270,15 @@ func getCloudConfig(configUpdatedAt int64) *protos.CloudConfig {
 	}
 
 	cloudConfig := &protos.CloudConfig{
-		ConfigUpdatedAt:   globals.CloudConfig.ConfigUpdatedAt,
-		BlockedUserIds:    globals.CloudConfig.BlockedUserIds,
-		BypassedIps:       globals.CloudConfig.BypassedIps,
-		BlockedIps:        map[string]*protos.IpBlockList{},
-		BlockedUserAgents: globals.CloudConfig.BlockedUserAgents,
-		Block:             isBlockingEnabled,
-	}
-
-	for ipBlocklistSource, ipBlocklist := range globals.CloudConfig.BlockedIpsList {
-		cloudConfig.BlockedIps[ipBlocklistSource] = &protos.IpBlockList{
-			Description: ipBlocklist.Description,
-			Ips:         ipBlocklist.Ips,
-		}
+		ConfigUpdatedAt:     globals.CloudConfig.ConfigUpdatedAt,
+		BlockedUserIds:      globals.CloudConfig.BlockedUserIds,
+		BypassedIps:         globals.CloudConfig.BypassedIps,
+		BlockedIps:          getIpsList(globals.CloudConfig.BlockedIpsList),
+		BlockedUserAgents:   globals.CloudConfig.BlockedUserAgents,
+		MonitoredIps:        getIpsList(globals.CloudConfig.MonitoredIpsList),
+		MonitoredUserAgents: globals.CloudConfig.MonitoredUserAgents,
+		UserAgentDetails:    globals.CloudConfig.UserAgentDetails,
+		Block:               isBlockingEnabled,
 	}
 
 	for _, endpoint := range globals.CloudConfig.Endpoints {
@@ -291,6 +310,8 @@ func onUserEvent(id string, username string, ip string) {
 		}
 		return
 	}
+
+	utils.RemoveOldestFromMapIfMaxExceeded(&globals.Users, &globals.UsersQueue, id)
 
 	globals.Users[id] = User{
 		ID:            id,

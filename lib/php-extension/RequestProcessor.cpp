@@ -140,7 +140,7 @@ bool RequestProcessor::Init() {
 
 bool RequestProcessor::RequestInit() {
     if (!this->Init()) {
-        AIKIDO_LOG_ERROR("Failed to initialize the request processor!\n");
+        AIKIDO_LOG_ERROR("Failed to initialize the request processor: %s!\n", dlerror());
         return false;
     }
 
