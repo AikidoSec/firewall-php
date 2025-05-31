@@ -251,10 +251,10 @@ func getRateLimitingStatus(method, route, routeParsed, user, ip string) *protos.
 	return &protos.RateLimitingStatus{Block: false}
 }
 
-func getIpsList(ipsList map[string]IpBlocklist) map[string]*protos.IpBlockList {
-	m := make(map[string]*protos.IpBlockList)
+func getIpsList(ipsList map[string]IpBlocklist) map[string]*protos.IpList {
+	m := make(map[string]*protos.IpList)
 	for ipBlocklistSource, ipBlocklist := range ipsList {
-		m[ipBlocklistSource] = &protos.IpBlockList{Description: ipBlocklist.Description, Ips: ipBlocklist.Ips}
+		m[ipBlocklistSource] = &protos.IpList{Description: ipBlocklist.Description, Ips: ipBlocklist.Ips}
 	}
 	return m
 }
@@ -274,6 +274,7 @@ func getCloudConfig(configUpdatedAt int64) *protos.CloudConfig {
 		BlockedUserIds:      globals.CloudConfig.BlockedUserIds,
 		BypassedIps:         globals.CloudConfig.BypassedIps,
 		BlockedIps:          getIpsList(globals.CloudConfig.BlockedIpsList),
+		AllowedIps:          getIpsList(globals.CloudConfig.AllowedIpsList),
 		BlockedUserAgents:   globals.CloudConfig.BlockedUserAgents,
 		MonitoredIps:        getIpsList(globals.CloudConfig.MonitoredIpsList),
 		MonitoredUserAgents: globals.CloudConfig.MonitoredUserAgents,

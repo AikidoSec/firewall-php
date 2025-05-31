@@ -45,6 +45,7 @@ def localhost_get_request(port, route="", headers={}, benchmark=False):
         
     time.sleep(0.001)
     return r
+
 def localhost_post_request(port, route, data, headers={}, benchmark=False):
     global benchmarks, s
     

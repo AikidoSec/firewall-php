@@ -123,10 +123,10 @@ func ApplyCloudConfig() {
 	UpdateRateLimitingConfig()
 }
 
-func UpdateIpsLists(BlockedIps []BlockedIpsData) map[string]IpBlocklist {
+func UpdateIpsLists(ipLists []IpsData) map[string]IpBlocklist {
 	m := make(map[string]IpBlocklist)
-	for _, blockedIpsGroup := range BlockedIps {
-		m[blockedIpsGroup.Source] = IpBlocklist{Description: blockedIpsGroup.Description, Ips: blockedIpsGroup.Ips}
+	for _, ipList := range ipLists {
+		m[ipList.Key] = IpBlocklist{Description: ipList.Description, Ips: ipList.Ips}
 	}
 	return m
 }
@@ -147,6 +147,7 @@ func UpdateListsConfig() bool {
 
 	CloudConfig.BlockedIpsList = UpdateIpsLists(tempListsConfig.BlockedIpAddresses)
 	CloudConfig.MonitoredIpsList = UpdateIpsLists(tempListsConfig.MonitoredIpAddresses)
+	CloudConfig.AllowedIpsList = UpdateIpsLists(tempListsConfig.AllowedIpAddresses)
 
 	CloudConfig.BlockedUserAgents = tempListsConfig.BlockedUserAgents
 	CloudConfig.MonitoredUserAgents = tempListsConfig.MonitoredUserAgents
@@ -166,7 +167,7 @@ func StoreCloudConfig(configReponse []byte) bool {
 	tempCloudConfig := CloudConfigData{}
 	err := json.Unmarshal(configReponse, &tempCloudConfig)
 	if err != nil {
-		log.Warnf("Failed to unmarshal cloud config!")
+		log.Warnf("Failed to unmarshal cloud config: %v", err)
 		return false
 	}
 	if tempCloudConfig.ConfigUpdatedAt <= globals.CloudConfig.ConfigUpdatedAt {

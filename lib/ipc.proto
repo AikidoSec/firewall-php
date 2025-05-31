@@ -77,9 +77,10 @@ message CloudConfigUpdatedAt {
   int64 configUpdatedAt = 1;
 }
 
-message IpBlockList {
-  string description = 1;
-  repeated string ips = 2;
+message IpList {
+  string key = 1;
+  string description = 2;
+  repeated string ips = 3;
 }
 
 message CloudConfig {
@@ -87,12 +88,13 @@ message CloudConfig {
   repeated Endpoint endpoints = 2;
   repeated string blockedUserIds = 3;
   repeated string bypassedIps = 4;
-  map<string, IpBlockList> blockedIps = 5;
-  string blockedUserAgents = 6;
-  map<string, IpBlockList> monitoredIps = 7;
-  string monitoredUserAgents = 8;
-  map<string, string> userAgentDetails = 9;
-  bool block = 10;
+  map<string, IpList> blockedIps = 5;
+  map<string, IpList> allowedIps = 6;
+  string blockedUserAgents = 7;
+  map<string, IpList> monitoredIps = 8;
+  string monitoredUserAgents = 9;
+  map<string, string> userAgentDetails = 10;
+  bool block = 11;
 }
 
 message RateLimitingStatus {
