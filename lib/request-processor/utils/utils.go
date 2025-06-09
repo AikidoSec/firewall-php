@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"main/globals"
+	"main/helpers"
 	"main/log"
 	"net"
 	"net/netip"
@@ -247,13 +248,17 @@ func IsIpInList(ipList map[string]IpList, ip string) (int, []IpListMatch) {
 	return Found, matches
 }
 
-func IsIpAllowed(ip string) (bool, []IpListMatch) {
+func IsIpAllowed(ip string) bool {
 	globals.CloudConfigMutex.Lock()
 	defer globals.CloudConfigMutex.Unlock()
-	log.Debugf("Checking if IP %s is allowed", ip)
-	result, matches := IsIpInList(globals.CloudConfig.AllowedIps, ip)
+
+	if helpers.IsPrivateIP(ip) {
+		return true
+	}
+
+	result, _ := IsIpInList(globals.CloudConfig.AllowedIps, ip)
 	// IP is allowed if it's found in the allowed lists or if the allowed lists are not configured
-	return result != NotFound, matches
+	return result != NotFound
 }
 
 func IsIpBlocked(ip string) (bool, []IpListMatch) {

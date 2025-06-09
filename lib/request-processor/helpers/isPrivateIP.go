@@ -62,7 +62,7 @@ func init() {
 }
 
 // isPrivateIP checks if an IP address is within a private range.
-func isPrivateIP(ip string) bool {
+func IsPrivateIP(ip string) bool {
 	parsedIP := net.ParseIP(ip)
 	if parsedIP == nil {
 		return false

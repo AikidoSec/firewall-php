@@ -26,7 +26,7 @@ func ResolveHostname(hostname string) []string {
 
 func FindPrivateIp(resolvedIps []string) string {
 	for _, resolvedIp := range resolvedIps {
-		if isPrivateIP(resolvedIp) {
+		if IsPrivateIP(resolvedIp) {
 			return resolvedIp
 		}
 	}
