@@ -36,6 +36,11 @@ def run_test():
     assert_response_code_is(response, 200)
     assert_response_body_contains(response, "Something")
     
+    # Test that private IPs are always allowed even when allowlists are configured
+    response = php_server_get("/test", headers={"X-Forwarded-For": "127.0.0.1"})
+    assert_response_code_is(response, 200)
+    assert_response_body_contains(response, "Something")
+    
     
 if __name__ == "__main__":
     load_test_args()
