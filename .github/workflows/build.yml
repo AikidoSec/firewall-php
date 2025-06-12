@@ -329,7 +329,7 @@ jobs:
     needs: [ build_rpm ]
     strategy:
       matrix:
-        php_version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4']
+        php_version: ['7.4', '8.0', '8.1', '8.2', '8.3', '8.4']
         server: ['nginx-php-fpm', 'apache-mod-php', 'php-built-in']
         os: ['ubuntu-24.04']
       fail-fast: false
