@@ -258,7 +258,7 @@ func IsIpAllowed(ip string) bool {
 
 	result, _ := IsIpInList(globals.CloudConfig.AllowedIps, ip)
 	// IP is allowed if it's found in the allowed lists or if the allowed lists are not configured
-	return result != NotFound
+	return result == Found || result == NoConfig
 }
 
 func IsIpBlocked(ip string) (bool, []IpListMatch) {
