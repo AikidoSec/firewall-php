@@ -448,7 +448,7 @@ jobs:
           a2enmod rewrite
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@vmore-verbose
+        uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php_version }}
           extensions: curl, sqlite3
