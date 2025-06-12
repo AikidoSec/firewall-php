@@ -63,10 +63,6 @@ func storeWildcardEndpointConfig(ep *protos.Endpoint) {
 	globals.CloudConfig.WildcardEndpoints[ep.Method] = append(wildcardRoutes, WildcardEndpointData{RouteRegex: wildcardRouteCompiled, Data: getEndpointData(ep)})
 }
 
-func isWildcardEndpoint(method, route string) bool {
-	return method == "*" || strings.Contains(route, "*")
-}
-
 func buildUserAgentsRegexpFromProto(userAgents string) *regexp.Regexp {
 	if userAgents == "" {
 		return nil
