@@ -342,7 +342,7 @@ jobs:
           uname -a
           cat /etc/centos-release
           yum install -y yum-utils
-          yum install -y https://rpms.remirepo.net/enterprise/remi-release-8.4.rpm
+          dnf install -y https://rpms.remirepo.net/enterprise/remi-release-9.rpm
           yum install -y gcc
           yum install -y python3-devel
           pip3 install flask
