@@ -355,6 +355,7 @@ jobs:
           yum install -y mod_php
           yum install -y nginx
           yum install -y php-fpm
+          dnf install -y procps-ng
 
       - name: Get Arch
         run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
