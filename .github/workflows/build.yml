@@ -341,9 +341,6 @@ jobs:
         run: |
           uname -a
           cat /etc/centos-release
-          cd /etc/yum.repos.d/
-          sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-*
-          sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-*
           yum install -y yum-utils
           yum install -y https://rpms.remirepo.net/enterprise/remi-release-8.4.rpm
           yum install -y gcc
