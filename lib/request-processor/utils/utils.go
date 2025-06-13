@@ -54,7 +54,7 @@ func MustGetFromMap[T any](m map[string]interface{}, key string) T {
 	return *value
 }
 
-func decodeURIComponent(input string) string {
+func DecodeURIComponent(input string) string {
 	var result strings.Builder
 	length := len(input)
 
@@ -117,7 +117,7 @@ func ParseFormData(data string, separator string) map[string]interface{} {
 
 		result[keyValue[0]] = keyValue[1]
 
-		decodedValue := decodeURIComponent(keyValue[1])
+		decodedValue := DecodeURIComponent(keyValue[1])
 		if decodedValue != keyValue[1] {
 			result[keyValue[0]] = decodedValue
 		}
