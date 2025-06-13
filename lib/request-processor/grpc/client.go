@@ -82,7 +82,7 @@ func OnDomain(domain string, port uint32) {
 }
 
 /* Send request metadata (route & method) to Aikido Agent via gRPC */
-func GetRateLimitingStatus(method string, route string, user string, ip string, timeout time.Duration) *protos.RateLimitingStatus {
+func GetRateLimitingStatus(method string, route string, routeParsed string, user string, ip string, timeout time.Duration) *protos.RateLimitingStatus {
 	if client == nil {
 		return nil
 	}
@@ -90,7 +90,7 @@ func GetRateLimitingStatus(method string, route string, user string, ip string, 
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	RateLimitingStatus, err := client.GetRateLimitingStatus(ctx, &protos.RateLimitingInfo{Method: method, Route: route, User: user, Ip: ip})
+	RateLimitingStatus, err := client.GetRateLimitingStatus(ctx, &protos.RateLimitingInfo{Method: method, Route: route, RouteParsed: routeParsed, User: user, Ip: ip})
 	if err != nil {
 		log.Warnf("Cannot get rate limiting status %v %v: %v", method, route, err)
 		return nil
@@ -101,7 +101,7 @@ func GetRateLimitingStatus(method string, route string, user string, ip string, 
 }
 
 /* Send request metadata (route, method & status code) to Aikido Agent via gRPC */
-func OnRequestShutdown(method string, route string, statusCode int, user string, ip string, apiSpec *protos.APISpec) {
+func OnRequestShutdown(method string, route string, routeParsed string, statusCode int, user string, ip string, apiSpec *protos.APISpec) {
 	if client == nil {
 		return
 	}
@@ -109,7 +109,7 @@ func OnRequestShutdown(method string, route string, statusCode int, user string,
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	_, err := client.OnRequestShutdown(ctx, &protos.RequestMetadataShutdown{Method: method, Route: route, StatusCode: int32(statusCode), User: user, Ip: ip, ApiSpec: apiSpec})
+	_, err := client.OnRequestShutdown(ctx, &protos.RequestMetadataShutdown{Method: method, Route: route, RouteParsed: routeParsed, StatusCode: int32(statusCode), User: user, Ip: ip, ApiSpec: apiSpec})
 	if err != nil {
 		log.Warnf("Could not send request metadata %v %v %v: %v", method, route, statusCode, err)
 		return
@@ -209,4 +209,36 @@ func OnMiddlewareInstalled() {
 		return
 	}
 	log.Debugf("OnMiddlewareInstalled sent via socket")
+}
+
+func OnMonitoredIpMatch(lists []string) {
+	if client == nil || len(lists) == 0 {
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	_, err := client.OnMonitoredIpMatch(ctx, &protos.MonitoredIpMatch{Lists: lists})
+	if err != nil {
+		log.Warnf("Could not call OnMonitoredIpMatch")
+		return
+	}
+	log.Debugf("OnMonitoredIpMatch sent via socket")
+}
+
+func OnMonitoredUserAgentMatch(lists []string) {
+	if client == nil || len(lists) == 0 {
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	_, err := client.OnMonitoredUserAgentMatch(ctx, &protos.MonitoredUserAgentMatch{Lists: lists})
+	if err != nil {
+		log.Warnf("Could not call OnMonitoredUserAgentMatch")
+		return
+	}
+	log.Debugf("OnMonitoredUserAgentMatch sent via socket")
 }

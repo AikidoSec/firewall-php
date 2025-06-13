@@ -20,22 +20,22 @@ def run_test():
     for _ in range(5):
         response = php_server_get("/")
         assert_response_code_is(response, 200)
-        
+
     time.sleep(10)
-    
+
     for _ in range(5):
         response = php_server_get("/")
-        
+
     for _ in range(5):
         response = php_server_get("/")
         assert_response_code_is(response, 429)
         assert_response_header_contains(response, "Content-Type", "text")
         assert_response_body_contains(response, "Rate limit exceeded")
-    
+
     for _ in range(100):
         response = php_server_get("/test")
         assert_response_code_is(response, 200)
-        
+        assert_response_body_contains(response, "Request successful")
     
 if __name__ == "__main__":
     load_test_args()

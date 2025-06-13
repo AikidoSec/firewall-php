@@ -29,12 +29,12 @@ def load_test_args():
 def get_mock_port():
     return mock_port
 
-def localhost_get_request(port, route="", benchmark=False):
+def localhost_get_request(port, route="", headers={}, benchmark=False):
     global benchmarks, s
-    
+
     start_time = datetime.datetime.now()
 
-    r = s.get(f"http://localhost:{port}{route}")
+    r = s.get(f"http://localhost:{port}{route}", headers=headers)
 
     end_time = datetime.datetime.now()    
     delta = end_time - start_time
@@ -45,14 +45,12 @@ def localhost_get_request(port, route="", benchmark=False):
         
     time.sleep(0.001)
     return r
-
 def localhost_post_request(port, route, data, headers={}, benchmark=False):
     global benchmarks, s
     
     start_time = datetime.datetime.now()
     
     r = s.post(f"http://localhost:{port}{route}", json=data, headers=headers)
-
     end_time = datetime.datetime.now()    
     delta = end_time - start_time
     elapsed_ms = delta.total_seconds() * 1000
@@ -63,8 +61,8 @@ def localhost_post_request(port, route, data, headers={}, benchmark=False):
     time.sleep(0.001)
     return r
 
-def php_server_get(route="", benchmark=False):
-    return localhost_get_request(php_port, route, benchmark)
+def php_server_get(route="", headers={}, benchmark=False):
+    return localhost_get_request(php_port, route, headers, benchmark)
 
 def php_server_post(route, data, headers={}, benchmark=False):
     return localhost_post_request(php_port, route, data, headers, benchmark)

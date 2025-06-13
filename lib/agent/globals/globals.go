@@ -22,6 +22,7 @@ var Machine MachineData
 
 // List of outgoing hostnames, their ports and number of hits, collected from the requests
 var Hostnames = make(map[string]map[uint32]uint64)
+var HostnamesQueue = NewQueue[string](MaxNumberOfStoredHostnames)
 
 // Hostnames mutex used to sync access to hostnames data across the go routines
 var HostnamesMutex sync.Mutex
@@ -29,6 +30,7 @@ var HostnamesMutex sync.Mutex
 // List of routes and their methods and count of calls collect from the requests
 // [method][route] = hits
 var Routes = make(map[string]map[string]*Route)
+var RoutesQueue = NewQueue[string](MaxNumberOfStoredRoutes)
 
 // Routes mutex used to sync access to routes data across the go routines
 var RoutesMutex sync.Mutex
@@ -37,13 +39,21 @@ var RoutesMutex sync.Mutex
 var StatsData StatsDataType
 
 // Rate limiting map, which holds the current rate limiting state for each configured route
+// map[(method, route)] -> RateLimitingValue
+// method can also be '*'
 var RateLimitingMap = make(map[RateLimitingKey]*RateLimitingValue)
+
+// Rate limiting wildcard map, which holds the current rate limiting state for each configured wildcard route
+// map[method] -> (RouteRegex, RateLimitingValue)
+// method can also be '*'
+var RateLimitingWildcardMap = make(map[RateLimitingKey]*RateLimitingWildcardValue)
 
 // Rate limiting mutex used to sync access across the go routines
 var RateLimitingMutex sync.RWMutex
 
 // Users map, which holds the current users and their data
 var Users = make(map[string]User)
+var UsersQueue = NewQueue[string](MaxNumberOfStoredUsers)
 
 // Users mutex used to sync access across the go routines
 var UsersMutex sync.Mutex
@@ -57,8 +67,8 @@ var GotTraffic uint32
 // Did we log a token error?
 var LoggedTokenError uint32
 
-// Users map, which holds the current users and their data
+// Attacks detected events timestamps vector, used to limit the number of attacks reported to cloud
 var AttackDetectedEventsSentAt []int64
 
-// Users mutex used to sync access across the go routines
+// Attack detected events timestamps vector mutex used to sync access across the go routines
 var AttackDetectedEventsSentAtMutex sync.Mutex

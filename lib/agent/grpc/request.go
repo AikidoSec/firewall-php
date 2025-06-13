@@ -7,6 +7,8 @@ import (
 	"main/ipc/protos"
 	"main/log"
 	"main/utils"
+	"slices"
+	"strings"
 )
 
 func storeStats() {
@@ -23,6 +25,19 @@ func storeAttackStats(req *protos.AttackDetected) {
 	globals.StatsData.Attacks += 1
 	if req.GetAttack().GetBlocked() {
 		globals.StatsData.AttacksBlocked += 1
+	}
+}
+
+func storeMonitoredListsMatches(m *map[string]int, lists []string) {
+	if *m == nil {
+		*m = make(map[string]int)
+	}
+
+	for _, list := range lists {
+		if _, exists := (*m)[list]; !exists {
+			(*m)[list] = 0
+		}
+		(*m)[list] += 1
 	}
 }
 
@@ -100,7 +115,9 @@ func storeRoute(method string, route string, apiSpec *protos.APISpec) {
 
 	if _, ok := globals.Routes[route]; !ok {
 		globals.Routes[route] = make(map[string]*Route)
+		utils.RemoveOldestFromMapIfMaxExceeded(&globals.Routes, &globals.RoutesQueue, route)
 	}
+
 	routeData, ok := globals.Routes[route][method]
 	if !ok {
 		routeData = &Route{Path: route, Method: method}
@@ -126,17 +143,17 @@ func incrementRateLimitingCounts(m map[string]*RateLimitingCounts, key string) {
 	rateLimitingData.NumberOfRequestsPerWindow.IncrementLast()
 }
 
-func updateRateLimitingCounts(method string, route string, user string, ip string) {
+func updateRateLimitingCounts(method string, route string, routeParsed string, user string, ip string) {
 	globals.RateLimitingMutex.Lock()
 	defer globals.RateLimitingMutex.Unlock()
 
-	rateLimitingData, exists := globals.RateLimitingMap[RateLimitingKey{Method: method, Route: route}]
-	if !exists {
+	rateLimitingDataForEndpoint := getRateLimitingDataForEndpoint(method, route, routeParsed)
+	if rateLimitingDataForEndpoint == nil {
 		return
 	}
 
-	incrementRateLimitingCounts(rateLimitingData.UserCounts, user)
-	incrementRateLimitingCounts(rateLimitingData.IpCounts, ip)
+	incrementRateLimitingCounts(rateLimitingDataForEndpoint.UserCounts, user)
+	incrementRateLimitingCounts(rateLimitingDataForEndpoint.IpCounts, ip)
 }
 
 func isRateLimitingThresholdExceeded(config *RateLimitingConfig, countsMap map[string]*RateLimitingCounts, key string) bool {
@@ -148,30 +165,98 @@ func isRateLimitingThresholdExceeded(config *RateLimitingConfig, countsMap map[s
 	return counts.TotalNumberOfRequests >= config.MaxRequests
 }
 
-func getRateLimitingStatus(method string, route string, user string, ip string) *protos.RateLimitingStatus {
+func getRateLimitingValue(method, route string) *RateLimitingValue {
+	rateLimitingDataForEndpoint, exists := globals.RateLimitingMap[RateLimitingKey{Method: method, Route: route}]
+	if !exists {
+		return nil
+	}
+	return rateLimitingDataForEndpoint
+}
+
+func getWildcardRateLimitingValues(method, route string) []*RateLimitingValue {
+	wildcardRatelimitingValues := []*RateLimitingValue{}
+
+	for key, r := range globals.RateLimitingWildcardMap {
+		if key.Method != method {
+			continue
+		}
+		if r.RouteRegex.MatchString(route) {
+			wildcardRatelimitingValues = append(wildcardRatelimitingValues, r.RateLimitingValue)
+		}
+	}
+	return wildcardRatelimitingValues
+}
+
+func getWildcardMatchingRateLimitingValues(method, route, routeParsed string) []*RateLimitingValue {
+	rateLimitingDataArray := []*RateLimitingValue{}
+	wildcardMethodRateLimitingData := getRateLimitingValue("*", routeParsed)
+	if wildcardMethodRateLimitingData != nil {
+		rateLimitingDataArray = append(rateLimitingDataArray, wildcardMethodRateLimitingData)
+	}
+	rateLimitingDataArray = append(rateLimitingDataArray, getWildcardRateLimitingValues(method, route)...)
+	rateLimitingDataArray = append(rateLimitingDataArray, getWildcardRateLimitingValues("*", route)...)
+
+	slices.SortFunc(rateLimitingDataArray, func(i, j *RateLimitingValue) int {
+		// Sort endpoints based on the amount of * in the route
+		return strings.Count(j.Route, "*") - strings.Count(i.Route, "*")
+	})
+	return rateLimitingDataArray
+}
+
+func getRateLimitingDataForEndpoint(method, route, routeParsed string) *RateLimitingValue {
+	// Check for exact match first
+	rateLimitingDataMatch := getRateLimitingValue(method, routeParsed)
+	if rateLimitingDataMatch != nil {
+		return rateLimitingDataMatch
+	}
+
+	// If no exact match, check for the most restrictive wildcard match
+	wildcardMatches := getWildcardMatchingRateLimitingValues(method, route, routeParsed)
+	if len(wildcardMatches) == 0 {
+		return nil
+	}
+
+	slices.SortFunc(wildcardMatches, func(i, j *RateLimitingValue) int {
+		aRate := float64(i.Config.MaxRequests) / float64(i.Config.WindowSizeInMinutes)
+		bRate := float64(j.Config.MaxRequests) / float64(j.Config.WindowSizeInMinutes)
+		return int(aRate - bRate)
+	})
+
+	return wildcardMatches[0]
+}
+
+func getRateLimitingStatus(method, route, routeParsed, user, ip string) *protos.RateLimitingStatus {
 	globals.RateLimitingMutex.RLock()
 	defer globals.RateLimitingMutex.RUnlock()
 
-	rateLimitingDataForRoute, exists := globals.RateLimitingMap[RateLimitingKey{Method: method, Route: route}]
-	if !exists {
+	rateLimitingDataMatch := getRateLimitingDataForEndpoint(method, route, routeParsed)
+	if rateLimitingDataMatch == nil {
 		return &protos.RateLimitingStatus{Block: false}
 	}
 
 	if user != "" {
 		// If the user exists, we only try to rate limit by user
-		if isRateLimitingThresholdExceeded(&rateLimitingDataForRoute.Config, rateLimitingDataForRoute.UserCounts, user) {
-			log.Infof("Rate limited request for user %s - %s %s - %v", user, method, route, rateLimitingDataForRoute.UserCounts[user])
+		if isRateLimitingThresholdExceeded(&rateLimitingDataMatch.Config, rateLimitingDataMatch.UserCounts, user) {
+			log.Infof("Rate limited request for user %s - %s %s - %v", user, method, routeParsed, rateLimitingDataMatch.UserCounts[user])
 			return &protos.RateLimitingStatus{Block: true, Trigger: "user"}
 		}
 	} else {
 		// Otherwise, we rate limit by ip
-		if isRateLimitingThresholdExceeded(&rateLimitingDataForRoute.Config, rateLimitingDataForRoute.IpCounts, ip) {
-			log.Infof("Rate limited request for ip %s - %s %s - %v", ip, method, route, rateLimitingDataForRoute.IpCounts[ip])
+		if isRateLimitingThresholdExceeded(&rateLimitingDataMatch.Config, rateLimitingDataMatch.IpCounts, ip) {
+			log.Infof("Rate limited request for ip %s - %s %s - %v", ip, method, routeParsed, rateLimitingDataMatch.IpCounts[ip])
 			return &protos.RateLimitingStatus{Block: true, Trigger: "ip"}
 		}
 	}
 
 	return &protos.RateLimitingStatus{Block: false}
+}
+
+func getIpsList(ipsList map[string]IpBlocklist) map[string]*protos.IpBlockList {
+	m := make(map[string]*protos.IpBlockList)
+	for ipBlocklistSource, ipBlocklist := range ipsList {
+		m[ipBlocklistSource] = &protos.IpBlockList{Description: ipBlocklist.Description, Ips: ipBlocklist.Ips}
+	}
+	return m
 }
 
 func getCloudConfig(configUpdatedAt int64) *protos.CloudConfig {
@@ -185,19 +270,15 @@ func getCloudConfig(configUpdatedAt int64) *protos.CloudConfig {
 	}
 
 	cloudConfig := &protos.CloudConfig{
-		ConfigUpdatedAt:   globals.CloudConfig.ConfigUpdatedAt,
-		BlockedUserIds:    globals.CloudConfig.BlockedUserIds,
-		BypassedIps:       globals.CloudConfig.BypassedIps,
-		BlockedIps:        map[string]*protos.IpBlockList{},
-		BlockedUserAgents: globals.CloudConfig.BlockedUserAgents,
-		Block:             isBlockingEnabled,
-	}
-
-	for ipBlocklistSource, ipBlocklist := range globals.CloudConfig.BlockedIpsList {
-		cloudConfig.BlockedIps[ipBlocklistSource] = &protos.IpBlockList{
-			Description: ipBlocklist.Description,
-			Ips:         ipBlocklist.Ips,
-		}
+		ConfigUpdatedAt:     globals.CloudConfig.ConfigUpdatedAt,
+		BlockedUserIds:      globals.CloudConfig.BlockedUserIds,
+		BypassedIps:         globals.CloudConfig.BypassedIps,
+		BlockedIps:          getIpsList(globals.CloudConfig.BlockedIpsList),
+		BlockedUserAgents:   globals.CloudConfig.BlockedUserAgents,
+		MonitoredIps:        getIpsList(globals.CloudConfig.MonitoredIpsList),
+		MonitoredUserAgents: globals.CloudConfig.MonitoredUserAgents,
+		UserAgentDetails:    globals.CloudConfig.UserAgentDetails,
+		Block:               isBlockingEnabled,
 	}
 
 	for _, endpoint := range globals.CloudConfig.Endpoints {
@@ -229,6 +310,8 @@ func onUserEvent(id string, username string, ip string) {
 		}
 		return
 	}
+
+	utils.RemoveOldestFromMapIfMaxExceeded(&globals.Users, &globals.UsersQueue, id)
 
 	globals.Users[id] = User{
 		ID:            id,

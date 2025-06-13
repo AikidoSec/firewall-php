@@ -5,6 +5,31 @@ import (
 	"main/globals"
 )
 
+func GetWildcardEndpointsConfigsForMethod(method string) []WildcardEndpointData {
+	wildcardRoutesForMethod, found := globals.CloudConfig.WildcardEndpoints[method]
+	if !found {
+		return []WildcardEndpointData{}
+	}
+	return wildcardRoutesForMethod
+}
+
+func GetWildcardEndpointsConfigs(method string, route string) []EndpointData {
+	globals.CloudConfigMutex.Lock()
+	defer globals.CloudConfigMutex.Unlock()
+
+	// We prioritize defined methods over wildcard methods
+	wildcardRoutes := GetWildcardEndpointsConfigsForMethod(method)
+	wildcardRoutes = append(wildcardRoutes, GetWildcardEndpointsConfigsForMethod("*")...)
+
+	matchedEndpointsData := []EndpointData{}
+	for _, wildcardEndpointData := range wildcardRoutes {
+		if wildcardEndpointData.RouteRegex.MatchString(route) {
+			matchedEndpointsData = append(matchedEndpointsData, wildcardEndpointData.Data)
+		}
+	}
+	return matchedEndpointsData
+}
+
 func GetEndpointConfig(method string, route string) *EndpointData {
 	globals.CloudConfigMutex.Lock()
 	defer globals.CloudConfigMutex.Unlock()

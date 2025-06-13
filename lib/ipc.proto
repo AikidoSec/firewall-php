@@ -16,6 +16,8 @@ service Aikido {
   rpc OnAttackDetected(AttackDetected) returns (google.protobuf.Empty);
   rpc OnMonitoredSinkStats(MonitoredSinkStats) returns (google.protobuf.Empty);
   rpc OnMiddlewareInstalled(google.protobuf.Empty) returns (google.protobuf.Empty);
+  rpc OnMonitoredIpMatch(MonitoredIpMatch) returns (google.protobuf.Empty);
+  rpc OnMonitoredUserAgentMatch(MonitoredUserAgentMatch) returns (google.protobuf.Empty);
 }
 
 message Config {
@@ -34,17 +36,19 @@ message Domain {
 message RateLimitingInfo {
   string method = 1;
   string route = 2;
-  string user = 3;
-  string ip = 4;
+  string routeParsed = 3;
+  string user = 4;
+  string ip = 5;
 }
 
 message RequestMetadataShutdown {
   string method = 1;
   string route = 2;
-  int32 statusCode = 3;
-  string user = 4;
-  string ip = 5;
-  APISpec apiSpec = 6;
+  string routeParsed = 3;
+  int32 statusCode = 4;
+  string user = 5;
+  string ip = 6;
+  APISpec apiSpec = 7;
 }
 
 message MonitoredSinkStats {
@@ -85,7 +89,10 @@ message CloudConfig {
   repeated string bypassedIps = 4;
   map<string, IpBlockList> blockedIps = 5;
   string blockedUserAgents = 6;
-  bool block = 7;
+  map<string, IpBlockList> monitoredIps = 7;
+  string monitoredUserAgents = 8;
+  map<string, string> userAgentDetails = 9;
+  bool block = 10;
 }
 
 message RateLimitingStatus {
@@ -162,4 +169,12 @@ message APISpec {
   APIBodyInfo body = 1;
   DataSchema query = 2;
   repeated APIAuthType auth = 3;
+}
+
+message MonitoredIpMatch {
+  repeated string lists = 1;
+}
+
+message MonitoredUserAgentMatch {
+  repeated string lists = 1;
 }

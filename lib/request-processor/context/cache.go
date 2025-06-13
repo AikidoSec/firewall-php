@@ -123,18 +123,114 @@ func ContextSetUserName() {
 	ContextSetString(C.CONTEXT_USER_NAME, &Context.UserName)
 }
 
-func ContextSetIsProtectionTurnedOff() {
-	if Context.IsProtectionTurnedOff != nil {
+func ContextSetEndpointConfig() {
+	if Context.EndpointConfig != nil {
 		return
 	}
 
-	method := GetMethod()
-	route := GetParsedRoute()
+	endpointConfig := utils.GetEndpointConfig(GetMethod(), GetParsedRoute())
+	Context.EndpointConfig = &endpointConfig
+}
 
-	endpointConfig := utils.GetEndpointConfig(method, route)
-	isProtectionTurnedOff := false
-	if endpointConfig != nil {
-		isProtectionTurnedOff = endpointConfig.ForceProtectionOff
+func ContextSetWildcardEndpointsConfigs() {
+	if Context.WildcardEndpointsConfigs != nil {
+		return
 	}
-	Context.IsProtectionTurnedOff = &isProtectionTurnedOff
+
+	wildcardEndpointsConfigs := utils.GetWildcardEndpointsConfigs(GetMethod(), GetParsedRoute())
+	Context.WildcardEndpointsConfigs = &wildcardEndpointsConfigs
+}
+
+func ContextSetIsEndpointProtectionTurnedOff() {
+	if Context.IsEndpointProtectionTurnedOff != nil {
+		return
+	}
+
+	isEndpointProtectionTurnedOff := false
+
+	endpointConfig := GetEndpointConfig()
+	if endpointConfig != nil {
+		isEndpointProtectionTurnedOff = endpointConfig.ForceProtectionOff
+	}
+	if !isEndpointProtectionTurnedOff {
+		for _, wildcardEndpointConfig := range GetWildcardEndpointsConfig() {
+			if wildcardEndpointConfig.ForceProtectionOff {
+				isEndpointProtectionTurnedOff = true
+				break
+			}
+		}
+	}
+	Context.IsEndpointProtectionTurnedOff = &isEndpointProtectionTurnedOff
+}
+
+func ContextSetIsEndpointConfigured() {
+	if Context.IsEndpointConfigured != nil {
+		return
+	}
+
+	IsEndpointConfigured := false
+
+	endpointConfig := GetEndpointConfig()
+	if endpointConfig != nil {
+		IsEndpointConfigured = true
+	}
+	if !IsEndpointConfigured {
+		if len(GetWildcardEndpointsConfig()) != 0 {
+			IsEndpointConfigured = true
+		}
+	}
+	Context.IsEndpointConfigured = &IsEndpointConfigured
+}
+
+func ContextSetIsEndpointRateLimitingEnabled() {
+	if Context.IsEndpointRateLimitingEnabled != nil {
+		return
+	}
+
+	IsEndpointRateLimitingEnabled := false
+
+	endpointConfig := GetEndpointConfig()
+	if endpointConfig != nil {
+		IsEndpointRateLimitingEnabled = endpointConfig.RateLimiting.Enabled
+	}
+	if !IsEndpointRateLimitingEnabled {
+		for _, wildcardEndpointConfig := range GetWildcardEndpointsConfig() {
+			if wildcardEndpointConfig.RateLimiting.Enabled {
+				IsEndpointRateLimitingEnabled = true
+				break
+			}
+		}
+	}
+	Context.IsEndpointRateLimitingEnabled = &IsEndpointRateLimitingEnabled
+}
+
+func ContextSetIsEndpointIpAllowed() {
+	if Context.IsEndpointIpAllowed != nil {
+		return
+	}
+
+	ip := GetIp()
+
+	isEndpointIpAllowed := utils.NoConfig
+
+	endpointConfig := GetEndpointConfig()
+	if endpointConfig != nil {
+		isEndpointIpAllowed = utils.IsIpAllowed(endpointConfig.AllowedIPAddresses, ip)
+	}
+
+	if isEndpointIpAllowed == utils.NoConfig {
+		for _, wildcardEndpointConfig := range GetWildcardEndpointsConfig() {
+			isEndpointIpAllowed = utils.IsIpAllowed(wildcardEndpointConfig.AllowedIPAddresses, ip)
+			if isEndpointIpAllowed != utils.NoConfig {
+				break
+			}
+		}
+	}
+
+	isEndpointIpAllowedBool := true
+	if isEndpointIpAllowed == utils.NotAllowed {
+		isEndpointIpAllowedBool = false
+	}
+
+	Context.IsEndpointIpAllowed = &isEndpointIpAllowedBool
 }

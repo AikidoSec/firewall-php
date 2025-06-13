@@ -7,6 +7,8 @@ import (
 	. "main/globals"
 	"main/log"
 	"main/utils"
+	"regexp"
+	"strings"
 	"sync/atomic"
 	"time"
 )
@@ -43,6 +45,10 @@ func ResetHeartbeatTicker() {
 	}
 }
 
+func isWildcardEndpoint(route string) bool {
+	return strings.Contains(route, "*")
+}
+
 func UpdateRateLimitingConfig() {
 	globals.RateLimitingMutex.Lock()
 	defer globals.RateLimitingMutex.Unlock()
@@ -63,6 +69,7 @@ func UpdateRateLimitingConfig() {
 
 			log.Infof("Rate limiting endpoint config has changed: %v", newEndpointConfig)
 			delete(globals.RateLimitingMap, k)
+			delete(globals.RateLimitingWildcardMap, k)
 		}
 
 		if !newEndpointConfig.RateLimiting.Enabled {
@@ -77,13 +84,27 @@ func UpdateRateLimitingConfig() {
 		}
 
 		log.Infof("Got new rate limiting endpoint config and storing to map: %v", newEndpointConfig)
-		globals.RateLimitingMap[k] = &RateLimitingValue{
+		rateLimitingValue := &RateLimitingValue{
+			Method: k.Method,
+			Route:  k.Route,
 			Config: RateLimitingConfig{
 				MaxRequests:         newEndpointConfig.RateLimiting.MaxRequests,
 				WindowSizeInMinutes: newEndpointConfig.RateLimiting.WindowSizeInMS / MinRateLimitingIntervalInMs},
 			UserCounts: make(map[string]*RateLimitingCounts),
 			IpCounts:   make(map[string]*RateLimitingCounts),
 		}
+
+		if isWildcardEndpoint(k.Route) {
+			routeRegex, err := regexp.Compile(strings.ReplaceAll(k.Route, "*", "(.*)") + "/?")
+			if err != nil {
+				log.Warnf("Route regex is not compiling: %s", k.Route)
+			} else {
+				log.Infof("Stored wildcard rate limiting config for: %v", k)
+				globals.RateLimitingWildcardMap[k] = &RateLimitingWildcardValue{RouteRegex: routeRegex, RateLimitingValue: rateLimitingValue}
+			}
+		}
+		log.Infof("Stored normal rate limiting config for: %v", k)
+		globals.RateLimitingMap[k] = rateLimitingValue
 	}
 
 	for k := range globals.RateLimitingMap {
@@ -91,6 +112,7 @@ func UpdateRateLimitingConfig() {
 		if !exists {
 			log.Infof("Removed rate limiting entry as it is no longer part of the config: %v", k)
 			delete(globals.RateLimitingMap, k)
+			delete(globals.RateLimitingWildcardMap, k)
 		}
 	}
 }
@@ -99,6 +121,14 @@ func ApplyCloudConfig() {
 	log.Infof("Applying new cloud config: %v", globals.CloudConfig)
 	ResetHeartbeatTicker()
 	UpdateRateLimitingConfig()
+}
+
+func UpdateIpsLists(BlockedIps []BlockedIpsData) map[string]IpBlocklist {
+	m := make(map[string]IpBlocklist)
+	for _, blockedIpsGroup := range BlockedIps {
+		m[blockedIpsGroup.Source] = IpBlocklist{Description: blockedIpsGroup.Description, Ips: blockedIpsGroup.Ips}
+	}
+	return m
 }
 
 func UpdateListsConfig() bool {
@@ -111,15 +141,21 @@ func UpdateListsConfig() bool {
 	tempListsConfig := ListsConfigData{}
 	err = json.Unmarshal(response, &tempListsConfig)
 	if err != nil {
-		log.Warnf("Failed to unmarshal lists config!")
+		log.Warnf("Failed to unmarshal lists config: %v", err)
 		return false
 	}
 
-	CloudConfig.BlockedIpsList = make(map[string]IpBlocklist)
-	for _, blockedIpsGroup := range tempListsConfig.BlockedIpAddresses {
-		CloudConfig.BlockedIpsList[blockedIpsGroup.Source] = IpBlocklist{Description: blockedIpsGroup.Description, Ips: blockedIpsGroup.Ips}
-	}
+	CloudConfig.BlockedIpsList = UpdateIpsLists(tempListsConfig.BlockedIpAddresses)
+	CloudConfig.MonitoredIpsList = UpdateIpsLists(tempListsConfig.MonitoredIpAddresses)
+
 	CloudConfig.BlockedUserAgents = tempListsConfig.BlockedUserAgents
+	CloudConfig.MonitoredUserAgents = tempListsConfig.MonitoredUserAgents
+
+	CloudConfig.UserAgentDetails = make(map[string]string)
+	for _, userAgentDetail := range tempListsConfig.UserAgentDetails {
+		CloudConfig.UserAgentDetails[userAgentDetail.Key] = userAgentDetail.Pattern
+	}
+
 	return true
 }
 
