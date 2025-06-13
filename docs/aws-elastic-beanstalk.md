@@ -4,7 +4,7 @@
 ```
 commands:
   aikido-php-firewall:
-    command: "rpm -Uvh --oldpackage https://github.com/AikidoSec/firewall-php/releases/download/v1.0.119/aikido-php-firewall.x86_64.rpm"
+    command: "rpm -Uvh --oldpackage https://github.com/AikidoSec/firewall-php/releases/download/v1.0.120/aikido-php-firewall.x86_64.rpm"
     ignoreErrors: true
 
 files:
