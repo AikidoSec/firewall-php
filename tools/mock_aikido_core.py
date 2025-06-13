@@ -33,6 +33,9 @@ def load_config(j):
     if "blockedUserAgents" in j:
         responses["lists"]["blockedUserAgents"] = j["blockedUserAgents"]
         del j["blockedUserAgents"]
+    if "lists_allowedIPAddresses" in j:
+        responses["lists"]["allowedIPAddresses"] = j["lists_allowedIPAddresses"]
+        del j["lists_allowedIPAddresses"]
     if "userAgentDetails" in j:
         responses["lists"]["userAgentDetails"] = j["userAgentDetails"]
         del j["userAgentDetails"]

@@ -17,6 +17,19 @@ var (
 	cloudConfigTicker = time.NewTicker(1 * time.Minute)
 )
 
+func buildIpList(cloudIpList map[string]*protos.IpList) map[string]IpList {
+	ipList := map[string]IpList{}
+	for ipListKey, protoIpList := range cloudIpList {
+		ipSet, err := utils.BuildIpList(protoIpList.Description, protoIpList.Ips)
+		if err != nil {
+			log.Errorf("Error building IP list: %s\n", err)
+			continue
+		}
+		ipList[ipListKey] = *ipSet
+	}
+	return ipList
+}
+
 func getEndpointData(ep *protos.Endpoint) EndpointData {
 	allowedIPSet, err := utils.BuildIpSet(ep.AllowedIPAddresses)
 	if err != nil {
@@ -48,19 +61,6 @@ func storeWildcardEndpointConfig(ep *protos.Endpoint) {
 	}
 
 	globals.CloudConfig.WildcardEndpoints[ep.Method] = append(wildcardRoutes, WildcardEndpointData{RouteRegex: wildcardRouteCompiled, Data: getEndpointData(ep)})
-}
-
-func buildIpListFromProto(monitoredIpsList map[string]*protos.IpBlockList) map[string]IpBlockList {
-	m := map[string]IpBlockList{}
-	for ipBlocklistSource, ipBlocklist := range monitoredIpsList {
-		ipBlocklist, err := utils.BuildIpBlocklist(ipBlocklistSource, ipBlocklist.Description, ipBlocklist.Ips)
-		if err != nil {
-			log.Errorf("Error building IP blocklist: %s\n", err)
-			continue
-		}
-		m[ipBlocklistSource] = *ipBlocklist
-	}
-	return m
 }
 
 func buildUserAgentsRegexpFromProto(userAgents string) *regexp.Regexp {
@@ -121,11 +121,13 @@ func setCloudConfig(cloudConfigFromAgent *protos.CloudConfig) {
 		globals.CloudConfig.Block = 0
 	}
 
-	globals.CloudConfig.BlockedIps = buildIpListFromProto(cloudConfigFromAgent.BlockedIps)
-	globals.CloudConfig.MonitoredIps = buildIpListFromProto(cloudConfigFromAgent.MonitoredIps)
+	globals.CloudConfig.BlockedIps = buildIpList(cloudConfigFromAgent.BlockedIps)
+	globals.CloudConfig.MonitoredIps = buildIpList(cloudConfigFromAgent.MonitoredIps)
 
 	globals.CloudConfig.BlockedUserAgents = buildUserAgentsRegexpFromProto(cloudConfigFromAgent.BlockedUserAgents)
 	globals.CloudConfig.MonitoredUserAgents = buildUserAgentsRegexpFromProto(cloudConfigFromAgent.MonitoredUserAgents)
+
+	globals.CloudConfig.AllowedIps = buildIpList(cloudConfigFromAgent.AllowedIps)
 
 	globals.CloudConfig.UserAgentDetails = buildUserAgentDetailsFromProto(cloudConfigFromAgent.UserAgentDetails)
 

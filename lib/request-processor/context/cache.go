@@ -215,22 +215,19 @@ func ContextSetIsEndpointIpAllowed() {
 
 	endpointConfig := GetEndpointConfig()
 	if endpointConfig != nil {
-		isEndpointIpAllowed = utils.IsIpAllowed(endpointConfig.AllowedIPAddresses, ip)
+		isEndpointIpAllowed = utils.IsIpAllowedOnEndpoint(endpointConfig.AllowedIPAddresses, ip)
 	}
 
 	if isEndpointIpAllowed == utils.NoConfig {
 		for _, wildcardEndpointConfig := range GetWildcardEndpointsConfig() {
-			isEndpointIpAllowed = utils.IsIpAllowed(wildcardEndpointConfig.AllowedIPAddresses, ip)
+			isEndpointIpAllowed = utils.IsIpAllowedOnEndpoint(wildcardEndpointConfig.AllowedIPAddresses, ip)
 			if isEndpointIpAllowed != utils.NoConfig {
 				break
 			}
 		}
 	}
 
-	isEndpointIpAllowedBool := true
-	if isEndpointIpAllowed == utils.NotAllowed {
-		isEndpointIpAllowedBool = false
-	}
+	isEndpointIpAllowedBool := isEndpointIpAllowed != utils.NotFound
 
 	Context.IsEndpointIpAllowed = &isEndpointIpAllowedBool
 }

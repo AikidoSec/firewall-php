@@ -13,7 +13,7 @@ jobs:
   build_libs:
     runs-on: ${{ matrix.os }}
     container:
-      image: ubuntu:20.04
+      image: ubuntu:22.04
     strategy:
       matrix:
         os: [ ubuntu-24.04 ]
@@ -92,7 +92,7 @@ jobs:
 
   build_php_extension:
     runs-on: ${{ matrix.os }}
-    container: ubuntu:20.04
+    container: ubuntu:22.04
     strategy:
       matrix:
         php_version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4']
@@ -123,7 +123,7 @@ jobs:
         echo "AIKIDO_ARTIFACT=aikido-extension-php-${{ matrix.php_version }}" >> $GITHUB_ENV
 
     - name: Setup PHP
-      uses: shivammathur/setup-php@cf4cade2721270509d5b1c766ab3549210a39a2a # v2 # v2
+      uses: shivammathur/setup-php@27853eb8b46dc01c33bf9fef67d98df2683c3be2 # v2
       with:
         php-version: ${{ matrix.php_version }}
         extensions: curl
@@ -163,7 +163,7 @@ jobs:
   build_rpm:
     runs-on: ${{ matrix.os }}
     container:
-      image: centos:8
+      image: quay.io/centos/centos:stream9
     strategy:
       matrix:
         os: ['ubuntu-24.04']
@@ -175,9 +175,6 @@ jobs:
 
       - name: Install rpmdevtools
         run: |
-          cd /etc/yum.repos.d/
-          sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-*
-          sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-*
           yum -y install epel-release
           yum -y install rpmdevtools
           yum -y install jq
@@ -260,7 +257,7 @@ jobs:
   build_deb:
     runs-on: ${{ matrix.os }}
     container:
-      image: ubuntu:20.04
+      image: ubuntu:22.04
     strategy:
       matrix:
         os: [ ubuntu-24.04 ]
@@ -328,11 +325,11 @@ jobs:
   test_php_centos:
     runs-on: ${{ matrix.os }}
     container:
-      image: centos:8
+      image: quay.io/centos/centos:stream9
     needs: [ build_rpm ]
     strategy:
       matrix:
-        php_version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4']
+        php_version: ['7.4', '8.0', '8.1', '8.2', '8.3', '8.4']
         server: ['nginx-php-fpm', 'apache-mod-php', 'php-built-in']
         os: ['ubuntu-24.04']
       fail-fast: false
@@ -344,11 +341,8 @@ jobs:
         run: |
           uname -a
           cat /etc/centos-release
-          cd /etc/yum.repos.d/
-          sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-*
-          sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-*
           yum install -y yum-utils
-          yum install -y https://rpms.remirepo.net/enterprise/remi-release-8.4.rpm
+          dnf install -y https://rpms.remirepo.net/enterprise/remi-release-9.rpm
           yum install -y gcc
           yum install -y python3-devel
           pip3 install flask
@@ -361,6 +355,7 @@ jobs:
           yum install -y mod_php
           yum install -y nginx
           yum install -y php-fpm
+          dnf install -y procps-ng
 
       - name: Get Arch
         run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
@@ -448,7 +443,7 @@ jobs:
           a2enmod rewrite
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@9e72090525849c5e82e596468b86eb55e9cc5401 # v2
+        uses: shivammathur/setup-php@27853eb8b46dc01c33bf9fef67d98df2683c3be2
         with:
           php-version: ${{ matrix.php_version }}
           extensions: curl, sqlite3

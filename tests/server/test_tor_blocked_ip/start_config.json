@@ -8,6 +8,7 @@
     "receivedAnyStats": true,
     "blockedIPAddresses": [
         {
+            "key": "tor",
             "source": "tor",
             "description": "tor usage",
             "ips": [
@@ -74,6 +75,7 @@
             ]
         },
         {
+            "key": "geoip",
             "source": "geoip",
             "description": "geo restrictions",
             "ips": [

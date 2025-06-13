@@ -211,7 +211,7 @@ func OnMiddlewareInstalled() {
 	log.Debugf("OnMiddlewareInstalled sent via socket")
 }
 
-func OnMonitoredIpMatch(lists []string) {
+func OnMonitoredIpMatch(lists []utils.IpListMatch) {
 	if client == nil || len(lists) == 0 {
 		return
 	}
@@ -219,7 +219,12 @@ func OnMonitoredIpMatch(lists []string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	_, err := client.OnMonitoredIpMatch(ctx, &protos.MonitoredIpMatch{Lists: lists})
+	protosLists := []string{}
+	for _, list := range lists {
+		protosLists = append(protosLists, list.Key)
+	}
+
+	_, err := client.OnMonitoredIpMatch(ctx, &protos.MonitoredIpMatch{Lists: protosLists})
 	if err != nil {
 		log.Warnf("Could not call OnMonitoredIpMatch")
 		return
