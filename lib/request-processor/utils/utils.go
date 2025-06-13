@@ -8,7 +8,6 @@ import (
 	"main/log"
 	"net"
 	"net/netip"
-	"net/url"
 	"regexp"
 	"runtime"
 	"strings"
@@ -55,6 +54,50 @@ func MustGetFromMap[T any](m map[string]interface{}, key string) T {
 	return *value
 }
 
+func DecodeURIComponent(input string) string {
+	var result strings.Builder
+	length := len(input)
+
+	for i := 0; i < length; {
+		char := input[i]
+
+		if char == '+' {
+			result.WriteByte(' ')
+			i++
+			continue
+		}
+
+		if char == '%' && i+2 < length {
+			first := decodeHexChar(input[i+1])
+			second := decodeHexChar(input[i+2])
+
+			if first != -1 && second != -1 {
+				result.WriteByte(byte((first << 4) | second))
+				i += 3
+				continue
+			}
+		}
+
+		result.WriteByte(char)
+		i++
+	}
+
+	return result.String()
+}
+
+func decodeHexChar(ch byte) int {
+	switch {
+	case '0' <= ch && ch <= '9':
+		return int(ch - '0')
+	case 'a' <= ch && ch <= 'f':
+		return int(ch - 'a' + 10)
+	case 'A' <= ch && ch <= 'F':
+		return int(ch - 'A' + 10)
+	default:
+		return -1
+	}
+}
+
 func ParseFormData(data string, separator string) map[string]interface{} {
 	result := map[string]interface{}{}
 	parts := strings.Split(data, separator)
@@ -73,8 +116,9 @@ func ParseFormData(data string, separator string) map[string]interface{} {
 		}
 
 		result[keyValue[0]] = keyValue[1]
-		decodedValue, err := url.QueryUnescape(keyValue[1])
-		if err == nil && decodedValue != keyValue[1] {
+
+		decodedValue := DecodeURIComponent(keyValue[1])
+		if decodedValue != keyValue[1] {
 			result[keyValue[0]] = decodedValue
 		}
 	}

@@ -7,9 +7,9 @@ import (
 	"crypto/sha256"
 	"crypto/sha512"
 	"encoding/hex"
+	"encoding/json"
 	"main/aikido_types"
 	"main/globals"
-	"encoding/json"
 	"math/big"
 	"regexp"
 	"strings"
@@ -241,13 +241,13 @@ func TestBuildRouteFromURL(t *testing.T) {
 func TestParseBodyJSON(t *testing.T) {
 	data := "\r\n\r\n\r\n{\r\n\r\n\r\n\"a\":\r\n\r\n\r\n \"1\",\r\n\r\n\"b\":\"2\"\r\n\r\n}\r\n\r\n\r\n\r\n"
 	expected := `{"a":"1","b":"2"}`
-	
+
 	result := ParseBody(data)
 	resultJSON, err := json.Marshal(result)
 	if err != nil {
 		t.Errorf("Failed to marshal result: %v", err)
 	}
-	
+
 	if string(resultJSON) != expected {
 		t.Errorf("Expected JSON string %q, got %q", expected, resultJSON)
 	}
@@ -265,7 +265,7 @@ func TestParseBodyJSONArray(t *testing.T) {
 
 	if string(resultJSON) != expected {
 		t.Errorf("Expected JSON string %q, got %q", expected, string(resultJSON))
-  }
+	}
 }
 
 func TestParseCookie(t *testing.T) {
@@ -284,6 +284,85 @@ func TestParseFormData(t *testing.T) {
 	}
 	if result["b"] != "2" {
 		t.Errorf("Expected 2, got %v", result["b"])
+	}
+}
+
+func TestParseFormDataWithInvalidEncoding(t *testing.T) {
+	data := "a=1asdlasdasd%22eee%ZZAAA&b=%20example%ZZPADDINGfoo%20bar%ZZ"
+	result := ParseFormData(data, "&")
+	if result["b"] != " example%ZZPADDINGfoo bar%ZZ" {
+		t.Errorf("retrieved invalid url decoded value: %v", result["b"])
+	}
+}
+func TestDecodeURIComponent(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "basic string without encoding",
+			input:    "a=1&b=2",
+			expected: "a=1&b=2",
+		},
+		{
+			name:     "basic percent encoding",
+			input:    "hello%20world",
+			expected: "hello world",
+		},
+		{
+			name:     "plus sign encoding",
+			input:    "hello+world",
+			expected: "hello world",
+		},
+		{
+			name:     "mixed encoding",
+			input:    "hello%20world+and%20universe",
+			expected: "hello world and universe",
+		},
+		{
+			name:     "special characters",
+			input:    "%21%40%23%24%25%5E%26%2A%28%29",
+			expected: "!@#$%^&*()",
+		},
+		{
+			name:     "invalid percent encoding - incomplete",
+			input:    "test%2",
+			expected: "test%2",
+		},
+		{
+			name:     "invalid percent encoding - invalid hex",
+			input:    "test%ZZ",
+			expected: "test%ZZ",
+		},
+		{
+			name:     "empty string",
+			input:    "",
+			expected: "",
+		},
+		{
+			name:     "percent sign without encoding",
+			input:    "100% complete",
+			expected: "100% complete",
+		},
+		{
+			name:     "multiple consecutive percent encodings",
+			input:    "%20%20%20",
+			expected: "   ",
+		},
+		{
+			name:     "mixed case hex encoding",
+			input:    "%2f%2F%3a%3A",
+			expected: "//::"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := DecodeURIComponent(tt.input)
+			if result != tt.expected {
+				t.Errorf("DecodeURIComponent(%q) = %q, want %q", tt.input, result, tt.expected)
+			}
+		})
 	}
 }
 
