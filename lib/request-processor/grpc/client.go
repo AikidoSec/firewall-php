@@ -33,6 +33,7 @@ func Init() {
 	log.Debugf("Current connection state: %s\n", conn.GetState().String())
 
 	SendAikidoConfig()
+	OnPackages(globals.EnvironmentConfig.Packages)
 	startCloudConfigRoutine()
 }
 
