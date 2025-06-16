@@ -33,7 +33,11 @@ func storePackages(packages map[string]string) {
 	defer globals.PackagesMutex.Unlock()
 
 	for packageName, packageVersion := range packages {
-		globals.Packages[packageName] = packageVersion
+		globals.Packages[packageName] = Package{
+			Name:       packageName,
+			Version:    packageVersion,
+			RequiredAt: utils.GetTime(),
+		}
 	}
 }
 

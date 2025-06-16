@@ -27,9 +27,8 @@ func GetAgentInfo() AgentInfo {
 			Name:    EnvironmentConfig.PlatformName,
 			Version: EnvironmentConfig.PlatformVersion,
 		},
-		Packages: GetPackages(),
-		NodeEnv:  "",
-		Library:  "firewall-php",
+		NodeEnv: "",
+		Library: "firewall-php",
 	}
 }
 

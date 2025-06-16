@@ -59,7 +59,7 @@ var UsersQueue = NewQueue[string](MaxNumberOfStoredUsers)
 var UsersMutex sync.Mutex
 
 // List of identified packages and their versions
-var Packages = make(map[string]string)
+var Packages = make(map[string]Package)
 
 // Packages mutex used to sync access to packages data across the go routines
 var PackagesMutex sync.Mutex
