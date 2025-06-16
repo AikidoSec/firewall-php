@@ -84,7 +84,7 @@ func GetMonitoredSinkStatsAndClear() map[string]MonitoredSinkStats {
 	return monitoredSinkStats
 }
 
-func GetPackagesAndClear() map[string]string {
+func GetPackages() map[string]string {
 	globals.PackagesMutex.Lock()
 	defer globals.PackagesMutex.Unlock()
 
@@ -149,7 +149,6 @@ func SendHeartbeatEvent() {
 		Hostnames:           GetHostnamesAndClear(),
 		Routes:              GetRoutesAndClear(),
 		Users:               GetUsersAndClear(),
-		Packages:            GetPackagesAndClear(),
 		MiddlewareInstalled: GetMiddlewareInstalled(),
 	}
 
