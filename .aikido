@@ -1,0 +1,6 @@
+exclude:
+  paths:
+    - benchmarks/
+    - tests/
+    - docs/
+    - tools/benchmark_report.py
