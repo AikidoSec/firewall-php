@@ -81,6 +81,24 @@ func OnDomain(domain string, port uint32) {
 	log.Debugf("Domain sent via socket: %v:%v", domain, port)
 }
 
+/* Send packages to Aikido Agent via gRPC */
+func OnPackages(packages map[string]string) {
+	if client == nil {
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+
+	_, err := client.OnPackages(ctx, &protos.Packages{Packages: packages})
+	if err != nil {
+		log.Warnf("Could not send packages %v: %v", packages, err)
+		return
+	}
+
+	log.Debugf("Packages sent via socket: %v", packages)
+}
+
 /* Send request metadata (route & method) to Aikido Agent via gRPC */
 func GetRateLimitingStatus(method string, route string, routeParsed string, user string, ip string, timeout time.Duration) *protos.RateLimitingStatus {
 	if client == nil {

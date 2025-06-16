@@ -149,6 +149,7 @@ def assert_event_contains_subset_file(event, event_subset_file):
 
 def assert_started_event_is_valid(event):
     assert_event_contains_subset(event, {"type": "started", "agent": { "library": "firewall-php" } })
+    assert len(event["packages"]) > 0, "At least one package should be present in the started event"
     
 def assert_detection_event_is_valid(event):
     assert_event_contains_subset(event, {"type": "detected_attack", "agent": { "library": "firewall-php" } })

@@ -91,14 +91,15 @@ type Started struct {
 }
 
 type Heartbeat struct {
-	Type                string     `json:"type"`
-	Stats               Stats      `json:"stats"`
-	Hostnames           []Hostname `json:"hostnames"`
-	Routes              []Route    `json:"routes"`
-	Users               []User     `json:"users"`
-	Agent               AgentInfo  `json:"agent"`
-	Time                int64      `json:"time"`
-	MiddlewareInstalled bool       `json:"middlewareInstalled"`
+	Type                string            `json:"type"`
+	Stats               Stats             `json:"stats"`
+	Packages            map[string]string `json:"packages"`
+	Hostnames           []Hostname        `json:"hostnames"`
+	Routes              []Route           `json:"routes"`
+	Users               []User            `json:"users"`
+	Agent               AgentInfo         `json:"agent"`
+	Time                int64             `json:"time"`
+	MiddlewareInstalled bool              `json:"middlewareInstalled"`
 }
 
 type RequestInfo struct {

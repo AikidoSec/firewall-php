@@ -8,6 +8,7 @@ option go_package = "ipc/protos;protos";
 
 service Aikido {
   rpc OnConfig (Config) returns (google.protobuf.Empty);
+  rpc OnPackages(Packages) returns (google.protobuf.Empty);
   rpc OnDomain (Domain) returns (google.protobuf.Empty);
   rpc GetRateLimitingStatus (RateLimitingInfo) returns (RateLimitingStatus);
   rpc OnRequestShutdown (RequestMetadataShutdown) returns (google.protobuf.Empty);
@@ -26,6 +27,10 @@ message Config {
   bool blocking = 3;
   bool localhost_allowed_by_default = 4;
   bool collect_api_schema = 5;
+}
+
+message Packages {
+  map<string, string> packages = 1;
 }
 
 message Domain {
