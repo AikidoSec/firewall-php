@@ -82,9 +82,9 @@ type AgentInfo struct {
 	Hostname                  string            `json:"hostname"`
 	Version                   string            `json:"version"`
 	IPAddress                 string            `json:"ipAddress"`
-	Packages                  map[string]string `json:"packages"`
 	OS                        OsInfo            `json:"os"`
 	Platform                  PlatformInfo      `json:"platform"`
+	Packages                  map[string]string `json:"packages"`
 	PreventPrototypePollution bool              `json:"preventedPrototypePollution"`
 	NodeEnv                   string            `json:"nodeEnv"`
 	Library                   string            `json:"library"`
