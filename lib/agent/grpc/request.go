@@ -28,6 +28,19 @@ func storeAttackStats(req *protos.AttackDetected) {
 	}
 }
 
+func storePackages(packages map[string]string) {
+	globals.PackagesMutex.Lock()
+	defer globals.PackagesMutex.Unlock()
+
+	for packageName, packageVersion := range packages {
+		globals.Packages[packageName] = Package{
+			Name:       packageName,
+			Version:    packageVersion,
+			RequiredAt: utils.GetTime(),
+		}
+	}
+}
+
 func storeMonitoredListsMatches(m *map[string]int, lists []string) {
 	if *m == nil {
 		*m = make(map[string]int)

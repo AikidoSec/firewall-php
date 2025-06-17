@@ -71,6 +71,12 @@ type Stats struct {
 	IpAddresses MonitoredListsBreakdown       `json:"ipAddresses"`
 }
 
+type Package struct {
+	Name       string `json:"name"`
+	Version    string `json:"version"`
+	RequiredAt int64  `json:"requiredAt"`
+}
+
 type AgentInfo struct {
 	DryMode                   bool              `json:"dryMode"`
 	Hostname                  string            `json:"hostname"`
@@ -93,6 +99,7 @@ type Started struct {
 type Heartbeat struct {
 	Type                string     `json:"type"`
 	Stats               Stats      `json:"stats"`
+	Packages            []Package  `json:"packages"`
 	Hostnames           []Hostname `json:"hostnames"`
 	Routes              []Route    `json:"routes"`
 	Users               []User     `json:"users"`

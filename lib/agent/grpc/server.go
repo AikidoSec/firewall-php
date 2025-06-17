@@ -36,6 +36,11 @@ func (s *server) OnConfig(ctx context.Context, req *protos.Config) (*emptypb.Emp
 	return &emptypb.Empty{}, nil
 }
 
+func (s *server) OnPackages(ctx context.Context, req *protos.Packages) (*emptypb.Empty, error) {
+	storePackages(req.GetPackages())
+	return &emptypb.Empty{}, nil
+}
+
 func (s *server) OnDomain(ctx context.Context, req *protos.Domain) (*emptypb.Empty, error) {
 	log.Debugf("Received domain: %s:%d", req.GetDomain(), req.GetPort())
 	storeDomain(req.GetDomain(), req.GetPort())

@@ -7,11 +7,12 @@ import (
 )
 
 type EnvironmentConfigData struct {
-	SocketPath                string `json:"socket_path"`                  // '/run/aikido-{version}/aikido-{datetime}-{randint}.sock'
-	SAPI                      string `json:"sapi"`                         // '{php-sapi}'
-	TrustProxy                bool   `json:"trust_proxy"`                  // default: true
-	LocalhostAllowedByDefault bool   `json:"localhost_allowed_by_default"` // default: true
-	CollectApiSchema          bool   `json:"collect_api_schema"`           // default: true
+	SocketPath                string            `json:"socket_path"`                  // '/run/aikido-{version}/aikido-{datetime}-{randint}.sock'
+	SAPI                      string            `json:"sapi"`                         // '{php-sapi}'
+	TrustProxy                bool              `json:"trust_proxy"`                  // default: true
+	LocalhostAllowedByDefault bool              `json:"localhost_allowed_by_default"` // default: true
+	CollectApiSchema          bool              `json:"collect_api_schema"`           // default: true
+	Packages                  map[string]string `json:"packages"`                     // default: {}
 }
 
 type AikidoConfigData struct {

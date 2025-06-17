@@ -84,6 +84,18 @@ func GetMonitoredSinkStatsAndClear() map[string]MonitoredSinkStats {
 	return monitoredSinkStats
 }
 
+func GetPackages() []Package {
+	globals.PackagesMutex.Lock()
+	defer globals.PackagesMutex.Unlock()
+
+	packages := []Package{}
+	for _, p := range globals.Packages {
+		packages = append(packages, p)
+	}
+
+	return packages
+}
+
 func GetIpsBreakdownAndClear() MonitoredListsBreakdown {
 	m := MonitoredListsBreakdown{
 		Breakdown: globals.StatsData.IpAddressesMatches,
@@ -142,6 +154,7 @@ func SendHeartbeatEvent() {
 		Hostnames:           GetHostnamesAndClear(),
 		Routes:              GetRoutesAndClear(),
 		Users:               GetUsersAndClear(),
+		Packages:            GetPackages(),
 		MiddlewareInstalled: GetMiddlewareInstalled(),
 	}
 

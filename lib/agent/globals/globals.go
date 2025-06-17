@@ -58,6 +58,12 @@ var UsersQueue = NewQueue[string](MaxNumberOfStoredUsers)
 // Users mutex used to sync access across the go routines
 var UsersMutex sync.Mutex
 
+// List of identified packages and their versions
+var Packages = make(map[string]Package)
+
+// Packages mutex used to sync access to packages data across the go routines
+var PackagesMutex sync.Mutex
+
 // MiddlewareInstalled boolean value to be reported on heartbeat events
 var MiddlewareInstalled uint32
 
