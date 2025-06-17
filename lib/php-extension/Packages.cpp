@@ -25,9 +25,17 @@ unordered_map<std::string, std::string> GetPhpPackages() {
     zval *extension;
     zend_ulong index;
 
+    std::string phpVersion = PHP_VERSION;
+
     ZEND_HASH_FOREACH_KEY_VAL(Z_ARRVAL(extensions_array), index, key, extension) {
         if (extension && Z_TYPE_P(extension) == IS_STRING) {
-            packages[Z_STRVAL_P(extension)] = GetPhpPackageVersion(Z_STRVAL_P(extension));
+            std::string extensionName = Z_STRVAL_P(extension)
+            std::string version = GetPhpPackageVersion(extensionName);
+            if (version == phpVersion) {
+                // Skip PHP build-in extensions
+                continue;
+            }
+            packages[extensionName] = version;
         }
     } ZEND_HASH_FOREACH_END();
 
