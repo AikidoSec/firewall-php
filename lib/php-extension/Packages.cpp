@@ -29,11 +29,11 @@ unordered_map<std::string, std::string> GetPhpPackages() {
 
     ZEND_HASH_FOREACH_KEY_VAL(Z_ARRVAL(extensions_array), index, key, extension) {
         if (extension && Z_TYPE_P(extension) == IS_STRING) {
-            std::string extensionName = Z_STRVAL_P(extension)
+            std::string extensionName = Z_STRVAL_P(extension);
             std::string version = GetPhpPackageVersion(extensionName);
-            if (version == phpVersion) {
-                // Skip PHP build-in extensions
-                continue;
+            if (version.find(phpVersion) != std::string::npos) {
+                // Mark PHP build-in extensions if version for package contains the current PHP version
+                extensionName = "php-" + extensionName;
             }
             packages[extensionName] = version;
         }
