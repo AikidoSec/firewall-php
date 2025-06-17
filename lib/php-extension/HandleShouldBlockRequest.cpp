@@ -30,6 +30,11 @@ bool CheckBlocking(EVENT_ID eventId, bool& checkedBlocking) {
 ZEND_FUNCTION(should_block_request) {
     ScopedTimer scopedTimer("should_block_request");
 
+    if (AIKIDO_GLOBAL(sapi_name) == "cli") {
+        AIKIDO_LOG_DEBUG("should_block_request called in CLI mode! Skipping...\n");
+        return;
+    }
+
     if (AIKIDO_GLOBAL(disable) == true) {
         return;
     }
@@ -64,7 +69,10 @@ ZEND_FUNCTION(should_block_request) {
 ZEND_FUNCTION(auto_block_request) {
     ScopedTimer scopedTimer("auto_block_request");
 
-    AIKIDO_LOG_DEBUG("auto_block_request called!\n");
+    if (AIKIDO_GLOBAL(sapi_name) == "cli") {
+        AIKIDO_LOG_DEBUG("auto_block_request called in CLI mode! Skipping...\n");
+        return;
+    }
 
     if (AIKIDO_GLOBAL(disable) == true) {
         return;
