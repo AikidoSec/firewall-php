@@ -7,22 +7,22 @@ import (
 )
 
 type EnvironmentConfigData struct {
-	SocketPath                string            `json:"socket_path"`                  // '/run/aikido-{version}/aikido-{datetime}-{randint}.sock'
-	SAPI                      string            `json:"sapi"`                         // '{php-sapi}'
-	TrustProxy                bool              `json:"trust_proxy"`                  // default: true
-	LocalhostAllowedByDefault bool              `json:"localhost_allowed_by_default"` // default: true
-	CollectApiSchema          bool              `json:"collect_api_schema"`           // default: true
-	Packages                  map[string]string `json:"packages"`                     // default: {}
-}
-
-type AikidoConfigData struct {
-	Token                     string `json:"token"`                        // default: ''
-	LogLevel                  string `json:"log_level"`                    // default: 'WARN'
-	Blocking                  bool   `json:"blocking"`                     // default: false
+	SocketPath                string `json:"socket_path"`                  // '/run/aikido-{version}/aikido-{datetime}-{randint}.sock'
+	SAPI                      string `json:"sapi"`                         // '{php-sapi}'
 	TrustProxy                bool   `json:"trust_proxy"`                  // default: true
 	LocalhostAllowedByDefault bool   `json:"localhost_allowed_by_default"` // default: true
 	CollectApiSchema          bool   `json:"collect_api_schema"`           // default: true
-	DiskLogs                  bool   `json:"disk_logs"`                    // default: false
+}
+
+type AikidoConfigData struct {
+	Token                     string            `json:"token"`                        // default: ''
+	LogLevel                  string            `json:"log_level"`                    // default: 'WARN'
+	Blocking                  bool              `json:"blocking"`                     // default: false
+	TrustProxy                bool              `json:"trust_proxy"`                  // default: true
+	LocalhostAllowedByDefault bool              `json:"localhost_allowed_by_default"` // default: true
+	CollectApiSchema          bool              `json:"collect_api_schema"`           // default: true
+	DiskLogs                  bool              `json:"disk_logs"`                    // default: false
+	Packages                  map[string]string `json:"packages"`                     // default: {}
 }
 
 type RateLimiting struct {
