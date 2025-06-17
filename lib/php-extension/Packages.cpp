@@ -35,6 +35,18 @@ unordered_map<std::string, std::string> GetPhpPackages() {
     return packages;
 }
 
+std::string GetComposerPackageVersion(const std::string& version) {
+    if (version.empty()) {
+        return version;
+    }
+    
+    if (version[0] == 'v') {
+        return version.substr(1);
+    }
+    
+    return version;
+}
+
 unordered_map<std::string, std::string> GetComposerPackages() {
     unordered_map<std::string, std::string> packages;
 
@@ -61,7 +73,7 @@ unordered_map<std::string, std::string> GetComposerPackages() {
             if (!composerLockPackage.contains("name") || !composerLockPackage.contains("version")) {
                 continue;
             }
-            packages[composerLockPackage["name"]] = composerLockPackage["version"];
+            packages[composerLockPackage["name"]] = GetComposerPackageVersion(composerLockPackage["version"]);
         }
     } catch (const std::exception& e) {
         AIKIDO_LOG_ERROR("Error parsing composer.lock: %s\n", e.what());
