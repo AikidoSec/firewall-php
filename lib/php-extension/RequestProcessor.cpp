@@ -84,7 +84,7 @@ bool RequestProcessor::ReportStats() {
 
     for (const auto& [sink, sinkStats] : stats) {
         AIKIDO_LOG_INFO("Reporting stats for sink \"%s\" to Aikido Request Processor...\n", sink.c_str());
-        requestProcessorReportStatsFn(GoCreateString(sink), sinkStats.attacksDetected, sinkStats.attacksBlocked, sinkStats.interceptorThrewError, sinkStats.withoutContext, sinkStats.timings.size(), GoCreateSlice(sinkStats.timings));
+        requestProcessorReportStatsFn(GoCreateString(sink), GoCreateString(sinkStats.kind), sinkStats.attacksDetected, sinkStats.attacksBlocked, sinkStats.interceptorThrewError, sinkStats.withoutContext, sinkStats.timings.size(), GoCreateSlice(sinkStats.timings));
     }
     stats.clear();
     return true;

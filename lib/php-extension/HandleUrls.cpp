@@ -1,6 +1,8 @@
 #include "Includes.h"
 
 AIKIDO_HANDLER_FUNCTION(handle_pre_curl_exec) {
+    scopedTimer.SetSink(sink, "outgoing_http_op");
+
     zval *curlHandle = NULL;
 
     ZEND_PARSE_PARAMETERS_START(1, 1)

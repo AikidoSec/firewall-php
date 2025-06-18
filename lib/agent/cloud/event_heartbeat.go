@@ -117,9 +117,9 @@ func GetStatsAndClear() Stats {
 	defer globals.StatsData.StatsMutex.Unlock()
 
 	stats := Stats{
-		Sinks:     GetMonitoredSinkStatsAndClear(),
-		StartedAt: globals.StatsData.StartedAt,
-		EndedAt:   utils.GetTime(),
+		Operations: GetMonitoredSinkStatsAndClear(),
+		StartedAt:  globals.StatsData.StartedAt,
+		EndedAt:    utils.GetTime(),
 		Requests: Requests{
 			Total:   globals.StatsData.Requests,
 			Aborted: globals.StatsData.RequestsAborted,

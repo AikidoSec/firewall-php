@@ -19,7 +19,7 @@ zend_op_array* handle_file_compilation(zend_file_handle* file_handle, int type) 
             return original_file_compilation_handler(file_handle, type);
     }
 
-    ScopedTimer scopedTimer(eventCache.functionName);
+    ScopedTimer scopedTimer(eventCache.functionName, "fs_op");
 
     char* filename = PHP_GET_CHAR_PTR(file_handle->filename);
     

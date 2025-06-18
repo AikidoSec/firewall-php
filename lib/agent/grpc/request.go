@@ -64,6 +64,7 @@ func storeSinkStats(protoSinkStats *protos.MonitoredSinkStats) {
 		monitoredSinkTimings = MonitoredSinkTimings{}
 	}
 
+	monitoredSinkTimings.Kind = protoSinkStats.Kind
 	monitoredSinkTimings.AttacksDetected.Total += int(protoSinkStats.GetAttacksDetected())
 	monitoredSinkTimings.AttacksDetected.Blocked += int(protoSinkStats.GetAttacksBlocked())
 	monitoredSinkTimings.InterceptorThrewError += int(protoSinkStats.GetInterceptorThrewError())

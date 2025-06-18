@@ -6,6 +6,8 @@ void helper_handle_pre_shell_execution(std::string cmd, EVENT_ID &eventId) {
 }
 
 AIKIDO_HANDLER_FUNCTION(handle_shell_execution) {
+    scopedTimer.SetSink(sink, "exec_op");
+
     zend_string *cmd = NULL;
 
     ZEND_PARSE_PARAMETERS_START(0, -1)
@@ -16,6 +18,8 @@ AIKIDO_HANDLER_FUNCTION(handle_shell_execution) {
     if (!cmd) {
         return;
     }
+
+    scopedTimer.SetSink("shell_execution", "shell_op");
 
     helper_handle_pre_shell_execution(ZSTR_VAL(cmd), eventId);
 }
