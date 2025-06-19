@@ -61,22 +61,13 @@ func GetUsersAndClear() []User {
 func GetMonitoredSinkStatsAndClear() map[string]MonitoredSinkStats {
 	monitoredSinkStats := make(map[string]MonitoredSinkStats)
 	for sink, stats := range globals.StatsData.MonitoredSinkTimings {
-		if stats.Total <= globals.MinStatsCollectedForRelevantMetrics {
-			continue
-		}
-
 		monitoredSinkStats[sink] = MonitoredSinkStats{
+			Kind:                  stats.Kind,
 			AttacksDetected:       stats.AttacksDetected,
 			InterceptorThrewError: stats.InterceptorThrewError,
 			WithoutContext:        stats.WithoutContext,
 			Total:                 stats.Total,
-			CompressedTimings: []CompressedTiming{
-				{
-					AverageInMS:  utils.ComputeAverage(stats.Timings),
-					Percentiles:  utils.ComputePercentiles(stats.Timings),
-					CompressedAt: utils.GetTime(),
-				},
-			},
+			CompressedTimings:     stats.CompressedTimings,
 		}
 
 		delete(globals.StatsData.MonitoredSinkTimings, sink)
