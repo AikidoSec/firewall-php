@@ -17,12 +17,12 @@ inline void AddRequestTotalToStats() {
         return;
     }
     uint64_t totalOverhead = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - currentRequestStart).count();
-    AddToStats("request_total", "other", totalOverhead);
+    AddToStats("request_total", "request_op", totalOverhead);
     currentRequestStart = std::chrono::high_resolution_clock::time_point{};
 }
 
 inline void AddRequestTotalOverheadToStats() {
-    AddToStats("request_total_overhead", "other", totalOverheadForCurrentRequest);
+    AddToStats("request_total_overhead", "request_op", totalOverheadForCurrentRequest);
     totalOverheadForCurrentRequest = 0;
 }
 

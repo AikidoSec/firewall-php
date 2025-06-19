@@ -19,8 +19,6 @@ AIKIDO_HANDLER_FUNCTION(handle_shell_execution) {
         return;
     }
 
-    scopedTimer.SetSink("shell_execution", "shell_op");
-
     helper_handle_pre_shell_execution(ZSTR_VAL(cmd), eventId);
 }
 

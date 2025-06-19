@@ -196,8 +196,6 @@ func OnMonitoredSinkStats(sink, kind string, attacksDetected, attacksBlocked, in
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	log.Debugf("Got stats for sink \"%s\"(%s): attacksDetected = %d, attacksBlocked = %d, interceptorThrewError = %d, withoutContext = %d, total = %d", sink, kind, attacksDetected, attacksBlocked, interceptorThrewError, withoutContext, total)
-
 	_, err := client.OnMonitoredSinkStats(ctx, &protos.MonitoredSinkStats{
 		Sink:                  sink,
 		Kind:                  kind,
