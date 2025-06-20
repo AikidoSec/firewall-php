@@ -120,7 +120,7 @@ class AikidoMiddleware
         // If a user is authenticated, set the user in Aikido Zen context
         if ($userId) {
             \aikido\set_user($userId);
-            // If you want to set the user's name in Aikido Zen context, you can change the above call with:
+            // If you want to set the user's name in Aikido Zen context, you can change the above to:
             // \aikido\set_user($userId, Auth::user()?->name);
         }
 
