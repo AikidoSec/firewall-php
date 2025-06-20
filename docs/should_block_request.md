@@ -95,7 +95,7 @@ class AikidoMiddleware implements MiddlewareInterface
 
 ## Laravel
 
-1. Place the ZenBlockDecision middleware in `app/Http/Middleware/AikidoMiddleware.php`.
+1. Place the AikidoMiddleware in `app/Http/Middleware/AikidoMiddleware.php`.
 
 ```php
 <?php
@@ -105,7 +105,7 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Support\Facades\Auth;
 
-class ZenBlockDecision
+class AikidoMiddleware
 {
     public function handle($request, Closure $next)
     {
@@ -150,7 +150,7 @@ class ZenBlockDecision
 ```
 
 2. In `bootstrap/app.php`, apply the following changes:
-```
+```php
 // ...
 use App\Http\Middleware\AikidoMiddleware;
 
