@@ -8,7 +8,7 @@
     ...
     
     SetEnv AIKIDO_TOKEN "AIK_RUNTIME_..."
-    SetEnv AIKIDO_BLOCKING "False"
+    SetEnv AIKIDO_BLOCK "False"
 
     ...
 
@@ -25,7 +25,7 @@ You can also use PassEnv if the environment is already configured at the system 
 <VirtualHost *:80>
     ...
     PassEnv AIKIDO_TOKEN
-    PassEnv AIKIDO_BLOCKING
+    PassEnv AIKIDO_BLOCK
     ...
 </VirtualHost>
 ```

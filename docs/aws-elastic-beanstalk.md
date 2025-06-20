@@ -23,6 +23,6 @@ files:
       /var/log/aikido-*/*.log
 ```
 
-2. Go to `AWS EB enviroment -> Configuration -> Updates, monitoring, and logging -> Edit`. add the `AIKIDO_TOKEN` and `AIKIDO_BLOCKING` environment values and save.
+2. Go to `AWS EB enviroment -> Configuration -> Updates, monitoring, and logging -> Edit`. add the `AIKIDO_TOKEN` and `AIKIDO_BLOCK` environment values and save.
 
 You can get your token from the [Aikido Security Dashboard](https://help.aikido.dev/doc/creating-an-aikido-zen-firewall-token/doc6vRJNzC4u).
