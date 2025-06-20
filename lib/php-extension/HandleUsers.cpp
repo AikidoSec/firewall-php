@@ -51,5 +51,7 @@ ZEND_FUNCTION(set_user) {
         nameString = std::string(name, nameLength);
     }
 
+    AIKIDO_LOG_DEBUG("set_user called with id=%s\n", idString.c_str());
+
     RETURN_BOOL(SendUserEvent(idString, nameString));
 }
