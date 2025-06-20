@@ -151,7 +151,9 @@ class AikidoMiddleware
 
 2. In `bootstrap/app.php`, apply the following changes:
 ```php
+<?php
 // ...
+
 use App\Http\Middleware\AikidoMiddleware;
 
 return Application::configure(basePath: dirname(__DIR__))
