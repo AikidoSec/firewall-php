@@ -10,7 +10,7 @@ example.com {
     php_fastcgi unix//run/php/php-fpm.sock {
         ...
         env AIKIDO_TOKEN "AIK_RUNTIME_...."
-        env AIKIDO_BLOCKING "False"
+        env AIKIDO_BLOCK "False"
         ...
     }
     file_server
@@ -29,7 +29,7 @@ You can get your token from the [Aikido Security Dashboard](https://help.aikido.
 ...
 clear_env = no
 env[AIKIDO_TOKEN] = $AIKIDO_TOKEN
-env[AIKIDO_BLOCKING] = $AIKIDO_BLOCKING
+env[AIKIDO_BLOCK] = $AIKIDO_BLOCK
 ```
 
 3. Restart your Caddy and PHP-FPM services
