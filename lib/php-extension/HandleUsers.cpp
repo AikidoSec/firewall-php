@@ -20,6 +20,8 @@ bool SendUserEvent(std::string id, std::string username) {
 // Returns true if the setting of the user succeeded, false otherwise.
 ZEND_FUNCTION(set_user) {
     ScopedTimer scopedTimer("set_user");
+
+    AIKIDO_LOG_DEBUG("set_user called!\n");
     
     if (AIKIDO_GLOBAL(sapi_name) == "cli") {
         AIKIDO_LOG_DEBUG("set_user called in CLI mode! Skipping...\n");
