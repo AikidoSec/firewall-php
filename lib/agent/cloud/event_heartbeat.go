@@ -121,8 +121,9 @@ func GetStatsAndClear() Stats {
 		StartedAt: globals.StatsData.StartedAt,
 		EndedAt:   utils.GetTime(),
 		Requests: Requests{
-			Total:   globals.StatsData.Requests,
-			Aborted: globals.StatsData.RequestsAborted,
+			Total:       globals.StatsData.Requests,
+			RateLimited: globals.StatsData.RequestsRateLimited,
+			Aborted:     globals.StatsData.RequestsAborted,
 			AttacksDetected: AttacksDetected{
 				Total:   globals.StatsData.Attacks,
 				Blocked: globals.StatsData.AttacksBlocked,

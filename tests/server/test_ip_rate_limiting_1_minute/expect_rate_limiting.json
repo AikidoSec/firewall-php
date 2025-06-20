@@ -1,0 +1,31 @@
+{
+    "type": "heartbeat",
+    "stats": {
+        "requests": {
+            "total": 115,
+            "aborted": 0,
+            "rateLimited": 10,
+            "attacksDetected": {
+                "total": 0,
+                "blocked": 0
+            }
+        }
+    },
+    "routes": [
+        {
+            "path": "/",
+            "method": "GET",
+            "hits": 15,
+            "rateLimitedCount": 10
+        },
+        {
+            "path": "/test",
+            "method": "GET",
+            "hits": 100,
+            "rateLimitedCount": 0
+        }
+    ],
+    "agent": {
+        "library": "firewall-php"
+    }
+}

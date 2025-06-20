@@ -11,11 +11,14 @@ import (
 	"strings"
 )
 
-func storeStats() {
+func storeTotalStats(rateLimited bool) {
 	globals.StatsData.StatsMutex.Lock()
 	defer globals.StatsData.StatsMutex.Unlock()
 
 	globals.StatsData.Requests += 1
+	if rateLimited {
+		globals.StatsData.RequestsRateLimited += 1
+	}
 }
 
 func storeAttackStats(req *protos.AttackDetected) {
@@ -122,7 +125,7 @@ func getMergedApiSpec(currentApiSpec *protos.APISpec, newApiSpec *protos.APISpec
 	}
 }
 
-func storeRoute(method string, route string, apiSpec *protos.APISpec) {
+func storeRoute(method string, route string, apiSpec *protos.APISpec, rateLimited bool) {
 	globals.RoutesMutex.Lock()
 	defer globals.RoutesMutex.Unlock()
 
@@ -139,6 +142,9 @@ func storeRoute(method string, route string, apiSpec *protos.APISpec) {
 
 	routeData.Hits++
 	routeData.ApiSpec = getMergedApiSpec(routeData.ApiSpec, apiSpec)
+	if rateLimited {
+		routeData.RateLimitedCount += 1
+	}
 }
 
 func incrementRateLimitingCounts(m map[string]*RateLimitingCounts, key string) {

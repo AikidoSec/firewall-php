@@ -18,10 +18,7 @@ def run_test():
         
     time.sleep(10)
     
-    for _ in range(5):
-        response = php_server_get("/myroute/" + generate_random_string(10))
-        
-    for _ in range(5):
+    for _ in range(10):
         response = php_server_get("/myroute/" + generate_random_string(10))
         assert_response_code_is(response, 429)
         assert_response_header_contains(response, "Content-Type", "text")
@@ -48,6 +45,13 @@ def run_test():
     assert_response_code_is(response, 429)
     assert_response_header_contains(response, "Content-Type", "text")
     assert_response_body_contains(response, "Rate limit exceeded")
+
+    mock_server_wait_for_new_events(60)
+    
+    events = mock_server_get_events()
+    assert_events_length_is(events, 2)
+    assert_started_event_is_valid(events[0])
+    assert_event_contains_subset_file(events[1], "expect_rate_limiting.json")
     
 if __name__ == "__main__":
     load_test_args()

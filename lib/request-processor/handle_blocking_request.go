@@ -61,6 +61,7 @@ func OnGetBlockingStatus() string {
 		}
 		rateLimitingStatus := grpc.GetRateLimitingStatus(method, route, routeParsed, userId, ip, 10*time.Millisecond)
 		if rateLimitingStatus != nil && rateLimitingStatus.Block {
+			context.ContextSetIsEndpointRateLimited()
 			log.Infof("Request made from IP \"%s\" is ratelimited by \"%s\"!", ip, rateLimitingStatus.Trigger)
 			return GetAction("store", "ratelimited", rateLimitingStatus.Trigger, "configured rate limit exceeded by current ip", ip, 429)
 		}

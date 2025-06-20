@@ -54,6 +54,7 @@ message RequestMetadataShutdown {
   string user = 5;
   string ip = 6;
   APISpec apiSpec = 7;
+  bool rateLimited = 8;
 }
 
 message MonitoredSinkStats {
