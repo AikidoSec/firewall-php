@@ -95,6 +95,8 @@ class AikidoMiddleware implements MiddlewareInterface
 
 ## Laravel
 
+1. Place the ZenBlockDecision middleware in `app/Http/Middleware/AikidoMiddleware.php`.
+
 ```php
 <?php
 
@@ -115,10 +117,11 @@ class ZenBlockDecision
         // Get the authenticated user's ID from Laravel's Auth system
         $userId = Auth::id();
 
-        // If a user is authenticated, set the user in Aikido's firewall context
+        // If a user is authenticated, set the user in Aikido Zen context
         if ($userId) {
-            // If username is available, you can set it as the second parameter in the \aikido\set_user function call
             \aikido\set_user($userId);
+            // If you want to set the user's name in Aikido Zen context, you can change the above call with:
+            // \aikido\set_user($userId, Auth::user()->name);
         }
 
         // Check blocking decision from Aikido
@@ -144,4 +147,28 @@ class ZenBlockDecision
         return $next($request);
     }
 }
+```
+
+2. In `bootstrap/app.php`, apply the following changes:
+```
+// ...
+use App\Http\Middleware\AikidoMiddleware;
+
+return Application::configure(basePath: dirname(__DIR__))
+    ->withRouting(
+        web: __DIR__.'/../routes/web.php',
+        api: __DIR__.'/../routes/api.php',
+        commands: __DIR__.'/../routes/console.php',
+    )
+    ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->web(append: [
+            AikidoMiddleware::class,
+        ]);
+        $middleware->api(append: [
+            AikidoMiddleware::class,
+        ]);
+        // Append AikidoMiddleware to other custom groups
+    })
+
+// ...
 ```
