@@ -121,7 +121,7 @@ class AikidoMiddleware
         if ($userId) {
             \aikido\set_user($userId);
             // If you want to set the user's name in Aikido Zen context, you can change the above call with:
-            // \aikido\set_user($userId, Auth::user()->name);
+            // \aikido\set_user($userId, Auth::user()?->name);
         }
 
         // Check blocking decision from Aikido
