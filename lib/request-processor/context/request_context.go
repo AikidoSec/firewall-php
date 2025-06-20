@@ -25,6 +25,7 @@ type RequestContextData struct {
 	IsEndpointRateLimitingEnabled *bool
 	IsEndpointProtectionTurnedOff *bool
 	IsEndpointIpAllowed           *bool
+	IsEndpointRateLimited         bool
 	UserAgent                     *string
 	UserId                        *string
 	UserName                      *string
@@ -165,4 +166,8 @@ func IsEndpointIpAllowed() bool {
 
 func IsEndpointProtectionTurnedOff() bool {
 	return GetFromCache(ContextSetIsEndpointProtectionTurnedOff, &Context.IsEndpointProtectionTurnedOff)
+}
+
+func IsEndpointRateLimited() bool {
+	return Context.IsEndpointRateLimited
 }

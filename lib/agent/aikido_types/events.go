@@ -19,10 +19,11 @@ type Hostname struct {
 }
 
 type Route struct {
-	Path    string          `json:"path"`
-	Method  string          `json:"method"`
-	Hits    int64           `json:"hits"`
-	ApiSpec *protos.APISpec `json:"apispec"`
+	Path             string          `json:"path"`
+	Method           string          `json:"method"`
+	Hits             int64           `json:"hits"`
+	RateLimitedCount int64           `json:"rateLimitedCount"`
+	ApiSpec          *protos.APISpec `json:"apispec"`
 }
 
 type User struct {
@@ -59,6 +60,7 @@ type MonitoredListsBreakdown struct {
 type Requests struct {
 	Total           int             `json:"total"`
 	Aborted         int             `json:"aborted"`
+	RateLimited     int             `json:"rateLimited"`
 	AttacksDetected AttacksDetected `json:"attacksDetected"`
 }
 

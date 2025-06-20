@@ -231,3 +231,7 @@ func ContextSetIsEndpointIpAllowed() {
 
 	Context.IsEndpointIpAllowed = &isEndpointIpAllowedBool
 }
+
+func ContextSetIsEndpointRateLimited() {
+	Context.IsEndpointRateLimited = true
+}

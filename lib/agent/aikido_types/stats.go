@@ -16,11 +16,12 @@ type MonitoredSinkTimings struct {
 type StatsDataType struct {
 	StatsMutex sync.Mutex
 
-	StartedAt       int64
-	Requests        int
-	RequestsAborted int
-	Attacks         int
-	AttacksBlocked  int
+	StartedAt           int64
+	Requests            int
+	RequestsAborted     int
+	RequestsRateLimited int
+	Attacks             int
+	AttacksBlocked      int
 
 	MonitoredSinkTimings map[string]MonitoredSinkTimings
 

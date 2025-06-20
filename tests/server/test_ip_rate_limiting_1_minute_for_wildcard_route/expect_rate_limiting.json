@@ -1,0 +1,37 @@
+{
+    "type": "heartbeat",
+    "stats": {
+        "requests": {
+            "total": 120,
+            "aborted": 0,
+            "rateLimited": 12,
+            "attacksDetected": {
+                "total": 0,
+                "blocked": 0
+            }
+        }
+    },
+    "routes": [
+        {
+            "path": "/login",
+            "method": "GET",
+            "hits": 3,
+            "rateLimitedCount": 1
+        },
+        {
+            "path": "/login",
+            "method": "POST",
+            "hits": 2,
+            "rateLimitedCount": 1
+        },
+        {
+            "path": "/test",
+            "method": "GET",
+            "hits": 100,
+            "rateLimitedCount": 0
+        }
+    ],
+    "agent": {
+        "library": "firewall-php"
+    }
+}

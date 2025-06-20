@@ -30,5 +30,5 @@
     ],
     "blockedUserIds": [],
     "allowedIPAddresses": [],
-    "receivedAnyStats": true
+    "receivedAnyStats": false
 }
