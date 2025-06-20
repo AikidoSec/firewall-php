@@ -59,7 +59,7 @@ PHP_MSHUTDOWN_FUNCTION(aikido) {
 }
 
 PHP_RINIT_FUNCTION(aikido) {
-    ScopedTimer scopedTimer("request_init");
+    ScopedTimer scopedTimer("request_init", "request_op");
 
     AIKIDO_LOG_DEBUG("RINIT started!\n");
     
@@ -74,7 +74,7 @@ PHP_RINIT_FUNCTION(aikido) {
 }
 
 PHP_RSHUTDOWN_FUNCTION(aikido) {
-    ScopedTimer scopedTimer("request_shutdown");
+    ScopedTimer scopedTimer("request_shutdown", "request_op");
 
     AIKIDO_LOG_DEBUG("RSHUTDOWN started!\n");
 

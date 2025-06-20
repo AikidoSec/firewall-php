@@ -158,5 +158,5 @@ void LoadEnvironment() {
     AIKIDO_GLOBAL(token) = GetEnvString("AIKIDO_TOKEN", "");
     AIKIDO_GLOBAL(endpoint) = GetEnvString("AIKIDO_ENDPOINT", "https://guard.aikido.dev/");
     AIKIDO_GLOBAL(config_endpoint) = GetEnvString("AIKIDO_REALTIME_ENDPOINT", "https://runtime.aikido.dev/");
-    AIKIDO_GLOBAL(report_stats_interval_to_agent) = GetEnvNumber("AIKIDO_REPORT_STATS_INTERVAL", 10000);
+    AIKIDO_GLOBAL(report_stats_interval_to_agent) = GetEnvNumber("AIKIDO_REPORT_STATS_INTERVAL", 1000);
 }

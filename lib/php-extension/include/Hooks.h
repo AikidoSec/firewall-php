@@ -1,6 +1,6 @@
 #pragma once
 
-typedef void (*aikido_handler)(INTERNAL_FUNCTION_PARAMETERS, EVENT_ID &eventId);
+typedef void (*aikido_handler)(INTERNAL_FUNCTION_PARAMETERS, EVENT_ID &eventId, std::string &sink, ScopedTimer &scopedTimer);
 typedef zend_op_array* (*aikido_file_compilation_handler)(zend_file_handle *file_handle, int type);
 
 struct PHP_HANDLERS {

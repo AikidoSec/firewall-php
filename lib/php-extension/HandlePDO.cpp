@@ -1,6 +1,8 @@
 #include "Includes.h"
 
 AIKIDO_HANDLER_FUNCTION(handle_pre_pdo_query) {
+    scopedTimer.SetSink(sink, "sql_op");
+
     zend_string *query = NULL;
 
     ZEND_PARSE_PARAMETERS_START(0, -1)
@@ -37,6 +39,8 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_pdo_query) {
 }
 
 AIKIDO_HANDLER_FUNCTION(handle_pre_pdostatement_execute) {
+    scopedTimer.SetSink(sink, "sql_op");
+
     zval *pdo_statement_object = getThis();
     if (!pdo_statement_object) {
         return;

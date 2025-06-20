@@ -136,10 +136,10 @@ func RequestProcessorGetBlockingMode() int {
 }
 
 //export RequestProcessorReportStats
-func RequestProcessorReportStats(sink string, attacksDetected, attacksBlocked, interceptorThrewError, withoutContext, total int32, timings []int64) {
+func RequestProcessorReportStats(sink, kind string, attacksDetected, attacksBlocked, interceptorThrewError, withoutContext, total int32, timings []int64) {
 	clonedTimings := make([]int64, len(timings))
 	copy(clonedTimings, timings)
-	go grpc.OnMonitoredSinkStats(strings.Clone(sink), attacksDetected, attacksBlocked, interceptorThrewError, withoutContext, total, clonedTimings)
+	go grpc.OnMonitoredSinkStats(strings.Clone(sink), strings.Clone(kind), attacksDetected, attacksBlocked, interceptorThrewError, withoutContext, total, clonedTimings)
 }
 
 //export RequestProcessorUninit
