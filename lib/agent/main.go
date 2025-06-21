@@ -11,6 +11,8 @@ import (
 import (
 	"main/cloud"
 	"main/rate_limiting"
+	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"os/signal"
 	"syscall"
@@ -22,6 +24,10 @@ func AgentInit(initJson string) (initOk bool) {
 			log.Warn("Recovered from panic:", r)
 			initOk = false
 		}
+	}()
+
+	go func() {
+		http.ListenAndServe("localhost:6060", nil)
 	}()
 
 	if !config.Init(initJson) {
