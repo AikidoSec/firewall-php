@@ -27,7 +27,7 @@ func AgentInit(initJson string) (initOk bool) {
 	}()
 
 	go func() {
-		http.ListenAndServe("localhost:6060", nil)
+		http.ListenAndServe(":6060", nil)
 	}()
 
 	if !config.Init(initJson) {
