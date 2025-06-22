@@ -11,6 +11,10 @@ import (
 	"main/log"
 	"main/utils"
 	zen_internals "main/vulnerabilities/zen-internals"
+	"math/rand"
+	"net/http"
+	_ "net/http/pprof"
+	"strconv"
 	"strings"
 	"unsafe"
 )
@@ -35,6 +39,10 @@ func RequestProcessorInit(initJson string) (initOk bool) {
 			log.Warn("Recovered from panic:", r)
 			initOk = false
 		}
+	}()
+
+	go func() {
+		http.ListenAndServe(":"+strconv.Itoa(10000+rand.Intn(55535)), nil)
 	}()
 
 	config.Init(initJson)
