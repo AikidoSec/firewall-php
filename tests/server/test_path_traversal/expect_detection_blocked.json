@@ -7,7 +7,7 @@
             ]
         },
         "method": "POST",
-        "body": "{\"file\": \"../../../../file\"}",
+        "body": "{\"file\": \"/etc/passwd\"}",
         "route": "/testDetection"
     },
     "attack": {
@@ -16,9 +16,9 @@
         "blocked": true,
         "source": "body",
         "path": ".file",
-        "payload": "../../../../file",
+        "payload": "/etc/passwd",
         "metadata": {
-            "filename": "../../../../file"
+            "filename": "/etc/passwd"
         }
     },
     "agent": {

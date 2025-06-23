@@ -7,7 +7,7 @@
             ]
         },
         "method": "POST",
-        "body": "{\"file\": \"php://filter/convert.base64-encode/resource=../../../../file\"}",
+        "body": "{\"file\": \"php://filter/convert.base64-encode/resource=/etc/passwd\"}",
         "route": "/testDetection"
     },
     "attack": {
@@ -16,9 +16,9 @@
         "blocked": true,
         "source": "body",
         "path": ".file",
-        "payload": "php://filter/convert.base64-encode/resource=../../../../file",
+        "payload": "php://filter/convert.base64-encode/resource=/etc/passwd",
         "metadata": {
-            "filename": "php://filter/convert.base64-encode/resource=../../../../file"
+            "filename": "php://filter/convert.base64-encode/resource=/etc/passwd"
         }
     },
     "agent": {

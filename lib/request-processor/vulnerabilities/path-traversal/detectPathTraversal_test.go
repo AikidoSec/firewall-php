@@ -146,6 +146,18 @@ func TestDetectPathTraversal(t *testing.T) {
 		}
 	})
 
+	t.Run("php://filter/convert.base64-encode/resource=/etc/passwd", func(t *testing.T) {
+		if detectPathTraversal("php://filter/convert.base64-encode/resource=/etc/passwd", "php://filter/convert.base64-encode/resource=/etc/passwd", true) != true {
+			t.Error("expected true")
+		}
+	})
+
+	t.Run("php://filter/convert.base64-encode/resource=../../../../file", func(t *testing.T) {
+		if detectPathTraversal("php://filter/convert.base64-encode/resource=../../../../file", "php://filter/convert.base64-encode/resource=../../../../file", true) != true {
+			t.Error("expected true")
+		}
+	})
+
 	t.Run("does not flag example/test.txt", func(t *testing.T) {
 		if detectPathTraversal("/app/data/example/test.txt", "example/test.txt", true) != false {
 			t.Error("expected false")
