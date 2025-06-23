@@ -11,27 +11,17 @@ Server server;
 /* Always load the current "_SERVER" variable from PHP, 
 so we make sure it's always available and it's the correct one */
 zval* Server::GetServerVar() {
-    if (!this->serverString) {
-        return nullptr;
-    }
-    
     /* Guarantee that "_SERVER" PHP global variable is initialized for the current request */
-    if (!zend_is_auto_global(this->serverString)) {
-        AIKIDO_LOG_WARN("'_SERVER' is not initialized!");
+    zend_string* serverString = ZSTR_KNOWN(ZEND_STR_AUTOGLOBAL_SERVER);
+
+    if (!zend_is_auto_global(serverString)) {
+        AIKIDO_LOG_WARN("'_SERVER' autoglobal is not initialized!");
         return nullptr;
     }
 
     /* Get the "_SERVER" PHP global variable */
-    return zend_hash_str_find(&EG(symbol_table), "_SERVER", sizeof("_SERVER") - 1);
+    return zend_hash_find(&EG(symbol_table), serverString);
 }
-
-void Server::Init() {
-    this->serverString = zend_string_init("_SERVER", sizeof("_SERVER") - 1, 0);
-    if (!this->serverString) {
-        AIKIDO_LOG_WARN("Error allocating the '_SERVER' zend string!");
-    }
-}
-
 
 std::string Server::GetVar(const char* var) {
     GET_SERVER_VAR();
