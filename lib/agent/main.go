@@ -15,6 +15,7 @@ import (
 	_ "net/http/pprof"
 	"os"
 	"os/signal"
+	"runtime"
 	"syscall"
 )
 
@@ -26,6 +27,7 @@ func AgentInit(initJson string) (initOk bool) {
 		}
 	}()
 
+	runtime.MemProfileRate = 1
 	go func() {
 		http.ListenAndServe(":6060", nil)
 	}()
