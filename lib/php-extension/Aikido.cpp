@@ -83,7 +83,7 @@ PHP_RSHUTDOWN_FUNCTION(aikido) {
         return SUCCESS;
     }
 
-    DestroyAstToClean();
+    //DestroyAstToClean();
     phpLifecycle.RequestShutdown();
     AIKIDO_LOG_DEBUG("RSHUTDOWN finished!\n");
     return SUCCESS;

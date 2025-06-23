@@ -11,11 +11,8 @@ import (
 import (
 	"main/cloud"
 	"main/rate_limiting"
-	"net/http"
-	_ "net/http/pprof"
 	"os"
 	"os/signal"
-	"runtime"
 	"syscall"
 )
 
@@ -25,11 +22,6 @@ func AgentInit(initJson string) (initOk bool) {
 			log.Warn("Recovered from panic:", r)
 			initOk = false
 		}
-	}()
-
-	runtime.MemProfileRate = 1
-	go func() {
-		http.ListenAndServe(":6060", nil)
 	}()
 
 	if !config.Init(initJson) {
