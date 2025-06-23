@@ -14,6 +14,7 @@ import (
 	"math/rand"
 	"net/http"
 	_ "net/http/pprof"
+	"runtime"
 	"strconv"
 	"strings"
 	"unsafe"
@@ -41,6 +42,7 @@ func RequestProcessorInit(initJson string) (initOk bool) {
 		}
 	}()
 
+	runtime.MemProfileRate = 1
 	go func() {
 		http.ListenAndServe(":"+strconv.Itoa(10000+rand.Intn(55535)), nil)
 	}()
