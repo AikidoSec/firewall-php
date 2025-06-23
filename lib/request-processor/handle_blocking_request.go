@@ -79,7 +79,7 @@ func OnGetAutoBlockingStatus() string {
 	}
 
 	ip := context.GetIp()
-	userAgent := context.GetUserAgent()
+	//userAgent := context.GetUserAgent()
 
 	if !context.IsEndpointIpAllowed() {
 		log.Infof("IP \"%s\" is not allowed to access this endpoint!", ip)
