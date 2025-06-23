@@ -99,6 +99,8 @@ bool RequestProcessor::Init() {
         return true;
     }
 
+    server.Init();
+
     std::string requestProcessorLibPath = "/opt/aikido-" + std::string(PHP_AIKIDO_VERSION) + "/aikido-request-processor.so";
     this->libHandle = dlopen(requestProcessorLibPath.c_str(), RTLD_LAZY);
     if (!this->libHandle) {
@@ -145,7 +147,6 @@ bool RequestProcessor::RequestInit() {
         return false;
     }
 
-    server.Init();
     this->requestInitialized = true;
     this->numberOfRequests++;
 
