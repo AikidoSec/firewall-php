@@ -67,6 +67,8 @@ ZEND_FUNCTION(should_block_request) {
 }
 
 ZEND_FUNCTION(auto_block_request) {
+    return;
+    
     ScopedTimer scopedTimer("auto_block_request");
 
     if (AIKIDO_GLOBAL(sapi_name) == "cli") {
