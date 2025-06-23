@@ -12,20 +12,18 @@ Server server;
 so we make sure it's always available and it's the correct one */
 zval* Server::GetServerVar() {
     /* Guarantee that "_SERVER" PHP global variable is initialized for the current request */
-    zend_string* serverString = ZSTR_KNOWN(ZEND_STR_AUTOGLOBAL_SERVER);
-
-    if (!zend_is_auto_global(serverString)) {
+    if (!zend_is_auto_global_str(ZEND_STRL("_SERVER"));) {
         AIKIDO_LOG_WARN("'_SERVER' autoglobal is not initialized!");
         return nullptr;
     }
 
-    zval* serverVars = zend_hash_find(&EG(symbol_table), serverString);
-    if (!serverVars || Z_TYPE_P(serverVars) != IS_ARRAY) {
+    /* Make sure that "_SERVER" PHP global variable is an array */
+    if (Z_TYPE(PG(http_globals)[TRACK_VARS_SERVER]) != IS_ARRAY) {
         return nullptr;
     }
 
     /* Get the "_SERVER" PHP global variable */
-    return serverVars;
+    return PG(http_globals)[TRACK_VARS_SERVER];
 }
 
 std::string Server::GetVar(const char* var) {
