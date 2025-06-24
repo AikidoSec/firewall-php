@@ -66,9 +66,7 @@ ZEND_FUNCTION(should_block_request) {
     zend_update_property_string(blockingStatusClass, obj, "user_agent", sizeof("user_agent") - 1, action.UserAgent());
 }
 
-ZEND_FUNCTION(auto_block_request) {
-    return;
-    
+ZEND_FUNCTION(auto_block_request) {    
     ScopedTimer scopedTimer("auto_block_request");
 
     if (AIKIDO_GLOBAL(sapi_name) == "cli") {
