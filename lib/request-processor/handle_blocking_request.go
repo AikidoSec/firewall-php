@@ -110,11 +110,11 @@ func OnGetAutoBlockingStatus() string {
 			return GetAction("exit", "blocked", "ip", ipBlockedMatches[0].Description, ip, 403)
 		}
 
-		if userAgentMonitored, userAgentMonitoredDescriptions := utils.IsUserAgentMonitored(userAgent); userAgentMonitored {
-			log.Infof("User Agent \"%s\" found in monitored lists: %v!", userAgent, userAgentMonitoredDescriptions)
-			go grpc.OnMonitoredUserAgentMatch(userAgentMonitoredDescriptions)
-		}
 	*/
+	if userAgentMonitored, userAgentMonitoredDescriptions := utils.IsUserAgentMonitored(userAgent); userAgentMonitored {
+		log.Infof("User Agent \"%s\" found in monitored lists: %v!", userAgent, userAgentMonitoredDescriptions)
+		go grpc.OnMonitoredUserAgentMatch(userAgentMonitoredDescriptions)
+	}
 
 	if userAgentBlocked, userAgentBlockedDescriptions := utils.IsUserAgentBlocked(userAgent); userAgentBlocked {
 		log.Infof("User Agent \"%s\" found in blocked lists: %v!", userAgent, userAgentBlockedDescriptions)
