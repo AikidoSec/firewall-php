@@ -111,20 +111,22 @@ func OnGetAutoBlockingStatus() string {
 		}
 
 	*/
-	if userAgentMonitored, userAgentMonitoredDescriptions := utils.IsUserAgentMonitored(userAgent); userAgentMonitored {
-		log.Infof("User Agent \"%s\" found in monitored lists: %v!", userAgent, userAgentMonitoredDescriptions)
-		go grpc.OnMonitoredUserAgentMatch(userAgentMonitoredDescriptions)
-	}
+	for i := 0; i < 100; i++ {
+		if userAgentMonitored, userAgentMonitoredDescriptions := utils.IsUserAgentMonitored(userAgent); userAgentMonitored {
+			log.Infof("User Agent \"%s\" found in monitored lists: %v!", userAgent, userAgentMonitoredDescriptions)
+			go grpc.OnMonitoredUserAgentMatch(userAgentMonitoredDescriptions)
+		}
 
-	if userAgentBlocked, userAgentBlockedDescriptions := utils.IsUserAgentBlocked(userAgent); userAgentBlocked {
-		log.Infof("User Agent \"%s\" found in blocked lists: %v!", userAgent, userAgentBlockedDescriptions)
-		go grpc.OnMonitoredUserAgentMatch(userAgentBlockedDescriptions)
+		if userAgentBlocked, userAgentBlockedDescriptions := utils.IsUserAgentBlocked(userAgent); userAgentBlocked {
+			log.Infof("User Agent \"%s\" found in blocked lists: %v!", userAgent, userAgentBlockedDescriptions)
+			go grpc.OnMonitoredUserAgentMatch(userAgentBlockedDescriptions)
 
-		//description := "unknown"
-		//if len(userAgentBlockedDescriptions) > 0 {
-		//	description = userAgentBlockedDescriptions[0]
-		//}
-		//return GetAction("exit", "blocked", "user-agent", description, userAgent, 403)
+			//description := "unknown"
+			//if len(userAgentBlockedDescriptions) > 0 {
+			//	description = userAgentBlockedDescriptions[0]
+			//}
+			//return GetAction("exit", "blocked", "user-agent", description, userAgent, 403)
+		}
 	}
 
 	return ""
