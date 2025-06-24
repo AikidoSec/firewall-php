@@ -2,16 +2,10 @@
 
 class Server {
    private:
-    // Stores the constant string "_SERVER", representing the PHP global variable 
-    // that is used to access data about the current request.
-    zend_string* serverString = nullptr;
-
     zval* GetServerVar();
 
    public:
     Server() = default;
-
-    void Init();
 
     std::string GetVar(const char* var);
 
