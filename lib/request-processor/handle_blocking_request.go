@@ -120,11 +120,11 @@ func OnGetAutoBlockingStatus() string {
 		log.Infof("User Agent \"%s\" found in blocked lists: %v!", userAgent, userAgentBlockedDescriptions)
 		go grpc.OnMonitoredUserAgentMatch(userAgentBlockedDescriptions)
 
-		description := "unknown"
-		if len(userAgentBlockedDescriptions) > 0 {
-			description = userAgentBlockedDescriptions[0]
-		}
-		return GetAction("exit", "blocked", "user-agent", description, userAgent, 403)
+		//description := "unknown"
+		//if len(userAgentBlockedDescriptions) > 0 {
+		//	description = userAgentBlockedDescriptions[0]
+		//}
+		//return GetAction("exit", "blocked", "user-agent", description, userAgent, 403)
 	}
 
 	return ""
