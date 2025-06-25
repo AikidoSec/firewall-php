@@ -6,11 +6,13 @@ import (
 )
 
 type MonitoredSinkTimings struct {
+	Kind                  string
 	AttacksDetected       AttacksDetected
 	InterceptorThrewError int
 	WithoutContext        int
 	Total                 int
 	Timings               []int64
+	CompressedTimings     []CompressedTiming
 }
 
 type StatsDataType struct {

@@ -81,7 +81,6 @@ ZEND_NAMED_FUNCTION(aikido_generic_handler) {
         }
 
         sink = scope_name;
-        scopedTimer.SetSink(sink);
 
         AIKIDO_LOG_DEBUG("Calling handler for \"%s\"!\n", scope_name.c_str());
 
@@ -93,7 +92,7 @@ ZEND_NAMED_FUNCTION(aikido_generic_handler) {
                 The event ID is initialy empty and it's only sent to Go only if the C++ handler
                 for the currently hooked function sets it.
         */
-        handler(INTERNAL_FUNCTION_PARAM_PASSTHRU, eventId);
+        handler(INTERNAL_FUNCTION_PARAM_PASSTHRU, eventId, sink, scopedTimer);
 
         if (aikido_process_event(eventId, sink) == BLOCK) {
             // exit generic handler and do not call the original handler, thus blocking the execution
@@ -119,7 +118,7 @@ ZEND_NAMED_FUNCTION(aikido_generic_handler) {
                     The event ID is initialy empty and it's only sent to Go only if the C++ handler
                     for the currently hooked function sets it.
             */
-            post_handler(INTERNAL_FUNCTION_PARAM_PASSTHRU, eventId);
+            post_handler(INTERNAL_FUNCTION_PARAM_PASSTHRU, eventId, sink, scopedTimer);
             aikido_process_event(eventId, sink);
         }
     }

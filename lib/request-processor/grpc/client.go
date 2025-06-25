@@ -188,7 +188,7 @@ func OnAttackDetected(attackDetected *protos.AttackDetected) {
 	log.Debugf("Attack detected event sent via socket")
 }
 
-func OnMonitoredSinkStats(sink string, attacksDetected, attacksBlocked, interceptorThrewError, withoutContext, total int32, timings []int64) {
+func OnMonitoredSinkStats(sink, kind string, attacksDetected, attacksBlocked, interceptorThrewError, withoutContext, total int32, timings []int64) {
 	if client == nil {
 		return
 	}
@@ -196,10 +196,9 @@ func OnMonitoredSinkStats(sink string, attacksDetected, attacksBlocked, intercep
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	log.Debugf("Got stats for sink \"%s\": attacksDetected = %d, attacksBlocked = %d, interceptorThrewError = %d, withoutContext = %d, total = %d", sink, attacksDetected, attacksBlocked, interceptorThrewError, withoutContext, total)
-
 	_, err := client.OnMonitoredSinkStats(ctx, &protos.MonitoredSinkStats{
 		Sink:                  sink,
+		Kind:                  kind,
 		AttacksDetected:       attacksDetected,
 		AttacksBlocked:        attacksBlocked,
 		InterceptorThrewError: interceptorThrewError,

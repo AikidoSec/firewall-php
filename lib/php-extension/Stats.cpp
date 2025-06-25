@@ -6,8 +6,9 @@ std::chrono::high_resolution_clock::time_point currentRequestStart = std::chrono
 
 uint64_t totalOverheadForCurrentRequest = 0;
 
-inline void AddToStats(const std::string& key, uint64_t duration) {
+inline void AddToStats(const std::string& key, const std::string& kind, uint64_t duration) {
     SinkStats& sinkStats = stats[key];
+    sinkStats.kind = kind;
     sinkStats.timings.push_back(duration);
 }
 
@@ -16,12 +17,12 @@ inline void AddRequestTotalToStats() {
         return;
     }
     uint64_t totalOverhead = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - currentRequestStart).count();
-    AddToStats("request_total", totalOverhead);
+    AddToStats("request_total", "request_op", totalOverhead);
     currentRequestStart = std::chrono::high_resolution_clock::time_point{};
 }
 
 inline void AddRequestTotalOverheadToStats() {
-    AddToStats("request_total_overhead", totalOverheadForCurrentRequest);
+    AddToStats("request_total_overhead", "request_op", totalOverheadForCurrentRequest);
     totalOverheadForCurrentRequest = 0;
 }
 
@@ -29,12 +30,13 @@ ScopedTimer::ScopedTimer() {
     this->Start();
 }
 
-ScopedTimer::ScopedTimer(std::string key) : key(key) {
+ScopedTimer::ScopedTimer(std::string key, std::string kind) : key(key), kind(kind) {
     this->Start();
 }
 
-void ScopedTimer::SetSink(std::string key) {
+void ScopedTimer::SetSink(std::string key, std::string kind) {
     this->key = key;
+    this->kind = kind;
 }
 
 void ScopedTimer::Start() {
@@ -53,7 +55,7 @@ void ScopedTimer::Stop() {
 }
 
 ScopedTimer::~ScopedTimer() {
-    if (this->key.empty()) {
+    if (this->key.empty() || this->kind.empty()) {
         return;
     }
     this->Stop();
@@ -62,7 +64,7 @@ ScopedTimer::~ScopedTimer() {
         AddRequestTotalOverheadToStats();
         AddRequestTotalToStats();
     }
-    AddToStats(this->key, this->duration);
+    AddToStats(this->key, this->kind, this->duration);
 }
 
 void SinkStats::IncrementAttacksDetected() {

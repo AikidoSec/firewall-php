@@ -42,12 +42,12 @@ using json = nlohmann::json;
 #include "Environment.h"
 #include "Action.h"
 #include "Cache.h"
+#include "Stats.h"
 #include "Hooks.h"
 #include "PhpWrappers.h"
 #include "Server.h"
 #include "RequestProcessor.h"
 #include "PhpLifecycle.h"
-#include "Stats.h"
 #include "Packages.h"
 
 #include "Utils.h"

@@ -46,6 +46,7 @@ type CompressedTiming struct {
 }
 
 type MonitoredSinkStats struct {
+	Kind                  string             `json:"kind"`
 	AttacksDetected       AttacksDetected    `json:"attacksDetected"`
 	InterceptorThrewError int                `json:"interceptorThrewError"`
 	WithoutContext        int                `json:"withoutContext"`
@@ -65,7 +66,7 @@ type Requests struct {
 }
 
 type Stats struct {
-	Sinks       map[string]MonitoredSinkStats `json:"sinks"`
+	Operations  map[string]MonitoredSinkStats `json:"operations"`
 	StartedAt   int64                         `json:"startedAt"`
 	EndedAt     int64                         `json:"endedAt"`
 	Requests    Requests                      `json:"requests"`

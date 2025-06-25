@@ -35,6 +35,8 @@ void helper_handle_post_file_path_access(EVENT_ID &eventId) {
 
 /* Handles PHP functions that have a file path as first parameter (pre-execution) */
 AIKIDO_HANDLER_FUNCTION(handle_pre_file_path_access) {
+    scopedTimer.SetSink(sink, "fs_op");
+
     zend_string *filename = NULL;
 
     ZEND_PARSE_PARAMETERS_START(0, -1)
@@ -56,6 +58,8 @@ AIKIDO_HANDLER_FUNCTION(handle_post_file_path_access) {
 
 /* Handles PHP functions that have a file path as both first and second parameter (pre-execution) */
 AIKIDO_HANDLER_FUNCTION(handle_pre_file_path_access_2) {
+    scopedTimer.SetSink(sink, "fs_op");
+
     zend_string *filename = NULL;
     zend_string *filename2 = NULL;
 
