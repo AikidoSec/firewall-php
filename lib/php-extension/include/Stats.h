@@ -10,7 +10,7 @@ class ScopedTimer {
    public:
     ScopedTimer();
     ScopedTimer(std::string key, std::string kind);
-    void SetSink(std::string key, std::string kind = "");
+    void SetSink(std::string key, std::string kind);
     void Start();
     void Stop();
     ~ScopedTimer();
