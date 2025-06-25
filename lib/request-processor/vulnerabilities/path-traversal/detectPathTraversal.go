@@ -1,9 +1,14 @@
 package path_traversal
 
-import "strings"
+import (
+	"strings"
+)
 
 func extractResourceOrOriginal(filePath string) string {
-	if strings.HasPrefix(filePath, "php://filter/") {
+	// Convert to lowercase for case-insensitive comparison
+	lowerFilePath := strings.ToLower(filePath)
+	if strings.HasPrefix(lowerFilePath, "php://filter/") {
+		// Use original string for splitting to preserve case in the resource path
 		parts := strings.Split(filePath, "/resource=")
 		if len(parts) > 1 {
 			return parts[1]

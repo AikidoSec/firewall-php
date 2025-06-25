@@ -36,6 +36,12 @@ func TestExtractResourceOrOriginal(t *testing.T) {
 		}
 	})
 
+	t.Run("Case insensitive", func(t *testing.T) {
+		if extractResourceOrOriginal("php://FiltEr/convert.base64-encode/resource=/etc/passwd") != "/etc/passwd" {
+			t.Error("expected /etc/passwd")
+		}
+	})
+
 }
 
 func TestDetectPathTraversal(t *testing.T) {

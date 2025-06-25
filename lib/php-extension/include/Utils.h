@@ -15,3 +15,5 @@ std::string GenerateSocketPath();
 const char* GetEventName(EVENT_ID event);
 
 std::string NormalizeAndDumpJson(const json& jsonStr);
+
+bool StartsWithCaseInsensitive(const std::string& str, const std::string& prefix);
