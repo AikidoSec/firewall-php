@@ -1,8 +1,8 @@
 #include "Includes.h"
 
 #define GET_SERVER_VAR() \
-    zval* server = this->GetServerVar(); \
-    if (!server) { \
+    zval* serverVars = this->GetServerVar(); \
+    if (!serverVars) { \
         return ""; \
     }
 
@@ -11,31 +11,24 @@ Server server;
 /* Always load the current "_SERVER" variable from PHP, 
 so we make sure it's always available and it's the correct one */
 zval* Server::GetServerVar() {
-    if (!this->serverString) {
+    /* Guarantee that "_SERVER" PHP global variable is initialized for the current request */
+    if (!zend_is_auto_global_str(ZEND_STRL("_SERVER"))) {
+        AIKIDO_LOG_WARN("'_SERVER' autoglobal is not initialized!");
         return nullptr;
     }
-    
-    /* Guarantee that "_SERVER" PHP global variable is initialized for the current request */
-    if (!zend_is_auto_global(this->serverString)) {
-        AIKIDO_LOG_WARN("'_SERVER' is not initialized!");
+
+    /* Make sure that "_SERVER" PHP global variable is an array */
+    if (Z_TYPE(PG(http_globals)[TRACK_VARS_SERVER]) != IS_ARRAY) {
         return nullptr;
     }
 
     /* Get the "_SERVER" PHP global variable */
-    return zend_hash_str_find(&EG(symbol_table), "_SERVER", sizeof("_SERVER") - 1);
+    return &PG(http_globals)[TRACK_VARS_SERVER];
 }
-
-void Server::Init() {
-    this->serverString = zend_string_init("_SERVER", sizeof("_SERVER") - 1, 0);
-    if (!this->serverString) {
-        AIKIDO_LOG_WARN("Error allocating the '_SERVER' zend string!");
-    }
-}
-
 
 std::string Server::GetVar(const char* var) {
     GET_SERVER_VAR();
-    zval* data = zend_hash_str_find(Z_ARRVAL_P(server), var, strlen(var));
+    zval* data = zend_hash_str_find(Z_ARRVAL_P(serverVars), var, strlen(var));
     if (!data) {
         return "";
     }
@@ -123,7 +116,7 @@ std::string Server::GetHeaders() {
     std::map<std::string, std::string> headers;
     zend_string* key;
     zval* val;
-    ZEND_HASH_FOREACH_STR_KEY_VAL(Z_ARRVAL_P(server), key, val) {
+    ZEND_HASH_FOREACH_STR_KEY_VAL(Z_ARRVAL_P(serverVars), key, val) {
         if (key && Z_TYPE_P(val) == IS_STRING) {
             std::string header_name(ZSTR_VAL(key));
             std::string http_header_key;

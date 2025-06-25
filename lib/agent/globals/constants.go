@@ -1,7 +1,7 @@
 package globals
 
 const (
-	Version                             = "1.0.122"
+	Version                             = "1.0.123"
 	ConfigUpdatedAtMethod               = "GET"
 	ConfigUpdatedAtAPI                  = "/config"
 	ConfigAPIMethod                     = "GET"

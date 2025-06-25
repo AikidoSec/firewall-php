@@ -31,7 +31,7 @@ func SendCloudRequest(endpoint string, route string, method string, payload inte
 			return nil, fmt.Errorf("failed to marshal payload: %v", err)
 		}
 
-		log.Infof("Sending %s request to %s with content %s", method, apiEndpoint, jsonData)
+		log.Infof("Sending %s request to %s with size %d and content: %s", method, apiEndpoint, len(jsonData), jsonData)
 
 		req, err = http.NewRequest(method, apiEndpoint, bytes.NewBuffer(jsonData))
 	} else {
