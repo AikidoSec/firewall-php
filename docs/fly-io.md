@@ -16,7 +16,7 @@ Add the required Aikido environment variables to your Fly.io application:
 
 ```bash
 fly secrets set AIKIDO_TOKEN=AIK_RUNTIME_...  # Replace with your actual token
-fly secrets set AIKIDO_BLOCKING=false         # Set to "true" to enable blocking mode
+fly secrets set AIKIDO_BLOCK=false         # Set to "true" to enable blocking mode
 ```
 
 You can get your token from the [Aikido Security Dashboard](https://help.aikido.dev/doc/creating-an-aikido-zen-firewall-token/doc6vRJNzC4u).
@@ -32,7 +32,7 @@ Create a script to install the Aikido PHP Firewall during deployment:
 #!/usr/bin/env bash
 cd /tmp
 
-curl -L -O https://github.com/AikidoSec/firewall-php/releases/download/v1.0.122/aikido-php-firewall.x86_64.deb
+curl -L -O https://github.com/AikidoSec/firewall-php/releases/download/v1.0.123/aikido-php-firewall.x86_64.deb
 dpkg -i -E ./aikido-php-firewall.x86_64.deb
 ```
 

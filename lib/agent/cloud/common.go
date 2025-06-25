@@ -8,6 +8,7 @@ import (
 	"main/log"
 	"main/utils"
 	"regexp"
+	"runtime"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -156,6 +157,10 @@ func UpdateListsConfig() bool {
 	for _, userAgentDetail := range tempListsConfig.UserAgentDetails {
 		CloudConfig.UserAgentDetails[userAgentDetail.Key] = userAgentDetail.Pattern
 	}
+
+	/* Force garbage collection to ensure that the IP blocklists temporary memory is released ASAP */
+	tempListsConfig = ListsConfigData{}
+	runtime.GC()
 
 	return true
 }

@@ -6,6 +6,8 @@
     #define PHP_GET_CHAR_PTR(x) ((char*)x)
 #endif
 
+void CallPhpExit();
+
 bool CallPhpEcho(std::string s);
 
 bool CallPhpFunction(std::string function_name, unsigned int params_number = 0, zval *params = nullptr, zval *return_value = nullptr, zval *object = nullptr);
