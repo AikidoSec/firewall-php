@@ -9,9 +9,9 @@ func extractResourceOrOriginal(filePath string) string {
 	lowerFilePath := strings.ToLower(filePath)
 	if strings.HasPrefix(lowerFilePath, "php://filter/") {
 		// Use original string for splitting to preserve case in the resource path
-		parts := strings.Split(filePath, "/resource=")
-		if len(parts) > 1 {
-			return parts[1]
+		index := strings.Index(filePath, "/resource=")
+		if index != -1 {
+			return filePath[index+len("/resource="):]
 		}
 	}
 	return filePath
