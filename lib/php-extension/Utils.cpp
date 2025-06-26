@@ -62,15 +62,3 @@ std::string NormalizeAndDumpJson(const json& jsonObj) {
     // https://json.nlohmann.me/api/basic_json/dump/
     return jsonObj.dump(-1, ' ', false, json::error_handler_t::ignore);
 }
-
-
-bool StartsWithCaseInsensitive(const std::string& str, const std::string& prefix) {
-    if (prefix.length() > str.length()) {
-        return false;
-    }
-    
-    return std::equal(prefix.begin(), prefix.end(), str.begin(),
-                     [](char a, char b) {
-                         return std::tolower(a) == std::tolower(b);
-                     });
-}
