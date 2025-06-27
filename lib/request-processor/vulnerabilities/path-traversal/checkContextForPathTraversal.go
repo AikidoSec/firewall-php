@@ -3,6 +3,7 @@ package path_traversal
 import (
 	"main/context"
 	"main/utils"
+	"strings"
 )
 
 func CheckContextForPathTraversal(filename string, operation string, checkPathStart bool) *utils.InterceptorResult {
@@ -31,8 +32,8 @@ func CheckContextForPathTraversal(filename string, operation string, checkPathSt
 }
 
 func SanitizePath(path string) string {
-	// If path starts with file:// -> remove it
-	if len(path) > 7 && path[:7] == "file://" {
+	// If path starts with file:// -> remove it (case insensitive)
+	if len(path) > 7 && strings.HasPrefix(strings.ToLower(path), "file://") {
 		path = path[7:]
 	}
 	return path

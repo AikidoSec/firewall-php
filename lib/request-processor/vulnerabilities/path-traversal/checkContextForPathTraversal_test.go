@@ -89,3 +89,34 @@ func TestCheckContextForPathTraversal(t *testing.T) {
 		}
 	})
 }
+
+func TestSanitizePath(t *testing.T) {
+	t.Run("file://test.txt", func(t *testing.T) {
+		if SanitizePath("file://test.txt") != "test.txt" {
+			t.Error("expected test.txt")
+		}
+	})
+
+	t.Run("FILE://test.txt", func(t *testing.T) {
+		if SanitizePath("FILE://test.txt") != "test.txt" {
+			t.Error("expected test.txt")
+		}
+	})
+
+	t.Run("fIle://test.txt", func(t *testing.T) {
+		if SanitizePath("fIle://test.txt") != "test.txt" {
+			t.Error("expected test.txt")
+		}
+	})
+	t.Run("test.txt", func(t *testing.T) {
+		if SanitizePath("test.txt") != "test.txt" {
+			t.Error("expected test.txt")
+		}
+	})
+	t.Run("One character", func(t *testing.T) {
+		if SanitizePath("t") != "t" {
+			t.Error("expected t")
+		}
+	})
+
+}
