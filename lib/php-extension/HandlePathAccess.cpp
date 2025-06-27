@@ -2,6 +2,7 @@
 
 /* Helper for handle pre file path access */
 void helper_handle_pre_file_path_access(char *filename, EVENT_ID &eventId) {
+    //https://github.com/php/php-src/blob/8b61c49987750b74bee19838c7f7c9fbbf53aace/ext/standard/php_fopen_wrapper.c#L339
     if (!strncasecmp(filename, "php://", 6) && 
         strncasecmp(filename, "php://filter", 12)) {
         // Whitelist all php:// streams apart from php://filter, for performance reasons (some PHP frameworks do 1000+ calls / request with these streams as param)
