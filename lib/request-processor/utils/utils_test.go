@@ -285,6 +285,12 @@ func TestParseFormData(t *testing.T) {
 	if result["b"] != "2" {
 		t.Errorf("Expected 2, got %v", result["b"])
 	}
+
+	data = "id=1+AND+sleep(3)--+="
+	result = ParseFormData(data, "&")
+	if result["id"] != "1 AND sleep(3)-- =" {
+		t.Errorf("Expected 1 AND sleep(3)-- =, got %v", result["id"])
+	}
 }
 
 func TestParseFormDataWithInvalidEncoding(t *testing.T) {
