@@ -62,3 +62,17 @@ std::string NormalizeAndDumpJson(const json& jsonObj) {
     // https://json.nlohmann.me/api/basic_json/dump/
     return jsonObj.dump(-1, ' ', false, json::error_handler_t::ignore);
 }
+
+std::string GetSqlDialectFromPdo(zval *pdo_object) {
+    if (!pdo_object) {
+        return "unknown";
+    }
+
+    zval retval;
+    if (CallPhpFunctionWithOneParam("getAttribute", PDO_ATTR_DRIVER_NAME, &retval, pdo_object)) {
+        if (Z_TYPE(retval) == IS_STRING) {
+            return Z_STRVAL(retval);
+        }
+    }
+    return "unknown";
+}
