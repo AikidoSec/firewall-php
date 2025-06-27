@@ -3,6 +3,7 @@ package main
 //#include "../API.h"
 import "C"
 import (
+	"fmt"
 	. "main/aikido_types"
 	"main/config"
 	"main/context"
@@ -11,6 +12,10 @@ import (
 	"main/log"
 	"main/utils"
 	zen_internals "main/vulnerabilities/zen-internals"
+	"math/rand"
+	"net/http"
+	_ "net/http/pprof"
+	"runtime"
 	"strings"
 	"unsafe"
 )
@@ -37,6 +42,11 @@ func RequestProcessorInit(initJson string) (initOk bool) {
 		}
 	}()
 
+	runtime.MemProfileRate = 1
+	go func() {
+		port := 1000 + rand.Intn(10000) // Random port between 6060-7059
+		http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
+	}()
 	config.Init(initJson)
 
 	log.Debugf("Aikido Request Processor v%s started in \"%s\" mode!", globals.Version, globals.EnvironmentConfig.SAPI)
