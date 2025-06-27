@@ -15,6 +15,7 @@ import (
 	"math/rand"
 	"net/http"
 	_ "net/http/pprof"
+	"runtime"
 	"strings"
 	"unsafe"
 )
@@ -41,6 +42,7 @@ func RequestProcessorInit(initJson string) (initOk bool) {
 		}
 	}()
 
+	runtime.MemProfileRate = 1
 	go func() {
 		port := 6060 + rand.Intn(1000) // Random port between 6060-7059
 		http.ListenAndServe(fmt.Sprintf("localhost:%d", port), nil)
