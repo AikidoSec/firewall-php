@@ -4,6 +4,46 @@ import (
 	"testing"
 )
 
+func TestExtractResourceOrOriginal(t *testing.T) {
+	t.Run("php://filter/convert.base64-encode/resource=/etc/passwd", func(t *testing.T) {
+		if extractResourceOrOriginal("php://filter/convert.base64-encode/resource=/etc/passwd") != "/etc/passwd" {
+			t.Error("expected /etc/passwd")
+		}
+	})
+	t.Run("php://filter/convert.base64-encode/resource=../../../../file", func(t *testing.T) {
+		if extractResourceOrOriginal("php://filter/convert.base64-encode/resource=../../../../file") != "../../../../file" {
+			t.Error("expected ../../../../file")
+		}
+	})
+	t.Run("file.txt", func(t *testing.T) {
+		if extractResourceOrOriginal("file.txt") != "file.txt" {
+			t.Error("expected file.txt")
+		}
+	})
+	t.Run("test.txt/resource=../../../../file", func(t *testing.T) {
+		if extractResourceOrOriginal("test.txt/resource=../../../../file") != "test.txt/resource=../../../../file" {
+			t.Error("expected test.txt/resource=../../../../file")
+		}
+	})
+	t.Run("php://filter/", func(t *testing.T) {
+		if extractResourceOrOriginal("php://filter/") != "php://filter/" {
+			t.Error("expected php://filter/")
+		}
+	})
+	t.Run("php://filter/resource=", func(t *testing.T) {
+		if extractResourceOrOriginal("php://filter/resource=") != "" {
+			t.Error("expected empty")
+		}
+	})
+
+	t.Run("Case insensitive", func(t *testing.T) {
+		if extractResourceOrOriginal("php://FiltEr/convert.base64-encode/resource=/etc/passwd") != "/etc/passwd" {
+			t.Error("expected /etc/passwd")
+		}
+	})
+
+}
+
 func TestDetectPathTraversal(t *testing.T) {
 	t.Run("empty user input", func(t *testing.T) {
 		if detectPathTraversal("test.txt", "", true) != false {
@@ -143,6 +183,18 @@ func TestDetectPathTraversal(t *testing.T) {
 	t.Run("does not flag test", func(t *testing.T) {
 		if detectPathTraversal("/app/test.txt", "test", true) != false {
 			t.Error("expected false")
+		}
+	})
+
+	t.Run("php://filter/convert.base64-encode/resource=/etc/passwd", func(t *testing.T) {
+		if detectPathTraversal("php://filter/convert.base64-encode/resource=/etc/passwd", "php://filter/convert.base64-encode/resource=/etc/passwd", true) != true {
+			t.Error("expected true")
+		}
+	})
+
+	t.Run("php://filter/convert.base64-encode/resource=../../../../file", func(t *testing.T) {
+		if detectPathTraversal("php://filter/convert.base64-encode/resource=../../../../file", "php://filter/convert.base64-encode/resource=../../../../file", true) != true {
+			t.Error("expected true")
 		}
 	})
 
