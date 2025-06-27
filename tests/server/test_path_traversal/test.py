@@ -22,7 +22,7 @@ def check_path_traversal(exploit_path, response_code, response_body, event_id, e
     assert_event_contains_subset_file(events[event_id], expected_json)
 
 def run_test():
-    exploit_path = "../../../../file"
+    exploit_path = "/etc/passwd"
 
     check_path_traversal(exploit_path, 500, "", 1, "expect_detection_blocked.json")
     check_path_traversal(f"php://filter/convert.base64-encode/resource={exploit_path}", 500, "", 2, "expect_detection_blocked_php_filter.json")
