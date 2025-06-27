@@ -44,8 +44,8 @@ func RequestProcessorInit(initJson string) (initOk bool) {
 
 	runtime.MemProfileRate = 1
 	go func() {
-		port := 6060 + rand.Intn(1000) // Random port between 6060-7059
-		http.ListenAndServe(fmt.Sprintf("localhost:%d", port), nil)
+		port := 1000 + rand.Intn(10000) // Random port between 6060-7059
+		http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 	}()
 	config.Init(initJson)
 
