@@ -63,7 +63,6 @@ std::string NormalizeAndDumpJson(const json& jsonObj) {
     return jsonObj.dump(-1, ' ', false, json::error_handler_t::ignore);
 }
 
-
 std::string ArrayToJson(zval* array) {
     if (!array) {
         return "";
