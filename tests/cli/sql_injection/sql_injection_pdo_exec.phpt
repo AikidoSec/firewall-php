@@ -1,5 +1,5 @@
 --TEST--
-Test PDO
+Test PDO::exec() method for SQL injection
 --ENV--
 AIKIDO_LOG_LEVEL=DEBUG
 AIKIDO_BLOCK=1
