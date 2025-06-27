@@ -21,6 +21,8 @@ class Server {
 
     std::string GetHeaders();
 
+    std::string GetPost();
+
     bool IsHttps();
 
     ~Server() = default;

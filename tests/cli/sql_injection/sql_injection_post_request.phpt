@@ -1,5 +1,5 @@
 --TEST--
-Test PDOStatement::execute() method for SQL injection (GET url encoded + non valid UTF-8)
+Test PDOStatement::execute() method for SQL injection (x-www-form-urlencoded)
 
 --ENV--
 AIKIDO_LOG_LEVEL=DEBUG

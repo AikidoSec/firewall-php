@@ -52,48 +52,21 @@ std::string Server::GetUrl() {
     return (IsHttps() ? "https://" : "http://") + GetVar("HTTP_HOST") + GetVar("REQUEST_URI");
 }
 
-// TODO: Duplicated code from Server::GetQuery()
-std::string GetPost() {
-  
+std::string Server::GetPost() {
     zval *post_array;
     post_array = zend_hash_str_find(&EG(symbol_table), "_POST", sizeof("_POST") - 1);
     if (!post_array) {
         return "";
     }
 
-    json query_json;
-    zend_string *key;
-    zval *val;
-    ZEND_HASH_FOREACH_STR_KEY_VAL(Z_ARRVAL_P(post_array), key, val) {
-        if(key && val) {
-            std::string key_str(ZSTR_VAL(key));
-            if (Z_TYPE_P(val) == IS_STRING) {
-                query_json[key_str] = Z_STRVAL_P(val);
-            }
-            else if (Z_TYPE_P(val) == IS_ARRAY){
-                json val_array = json::array();
-                zval *v;
-                ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(val), v) {
-                    if (Z_TYPE_P(v) == IS_STRING) {
-                        val_array.push_back(Z_STRVAL_P(v));
-                    }
-                } 
-                ZEND_HASH_FOREACH_END();
-                query_json[key_str] = val_array;
-            }
-        }
-    }
-    ZEND_HASH_FOREACH_END();
-
-    return NormalizeAndDumpJson(query_json);
+    return ArrayToJson(post_array);
 }
-
 
 std::string Server::GetBody() {
     // for application/x-www-form-urlencoded or multipart/form-data, _POST is used
     if(!strncasecmp(GetVar("CONTENT_TYPE").c_str(), "application/x-www-form-urlencoded", strlen("application/x-www-form-urlencoded"))
      || !strncasecmp(GetVar("CONTENT_TYPE").c_str(), "multipart/form-data", strlen("multipart/form-data"))) {
-        return GetPost();
+        return server.GetPost();
     }
 
     long maxlen = PHP_STREAM_COPY_ALL;
@@ -120,38 +93,13 @@ std::string Server::GetBody() {
  * the query params.
 */
 std::string Server::GetQuery() {
-  
     zval *get_array;
     get_array = zend_hash_str_find(&EG(symbol_table), "_GET", sizeof("_GET") - 1);
     if (!get_array) {
         return "";
     }
 
-    json query_json;
-    zend_string *key;
-    zval *val;
-    ZEND_HASH_FOREACH_STR_KEY_VAL(Z_ARRVAL_P(get_array), key, val) {
-        if(key && val) {
-            std::string key_str(ZSTR_VAL(key));
-            if (Z_TYPE_P(val) == IS_STRING) {
-                query_json[key_str] = Z_STRVAL_P(val);
-            }
-            else if (Z_TYPE_P(val) == IS_ARRAY){
-                json val_array = json::array();
-                zval *v;
-                ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(val), v) {
-                    if (Z_TYPE_P(v) == IS_STRING) {
-                        val_array.push_back(Z_STRVAL_P(v));
-                    }
-                } 
-                ZEND_HASH_FOREACH_END();
-                query_json[key_str] = val_array;
-            }
-        }
-    }
-    ZEND_HASH_FOREACH_END();
-
-    return NormalizeAndDumpJson(query_json);
+    return ArrayToJson(get_array);
 }
 
 std::string Server::GetHeaders() {
