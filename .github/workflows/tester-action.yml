@@ -1,7 +1,7 @@
 name: Tester Action
 
 on:
-  workflow_call:
+  workflow_dispatch:
     # a tag is passed in
     inputs:
       tag:
