@@ -1,17 +1,16 @@
 name: Tester Action
 
 on:
-  workflow_dispatch:
-    # a tag is passed in
-    inputs:
-      tag:
-        description: The tag to test
-        required: true
-        type: string
+  push:
+    branches:
+      - add-tester-action
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: read
-  
+
 jobs:
   test-php:
     name: PHP Tests (zen-demo-php)
