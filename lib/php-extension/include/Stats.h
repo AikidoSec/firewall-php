@@ -32,3 +32,4 @@ class SinkStats {
 };
 
 extern std::unordered_map<std::string, SinkStats> stats;
+void GetStatsTotalMemoryAllocated();

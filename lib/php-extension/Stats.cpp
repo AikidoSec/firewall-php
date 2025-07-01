@@ -82,3 +82,13 @@ void SinkStats::IncrementInterceptorThrewError() {
 void SinkStats::IncrementWithoutContext() {
     withoutContext += 1;
 }
+
+void GetStatsTotalMemoryAllocated() {
+    size_t total = 0;
+    for (const auto& [sink, sinkStats] : stats) {
+        size_t total_allocated = sinkStats.timings.capacity() * sizeof(int64_t) + sizeof(SinkStats) + sinkStats.kind.capacity() + sink.capacity();
+        AIKIDO_LOG_INFO("Stats memory allocated for sink \"%s\": %zu bytes\n", sink.c_str(), total_allocated);
+        total += total_allocated;
+    }
+    AIKIDO_LOG_INFO("Total stats memory allocated: %zu bytes\n", total);
+}

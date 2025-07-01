@@ -151,6 +151,10 @@ bool RequestProcessor::RequestInit() {
     ContextInit();
     SendPreRequestEvent();
 
+    if ((this->numberOfRequests % 10) == 0) {
+        GetStatsTotalMemoryAllocated();
+    }
+
     if ((this->numberOfRequests % AIKIDO_GLOBAL(report_stats_interval_to_agent)) == 0) {
         requestProcessor.ReportStats();
     }
