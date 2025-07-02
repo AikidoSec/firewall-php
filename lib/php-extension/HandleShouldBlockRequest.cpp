@@ -15,6 +15,8 @@ bool CheckBlocking(EVENT_ID eventId, bool& checkedBlocking) {
         return true;
     }
 
+    ScopedTimer scopedTimer("check_blocking", "aikido_op");
+
     try {
         std::string output;
         requestProcessor.SendEvent(eventId, output);
@@ -28,8 +30,6 @@ bool CheckBlocking(EVENT_ID eventId, bool& checkedBlocking) {
 }
 
 ZEND_FUNCTION(should_block_request) {
-    ScopedTimer scopedTimer("should_block_request", "aikido_op");
-
     if (AIKIDO_GLOBAL(sapi_name) == "cli") {
         AIKIDO_LOG_DEBUG("should_block_request called in CLI mode! Skipping...\n");
         return;
@@ -67,8 +67,6 @@ ZEND_FUNCTION(should_block_request) {
 }
 
 ZEND_FUNCTION(auto_block_request) {
-    ScopedTimer scopedTimer("auto_block_request", "aikido_op");
-
     if (AIKIDO_GLOBAL(sapi_name) == "cli") {
         AIKIDO_LOG_DEBUG("auto_block_request called in CLI mode! Skipping...\n");
         return;
