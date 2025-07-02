@@ -42,7 +42,7 @@ ZEND_NAMED_FUNCTION(aikido_generic_handler) {
     try {
         zend_execute_data* exec_data = EG(current_execute_data);
         zend_function* func = exec_data->func;
-        zend_class_entry* executed_scope = zend_get_executed_scope();
+        zend_class_entry* executed_scope = exec_data->func->common.scope;
 
         std::string function_name(ZSTR_VAL(func->common.function_name));
         function_name = ToLowercase(function_name);
@@ -51,7 +51,7 @@ ZEND_NAMED_FUNCTION(aikido_generic_handler) {
 
         std::string scope_name = function_name;
         AIKIDO_LOG_DEBUG("Function name: %s\n", scope_name.c_str());
-        if (HOOKED_FUNCTIONS.find(function_name) != HOOKED_FUNCTIONS.end()) {
+        if (HOOKED_FUNCTIONS.find(function_name) != HOOKED_FUNCTIONS.end() && !executed_scope) {
             handler = HOOKED_FUNCTIONS[function_name].handler;
             post_handler = HOOKED_FUNCTIONS[function_name].post_handler;
             original_handler = HOOKED_FUNCTIONS[function_name].original_handler;

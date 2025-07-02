@@ -94,3 +94,17 @@ std::string ArrayToJson(zval* array) {
 
     return NormalizeAndDumpJson(query_json);
 }
+
+std::string GetSqlDialectFromPdo(zval *pdo_object) {
+    if (!pdo_object) {
+        return "unknown";
+    }
+
+    zval retval;
+    if (CallPhpFunctionWithOneParam("getAttribute", PDO_ATTR_DRIVER_NAME, &retval, pdo_object)) {
+        if (Z_TYPE(retval) == IS_STRING) {
+            return Z_STRVAL(retval);
+        }
+    }
+    return "unknown";
+}
