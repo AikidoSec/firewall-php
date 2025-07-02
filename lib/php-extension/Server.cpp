@@ -66,7 +66,7 @@ std::string Server::GetBody() {
     // for application/x-www-form-urlencoded or multipart/form-data, _POST is used
     if(!strncasecmp(GetVar("CONTENT_TYPE").c_str(), "application/x-www-form-urlencoded", strlen("application/x-www-form-urlencoded"))
      || !strncasecmp(GetVar("CONTENT_TYPE").c_str(), "multipart/form-data", strlen("multipart/form-data"))) {
-        return server.GetPost();
+        return this->GetPost();
     }
 
     long maxlen = PHP_STREAM_COPY_ALL;
