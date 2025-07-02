@@ -33,15 +33,27 @@ bool LoadLaravelEnvFile() {
     }
 
     std::string docRoot = server.GetVar("DOCUMENT_ROOT");
+    AIKIDO_LOG_DEBUG("Trying to load .env file, starting with DOCUMENT_ROOT: %s\n", docRoot.c_str());
     if (docRoot.empty()) {
+        AIKIDO_LOG_DEBUG("DOCUMENT_ROOT is empty!\n");
         return false;
     }
     std::string laravelEnvPath = docRoot + "/../.env";
+    AIKIDO_LOG_DEBUG("Trying to load .env file, path: %s\n", laravelEnvPath.c_str());
     std::ifstream envFile(laravelEnvPath);
 
     if (!envFile.is_open()) {
-        return false;
+        AIKIDO_LOG_DEBUG("Failed to open .env file: %s\n", laravelEnvPath.c_str());
+
+        // Try to open .env file from docRoot + "/.env" if not found at docRoot + "/../.env"
+        laravelEnvPath = docRoot + "/.env";
+        envFile.open(laravelEnvPath);
+        if (!envFile.is_open()) {
+            AIKIDO_LOG_DEBUG("Failed to open .env file: %s\n", laravelEnvPath.c_str());
+            return false;
+        }
     }
+    AIKIDO_LOG_DEBUG("Found .env file: %s\n", laravelEnvPath.c_str());
 
     std::string line;
     while (std::getline(envFile, line)) {
