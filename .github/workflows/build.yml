@@ -106,10 +106,6 @@ jobs:
     - name: Install dependencies
       run: |
         DEBIAN_FRONTEND=noninteractive apt-get update
-        DEBIAN_FRONTEND=noninteractive apt-get install -y tzdata
-        ln -fs /usr/share/zoneinfo/Etc/UTC /etc/localtime
-        echo "Etc/UTC" > /etc/timezone
-        DEBIAN_FRONTEND=noninteractive dpkg-reconfigure -f noninteractive tzdata
         apt-get install -y autoconf bison re2c libxml2-dev libssl-dev libcurl4-gnutls-dev
 
     - name: Get Arch
@@ -289,10 +285,6 @@ jobs:
       - name: Install dependencies
         run: |
           DEBIAN_FRONTEND=noninteractive apt-get update
-          DEBIAN_FRONTEND=noninteractive apt-get install -y tzdata
-          ln -fs /usr/share/zoneinfo/Etc/UTC /etc/localtime
-          echo "Etc/UTC" > /etc/timezone
-          DEBIAN_FRONTEND=noninteractive dpkg-reconfigure -f noninteractive tzdata
           apt-get install -y alien
 
       - name: Get Aikido version
@@ -428,10 +420,6 @@ jobs:
       - name: Setup nginx & php-fpm
         run: |
           DEBIAN_FRONTEND=noninteractive apt-get update
-          DEBIAN_FRONTEND=noninteractive apt-get install -y tzdata
-          ln -fs /usr/share/zoneinfo/Etc/UTC /etc/localtime
-          echo "Etc/UTC" > /etc/timezone
-          DEBIAN_FRONTEND=noninteractive dpkg-reconfigure -f noninteractive tzdata
           apt-get install -y nginx php-fpm
 
       - name: Setup Apache (mod_php)
@@ -461,10 +449,6 @@ jobs:
               fi
           done
           DEBIAN_FRONTEND=noninteractive apt-get update
-          DEBIAN_FRONTEND=noninteractive apt-get install -y tzdata
-          ln -fs /usr/share/zoneinfo/Etc/UTC /etc/localtime
-          echo "Etc/UTC" > /etc/timezone
-          DEBIAN_FRONTEND=noninteractive dpkg-reconfigure -f noninteractive tzdata
           apt-get install -y libapache2-mod-php${{ matrix.php_version }}
           a2enmod php${{ matrix.php_version }}
           php -i
