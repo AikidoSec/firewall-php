@@ -36,7 +36,7 @@ class RequestProcessor {
     bool SendEvent(EVENT_ID eventId, std::string& output);
     bool IsBlockingEnabled();
     bool ReportStats();
-    void LoadConfigOnce();
+    void LoadConfig(bool force = false);
     void RequestShutdown();
     void Uninit();
 

@@ -43,7 +43,7 @@ ZEND_FUNCTION(should_block_request) {
         return;
     }
 
-    requestProcessor.LoadConfigOnce();
+    requestProcessor.LoadConfig();
 
     if (!CheckBlocking(EVENT_GET_BLOCKING_STATUS, checkedShouldBlockRequest)) {
         return;
@@ -76,7 +76,7 @@ ZEND_FUNCTION(auto_block_request) {
         return;
     }
 
-    requestProcessor.LoadConfigOnce();
+    requestProcessor.LoadConfig();
 
     CheckBlocking(EVENT_GET_AUTO_BLOCKING_STATUS, checkedAutoBlock);
 }

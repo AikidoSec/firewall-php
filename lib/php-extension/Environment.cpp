@@ -129,12 +129,16 @@ std::string GetEnvString(const std::string& env_key, const std::string default_v
     return default_value;
 }
 
-bool GetEnvBool(const std::string& env_key, bool default_value) {
-    std::string env_value = ToLowercase(GetEnvVariable(env_key));
+bool GetBoolFromString(const std::string& env, bool default_value) {
+    std::string env_value = ToLowercase(env);
     if (!env_value.empty()) {
         return (env_value == "1" || env_value == "true");
     }
     return default_value;
+}
+
+bool GetEnvBool(const std::string& env_key, bool default_value) {
+    return GetBoolFromString(GetEnvVariable(env_key), default_value);
 }
 
 unsigned int GetEnvNumber(const std::string& env_key, unsigned int default_value) {

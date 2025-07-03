@@ -18,9 +18,7 @@ bool SendUserEvent(std::string id, std::string username) {
 // Exports the "\aikido\set_user" function, to be called from PHP user code.
 // Receives two parameters: "id" (string) and "name" (string, optional).
 // Returns true if the setting of the user succeeded, false otherwise.
-ZEND_FUNCTION(set_user) {
-    ScopedTimer scopedTimer("set_user", "aikido_op");
-    
+ZEND_FUNCTION(set_user) {    
     if (AIKIDO_GLOBAL(sapi_name) == "cli") {
         AIKIDO_LOG_DEBUG("set_user called in CLI mode! Skipping...\n");
         return;
@@ -30,7 +28,8 @@ ZEND_FUNCTION(set_user) {
         RETURN_BOOL(false);
     }
 
-    requestProcessor.LoadConfigOnce();
+    ScopedTimer scopedTimer("set_user", "aikido_op");
+    requestProcessor.LoadConfig();
 
     char* id = nullptr;
     size_t idLength = 0;
