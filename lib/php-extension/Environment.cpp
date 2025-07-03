@@ -15,7 +15,7 @@ std::string GetPhpEnvVariable(const std::string& env_key) {
 
     AIKIDO_LOG_DEBUG("php_env[%s] = %s\n", env_key.c_str(), env_value_str.c_str());
     return env_value_str;
-} 
+}
 
 std::string GetSystemEnvVariable(const std::string& env_key) {
     const char* env_value = getenv(env_key.c_str());
@@ -39,7 +39,6 @@ bool LoadLaravelEnvFile() {
         return false;
     }
     std::string laravelEnvPath = docRoot + "/../.env";
-    AIKIDO_LOG_DEBUG("Trying to load .env file, path: %s\n", laravelEnvPath.c_str());
     std::ifstream envFile(laravelEnvPath);
 
     if (!envFile.is_open()) {
@@ -68,15 +67,15 @@ bool LoadLaravelEnvFile() {
             if (pos != std::string::npos) {
                 std::string key = line.substr(0, pos);
                 std::string value = line.substr(pos + 1);
-                
+
                 // Trim whitespace from key and value
                 key.erase(0, key.find_first_not_of(" "));
                 key.erase(key.find_last_not_of(" ") + 1);
                 value.erase(0, value.find_first_not_of(" "));
                 value.erase(value.find_last_not_of(" ") + 1);
-                
+
                 // Remove quotes if present
-                if (value.length() >= 2 && 
+                if (value.length() >= 2 &&
                     ((value.front() == '"' && value.back() == '"') ||
                      (value.front() == '\'' && value.back() == '\''))) {
                     value = value.substr(1, value.length() - 2);
