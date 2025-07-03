@@ -15,7 +15,7 @@ std::string GetPhpEnvVariable(const std::string& env_key) {
 
     AIKIDO_LOG_DEBUG("php_env[%s] = %s\n", env_key.c_str(), env_value_str.c_str());
     return env_value_str;
-} 
+}
 
 std::string GetSystemEnvVariable(const std::string& env_key) {
     const char* env_value = getenv(env_key.c_str());
@@ -33,15 +33,26 @@ bool LoadLaravelEnvFile() {
     }
 
     std::string docRoot = server.GetVar("DOCUMENT_ROOT");
+    AIKIDO_LOG_DEBUG("Trying to load .env file, starting with DOCUMENT_ROOT: %s\n", docRoot.c_str());
     if (docRoot.empty()) {
+        AIKIDO_LOG_DEBUG("DOCUMENT_ROOT is empty!\n");
         return false;
     }
     std::string laravelEnvPath = docRoot + "/../.env";
     std::ifstream envFile(laravelEnvPath);
 
     if (!envFile.is_open()) {
-        return false;
+        AIKIDO_LOG_DEBUG("Failed to open .env file: %s\n", laravelEnvPath.c_str());
+
+        // Try to open .env file from docRoot + "/.env" if not found at docRoot + "/../.env"
+        laravelEnvPath = docRoot + "/.env";
+        envFile.open(laravelEnvPath);
+        if (!envFile.is_open()) {
+            AIKIDO_LOG_DEBUG("Failed to open .env file: %s\n", laravelEnvPath.c_str());
+            return false;
+        }
     }
+    AIKIDO_LOG_DEBUG("Found .env file: %s\n", laravelEnvPath.c_str());
 
     std::string line;
     while (std::getline(envFile, line)) {
@@ -56,15 +67,15 @@ bool LoadLaravelEnvFile() {
             if (pos != std::string::npos) {
                 std::string key = line.substr(0, pos);
                 std::string value = line.substr(pos + 1);
-                
+
                 // Trim whitespace from key and value
                 key.erase(0, key.find_first_not_of(" "));
                 key.erase(key.find_last_not_of(" ") + 1);
                 value.erase(0, value.find_first_not_of(" "));
                 value.erase(value.find_last_not_of(" ") + 1);
-                
+
                 // Remove quotes if present
-                if (value.length() >= 2 && 
+                if (value.length() >= 2 &&
                     ((value.front() == '"' && value.back() == '"') ||
                      (value.front() == '\'' && value.back() == '\''))) {
                     value = value.substr(1, value.length() - 2);
@@ -117,12 +128,16 @@ std::string GetEnvString(const std::string& env_key, const std::string default_v
     return default_value;
 }
 
-bool GetEnvBool(const std::string& env_key, bool default_value) {
-    std::string env_value = ToLowercase(GetEnvVariable(env_key));
+bool GetBoolFromString(const std::string& env, bool default_value) {
+    std::string env_value = ToLowercase(env);
     if (!env_value.empty()) {
         return (env_value == "1" || env_value == "true");
     }
     return default_value;
+}
+
+bool GetEnvBool(const std::string& env_key, bool default_value) {
+    return GetBoolFromString(GetEnvVariable(env_key), default_value);
 }
 
 unsigned int GetEnvNumber(const std::string& env_key, unsigned int default_value) {
