@@ -5,7 +5,7 @@ Test \aikido\set_token without parameter
 AIKIDO_LOG_LEVEL=INFO
 
 --SKIPIF--
-<?php if (PHP_VERSION_ID < 70400) die("PHP >= 7.4."); ?>
+<?php if (PHP_VERSION_ID <= 70400) die("PHP <= 7.4."); ?>
 
 --FILE--
 <?php
