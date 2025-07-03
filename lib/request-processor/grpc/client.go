@@ -52,8 +52,6 @@ func SendAikidoConfig() {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
-	log.Infof("Sending AIKIDO_TOKEN to Agent: %v", globals.AikidoConfig.Token)
-
 	_, err := client.OnConfig(ctx, &protos.Config{Token: globals.AikidoConfig.Token, LogLevel: globals.AikidoConfig.LogLevel,
 		Blocking: globals.AikidoConfig.Blocking, LocalhostAllowedByDefault: globals.AikidoConfig.LocalhostAllowedByDefault,
 		CollectApiSchema: globals.AikidoConfig.CollectApiSchema})

@@ -103,7 +103,14 @@ func RequestProcessorConfigUpdate(configJson string) (initOk bool) {
 		}
 	}()
 
+	previousToken := globals.AikidoConfig.Token
+
 	config.ReloadAikidoConfig(configJson)
+
+	if previousToken != globals.AikidoConfig.Token {
+		log.Infof("Token changed: %s", globals.AikidoConfig.Token)
+	}
+
 	log.Debugf("Reloading Aikido config with: %v", configJson)
 	grpc.SendAikidoConfig()
 	return true

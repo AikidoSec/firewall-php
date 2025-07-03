@@ -1,0 +1,15 @@
+--TEST--
+Test \aikido\set_token
+
+--ENV--
+AIKIDO_LOG_LEVEL=INFO
+
+--FILE--
+<?php
+
+\aikido\set_token();
+
+?>
+
+--EXPECTREGEX--
+.*Fatal error: Uncaught ArgumentCountError: aikido\\set_token\(\) expects exactly 1 argument, 0 given.*
