@@ -110,6 +110,10 @@ func RequestProcessorConfigUpdate(configJson string) (initOk bool) {
 	}
 
 	config.ReloadAikidoConfig(configJson)
+	if globals.AikidoConfig.Token == "" {
+		log.Error("Token is not set, not sending config to Agent!")
+		return true
+	}
 
 	log.Infof("Token changed: %s", globals.AikidoConfig.Token)
 	log.Debugf("Reloading Aikido config with: %v", configJson)
