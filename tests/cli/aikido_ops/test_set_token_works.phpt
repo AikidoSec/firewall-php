@@ -1,5 +1,5 @@
 --TEST--
-Test \aikido\set_user
+Test \aikido\set_token with a valid token
 
 --ENV--
 AIKIDO_LOG_LEVEL=INFO
@@ -11,5 +11,5 @@ AIKIDO_LOG_LEVEL=INFO
 
 ?>
 
---EXPECTREGEX--
-.*Fatal error: Uncaught Exception: Aikido firewall has blocked a path traversal attack.*
+--EXPECT--
+[AIKIDO][INFO] Token changed: your token here

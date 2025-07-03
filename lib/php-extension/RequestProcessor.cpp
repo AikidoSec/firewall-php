@@ -2,12 +2,16 @@
 
 RequestProcessor requestProcessor;
 
-std::string RequestProcessor::GetInitData() {
+std::string RequestProcessor::GetInitData(std::string token) {
     LoadLaravelEnvFile();
     LoadEnvironment();
 
+    if (token.empty()) {
+        token = AIKIDO_GLOBAL(token);
+    }
+
     json initData = {
-        {"token", AIKIDO_GLOBAL(token)},
+        {"token", token},
         {"log_level", AIKIDO_GLOBAL(log_level_str)},
         {"socket_path", AIKIDO_GLOBAL(socket_path)},
         {"blocking", AIKIDO_GLOBAL(blocking)},
@@ -157,13 +161,13 @@ bool RequestProcessor::RequestInit() {
     return true;
 }
 
-void RequestProcessor::LoadConfig(bool force) {
-    if (!force && this->configReloaded) {
+void RequestProcessor::LoadConfig(std::string token) {
+    if (token.empty() && this->configReloaded) {
         return;
     }
     
     AIKIDO_LOG_INFO("Reloading Aikido config...\n");
-    std::string initJson = this->GetInitData();
+    std::string initJson = this->GetInitData(token);
     this->requestProcessorConfigUpdateFn(GoCreateString(initJson));
     this->configReloaded = true;
 }

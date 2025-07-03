@@ -19,10 +19,6 @@ ZEND_FUNCTION(set_token) {
         RETURN_BOOL(false);
     }
 
-    std::string tokenStr(token, tokenLength);
-
-    AIKIDO_GLOBAL(token) = tokenStr;
-    requestProcessor.LoadConfig(true);
-
+    requestProcessor.LoadConfig(std::string(token, tokenLength));
     RETURN_BOOL(true);
 }

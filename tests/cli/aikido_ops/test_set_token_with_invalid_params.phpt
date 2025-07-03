@@ -1,5 +1,5 @@
 --TEST--
-Test \aikido\set_token
+Test \aikido\set_token without parameter
 
 --ENV--
 AIKIDO_LOG_LEVEL=INFO
