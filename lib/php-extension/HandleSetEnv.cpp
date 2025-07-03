@@ -3,11 +3,6 @@
 ZEND_FUNCTION(set_env) {
     ScopedTimer scopedTimer("set_env", "aikido_op");
 
-    if (AIKIDO_GLOBAL(sapi_name) == "cli") {
-        AIKIDO_LOG_DEBUG("set_env called in CLI mode! Skipping...\n");
-        RETURN_BOOL(false);
-    }
-
     if (AIKIDO_GLOBAL(disable) == true) {
         RETURN_BOOL(false);
     }
@@ -46,7 +41,7 @@ ZEND_FUNCTION(set_env) {
         AIKIDO_GLOBAL(trust_proxy) = GetBoolFromString(valueStr, true);
     }
     else if (keyStr == "AIKIDO_DISK_LOGS") {
-        AIKIDO_GLOBAL(disk_logs) = GetBoolFromString(valueStr, true);
+        AIKIDO_GLOBAL(disk_logs) = GetBoolFromString(valueStr, false);
     }
     else if (keyStr == "AIKIDO_LOCALHOST_ALLOWED_BY_DEFAULT") {
         AIKIDO_GLOBAL(localhost_allowed_by_default) = GetBoolFromString(valueStr, true);
@@ -59,6 +54,8 @@ ZEND_FUNCTION(set_env) {
         RETURN_BOOL(false);
     }
 
+    AIKIDO_LOG_INFO("set_env: %s = %s\n", keyStr.c_str(), valueStr.c_str());
+    
     requestProcessor.LoadConfig(true);
 
     RETURN_BOOL(true);
