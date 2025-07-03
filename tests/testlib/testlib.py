@@ -230,3 +230,6 @@ def mock_server_down():
     
 def mock_server_up():
     mock_server_post("/mock/up", "")
+
+def mock_server_get_token():
+    return mock_server_get("/mock/token").json().get("token")

@@ -52,11 +52,17 @@ def gzip_response(data):
     response.headers['Content-Type'] = 'application/json'
     return response
 
+token = None
+
 @app.before_request
 def check_server_status():
     global server_down
     if request.endpoint in excluded_routes:
         return None
+    if request.headers.get('Authorization') is not None:
+        global token
+        token = request.headers.get('Authorization')
+        print("Token: ", token)
     if server_down:
         return gzip_response({"error": "Service Unavailable"}), 503
 
@@ -104,6 +110,10 @@ def mock_get_events():
 def mock_tests_simple():
     time.sleep(1)
     return gzip_response("{}")
+
+@app.route('/mock/token', methods=['GET'])
+def mock_get_token():
+    return gzip_response({"token": token})
 
 if __name__ == '__main__':
     if len(sys.argv) < 2 or len(sys.argv) > 3:
