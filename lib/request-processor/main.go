@@ -105,13 +105,13 @@ func RequestProcessorConfigUpdate(configJson string) (initOk bool) {
 
 	previousToken := globals.AikidoConfig.Token
 	if previousToken != "" {
-		log.Infof("Token was previously set, not sending config to Agent!")
+		log.Debugf("Token was previously set, not sending config to Agent!")
 		return true
 	}
 
 	config.ReloadAikidoConfig(configJson)
 	if globals.AikidoConfig.Token == "" {
-		log.Error("Token is not set, not sending config to Agent!")
+		log.Debugf("Token is not set, not sending config to Agent!")
 		return true
 	}
 
