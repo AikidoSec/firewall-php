@@ -33,6 +33,7 @@ func Init() {
 	log.Debugf("Current connection state: %s\n", conn.GetState().String())
 
 	SendAikidoConfig()
+	OnPackages(globals.AikidoConfig.Packages)
 	startCloudConfigRoutine()
 }
 
@@ -61,7 +62,6 @@ func SendAikidoConfig() {
 	}
 
 	log.Debugf("Aikido config sent via socket!")
-	OnPackages(globals.AikidoConfig.Packages)
 }
 
 /* Send outgoing domain to Aikido Agent via gRPC */
