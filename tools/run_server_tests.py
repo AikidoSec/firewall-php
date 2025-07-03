@@ -165,6 +165,7 @@ def main(root_tests_dir, test_lib_dir, specific_test=None, server="php-built-in"
             "AIKIDO_REALTIME_ENDPOINT": f"http://localhost:{mock_port}/",
         }
         env.update(load_env_from_json(test_data["env_path"]))
+        env = {k: v for k, v in env.items() if v != ""}
         test_data["env"] = env
         
         server_process_test = servers[server][PROCESS_TEST]
