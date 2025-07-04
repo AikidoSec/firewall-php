@@ -7,6 +7,7 @@ import (
 
 const maxDepth = 20
 const maxProperties = 100
+const maxPropertyKeyLength = 100
 
 // GetDataSchema returns the schema of the given data as a DataSchema
 func GetDataSchema(data interface{}, depth int) *protos.DataSchema {
@@ -42,6 +43,9 @@ func GetDataSchema(data interface{}, depth int) *protos.DataSchema {
 			for i, key := range keys {
 				if i >= maxProperties {
 					break
+				}
+				if len(key.String()) > maxPropertyKeyLength {
+					continue //
 				}
 				value := reflect.ValueOf(data).MapIndex(key).Interface()
 				schema.Properties[key.String()] = GetDataSchema(value, depth+1)
