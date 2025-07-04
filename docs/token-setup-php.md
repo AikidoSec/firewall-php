@@ -10,4 +10,4 @@ if (extension_loaded('aikido')) {
 ?>
 ```
 
-This code needs to run with every request, so you can add it in a middleware, as exemplfied [here](./should_block_request.md).
+This code needs to run with every request, so you can add it in a middleware, as exemplified [here](./should_block_request.md).
