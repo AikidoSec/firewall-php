@@ -16,9 +16,6 @@ jobs:
     name: PHP Tests (zen-demo-php)
     runs-on: ubuntu-latest
     steps:
-      # - name: Print tag
-      #   run: 'echo "The tag is: ${{ inputs.tag }}"'
-
 
       - name: Checkout demo app
         uses: actions/checkout@v4
@@ -26,7 +23,6 @@ jobs:
           repository: Aikido-demo-apps/zen-demo-php
           path: ./zen-demo
           ref: dynamic-firewall-version
-          token: ${{ secrets.DEMO_APPS_DOWNLOAD_TOKEN }}
           submodules: recursive
 
       - name: Test Local Action
@@ -34,11 +30,8 @@ jobs:
         uses: AikidoSec/firewall-tester-action@releases/v1
         with:
           dockerfile_path: ./zen-demo/Dockerfile
-          extra_args:
-            '--env-file=./zen-demo/.env.example -e
-            APP_KEY=base64:W2v6u6VR4lURkxuMT9xZ6pdhXSt5rxsmWTbd1HGqlIM='
           sleep_before_test: 20
           skip_tests: test_api_spec
-          extra_build_args: "--build-arg PHP_FIREWALL_VERSION=1.0.123"
+          extra_build_args: "--build-arg PHP_FIREWALL_VERSION=1.0.125"
           
      
