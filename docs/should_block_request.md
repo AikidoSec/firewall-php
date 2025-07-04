@@ -30,6 +30,9 @@ class AikidoMiddleware implements MiddlewareInterface
             return $handler->handle($request);
         }
 
+        // You can pass in the Aikido token here
+        // \aikido\set_token("your token here");
+
         // Get the user ID / name (from session or other auth system)
         $userId = $this->getAuthenticatedUserId();
 
@@ -113,6 +116,10 @@ class AikidoMiddleware
         if (!extension_loaded('aikido')) {
             return $next($request);
         }
+
+        // You can pass in the Aikido token here
+        // \aikido\set_token("your token here");
+
 		
         // Get the authenticated user's ID from Laravel's Auth system
         $userId = Auth::id();
