@@ -45,7 +45,7 @@ func GetDataSchema(data interface{}, depth int) *protos.DataSchema {
 					break
 				}
 				if len(key.String()) > maxPropertyKeyLength {
-					continue //
+					continue // skip key if it's too long
 				}
 				value := reflect.ValueOf(data).MapIndex(key).Interface()
 				schema.Properties[key.String()] = GetDataSchema(value, depth+1)
