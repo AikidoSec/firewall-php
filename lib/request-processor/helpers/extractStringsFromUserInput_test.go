@@ -192,6 +192,7 @@ func TestExtractStringsFromUserInput(t *testing.T) {
 			"username":   ".token<jwt>",
 			"sub":        ".token<jwt>",
 			"1234567890": ".token<jwt>.sub",
+			"1516239022": ".token<jwt>.iat",
 			"$ne":        ".token<jwt>.username",
 			"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwidXNlcm5hbWUiOnsiJG5lIjpudWxsfSwiaWF0IjoxNTE2MjM5MDIyfQ._jhGJw9WzB6gHKPSozTFHDo9NOHs3CNOlvJ8rWy6VrQ": ".token",
 		}
