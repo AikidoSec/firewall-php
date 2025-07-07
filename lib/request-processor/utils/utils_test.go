@@ -251,6 +251,18 @@ func TestParseBodyJSON(t *testing.T) {
 	if string(resultJSON) != expected {
 		t.Errorf("Expected JSON string %q, got %q", expected, resultJSON)
 	}
+	data = "{ \"age\": -1e+9999, \"cmd\": \"cat /etc/passwd\"}"
+	expected = `{"age":-1e+9999,"cmd":"cat /etc/passwd"}`
+
+	result = ParseBody(data)
+	resultJSON, err = json.Marshal(result)
+	if err != nil {
+		t.Errorf("Failed to marshal result: %v", err)
+	}
+
+	if string(resultJSON) != expected {
+		t.Errorf("Expected JSON string %q, got %q", expected, resultJSON)
+	}
 }
 
 func TestParseBodyJSONArray(t *testing.T) {

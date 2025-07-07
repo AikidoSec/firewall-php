@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"encoding/json"
 	"fmt"
 	"main/globals"
 	"main/helpers"
@@ -130,7 +129,7 @@ func ParseBody(body string) map[string]interface{} {
 	trimmedBody := strings.TrimSpace(body)
 	if strings.HasPrefix(trimmedBody, "[") || strings.HasPrefix(trimmedBody, "{") {
 		var jsonBody interface{}
-		err := json.Unmarshal([]byte(trimmedBody), &jsonBody)
+		err := helpers.ParseJSON([]byte(trimmedBody), &jsonBody)
 		if err == nil {
 			if array, ok := jsonBody.([]interface{}); ok {
 				return map[string]interface{}{"array": array}
@@ -147,7 +146,7 @@ func ParseBody(body string) map[string]interface{} {
 
 func ParseQuery(query string) map[string]interface{} {
 	jsonQuery := map[string]interface{}{}
-	err := json.Unmarshal([]byte(query), &jsonQuery)
+	err := helpers.ParseJSON([]byte(query), &jsonQuery)
 	if err == nil {
 		return jsonQuery
 	}
@@ -160,7 +159,7 @@ func ParseCookies(cookies string) map[string]interface{} {
 
 func ParseHeaders(headers string) map[string]interface{} {
 	j := map[string]interface{}{}
-	err := json.Unmarshal([]byte(headers), &j)
+	err := helpers.ParseJSON([]byte(headers), &j)
 	if err != nil {
 		return map[string]interface{}{}
 	}

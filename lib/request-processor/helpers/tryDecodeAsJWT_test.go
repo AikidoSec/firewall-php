@@ -83,4 +83,20 @@ func TestTryDecodeAsJWT(t *testing.T) {
 			t.Errorf("got %v, want %v", result, expected)
 		}
 	})
+
+	t.Run("JWT with big number in payload", func(t *testing.T) {
+		input := "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.IHsKICAgICJhZ2UiOiAxLjVlKzk5OTksCiAgICAiY21kIjogImNhdCAvZXRjL3Bhc3N3ZCIKfQ._jhGJw9WzB6gHKPSozTFHDo9NOHs3CNOlvJ8rWy6VrQ"
+
+		expectedJson := `{"JWT":true,"Object":{"age":1.5e+9999,"cmd":"cat /etc/passwd"}}`
+		dec := json.NewDecoder(strings.NewReader(expectedJson))
+		dec.UseNumber()
+		var expected JWTDecodeResult
+		dec.Decode(&expected)
+
+		result := tryDecodeAsJWT(strings.TrimPrefix(input, "Bearer "))
+		if !jsonEqual(result, expected) {
+			t.Errorf("got %v, want %v", result, expected)
+		}
+	})
+
 }

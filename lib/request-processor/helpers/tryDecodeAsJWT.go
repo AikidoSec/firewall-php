@@ -2,7 +2,6 @@ package helpers
 
 import (
 	"encoding/base64"
-	"encoding/json"
 	"strings"
 )
 
@@ -31,7 +30,8 @@ func tryDecodeAsJWT(jwt string) JWTDecodeResult {
 	}
 
 	var object interface{}
-	err = json.Unmarshal(payload, &object)
+	err = ParseJSON(payload, &object)
+
 	if err != nil {
 		return JWTDecodeResult{JWT: false}
 	}
