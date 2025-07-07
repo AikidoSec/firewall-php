@@ -157,4 +157,28 @@ func TestGetDataSchema(t *testing.T) {
 			t.Errorf("Expected 100 properties, got %d", len(schema2.Properties))
 		}
 	})
+
+	t.Run("test max property key length", func(t *testing.T) {
+		key := strings.Repeat("a", 101)
+		shorterKey := strings.Repeat("b", 99)
+		value := "test"
+		obj := map[string]interface{}{
+			key:        value,
+			"test":     []int{1, 2, 3},
+			shorterKey: value,
+		}
+		schema := GetDataSchema(obj, 0)
+		compareSchemas(t, schema, &protos.DataSchema{
+			Type: []string{"object"},
+			Properties: map[string]*protos.DataSchema{
+				shorterKey: {Type: []string{"string"}},
+				"test": {
+					Type: []string{"array"},
+					Items: &protos.DataSchema{
+						Type: []string{"number"},
+					},
+				},
+			},
+		})
+	})
 }
