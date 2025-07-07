@@ -2,14 +2,16 @@ package helpers
 
 import (
 	"encoding/json"
+	"errors"
 	"testing"
 )
 
 func TestParseJSON(t *testing.T) {
 	testCases := []struct {
-		name     string
-		input    string
-		expected string
+		name          string
+		input         string
+		expected      string
+		expectedError error
 	}{
 		{
 			name:     "negative large exponent",
@@ -31,6 +33,12 @@ func TestParseJSON(t *testing.T) {
 			input:    `{ "age": -123123e10000}`,
 			expected: `{"age":-123123e10000}`,
 		},
+		{
+			name:          "negative integer with large exponent and trailing garbage",
+			input:         `{ "age": -123123e10000}{}`,
+			expected:      ``,
+			expectedError: errors.New("unexpected extra JSON values"),
+		},
 	}
 
 	for _, tc := range testCases {
@@ -38,7 +46,10 @@ func TestParseJSON(t *testing.T) {
 			var result map[string]interface{}
 			err := ParseJSON([]byte(tc.input), &result)
 			if err != nil {
-				t.Errorf("Failed to parse JSON: %v", err)
+				if tc.expectedError.Error() != err.Error() {
+					t.Errorf("Expected error %v, got %v", tc.expectedError, err)
+				}
+				return
 			}
 
 			resultJSON, err := json.Marshal(result)
