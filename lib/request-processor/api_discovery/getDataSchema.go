@@ -1,6 +1,7 @@
 package api_discovery
 
 import (
+	"encoding/json"
 	"main/ipc/protos"
 	"reflect"
 )
@@ -13,6 +14,10 @@ func GetDataSchema(data interface{}, depth int) *protos.DataSchema {
 	// If the data is not an object (or an array), return the type
 	if data == nil {
 		return &protos.DataSchema{Type: []string{"null"}}
+	}
+	//interface {}(encoding/json.Number)
+	if _, ok := data.(json.Number); ok {
+		return &protos.DataSchema{Type: []string{"number"}}
 	}
 
 	dataType := reflect.TypeOf(data)
