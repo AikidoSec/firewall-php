@@ -11,6 +11,7 @@ func TestFindHostnameInUserInput(t *testing.T) {
 		port      uint32
 		expected  bool
 	}{
+		{"hTTps://lOcalhosT:8081", "Localhost", 8081, true},
 		{"", "", 0, false},
 		{"", "example.com", 0, false},
 		{"http://example.com", "", 0, false},

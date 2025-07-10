@@ -161,6 +161,7 @@ func TestGetDataSchema(t *testing.T) {
 		}
 	})
 
+
 	t.Run("test json.Number is treated as number", func(t *testing.T) {
 		var data interface{}
 		rowData := []byte(`{"age": 30, "name": "John", "isAdmin": true, "array": [1, 2, 3], "object": {"name": "John", "age": 30}}`)
@@ -186,4 +187,28 @@ func TestGetDataSchema(t *testing.T) {
 			t.Errorf("expected %v, got %v", expected, schema)
 		}
 	})
+  
+	t.Run("test max property key length", func(t *testing.T) {
+		key := strings.Repeat("a", 101)
+		shorterKey := strings.Repeat("b", 99)
+		value := "test"
+		obj := map[string]interface{}{
+			key:        value,
+			"test":     []int{1, 2, 3},
+			shorterKey: value,
+		}
+		schema := GetDataSchema(obj, 0)
+		compareSchemas(t, schema, &protos.DataSchema{
+			Type: []string{"object"},
+			Properties: map[string]*protos.DataSchema{
+				shorterKey: {Type: []string{"string"}},
+				"test": {
+					Type: []string{"array"},
+					Items: &protos.DataSchema{
+						Type: []string{"number"},
+					},
+				},
+			},
+		})
+    
 }
