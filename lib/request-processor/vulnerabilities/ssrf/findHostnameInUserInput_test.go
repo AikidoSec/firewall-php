@@ -11,7 +11,13 @@ func TestFindHostnameInUserInput(t *testing.T) {
 		port      uint32
 		expected  bool
 	}{
+		{"https://m%C3%BCnchen.de", "münchen.de", 0, true},
+		{"https://münchen.de", "xn--mnchen-3ya.de", 0, true},
+		{"https://xn--mnchen-3ya.de", "münchen.de", 0, true},
 		{"hTTps://lOcalhosT:8081", "Localhost", 8081, true},
+		{"MÜNCHEN.DE", "münchen.de", 0, true},
+		{"HTTP://localhost", "loCalhost", 0, true},
+		{"http://LOCALHOST", "loCalhOst", 0, true},
 		{"", "", 0, false},
 		{"", "example.com", 0, false},
 		{"http://example.com", "", 0, false},
