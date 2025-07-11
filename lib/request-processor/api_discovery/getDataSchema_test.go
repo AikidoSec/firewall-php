@@ -1,9 +1,11 @@
 package api_discovery
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"main/ipc/protos"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -19,6 +21,7 @@ func compareSchemas(t *testing.T, got, expected *protos.DataSchema) {
 }
 
 func TestGetDataSchema(t *testing.T) {
+
 	t.Run("it works", func(t *testing.T) {
 		compareSchemas(t, GetDataSchema("test", 0), &protos.DataSchema{
 			Type: []string{"string"},
@@ -155,6 +158,32 @@ func TestGetDataSchema(t *testing.T) {
 		schema2 := GetDataSchema(obj2, 0)
 		if len(schema2.Properties) != 100 {
 			t.Errorf("Expected 100 properties, got %d", len(schema2.Properties))
+		}
+	})
+
+	t.Run("test json.Number is treated as number", func(t *testing.T) {
+		var data interface{}
+		rowData := []byte(`{"age": 30, "name": "John", "isAdmin": true, "array": [1, 2, 3], "object": {"name": "John", "age": 30}}`)
+		dec := json.NewDecoder(bytes.NewReader(rowData))
+		dec.UseNumber()
+		dec.Decode(&data)
+		schema := GetDataSchema(data, 0)
+		expected := &protos.DataSchema{
+			Type: []string{"object"},
+			Properties: map[string]*protos.DataSchema{
+				"age":     {Type: []string{"number"}},
+				"name":    {Type: []string{"string"}},
+				"isAdmin": {Type: []string{"boolean"}},
+				"array":   {Type: []string{"array"}, Items: &protos.DataSchema{Type: []string{"number"}}},
+				"object": {Type: []string{"object"}, Properties: map[string]*protos.DataSchema{
+					"name": {Type: []string{"string"}},
+					"age":  {Type: []string{"number"}},
+				}},
+			},
+		}
+
+		if !reflect.DeepEqual(schema, expected) {
+			t.Errorf("expected %v, got %v", expected, schema)
 		}
 	})
 
