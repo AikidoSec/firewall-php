@@ -76,6 +76,13 @@ def get_runtime_config():
 
 @app.route('/api/runtime/firewall/lists', methods=['GET'])
 def get_lists_config():
+    accept_encoding = request.headers.get('Accept-Encoding', '').lower()
+    if 'gzip' not in accept_encoding:
+        return jsonify({
+            "success": False,
+            "error": "Accept-Encoding header must include 'gzip' for firewall lists endpoint"
+        }), 400
+
     return gzip_response(responses["lists"])
 
 @app.route('/api/runtime/events', methods=['POST'])
