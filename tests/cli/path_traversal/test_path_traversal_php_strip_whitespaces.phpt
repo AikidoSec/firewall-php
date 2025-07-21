@@ -10,7 +10,7 @@ AIKIDO_BLOCK=1
 
 $file = '../file/test.txt';
 
-php_strip_whitespaces($file);
+php_strip_whitespace($file);
 
 ?>
 
