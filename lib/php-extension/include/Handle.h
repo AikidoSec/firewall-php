@@ -49,6 +49,11 @@
         AIKIDO_METHOD_KEY(std::string(#class_name), std::string(#method_name)), { handle_pre_##class_name##_##method_name, nullptr } \
     }
 
+#define AIKIDO_REGISTER_METHOD_HANDLER_EX(class_name, method_name, pre_handler)                           \
+    {                                                                                                     \
+        AIKIDO_METHOD_KEY(std::string(#class_name), std::string(#method_name)), { pre_handler, nullptr }  \
+    }
+
 #define AIKIDO_HANDLER_FUNCTION(name) void name(INTERNAL_FUNCTION_PARAMETERS, EVENT_ID& eventId, std::string &sink, ScopedTimer &scopedTimer)
 
 ZEND_NAMED_FUNCTION(aikido_generic_handler);

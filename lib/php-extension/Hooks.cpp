@@ -45,8 +45,10 @@ unordered_map<std::string, PHP_HANDLERS> HOOKED_FUNCTIONS = {
 unordered_map<AIKIDO_METHOD_KEY, PHP_HANDLERS, AIKIDO_METHOD_KEY_HASH> HOOKED_METHODS = {
     AIKIDO_REGISTER_METHOD_HANDLER(pdo, query),
     AIKIDO_REGISTER_METHOD_HANDLER(pdo, exec),
-    AIKIDO_REGISTER_METHOD_HANDLER(pdostatement, execute)
-    };
+    AIKIDO_REGISTER_METHOD_HANDLER(pdostatement, execute),
+    AIKIDO_REGISTER_METHOD_HANDLER_EX(splfileobject, __construct, handle_pre_file_path_access),
+    AIKIDO_REGISTER_METHOD_HANDLER_EX(splfileinfo, __construct, handle_pre_file_path_access),
+};
 
 aikido_file_compilation_handler original_file_compilation_handler = nullptr;
 
