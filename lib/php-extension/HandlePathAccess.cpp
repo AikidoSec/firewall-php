@@ -41,8 +41,8 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_file_path_access) {
     zend_string *filename = NULL;
 
     ZEND_PARSE_PARAMETERS_START(0, -1)
-    Z_PARAM_OPTIONAL
-    Z_PARAM_STR(filename)
+        Z_PARAM_OPTIONAL
+        Z_PARAM_STR(filename)
     ZEND_PARSE_PARAMETERS_END();
 
     if (!filename) {
