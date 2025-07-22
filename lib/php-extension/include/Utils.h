@@ -19,3 +19,5 @@ std::string NormalizeAndDumpJson(const json& jsonStr);
 std::string ArrayToJson(zval* array);
 
 std::string GetSqlDialectFromPdo(zval *pdo_object);
+
+bool StartsWith(const std::string& str, const std::string& prefix);

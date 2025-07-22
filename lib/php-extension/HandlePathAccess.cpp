@@ -12,19 +12,20 @@ void get_resource_or_original_from_php_filter(char* filename) {
 
 /* Helper for handle pre file path access */
 void helper_handle_pre_file_path_access(char *filename, EVENT_ID &eventId) {
+    std::string filenameString(filename);
+
     //https://github.com/php/php-src/blob/8b61c49987750b74bee19838c7f7c9fbbf53aace/ext/standard/php_fopen_wrapper.c#L339
-    if (!strncasecmp(filename, "php://", 6) && 
-        strncasecmp(filename, "php://filter", 12)) {
+    if (StartsWith(filename, "php://") && !StartsWith(filename, "php://filter")) {
         // Whitelist all php:// streams apart from php://filter, for performance reasons (some PHP frameworks do 1000+ calls / request with these streams as param)
         // php://filter can be used to open arbitrary files, so we still monitor this
         return;
     }
 
-    std::string filenameString = get_resource_or_original_from_php_filter(filename);
+    filenameString = get_resource_or_original_from_php_filter(filename);
 
     // if filename starts with http:// or https://, it's a URL so we treat it as an outgoing request
-    if (filenameString.starts_with("http://") ||
-        filenameString.starts_with("https://")) {
+    if (StartsWith(filenameString, "http://") ||
+        StartsWith(filenameString, "https://")) {
         eventId = EVENT_PRE_OUTGOING_REQUEST;
         eventCache.outgoingRequestUrl = filenameString;
     } else {
