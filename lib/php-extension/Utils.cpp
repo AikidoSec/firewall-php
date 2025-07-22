@@ -109,6 +109,12 @@ std::string GetSqlDialectFromPdo(zval *pdo_object) {
     return "unknown";
 }
 
-bool StartsWith(const std::string& str, const std::string& prefix) {
-    return str.size() >= prefix.size() && str.compare(0, prefix.length(), prefix) == 0;
+bool StartsWith(const std::string& str, const std::string& prefix, bool caseSensitive) {
+    std::string strToCompare = str;
+    std::string prefixToCompare = prefix;
+    if (caseSensitive) {
+        strToCompare = ToLowercase(str);
+        prefixToCompare = ToLowercase(prefix);
+    }
+    return strToCompare.size() >= prefixToCompare.size() && strToCompare.compare(0, prefixToCompare.length(), prefixToCompare) == 0;
 }
