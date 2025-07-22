@@ -112,7 +112,7 @@ std::string GetSqlDialectFromPdo(zval *pdo_object) {
 bool StartsWith(const std::string& str, const std::string& prefix, bool caseSensitive) {
     std::string strToCompare = str;
     std::string prefixToCompare = prefix;
-    if (caseSensitive) {
+    if (!caseSensitive) {
         strToCompare = ToLowercase(str);
         prefixToCompare = ToLowercase(prefix);
     }
