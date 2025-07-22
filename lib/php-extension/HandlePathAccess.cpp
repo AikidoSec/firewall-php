@@ -1,5 +1,15 @@
 #include "Includes.h"
 
+void get_resource_or_original_from_php_filter(char* filename) {
+    std::string filenameStr(filename);
+    std::string phpResourceString = "php://filter/resource=";
+    size_t pos = filenameStr.rfind(phpResourceString);
+    if (pos != std::string::npos) {
+        return filenameStr.substr(pos + phpResourceString.length());
+    }
+    return filenameStr;
+}
+
 /* Helper for handle pre file path access */
 void helper_handle_pre_file_path_access(char *filename, EVENT_ID &eventId) {
     //https://github.com/php/php-src/blob/8b61c49987750b74bee19838c7f7c9fbbf53aace/ext/standard/php_fopen_wrapper.c#L339
@@ -10,14 +20,16 @@ void helper_handle_pre_file_path_access(char *filename, EVENT_ID &eventId) {
         return;
     }
 
+    std::string filenameString = get_resource_or_original_from_php_filter(filename);
+
     // if filename starts with http:// or https://, it's a URL so we treat it as an outgoing request
-    if (!strncasecmp(filename, "http://", 7) ||
-        !strncasecmp(filename, "https://", 8)) {
+    if (filenameString.starts_with("http://") ||
+        filenameString.starts_with("https://")) {
         eventId = EVENT_PRE_OUTGOING_REQUEST;
-        eventCache.outgoingRequestUrl = filename;
+        eventCache.outgoingRequestUrl = filenameString;
     } else {
         eventId = EVENT_PRE_PATH_ACCESSED;
-        eventCache.filename = filename;
+        eventCache.filename = filenameString;
     }
 }
 

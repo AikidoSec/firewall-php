@@ -81,3 +81,15 @@ func ExtractStringsFromUserInput(obj interface{}, pathToPayload []PathPart) map[
 
 	return results
 }
+
+func ExtractResourceOrOriginal(filePath string) string {
+	// Convert to lowercase for case-insensitive comparison
+	if strings.HasPrefix(strings.ToLower(filePath), "php://filter/") {
+		// https://github.com/php/php-src/blob/8b61c49987750b74bee19838c7f7c9fbbf53aace/ext/standard/php_fopen_wrapper.c#L348
+		index := strings.LastIndex(filePath, "/resource=")
+		if index != -1 {
+			return filePath[index+len("/resource="):]
+		}
+	}
+	return filePath
+}

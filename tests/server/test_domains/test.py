@@ -16,6 +16,8 @@ def run_test():
     mock_server_wait_for_new_events(70)
     
     events = mock_server_get_events()
+    for e in events:
+        print(e)
     assert_events_length_is(events, 2)
     assert_started_event_is_valid(events[0])
     assert_event_contains_subset_file(events[1], "expect_domains.json")

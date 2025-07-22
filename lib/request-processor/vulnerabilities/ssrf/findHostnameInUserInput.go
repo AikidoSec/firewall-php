@@ -16,6 +16,7 @@ func findHostnameInUserInput(userInput string, hostname string, port uint32) boo
 		return false
 	}
 
+	userInput = helpers.ExtractResourceOrOriginal(userInput)
 	variants := []string{userInput, "http://" + userInput, "https://" + userInput}
 
 	for _, variant := range variants {

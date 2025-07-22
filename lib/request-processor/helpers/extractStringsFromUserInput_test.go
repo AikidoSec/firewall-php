@@ -271,3 +271,48 @@ func TestExtractStringsFromUserInput(t *testing.T) {
 	})
 
 }
+
+func TestExtractResourceOrOriginal(t *testing.T) {
+	t.Run("php://filter/convert.base64-encode/resource=/etc/passwd", func(t *testing.T) {
+		if ExtractResourceOrOriginal("php://filter/convert.base64-encode/resource=/etc/passwd") != "/etc/passwd" {
+			t.Error("expected /etc/passwd")
+		}
+	})
+	t.Run("php://filter/convert.base64-encode/resource=../../../../file", func(t *testing.T) {
+		if ExtractResourceOrOriginal("php://filter/convert.base64-encode/resource=../../../../file") != "../../../../file" {
+			t.Error("expected ../../../../file")
+		}
+	})
+	t.Run("php://filter/resource=php://filter/resource=../../../../file", func(t *testing.T) {
+		if ExtractResourceOrOriginal("php://filter/resource=php://filter/resource=../../../../file") != "../../../../file" {
+			t.Error("expected ../../../../file")
+		}
+	})
+	t.Run("file.txt", func(t *testing.T) {
+		if ExtractResourceOrOriginal("file.txt") != "file.txt" {
+			t.Error("expected file.txt")
+		}
+	})
+	t.Run("test.txt/resource=../../../../file", func(t *testing.T) {
+		if ExtractResourceOrOriginal("test.txt/resource=../../../../file") != "test.txt/resource=../../../../file" {
+			t.Error("expected test.txt/resource=../../../../file")
+		}
+	})
+	t.Run("php://filter/", func(t *testing.T) {
+		if ExtractResourceOrOriginal("php://filter/") != "php://filter/" {
+			t.Error("expected php://filter/")
+		}
+	})
+	t.Run("php://filter/resource=", func(t *testing.T) {
+		if ExtractResourceOrOriginal("php://filter/resource=") != "" {
+			t.Error("expected empty")
+		}
+	})
+
+	t.Run("Case insensitive", func(t *testing.T) {
+		if ExtractResourceOrOriginal("php://FiltEr/convert.base64-encode/resource=/etc/passwd") != "/etc/passwd" {
+			t.Error("expected /etc/passwd")
+		}
+	})
+
+}
