@@ -1,6 +1,6 @@
 #include "Includes.h"
 
-void get_resource_or_original_from_php_filter(char* filename) {
+std::string get_resource_or_original_from_php_filter(char* filename) {
     std::string filenameStr(filename);
     std::string phpResourceString = "php://filter/resource=";
     size_t pos = filenameStr.rfind(phpResourceString);
