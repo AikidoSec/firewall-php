@@ -110,5 +110,5 @@ std::string GetSqlDialectFromPdo(zval *pdo_object) {
 }
 
 bool StartsWith(const std::string& str, const std::string& prefix) {
-    return str.compare(0, prefix.length(), prefix) == 0;
+    return str.size() >= prefix.size() && str.compare(0, prefix.length(), prefix) == 0;
 }
