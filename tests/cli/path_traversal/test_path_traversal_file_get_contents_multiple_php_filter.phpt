@@ -19,7 +19,3 @@ test=../file
 
 --EXPECTREGEX--
 .*Fatal error: Uncaught Exception: Aikido firewall has blocked a path traversal attack.*
-
-file_get_contents("php://filter/resource=https://example.com");
-file_get_contents("php://filter/resource=php://filter/resource=php://filter/resource=php://filter/resource=php://filter/resource=php://filter/resource=php://filter/resource=https://example.com");
-
