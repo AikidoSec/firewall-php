@@ -2,6 +2,8 @@ package ssrf
 
 import (
 	"net"
+	"strconv"
+	"strings"
 )
 
 // Taken from https://github.com/frenchbread/private-ip/blob/master/src/index.ts
@@ -52,9 +54,55 @@ func init() {
 	}
 }
 
+func parseWeirdIPv4(s string) net.IP {
+	parts := strings.Split(s, ".")
+	if len(parts) > 4 {
+		return nil
+	}
+
+	var nums []uint64
+	for _, p := range parts {
+		var n uint64
+		var err error
+		if strings.HasPrefix(p, "0x") || strings.HasPrefix(p, "0X") {
+			n, err = strconv.ParseUint(p[2:], 16, 32)
+		} else if strings.HasPrefix(p, "0") && len(p) > 1 {
+			n, err = strconv.ParseUint(p[1:], 8, 32)
+		} else {
+			n, err = strconv.ParseUint(p, 10, 32)
+		}
+		if err != nil || n > 0xFFFFFFFF {
+			return nil
+		}
+		nums = append(nums, n)
+	}
+
+	ip := uint32(0)
+	switch len(nums) {
+	case 1:
+		ip = uint32(nums[0])
+	case 2:
+		ip = (uint32(nums[0]&0xFF) << 24) | uint32(nums[1])
+	case 3:
+		ip = (uint32(nums[0]&0xFF) << 24) | (uint32(nums[1]&0xFF) << 16) | uint32(nums[2])
+	case 4:
+		ip = (uint32(nums[0]&0xFF) << 24) | (uint32(nums[1]&0xFF) << 16) |
+			(uint32(nums[2]&0xFF) << 8) | uint32(nums[3]&0xFF)
+	default:
+		return nil
+	}
+
+	b := []byte{byte(ip >> 24), byte(ip >> 16), byte(ip >> 8), byte(ip)}
+	return net.IPv4(b[0], b[1], b[2], b[3])
+}
+
 // isPrivateIP checks if an IP address is within a private range.
 func isPrivateIP(ip string) bool {
 	parsedIP := net.ParseIP(ip)
+	if parsedIP == nil {
+		parsedIP = parseWeirdIPv4(ip)
+	}
+
 	if parsedIP == nil {
 		return false
 	}
