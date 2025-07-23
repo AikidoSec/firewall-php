@@ -1,7 +1,6 @@
 #include "Includes.h"
 
-std::string get_resource_or_original_from_php_filter(char* filename) {
-    std::string filenameStr(filename);
+std::string get_resource_or_original_from_php_filter(const std::string& filenameStr) {
     std::string phpResourceString = "php://filter/resource=";
     size_t pos = filenameStr.rfind(phpResourceString);
     if (pos != std::string::npos) {
@@ -21,7 +20,7 @@ void helper_handle_pre_file_path_access(char *filename, EVENT_ID &eventId) {
         return;
     }
 
-    filenameString = get_resource_or_original_from_php_filter(filename);
+    filenameString = get_resource_or_original_from_php_filter(filenameString);
 
     // if filename starts with http:// or https://, it's a URL so we treat it as an outgoing request
     if (StartsWith(filenameString, "http://", false) ||
