@@ -11,7 +11,6 @@ AIKIDO_BLOCK=1
 $file = '../file/test.txt';
     
 file_get_contents("php://filter/resource=" . $file);
-//file_get_contents("php://filter/resource=php://filter/resource=php://filter/resource=php://filter/resource=php://filter/resource=php://filter/resource=php://filter/resource=../test.txt");
 
 ?>
 
