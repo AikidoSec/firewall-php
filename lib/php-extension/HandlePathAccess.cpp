@@ -1,6 +1,10 @@
 #include "Includes.h"
 
 std::string get_resource_or_original_from_php_filter(const std::string& filenameStr) {
+    if (!StartsWith(filenameStr, "php://filter", false)) {
+        return filenameStr;
+    }
+
     std::string phpResourceString = "/resource=";
     size_t pos = filenameStr.rfind(phpResourceString);
     if (pos != std::string::npos) {
