@@ -11,7 +11,7 @@ test=https://localhost:8081
 --FILE--
 <?php
 
-$file = 'php://filter/convert.base64-encode/resource=php://filter/resource=php://filter/resource=php://filter/resource=https://localhost:8081';
+$file = 'php://filter/convert.base64-encode/resource=php://filter/resource=php://filter/resource=php://filter/convert.base64-encode/resource=https://localhost:8081';
 file_get_contents($file);
 
 ?>

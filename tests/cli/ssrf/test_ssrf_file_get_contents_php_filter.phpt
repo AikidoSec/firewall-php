@@ -11,7 +11,7 @@ test=hTTps://lOcalhosT:8081
 --FILE--
 <?php
 
-$file = 'php://filter/resource=hTTps://lOcalhosT:8081';
+$file = 'php://filter/convert.base64-encode/resource=hTTps://lOcalhosT:8081';
     
 file_get_contents($file);
 

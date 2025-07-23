@@ -1,7 +1,7 @@
 #include "Includes.h"
 
 std::string get_resource_or_original_from_php_filter(const std::string& filenameStr) {
-    std::string phpResourceString = "php://filter/resource=";
+    std::string phpResourceString = "/resource=";
     size_t pos = filenameStr.rfind(phpResourceString);
     if (pos != std::string::npos) {
         return filenameStr.substr(pos + phpResourceString.length());
