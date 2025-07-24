@@ -1,23 +1,39 @@
 #include "Includes.h"
 
+std::string get_resource_or_original_from_php_filter(const std::string& filenameStr) {
+    if (!StartsWith(filenameStr, "php://filter", false)) {
+        return filenameStr;
+    }
+
+    std::string phpResourceString = "/resource=";
+    size_t pos = filenameStr.rfind(phpResourceString);
+    if (pos != std::string::npos) {
+        return filenameStr.substr(pos + phpResourceString.length());
+    }
+    return filenameStr;
+}
+
 /* Helper for handle pre file path access */
 void helper_handle_pre_file_path_access(char *filename, EVENT_ID &eventId) {
+    std::string filenameString(filename);
+
     //https://github.com/php/php-src/blob/8b61c49987750b74bee19838c7f7c9fbbf53aace/ext/standard/php_fopen_wrapper.c#L339
-    if (!strncasecmp(filename, "php://", 6) && 
-        strncasecmp(filename, "php://filter", 12)) {
+    if (StartsWith(filename, "php://", false) && !StartsWith(filename, "php://filter", false)) {
         // Whitelist all php:// streams apart from php://filter, for performance reasons (some PHP frameworks do 1000+ calls / request with these streams as param)
         // php://filter can be used to open arbitrary files, so we still monitor this
         return;
     }
 
+    filenameString = get_resource_or_original_from_php_filter(filenameString);
+
     // if filename starts with http:// or https://, it's a URL so we treat it as an outgoing request
-    if (!strncasecmp(filename, "http://", 7) ||
-        !strncasecmp(filename, "https://", 8)) {
+    if (StartsWith(filenameString, "http://", false) ||
+        StartsWith(filenameString, "https://", false)) {
         eventId = EVENT_PRE_OUTGOING_REQUEST;
-        eventCache.outgoingRequestUrl = filename;
+        eventCache.outgoingRequestUrl = filenameString;
     } else {
         eventId = EVENT_PRE_PATH_ACCESSED;
-        eventCache.filename = filename;
+        eventCache.filename = filenameString;
     }
 }
 
@@ -41,8 +57,8 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_file_path_access) {
     zend_string *filename = NULL;
 
     ZEND_PARSE_PARAMETERS_START(0, -1)
-    Z_PARAM_OPTIONAL
-    Z_PARAM_STR(filename)
+        Z_PARAM_OPTIONAL
+        Z_PARAM_STR(filename)
     ZEND_PARSE_PARAMETERS_END();
 
     if (!filename) {
