@@ -12,6 +12,9 @@ func detectPathTraversal(filePath string, userInput string, checkPathStart bool)
 		return false
 	}
 
+	filePath = helpers.ExtractResourceOrOriginal(filePath)
+	userInput = helpers.ExtractResourceOrOriginal(userInput)
+
 	if len(userInput) > len(filePath) {
 		// We ignore cases where the user input is longer than the file path.
 		// Because the user input can't be part of the file path.
@@ -22,9 +25,6 @@ func detectPathTraversal(filePath string, userInput string, checkPathStart bool)
 		// We ignore cases where the user input is not part of the file path.
 		return false
 	}
-
-	filePath = helpers.ExtractResourceOrOriginal(filePath)
-	userInput = helpers.ExtractResourceOrOriginal(userInput)
 
 	if containsUnsafePathParts(filePath) && containsUnsafePathParts(userInput) {
 		return true

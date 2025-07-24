@@ -39,3 +39,4 @@ RUN yum install -y python3-devel
 RUN yum install -y nginx
 RUN pip3 install psutil flask requests --quiet --no-input
 RUN yum install -y gdb
+RUN go install github.com/go-delve/delve/cmd/dlv@latest

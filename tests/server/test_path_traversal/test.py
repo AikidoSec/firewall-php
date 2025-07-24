@@ -26,7 +26,8 @@ def run_test():
 
     check_path_traversal(exploit_path, 500, "", 1, "expect_detection_blocked.json")
     check_path_traversal(f"php://filter/convert.base64-encode/resource={exploit_path}", 500, "", 2, "expect_detection_blocked_php_filter.json")
-    
+    check_path_traversal(f"php://filter/resource=php://filter/resource=php://filter/resource=php://filter/resource=php://filter/resource=php://filter/resource=php://filter/convert.base64-encode/resource={exploit_path}", 500, "", 3, "expect_detection_blocked_php_filter_multiple.json")
+
     apply_config("change_config_disable_blocking.json")
     check_path_traversal(exploit_path, 200, "File opened!", 3, "expect_detection_not_blocked.json")
     
