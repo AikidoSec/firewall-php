@@ -126,7 +126,7 @@ jobs:
       uses: shivammathur/setup-php@27853eb8b46dc01c33bf9fef67d98df2683c3be2 # v2
       with:
         php-version: ${{ matrix.php_version }}
-        extensions: curl
+        extensions: curl, mysqli
         coverage: none
 
     - name: Check PHP setup
