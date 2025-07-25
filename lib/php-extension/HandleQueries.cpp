@@ -1,4 +1,6 @@
 #include "Includes.h"
+#include "ext/mysqli/php_mysqli_structs.h"
+#include "ext/mysqli/mysqli_mysqlnd.h"
 
 AIKIDO_HANDLER_FUNCTION(handle_pre_pdo_query) {
     scopedTimer.SetSink(sink, "sql_op");
@@ -6,8 +8,8 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_pdo_query) {
     zend_string *query = NULL;
 
     ZEND_PARSE_PARAMETERS_START(0, -1)
-    Z_PARAM_OPTIONAL
-    Z_PARAM_STR(query)
+        Z_PARAM_OPTIONAL
+        Z_PARAM_STR(query)
     ZEND_PARSE_PARAMETERS_END();
 
     if (!query) {
@@ -34,7 +36,7 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_pdo_exec) {
     zend_string *query = NULL;
 
     ZEND_PARSE_PARAMETERS_START(1, 1)
-    Z_PARAM_STR(query)
+        Z_PARAM_STR(query)
     ZEND_PARSE_PARAMETERS_END();
 
     if (!query) {
@@ -71,4 +73,47 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_pdostatement_execute) {
 
     zval *pdo_object = &stmt->database_object_handle;
     eventCache.sqlDialect = GetSqlDialectFromPdo(pdo_object);
+}
+
+void handle_pre_mysqli_query_common(zval *mysql_object, zend_string *query, EVENT_ID& eventId, std::string &sink, ScopedTimer &scopedTimer) {
+    if (!mysql_object || !query) {
+        AIKIDO_LOG_WARN("handle_pre_mysqli_query: Missing mysql_object or query parameter.\n");
+        return;
+    }
+
+    AIKIDO_LOG_INFO("handle_pre_mysqli_query: Query: \"%s\"\n", ZSTR_VAL(query));
+
+    scopedTimer.SetSink(sink, "sql_op");
+
+    eventId = EVENT_PRE_SQL_QUERY_EXECUTED;
+    eventCache.moduleName = "mysqli";
+    eventCache.sqlQuery = ZSTR_VAL(query);
+    eventCache.sqlDialect = "mysql";
+}
+
+AIKIDO_HANDLER_FUNCTION(handle_pre_mysqli_query) {
+    AIKIDO_LOG_DEBUG("handle_pre_mysqli_query called");
+
+    zval *mysql_object = getThis();
+    zend_string *query = NULL;
+
+    ZEND_PARSE_PARAMETERS_START(0, -1)
+        Z_PARAM_STR(query)
+    ZEND_PARSE_PARAMETERS_END();
+
+    handle_pre_mysqli_query_common(mysql_object, query, eventId, sink, scopedTimer);
+}
+
+AIKIDO_HANDLER_FUNCTION(handle_pre_mysqli_query_procedure) {
+    AIKIDO_LOG_DEBUG("handle_pre_mysqli_query_procedure called");
+    
+    zval *mysql_object;
+    zend_string *query = NULL;
+    
+    ZEND_PARSE_PARAMETERS_START(0, -1)
+        Z_PARAM_OBJECT_OF_CLASS(mysql_object, mysqli_link_class_entry)
+        Z_PARAM_STR(query)
+    ZEND_PARSE_PARAMETERS_END();
+
+    handle_pre_mysqli_query_common(mysql_object, query, eventId, sink, scopedTimer);
 }
