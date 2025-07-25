@@ -22,6 +22,7 @@ unordered_map<std::string, PHP_HANDLERS> HOOKED_FUNCTIONS = {
     AIKIDO_REGISTER_FUNCTION_HANDLER_WITH_POST_EX(file_get_contents, handle_pre_file_path_access, handle_post_file_path_access),
     AIKIDO_REGISTER_FUNCTION_HANDLER_EX(file_put_contents, handle_pre_file_path_access),
     AIKIDO_REGISTER_FUNCTION_HANDLER_WITH_POST_EX(fopen, handle_pre_file_path_access, handle_post_file_path_access),
+    AIKIDO_REGISTER_FUNCTION_HANDLER_EX(highlight_file, handle_pre_file_path_access),
     AIKIDO_REGISTER_FUNCTION_HANDLER_EX(lchgrp, handle_pre_file_path_access),
     AIKIDO_REGISTER_FUNCTION_HANDLER_EX(lchown, handle_pre_file_path_access),
     AIKIDO_REGISTER_FUNCTION_HANDLER_EX(link, handle_pre_file_path_access_2),
@@ -29,6 +30,7 @@ unordered_map<std::string, PHP_HANDLERS> HOOKED_FUNCTIONS = {
     AIKIDO_REGISTER_FUNCTION_HANDLER_EX(move_uploaded_file, handle_pre_file_path_access_2),
     AIKIDO_REGISTER_FUNCTION_HANDLER_EX(opendir, handle_pre_file_path_access),
     AIKIDO_REGISTER_FUNCTION_HANDLER_EX(parse_ini_file, handle_pre_file_path_access),
+    AIKIDO_REGISTER_FUNCTION_HANDLER_EX(php_strip_whitespace, handle_pre_file_path_access),
     AIKIDO_REGISTER_FUNCTION_HANDLER_EX(readfile, handle_pre_file_path_access),
     AIKIDO_REGISTER_FUNCTION_HANDLER_EX(readlink, handle_pre_file_path_access),
     AIKIDO_REGISTER_FUNCTION_HANDLER_EX(realpath, handle_pre_file_path_access),
@@ -43,8 +45,10 @@ unordered_map<std::string, PHP_HANDLERS> HOOKED_FUNCTIONS = {
 unordered_map<AIKIDO_METHOD_KEY, PHP_HANDLERS, AIKIDO_METHOD_KEY_HASH> HOOKED_METHODS = {
     AIKIDO_REGISTER_METHOD_HANDLER(pdo, query),
     AIKIDO_REGISTER_METHOD_HANDLER(pdo, exec),
-    AIKIDO_REGISTER_METHOD_HANDLER(pdostatement, execute)
-    };
+    AIKIDO_REGISTER_METHOD_HANDLER(pdostatement, execute),
+    AIKIDO_REGISTER_METHOD_HANDLER_EX(splfileobject, __construct, handle_pre_file_path_access),
+    AIKIDO_REGISTER_METHOD_HANDLER_EX(splfileinfo, __construct, handle_pre_file_path_access),
+};
 
 aikido_file_compilation_handler original_file_compilation_handler = nullptr;
 
