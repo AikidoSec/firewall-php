@@ -35,8 +35,8 @@ server {{
         try_files $uri $uri/ /index.php?$args;
     }}
 
-    location ~ \.php$ {{
-        fastcgi_split_path_info ^(.+\.php)(/.+)$;
+    location ~ \\.php$ {{
+        fastcgi_split_path_info ^(.+\\.php)(/.+)$;
         fastcgi_pass unix:{run_dir}/php-fpm-{name}.sock;
         fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
         fastcgi_index index.php;
@@ -139,7 +139,7 @@ def select_nginx_user():
         if u in usernames:
             nginx_user = u
             break
-        
+
     print("Selected nginx user: ", nginx_user)
 
 
@@ -153,13 +153,13 @@ def php_fpm_create_conf_file(test_dir, test_name, user, env):
 
     for e in env:
         php_fpm_config += f"env[%s] = %s\n" % (e, env[e])
-        
+
     php_fpm_config_file_path = os.path.join(test_dir, f"{test_name}.conf")
     with open(php_fpm_config_file_path, "w") as fpm_file:
         fpm_file.write(php_fpm_config)
 
     print(f"Configured PHP-FPM config for {test_name}")
-    
+
     return php_fpm_config_file_path
 
 
