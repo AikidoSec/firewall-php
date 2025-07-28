@@ -32,6 +32,5 @@ func OnRequestShutdownReporting(method string, route string, routeParsed string,
 func OnPostRequest() string {
 	go OnRequestShutdownReporting(context.GetMethod(), context.GetRoute(), context.GetParsedRoute(), context.GetStatusCode(), context.GetUserId(), context.GetIp(), api_discovery.GetApiInfo(), context.IsEndpointRateLimited())
 	context.Clear()
-	context.ResetEventContext()
 	return ""
 }
