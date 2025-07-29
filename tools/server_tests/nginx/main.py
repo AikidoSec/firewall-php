@@ -105,11 +105,14 @@ def modify_nginx_conf(file_path):
         content = content.replace('user nginx;', 'user root;')
         content = content.replace('user www-data;', 'user root;')
 
+        # Disable the default server directive by commenting out 'listen ... default_server;' lines
+        content = re.sub(r'^(?P<indent>\s*)(listen\s+[^;]*default_server;)', r'\g<indent># \2', content, flags=re.MULTILINE)
+
         # Write the modified content back to the file
         with open(file_path, 'w') as file:
             file.write(content)
 
-        print(f"nginx.conf has been updated to use 'user root;'.")
+        print(f"nginx.conf has been updated to use 'user root;' and disabled default server directive.")
     except FileNotFoundError:
         print(f"Error: File {file_path} not found.")
     except Exception as e:
@@ -184,12 +187,7 @@ def nginx_php_fpm_pre_tests():
     create_folder(php_fpm_run_dir)
     create_folder(f'{log_dir}/php-fpm')
     modify_nginx_conf(nginx_global_conf)
-    try:
-        subprocess.run(['nginx'], check=True, capture_output=True, text=True)
-    except subprocess.CalledProcessError as e:
-        print("Command failed with exit code:", e.returncode)
-        print("stdout:\n", e.stdout)
-        print("stderr:\n", e.stderr)
+    subprocess.run(['nginx'], check=True)
     print("nginx server restarted!")
     time.sleep(5)
 
