@@ -6,13 +6,13 @@ AIKIDO_LOG_LEVEL=INFO
 AIKIDO_BLOCK=1
 
 --POST--
-test=http://ssrf-redirects.testssandbox.com/ssrf-test
+test=https://ssrf-redirects.testssandbox.com/ssrf-test-3
 
 --FILE--
 <?php
 
-$host = '0.0.0.0';
-$port = 80;
+$host = '127.0.0.1';
+$port = 3000;
 $pid = null;
 
 $descriptorspec = [
@@ -35,7 +35,7 @@ try {
     sleep(1);
 
     // Perform the cURL request
-    $ch1 = curl_init("http://ssrf-redirects.testssandbox.com/ssrf-test");
+    $ch1 = curl_init("https://ssrf-redirects.testssandbox.com/ssrf-test-3");
     curl_setopt($ch1, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch1, CURLOPT_FOLLOWLOCATION, true);
     $response = curl_exec($ch1);
