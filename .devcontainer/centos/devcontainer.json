@@ -20,7 +20,8 @@
         "ms-vscode.cpptools",
         "ms-vscode.cpptools-themes",
         "austin.code-gnu-global",
-        "ms-vscode.makefile-tools"
+        "ms-vscode.makefile-tools",
+        "ms-python.vscode-pylance"
       ]
     }
   }
