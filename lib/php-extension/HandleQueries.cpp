@@ -85,14 +85,18 @@ void handle_pre_mysqli_query_common(zval *mysql_object, zend_string *query, EVEN
 
     scopedTimer.SetSink(sink, "sql_op");
 
+    AIKIDO_LOG_INFO("handle_pre_mysqli_query: after set sink\n");
+
     eventId = EVENT_PRE_SQL_QUERY_EXECUTED;
     eventCache.moduleName = "mysqli";
     eventCache.sqlQuery = ZSTR_VAL(query);
     eventCache.sqlDialect = "mysql";
+
+    AIKIDO_LOG_INFO("handle_pre_mysqli_query: after set eventId\n");
 }
 
 AIKIDO_HANDLER_FUNCTION(handle_pre_mysqli_query) {
-    AIKIDO_LOG_DEBUG("handle_pre_mysqli_query called");
+    AIKIDO_LOG_DEBUG("handle_pre_mysqli_query called\n");
 
     zval *mysql_object = getThis();
     zend_string *query = NULL;
