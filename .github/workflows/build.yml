@@ -357,6 +357,13 @@ jobs:
           yum install -y php-fpm
           dnf install -y procps-ng
 
+      - name: Install and start MySQL
+        run: |
+          yum install -y mysql-server
+          systemctl start mysqld
+          systemctl status mysqld || true
+          mysql -u root -e "CREATE DATABASE IF NOT EXISTS db;"
+
       - name: Get Arch
         run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
 
@@ -441,6 +448,14 @@ jobs:
           a2dismod mpm_worker
           a2enmod mpm_prefork
           a2enmod rewrite
+
+      - name: Install MySQL server
+        run: |
+          DEBIAN_FRONTEND=noninteractive apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y mysql-server
+          systemctl start mysqld
+          systemctl status mysqld || true
+          mysql -u root -e "CREATE DATABASE IF NOT EXISTS db;"
 
       - name: Setup PHP
         uses: shivammathur/setup-php@27853eb8b46dc01c33bf9fef67d98df2683c3be2
