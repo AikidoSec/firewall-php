@@ -134,6 +134,7 @@ jobs:
         which php
         php -v
         php -i
+        ls -lR /usr/include/php
 
     - name: Build extension
       run: |
