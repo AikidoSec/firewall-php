@@ -134,7 +134,6 @@ jobs:
         which php
         php -v
         php -i
-        ls -lR /usr/include/
 
     - name: Build extension
       run: |
@@ -143,7 +142,7 @@ jobs:
         cd lib/php-extension
         phpize
         cd ../../build
-        CXX=g++ CXXFLAGS="-fPIC -O2 -I../lib/php-extension/include" LDFLAGS="-lstdc++" ../lib/php-extension/configure
+        CXX=g++ CXXFLAGS="-fPIC -O2 -I../lib/php-extension/include -I/usr/include/mysql" LDFLAGS="-lstdc++" ../lib/php-extension/configure
         make
 
     - name: Version Aikido extension
