@@ -75,49 +75,42 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_pdostatement_execute) {
     eventCache.sqlDialect = GetSqlDialectFromPdo(pdo_object);
 }
 
-void handle_pre_mysqli_query_common(zval *mysql_object, zend_string *query, EVENT_ID& eventId, std::string &sink, ScopedTimer &scopedTimer) {
-    if (!mysql_object || !query) {
+
+zend_class_entry* mysqli_link_class_entry = nullptr;
+
+AIKIDO_HANDLER_FUNCTION(handle_pre_mysqli_query){
+	MY_MYSQL			*mysql;
+	zval				*mysql_link;
+	MYSQLI_RESOURCE		*mysqli_resource;
+	MYSQL_RES 			*result = NULL;
+	char				*query = NULL;
+	size_t 				query_len;
+    zend_long 		    resultmode;
+
+    if ((mysqli_link_class_entry = (zend_class_entry*)zend_hash_str_find_ptr(EG(class_table), "mysqli", sizeof("mysqli") - 1)) == NULL) {
+        AIKIDO_LOG_DEBUG("handle_pre_mysqli_query: no link class\n");
+        return;
+    }
+
+	if (zend_parse_method_parameters(ZEND_NUM_ARGS(), getThis(), "Os|l", &mysql_link, mysqli_link_class_entry, &query, &query_len, &resultmode) == FAILURE) {
+		AIKIDO_LOG_DEBUG("handle_pre_mysqli_query: no parse\n");
+        RETURN_THROWS();
+	}
+
+	if (!query_len) {
+        AIKIDO_LOG_DEBUG("handle_pre_mysqli_query: no query len\n");
+		RETURN_THROWS();
+	}
+
+    if (!mysql_link) {
         AIKIDO_LOG_WARN("handle_pre_mysqli_query: Missing mysql_object or query parameter.\n");
         return;
     }
 
-    AIKIDO_LOG_INFO("handle_pre_mysqli_query: Query: \"%s\"\n", ZSTR_VAL(query));
-
     scopedTimer.SetSink(sink, "sql_op");
-
-    AIKIDO_LOG_INFO("handle_pre_mysqli_query: after set sink\n");
 
     eventId = EVENT_PRE_SQL_QUERY_EXECUTED;
     eventCache.moduleName = "mysqli";
-    eventCache.sqlQuery = ZSTR_VAL(query);
+    eventCache.sqlQuery = query;
     eventCache.sqlDialect = "mysql";
-
-    AIKIDO_LOG_INFO("handle_pre_mysqli_query: after set eventId\n");
-}
-
-AIKIDO_HANDLER_FUNCTION(handle_pre_mysqli_query) {
-    AIKIDO_LOG_DEBUG("handle_pre_mysqli_query called\n");
-
-    zval *mysql_object = getThis();
-    zend_string *query = NULL;
-
-    ZEND_PARSE_PARAMETERS_START(0, -1)
-        Z_PARAM_STR(query)
-    ZEND_PARSE_PARAMETERS_END();
-
-    handle_pre_mysqli_query_common(mysql_object, query, eventId, sink, scopedTimer);
-}
-
-AIKIDO_HANDLER_FUNCTION(handle_pre_mysqli_query_procedure) {
-    AIKIDO_LOG_DEBUG("handle_pre_mysqli_query_procedure called");
-    
-    zval *mysql_object;
-    zend_string *query = NULL;
-    
-    ZEND_PARSE_PARAMETERS_START(0, -1)
-        Z_PARAM_OBJECT_OF_CLASS(mysql_object, mysqli_link_class_entry)
-        Z_PARAM_STR(query)
-    ZEND_PARSE_PARAMETERS_END();
-
-    handle_pre_mysqli_query_common(mysql_object, query, eventId, sink, scopedTimer);
 }

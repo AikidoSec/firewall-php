@@ -14,7 +14,7 @@ func OnPreSqlQueryExecuted() string {
 	if query == "" || dialect == "" {
 		return ""
 	}
-	log.Info("Got PDO query: ", query, " dialect: ", dialect)
+	log.Info("Got SQL query: \"", query, "\", dialect: ", dialect)
 
 	if context.IsEndpointProtectionTurnedOff() {
 		log.Infof("Protection is turned off -> will not run detection logic!")

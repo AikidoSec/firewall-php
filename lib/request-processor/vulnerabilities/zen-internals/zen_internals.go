@@ -77,6 +77,6 @@ func DetectSQLInjection(query string, user_input string, dialect int) int {
 
 	// Call the detect_sql_injection function
 	result := int(C.call_detect_sql_injection(detectSqlInjection, cQuery, cUserInput, C.int(dialect)))
-	log.Debugf("DetectSqlInjection(%s, %s, %d) -> %d", query, user_input, dialect, result)
+	log.Debugf("DetectSqlInjection(\"%s\", \"%s\", %d) -> %d", query, user_input, dialect, result)
 	return result
 }
