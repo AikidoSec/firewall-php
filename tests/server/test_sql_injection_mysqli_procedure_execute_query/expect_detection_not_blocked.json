@@ -13,15 +13,15 @@
     },
     "attack": {
         "kind": "sql_injection",
-        "operation": "query",
-        "module": "PDO",
+        "operation": "mysqli_execute_query",
+        "module": "mysqli",
         "blocked": false,
         "source": "body",
         "path": ".userId",
         "stack": "",
         "payload": "1 OR 1=1",
         "metadata": {
-            "dialect": "sqlite",
+            "dialect": "mysql",
             "sql": "SELECT * FROM users WHERE id = 1 OR 1=1"
         },
         "user": {
