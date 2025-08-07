@@ -53,6 +53,7 @@ func Clear() bool {
 	Context = RequestContextData{
 		Callback: Context.Callback,
 	}
+	ResetEventContext()
 	return true
 }
 

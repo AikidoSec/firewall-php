@@ -19,8 +19,6 @@ All these checks first verify if the hostname was provided via user input.
 Protects both curl and fopen wrapper functions (file_get_contents, etc...).
 */
 func OnPreOutgoingRequest() string {
-	defer context.ResetEventContext()
-
 	if context.IsEndpointProtectionTurnedOff() {
 		log.Infof("Protection is turned off -> will not run detection logic!")
 		return ""

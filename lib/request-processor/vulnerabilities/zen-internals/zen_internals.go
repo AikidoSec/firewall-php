@@ -5,15 +5,18 @@ package zen_internals
 #include <dlfcn.h>
 #include <stdlib.h>
 
-typedef int (*detect_sql_injection_func)(const char*, const char*, int);
+typedef int (*detect_sql_injection_func)(const char*, size_t, const char*, size_t, int);
 typedef int (*detect_shell_injection_func)(const char*, const char*);
 
 int call_detect_shell_injection(detect_shell_injection_func func, const char* command, const char* user_input) {
     return func(command, user_input);
 }
 
-int call_detect_sql_injection(detect_sql_injection_func func, const char* query, const char* input, int sql_dialect) {
-    return func(query, input, sql_dialect);
+int call_detect_sql_injection(detect_sql_injection_func func,
+                              const char* query, size_t query_len,
+                              const char* input, size_t input_len,
+                              int sql_dialect) {
+    return func(query, query_len, input, input_len, sql_dialect);
 }
 */
 import "C"
@@ -75,8 +78,14 @@ func DetectSQLInjection(query string, user_input string, dialect int) int {
 	defer C.free(unsafe.Pointer(cQuery))
 	defer C.free(unsafe.Pointer(cUserInput))
 
-	// Call the detect_sql_injection function
-	result := int(C.call_detect_sql_injection(detectSqlInjection, cQuery, cUserInput, C.int(dialect)))
-	log.Debugf("DetectSqlInjection(\"%s\", \"%s\", %d) -> %d", query, user_input, dialect, result)
+	queryLen := C.size_t(len(query))
+	userInputLen := C.size_t(len(user_input))
+
+	result := int(C.call_detect_sql_injection(detectSqlInjection,
+		cQuery, queryLen,
+		cUserInput, userInputLen,
+		C.int(dialect)))
+
+	log.Debugf("DetectSqlInjection(%s, %s, %d) -> %d", query, user_input, dialect, result)
 	return result
 }
