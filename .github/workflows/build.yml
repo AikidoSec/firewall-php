@@ -327,6 +327,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     container:
       image: quay.io/centos/centos:stream9
+      options: --privileged
     needs: [ build_rpm ]
     strategy:
       matrix:
