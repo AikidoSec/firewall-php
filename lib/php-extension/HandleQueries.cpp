@@ -80,10 +80,10 @@ zend_class_entry* helper_load_mysqli_link_class_entry() {
 }
 
 AIKIDO_HANDLER_FUNCTION(handle_pre_mysqli_query){
-	zval				*mysqliLinkObject;
-	char				*query = NULL;
-	size_t 				queryLength;
-    zend_long 		    resultMode;
+	zval*     mysqliLinkObject = nullptr;
+	char*	  query = nullptr;
+	size_t 	  queryLength;
+    zend_long resultMode;
 
     zend_class_entry* mysqliLinkClassEntry = helper_load_mysqli_link_class_entry();
     if (!mysqliLinkClassEntry) {
