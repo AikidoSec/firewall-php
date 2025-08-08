@@ -360,10 +360,11 @@ jobs:
 
       - name: Install and start MySQL
         run: |
-          sudo yum install -y mysql-server
+          yum install -y mysql-server
           mkdir -p /var/lib/mysql
           mysqld --initialize-insecure --datadir=/var/lib/mysql
           mysqld --datadir=/var/lib/mysql --socket=/tmp/mysql.sock &
+          sleep 5
           mysql -u root -e "CREATE DATABASE IF NOT EXISTS db;"
 
       - name: Get Arch
