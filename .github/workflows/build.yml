@@ -547,3 +547,4 @@ jobs:
           if-no-files-found: ignore
           path: |
             ${{ github.workspace }}/tests/cli/**/*.diff
+            /var/log/mysql/error.log
