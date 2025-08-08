@@ -471,8 +471,7 @@ jobs:
         run: |
           apt-get install -y mariadb-server
           mkdir -p /var/lib/mysql
-          mysqld --initialize-insecure --datadir=/var/lib/mysql
-          mysqld -u root --datadir=/var/lib/mysql --socket=/var/lib/mysql/mysql.sock &
+          mysqld --user=root --initialize-insecure --datadir=/var/lib/mysql &
           sleep 10
           mysql -u root -e "CREATE DATABASE IF NOT EXISTS db;"
 
