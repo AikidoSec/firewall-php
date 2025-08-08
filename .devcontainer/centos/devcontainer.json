@@ -1,6 +1,6 @@
 {
   "name": "Centos Dev Container",
-  "runArgs": [],
+  "runArgs": ["--privileged"],
   "mounts": [
     "source=${localWorkspaceFolder}/.devcontainer/shared,target=/shared,type=bind"
   ],
@@ -20,7 +20,8 @@
         "ms-vscode.cpptools",
         "ms-vscode.cpptools-themes",
         "austin.code-gnu-global",
-        "ms-vscode.makefile-tools"
+        "ms-vscode.makefile-tools",
+        "ms-python.vscode-pylance"
       ]
     }
   }

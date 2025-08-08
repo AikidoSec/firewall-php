@@ -126,7 +126,7 @@ jobs:
       uses: shivammathur/setup-php@27853eb8b46dc01c33bf9fef67d98df2683c3be2 # v2
       with:
         php-version: ${{ matrix.php_version }}
-        extensions: curl
+        extensions: curl, mysqli
         coverage: none
 
     - name: Check PHP setup
@@ -326,6 +326,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     container:
       image: quay.io/centos/centos:stream9
+      options: --privileged
     needs: [ build_rpm ]
     strategy:
       matrix:
@@ -352,10 +353,33 @@ jobs:
           dnf --assumeyes module reset php
           dnf --assumeyes --nogpgcheck module install php:remi-${{ matrix.php_version }}
           dnf --assumeyes install php-pdo
+          dnf --assumeyes install php-mysqlnd
           yum install -y mod_php
           yum install -y nginx
           yum install -y php-fpm
           dnf install -y procps-ng
+
+      - name: Install and start MySQL
+        run: |
+          yum install -y mysql-server
+          mkdir -p /var/lib/mysql
+          mysqld --initialize-insecure --datadir=/var/lib/mysql
+          mysqld -u root --datadir=/var/lib/mysql --socket=/var/lib/mysql/mysql.sock &
+          sleep 10
+          mysql -u root -e "CREATE DATABASE IF NOT EXISTS db;"
+
+      - name: Test MySQL connection with mysqli
+        run: |
+          php -r '
+            $mysqli = new mysqli("localhost", "root", "", "db");
+            if ($mysqli->connect_error) {
+              echo "MySQL connection failed: " . $mysqli->connect_error . "\n";
+              exit(1);
+            } else {
+              echo "MySQL connection successful\n";
+              $mysqli->close();
+            }
+          '
 
       - name: Get Arch
         run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
@@ -397,6 +421,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     container:
       image: ${{ matrix.container }}
+      options: --privileged
     needs: [ build_deb ]
     strategy:
       matrix:
@@ -442,12 +467,34 @@ jobs:
           a2enmod mpm_prefork
           a2enmod rewrite
 
+      - name: Install MariaDB server
+        run: |
+          apt-get install -y mariadb-server
+          mkdir -p /var/lib/mysql
+          mkdir -p /run/mysqld
+          mysqld --user=root --datadir=/var/lib/mysql &
+          sleep 10
+          mysql -u root -e "CREATE DATABASE IF NOT EXISTS db;"
+
       - name: Setup PHP
         uses: shivammathur/setup-php@27853eb8b46dc01c33bf9fef67d98df2683c3be2
         with:
           php-version: ${{ matrix.php_version }}
-          extensions: curl, sqlite3
+          extensions: curl, sqlite3, mysqli
           coverage: none
+
+      - name: Test MySQL connection with mysqli
+        run: |
+          php -r '
+            $mysqli = new mysqli("localhost", "root", "", "db");
+            if ($mysqli->connect_error) {
+              echo "MySQL connection failed: " . $mysqli->connect_error . "\n";
+              exit(1);
+            } else {
+              echo "MySQL connection successful\n";
+              $mysqli->close();
+            }
+          '
 
       - name: Check PHP setup
         run: |
@@ -495,3 +542,4 @@ jobs:
           if-no-files-found: ignore
           path: |
             ${{ github.workspace }}/tests/cli/**/*.diff
+            /var/log/mysql/error.log

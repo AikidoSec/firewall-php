@@ -6,8 +6,8 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_pdo_query) {
     zend_string *query = NULL;
 
     ZEND_PARSE_PARAMETERS_START(0, -1)
-    Z_PARAM_OPTIONAL
-    Z_PARAM_STR(query)
+        Z_PARAM_OPTIONAL
+        Z_PARAM_STR(query)
     ZEND_PARSE_PARAMETERS_END();
 
     if (!query) {
@@ -34,7 +34,7 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_pdo_exec) {
     zend_string *query = NULL;
 
     ZEND_PARSE_PARAMETERS_START(1, 1)
-    Z_PARAM_STR(query)
+        Z_PARAM_STR(query)
     ZEND_PARSE_PARAMETERS_END();
 
     if (!query) {
@@ -71,4 +71,45 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_pdostatement_execute) {
 
     zval *pdo_object = &stmt->database_object_handle;
     eventCache.sqlDialect = GetSqlDialectFromPdo(pdo_object);
+}
+
+zend_class_entry* helper_load_mysqli_link_class_entry() {
+    /* Static variable initialization ensures that the class entry is loaded only once and is thread-safe */
+    static zend_class_entry* mysqliLinkClassEntry = (zend_class_entry*)zend_hash_str_find_ptr(EG(class_table), "mysqli", sizeof("mysqli") - 1);
+    return mysqliLinkClassEntry;
+}
+
+AIKIDO_HANDLER_FUNCTION(handle_pre_mysqli_query){
+	zval*     mysqliLinkObject = nullptr;
+	char*	  query = nullptr;
+	size_t 	  queryLength;
+    zend_long resultMode;
+
+    zend_class_entry* mysqliLinkClassEntry = helper_load_mysqli_link_class_entry();
+    if (!mysqliLinkClassEntry) {
+        AIKIDO_LOG_WARN("handle_pre_mysqli_query: did not find mysqli link class!\n");
+        return;
+    }
+
+	if (zend_parse_method_parameters(ZEND_NUM_ARGS(), getThis(), "Os|l", &mysqliLinkObject, mysqliLinkClassEntry, &query, &queryLength, &resultMode) == FAILURE) {
+		AIKIDO_LOG_WARN("handle_pre_mysqli_query: failed to parse parameters!\n");
+        return;
+	}
+
+	if (!queryLength) {
+        AIKIDO_LOG_WARN("handle_pre_mysqli_query: query length is 0!\n");
+		return;
+	}
+
+    if (!mysqliLinkObject) {
+        AIKIDO_LOG_WARN("handle_pre_mysqli_query: mysqli link object is null!\n");
+        return;
+    }
+
+    scopedTimer.SetSink(sink, "sql_op");
+
+    eventId = EVENT_PRE_SQL_QUERY_EXECUTED;
+    eventCache.moduleName = "mysqli";
+    eventCache.sqlQuery = query;
+    eventCache.sqlDialect = "mysql";
 }

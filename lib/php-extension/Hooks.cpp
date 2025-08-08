@@ -40,12 +40,32 @@ unordered_map<std::string, PHP_HANDLERS> HOOKED_FUNCTIONS = {
     AIKIDO_REGISTER_FUNCTION_HANDLER_EX(symlink, handle_pre_file_path_access_2),
     AIKIDO_REGISTER_FUNCTION_HANDLER_EX(touch, handle_pre_file_path_access),
     AIKIDO_REGISTER_FUNCTION_HANDLER_EX(unlink, handle_pre_file_path_access),
+
+    /* Queries - PDO */
+    AIKIDO_REGISTER_FUNCTION_HANDLER_EX(pdo_query, handle_pre_pdo_query),
+    AIKIDO_REGISTER_FUNCTION_HANDLER_EX(pdo_exec, handle_pre_pdo_exec),
+    AIKIDO_REGISTER_FUNCTION_HANDLER_EX(pdostatement_execute, handle_pre_pdostatement_execute),
+
+    /* Queries - mysqli */
+    AIKIDO_REGISTER_FUNCTION_HANDLER_EX(mysqli_query, handle_pre_mysqli_query),
+    AIKIDO_REGISTER_FUNCTION_HANDLER_EX(mysqli_execute_query, handle_pre_mysqli_query),
+    AIKIDO_REGISTER_FUNCTION_HANDLER_EX(mysqli_multi_query, handle_pre_mysqli_query),
+    AIKIDO_REGISTER_FUNCTION_HANDLER_EX(mysqli_real_query, handle_pre_mysqli_query),
 };
 
 unordered_map<AIKIDO_METHOD_KEY, PHP_HANDLERS, AIKIDO_METHOD_KEY_HASH> HOOKED_METHODS = {
+    /* Queries - PDO */
     AIKIDO_REGISTER_METHOD_HANDLER(pdo, query),
     AIKIDO_REGISTER_METHOD_HANDLER(pdo, exec),
     AIKIDO_REGISTER_METHOD_HANDLER(pdostatement, execute),
+
+    /* Queries - mysqli */
+    AIKIDO_REGISTER_METHOD_HANDLER_EX(mysqli, query, handle_pre_mysqli_query),
+    AIKIDO_REGISTER_METHOD_HANDLER_EX(mysqli, execute_query, handle_pre_mysqli_query),
+    AIKIDO_REGISTER_METHOD_HANDLER_EX(mysqli, multi_query, handle_pre_mysqli_query),
+    AIKIDO_REGISTER_METHOD_HANDLER_EX(mysqli, real_query, handle_pre_mysqli_query),
+    
+    /* Path access */
     AIKIDO_REGISTER_METHOD_HANDLER_EX(splfileobject, __construct, handle_pre_file_path_access),
     AIKIDO_REGISTER_METHOD_HANDLER_EX(splfileinfo, __construct, handle_pre_file_path_access),
 };

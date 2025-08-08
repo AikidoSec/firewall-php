@@ -1,0 +1,36 @@
+{
+    "type": "detected_attack",
+    "request": {
+        "headers": {
+            "content_type": [
+                "application/json"
+            ]
+        },
+        "method": "POST",
+        "body": "{\"userId\": \"1 OR 1=1\"}",
+        "source": "php",
+        "route": "/testDetection"
+    },
+    "attack": {
+        "kind": "sql_injection",
+        "operation": "mysqli_query",
+        "module": "mysqli",
+        "blocked": true,
+        "source": "body",
+        "path": ".userId",
+        "stack": "",
+        "payload": "1 OR 1=1",
+        "metadata": {
+            "dialect": "mysql",
+            "sql": "SELECT * FROM users WHERE id = 1 OR 1=1"
+        },
+        "user": {
+            "id": "12345",
+            "name": "Tudor"
+        }
+    },
+    "agent": {
+        "dryMode": false,
+        "library": "firewall-php"
+    }
+}
