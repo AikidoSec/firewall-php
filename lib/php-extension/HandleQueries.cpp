@@ -74,31 +74,31 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_pdostatement_execute) {
 }
 
 
-zend_class_entry* mysqli_link_class_entry = nullptr;
+zend_class_entry* mysqliLinkClassEntry = nullptr;
 
 AIKIDO_HANDLER_FUNCTION(handle_pre_mysqli_query){
-	zval				*mysql_link;
+	zval				*mysqliLink;
 	char				*query = NULL;
-	size_t 				query_len;
-    zend_long 		    resultmode;
+	size_t 				queryLength;
+    zend_long 		    resultMode;
 
-    if ((mysqli_link_class_entry = (zend_class_entry*)zend_hash_str_find_ptr(EG(class_table), "mysqli", sizeof("mysqli") - 1)) == NULL) {
-        AIKIDO_LOG_DEBUG("handle_pre_mysqli_query: no link class\n");
+    if ((mysqliLinkClassEntry = (zend_class_entry*)zend_hash_str_find_ptr(EG(class_table), "mysqli", sizeof("mysqli") - 1)) == NULL) {
+        AIKIDO_LOG_WARN("handle_pre_mysqli_query: did not find mysqli link class!\n");
         return;
     }
 
-	if (zend_parse_method_parameters(ZEND_NUM_ARGS(), getThis(), "Os|l", &mysql_link, mysqli_link_class_entry, &query, &query_len, &resultmode) == FAILURE) {
-		AIKIDO_LOG_DEBUG("handle_pre_mysqli_query: no parse\n");
-        RETURN_THROWS();
+	if (zend_parse_method_parameters(ZEND_NUM_ARGS(), getThis(), "Os|l", &mysqliLink, mysqliLinkClassEntry, &query, &queryLength, &resultMode) == FAILURE) {
+		AIKIDO_LOG_WARN("handle_pre_mysqli_query: failed to parse parameters!\n");
+        return;
 	}
 
-	if (!query_len) {
-        AIKIDO_LOG_DEBUG("handle_pre_mysqli_query: no query len\n");
-		RETURN_THROWS();
+	if (!queryLength) {
+        AIKIDO_LOG_WARN("handle_pre_mysqli_query: query length is 0!\n");
+		return;
 	}
 
-    if (!mysql_link) {
-        AIKIDO_LOG_WARN("handle_pre_mysqli_query: Missing mysql_object or query parameter.\n");
+    if (!mysqliLink) {
+        AIKIDO_LOG_WARN("handle_pre_mysqli_query: mysqli link object is null!\n");
         return;
     }
 
