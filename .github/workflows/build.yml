@@ -514,6 +514,8 @@ jobs:
           DEBIAN_FRONTEND=noninteractive dpkg-reconfigure -f noninteractive tzdata
           apt-get install -y libapache2-mod-php${{ matrix.php_version }}
           a2enmod php${{ matrix.php_version }}
+          apt-get install -y php${{ matrix.php_version }}-mysqli
+          apt-get install -y php${{ matrix.php_version }}-pdo
           php -i
 
       - name: Setup Python
