@@ -470,7 +470,6 @@ jobs:
 
       - name: Install MySQL server
         run: |
-          dpkg -l | egrep 'mysql|mariadb'
           dpkg --configure -a
           apt --fix-broken install -y
           apt purge -y mysql-server mysql-server-8.0
