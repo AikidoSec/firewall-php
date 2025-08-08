@@ -364,8 +364,8 @@ jobs:
           yum install -y mysql-server
           mkdir -p /var/lib/mysql
           mysqld --initialize-insecure --datadir=/var/lib/mysql
-          mysqld -u root --datadir=/var/lib/mysql --socket=/tmp/mysql.sock &
-          sleep 5
+          mysqld -u root --datadir=/var/lib/mysql --socket=/var/lib/mysql/mysql.sock &
+          sleep 10
           mysql -u root -e "CREATE DATABASE IF NOT EXISTS db;"
 
       - name: Get Arch
@@ -459,8 +459,8 @@ jobs:
           DEBIAN_FRONTEND=noninteractive apt-get install -y mysql-server
           mkdir -p /var/lib/mysql
           mysqld --initialize-insecure --datadir=/var/lib/mysql
-          mysqld -u root --datadir=/var/lib/mysql --socket=/tmp/mysql.sock &
-          sleep 5
+          mysqld -u root --datadir=/var/lib/mysql --socket=/var/lib/mysql/mysql.sock &
+          sleep 10
           mysql -u root -e "CREATE DATABASE IF NOT EXISTS db;"
 
       - name: Setup PHP
