@@ -1,10 +1,11 @@
 # Docker container used for building Zen for PHP from source on Ubuntu
 
-FROM --platform=linux/amd64 ubuntu:20.04
+FROM --platform=linux/amd64 ubuntu:22.04
 
 ARG PHP_VERSION=8.1
 
-
+RUN ln -fs /usr/share/zoneinfo/Etc/UTC /etc/localtime
+RUN echo "Etc/UTC" > /etc/timezone
 RUN apt-get update
 RUN apt install software-properties-common -y
 RUN add-apt-repository ppa:ondrej/php -y

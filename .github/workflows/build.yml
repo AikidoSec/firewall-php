@@ -361,8 +361,8 @@ jobs:
       - name: Install and start MySQL
         run: |
           yum install -y mysql-server
-          systemctl start mysqld
-          systemctl status mysqld || true
+          service mysqld start
+          service mysqld status || true
           mysql -u root -e "CREATE DATABASE IF NOT EXISTS db;"
 
       - name: Get Arch
@@ -452,10 +452,9 @@ jobs:
 
       - name: Install MySQL server
         run: |
-          DEBIAN_FRONTEND=noninteractive apt-get update
           DEBIAN_FRONTEND=noninteractive apt-get install -y mysql-server
-          systemctl start mysqld
-          systemctl status mysqld || true
+          service mysqld start
+          service mysqld status || true
           mysql -u root -e "CREATE DATABASE IF NOT EXISTS db;"
 
       - name: Setup PHP
