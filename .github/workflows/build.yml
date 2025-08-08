@@ -360,9 +360,7 @@ jobs:
 
       - name: Install and start MySQL
         run: |
-          yum install -y mysql-server
-          service mysqld start
-          service mysqld status || true
+          sudo yum install -y mysql-community-server
           mysql -u root -e "CREATE DATABASE IF NOT EXISTS db;"
 
       - name: Get Arch
