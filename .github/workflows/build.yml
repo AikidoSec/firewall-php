@@ -468,18 +468,9 @@ jobs:
           a2enmod mpm_prefork
           a2enmod rewrite
 
-      - name: Install MySQL server
+      - name: Install MariaDB server
         run: |
-          apt-get clean
-          apt-get purge mysql*
-          apt-get update
-          apt-get install -f
-          apt install -y mysql-server || true
-          mkdir -p /var/lib/mysql
-          mysqld --initialize-insecure --datadir=/var/lib/mysql
-          mysqld -u root --datadir=/var/lib/mysql --socket=/var/lib/mysql/mysql.sock &
-          sleep 10
-          mysql -u root -e "CREATE DATABASE IF NOT EXISTS db;"
+          apt-get install -y mariadb-server
       
       - name: Test MySQL connection with mysqli
         run: |
