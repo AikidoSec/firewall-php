@@ -134,7 +134,6 @@ jobs:
         which php
         php -v
         php -i
-        ls -lR /usr/include/
 
     - name: Build extension
       run: |
@@ -143,7 +142,7 @@ jobs:
         cd lib/php-extension
         phpize
         cd ../../build
-        CXX=g++ CXXFLAGS="-fPIC -O2 -I../lib/php-extension/include -I/usr/include/mysql" LDFLAGS="-lstdc++" ../lib/php-extension/configure
+        CXX=g++ CXXFLAGS="-fPIC -O2 -I../lib/php-extension/include" LDFLAGS="-lstdc++" ../lib/php-extension/configure
         make
 
     - name: Version Aikido extension
@@ -476,7 +475,14 @@ jobs:
           mysqld -u root --datadir=/var/lib/mysql --socket=/var/lib/mysql/mysql.sock &
           sleep 10
           mysql -u root -e "CREATE DATABASE IF NOT EXISTS db;"
-      
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@27853eb8b46dc01c33bf9fef67d98df2683c3be2
+        with:
+          php-version: ${{ matrix.php_version }}
+          extensions: curl, sqlite3, mysqli
+          coverage: none
+
       - name: Test MySQL connection with mysqli
         run: |
           php -r '
@@ -489,13 +495,6 @@ jobs:
               $mysqli->close();
             }
           '
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@27853eb8b46dc01c33bf9fef67d98df2683c3be2
-        with:
-          php-version: ${{ matrix.php_version }}
-          extensions: curl, sqlite3
-          coverage: none
 
       - name: Check PHP setup
         run: |
