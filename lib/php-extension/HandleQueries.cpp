@@ -1,6 +1,4 @@
 #include "Includes.h"
-#include "ext/mysqli/php_mysqli_structs.h"
-#include "ext/mysqli/mysqli_mysqlnd.h"
 
 AIKIDO_HANDLER_FUNCTION(handle_pre_pdo_query) {
     scopedTimer.SetSink(sink, "sql_op");
@@ -79,10 +77,7 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_pdostatement_execute) {
 zend_class_entry* mysqli_link_class_entry = nullptr;
 
 AIKIDO_HANDLER_FUNCTION(handle_pre_mysqli_query){
-	MY_MYSQL			*mysql;
 	zval				*mysql_link;
-	MYSQLI_RESOURCE		*mysqli_resource;
-	MYSQL_RES 			*result = NULL;
 	char				*query = NULL;
 	size_t 				query_len;
     zend_long 		    resultmode;
