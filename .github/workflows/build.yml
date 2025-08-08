@@ -367,7 +367,7 @@ jobs:
           mysqld --initialize-insecure --datadir=/var/lib/mysql
           mysqld -u root --datadir=/var/lib/mysql --socket=/var/lib/mysql/mysql.sock &
           sleep 10
-          mysql -u root -e "CREATE DATABASE IF NOT EXISTS db;"-=o
+          mysql -u root -e "CREATE DATABASE IF NOT EXISTS db;"
 
       - name: Get Arch
         run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
