@@ -470,10 +470,10 @@ jobs:
 
       - name: Install MySQL server
         run: |
-          dpkg --configure -a
-          apt --fix-broken install -y
-          apt purge -y mysql-server mysql-server-8.0
-          apt autoremove -y
+          apt-get clean
+          apt-get purge mysql*
+          apt-get update
+          apt-get install -f
           apt install -y mysql-server
           mkdir -p /var/lib/mysql
           mysqld --initialize-insecure --datadir=/var/lib/mysql
