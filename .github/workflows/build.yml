@@ -474,6 +474,7 @@ jobs:
           apt-get purge mysql*
           apt-get update
           apt-get install -f
+          apt install -y mysql-server-8.0
           apt install -y mysql-server
           mkdir -p /var/lib/mysql
           mysqld --initialize-insecure --datadir=/var/lib/mysql
