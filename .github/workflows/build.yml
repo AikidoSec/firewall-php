@@ -408,6 +408,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     container:
       image: ${{ matrix.container }}
+      options: --privileged
     needs: [ build_deb ]
     strategy:
       matrix:
@@ -456,8 +457,10 @@ jobs:
       - name: Install MySQL server
         run: |
           DEBIAN_FRONTEND=noninteractive apt-get install -y mysql-server
-          service mysqld start
-          service mysqld status || true
+          mkdir -p /var/lib/mysql
+          mysqld --initialize-insecure --datadir=/var/lib/mysql
+          mysqld --datadir=/var/lib/mysql --socket=/tmp/mysql.sock &
+          sleep 5
           mysql -u root -e "CREATE DATABASE IF NOT EXISTS db;"
 
       - name: Setup PHP
