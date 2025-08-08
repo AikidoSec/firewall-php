@@ -456,6 +456,8 @@ jobs:
 
       - name: Install MySQL server
         run: |
+          DEBIAN_FRONTEND=noninteractive apt-get purge -y mysql-server mysql-server-8.0
+          DEBIAN_FRONTEND=noninteractive apt-get autoremove -y
           DEBIAN_FRONTEND=noninteractive apt-get install -y mysql-server
           mkdir -p /var/lib/mysql
           mysqld --initialize-insecure --datadir=/var/lib/mysql
