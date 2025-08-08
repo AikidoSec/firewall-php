@@ -368,6 +368,19 @@ jobs:
           sleep 10
           mysql -u root -e "CREATE DATABASE IF NOT EXISTS db;"
 
+      - name: Test MySQL connection with mysqli
+        run: |
+          php -r '
+            $mysqli = new mysqli("localhost", "root", "", "db");
+            if ($mysqli->connect_error) {
+              echo "MySQL connection failed: " . $mysqli->connect_error . "\n";
+              exit(1);
+            } else {
+              echo "MySQL connection successful\n";
+              $mysqli->close();
+            }
+          '
+
       - name: Get Arch
         run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
 
