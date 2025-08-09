@@ -78,17 +78,18 @@ LogFormat "%h %l %u %t %r %>s %b" combined
         Options Indexes FollowSymLinks
         AllowOverride All
         Require all granted
-        
+
         RewriteEngine On
         RewriteCond %{{REQUEST_FILENAME}} !-f
         RewriteCond %{{REQUEST_FILENAME}} !-d
         RewriteRule ^(.*)$ index.php [L]
-        
+
         SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1
     </Directory>
 
     ErrorLog {log_dir}/error_{name}.log
     CustomLog {log_dir}/access_{name}.log combined
+
 </VirtualHost>
 """
 
@@ -137,7 +138,7 @@ def toggle_config_line(file_path, line_to_check, comment_ch, enable=False):
     if not os.path.exists(file_path):
         print(f"File '{file_path}' does not exist.")
         return
-    
+
     with open(file_path, 'r') as file:
         lines = file.readlines()
 
@@ -185,9 +186,9 @@ def select_apache_user():
         if u in usernames:
             apache_user = u
             break
-    
+
     assert apache_user is not None
-        
+
     print("Selected apache user: ", apache_user)
 
 
@@ -220,7 +221,7 @@ def apache_create_config_file(test_name, test_dir, server_port, env):
         optional_conf = apache_include_conf,
         error_log = apache_error_log
     )
-    
+
     apache_config_file = os.path.join(test_dir, f"{test_name}.conf")
     with open(apache_config_file, "w") as f:
         f.write(apache_config)
@@ -239,13 +240,13 @@ def add_user_group_access(full_path, user, group):
             current_path = os.sep.join(path_parts[:i])
             if current_path:  # Avoid empty strings for the root "/"
                 # print(f"Setting permissions for {current_path}")
-                
+
                 # Change ownership of the directory
                 subprocess.run(['chown', f'{user}:{group}', current_path], check=True)
 
                 # Ensure the execute permission (search permission) on directories
                 subprocess.run(['chmod', '775', current_path], check=True)
-        
+
         print(f"Successfully added access to full path '{full_path}' for user '{user}' and group '{group}'.")
     except subprocess.CalledProcessError as e:
         print(f"Failed to modify permissions: {e}")
@@ -259,28 +260,28 @@ def apache_mod_php_init(tests_dir):
     subprocess.run(['mkdir', '-p', apache_log_folder], check=True)
     subprocess.run(['chown', f'{apache_user}:{apache_user}', apache_log_folder], check=True)
     subprocess.run(['chmod', '755', apache_log_folder], check=True)
-    
-    
+
+
     toggle_config_line(apache_conf_proxy_module_file, "LoadModule proxy_fcgi_module", "#")
     toggle_config_line(apache_conf_proxy_h2_module_file, "LoadModule proxy_http2_module", "#")
-    
+
     toggle_config_line(apache_conf_mpm_worker_file, "LoadModule mpm_worker_module", "#")
     toggle_config_line(apache_conf_mpm_event_file, "LoadModule mpm_event_module", "#")
     toggle_config_line(apache_conf_mpm_prefork_file, "LoadModule mpm_prefork_module", "#", enable=True)
-    
+
     global prev_owning_user, prev_owning_group
     prev_owning_user, prev_owning_group = get_user_and_group(tests_dir)
     print(f"Got previous owning user:group -> {prev_owning_user}:{prev_owning_group}")
-    
+
 
 def apache_mod_php_process_test(test_data):
     test_dir = test_data["test_dir"]
     server_port = test_data["server_port"]
     test_data["apache_config"] = apache_create_config_file(test_data["test_name"], test_dir, server_port, test_data["env"])
-    
+
     global apache_user
     add_user_group_access(os.path.join(test_dir, "index.php"), apache_user, apache_user)
-    
+
     # append_if_not_exists(apache_conf_global_file, f"Listen {server_port}\n")
     return test_data
 

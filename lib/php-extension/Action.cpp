@@ -6,6 +6,7 @@ ACTION_STATUS Action::executeThrow(json &event) {
     int _code = event["code"].get<int>();
     std::string _message = event["message"].get<std::string>();
     zend_throw_exception(zend_exception_get_default(), _message.c_str(), _code);
+    CallPhpFunctionWithOneParam("http_response_code", _code);
     return BLOCK;
 }
 
