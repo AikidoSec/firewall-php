@@ -79,7 +79,7 @@ func GetThrowAction(message string, code int) string {
 }
 
 func GetAttackDetectedAction(result utils.InterceptorResult) string {
-	return GetThrowAction(BuildAttackDetectedMessage(result), -1)
+	return GetThrowAction(BuildAttackDetectedMessage(result), 500)
 }
 
 func ReportAttackDetected(res *utils.InterceptorResult) string {
