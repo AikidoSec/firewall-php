@@ -72,7 +72,7 @@ jobs:
         go build -ldflags "-s -w" -buildmode=c-shared -o ../../build/aikido-request-processor.so
         ls -l ../../build
 
-    - name: Archive agent 
+    - name: Archive agent
       uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4
       if: always()
       with:
@@ -149,7 +149,7 @@ jobs:
       run: |
         cd ./build/modules
         mv aikido.so ${{ env.AIKIDO_ARTIFACT }}.so
-        
+
     - name: Archive build artifacts
       uses: actions/upload-artifact@v4
       if: always()
@@ -245,7 +245,7 @@ jobs:
         if: matrix.os == 'ubuntu-22.04'
         run: |
           yum deplist ~/rpmbuild/RPMS/${{ env.ARCH }}/${{ env.AIKIDO_ARTIFACT_RELEASE }} | grep -E "GLIBC_2.32|GLIBC_2.34|GLIBCXX_3.4.29" && exit 1 || exit 0
-      
+
       - name: Archive rpm package
         uses: actions/upload-artifact@v4
         with:
@@ -301,19 +301,19 @@ jobs:
           echo $AIKIDO_VERSION
           echo "AIKIDO_VERSION=$AIKIDO_VERSION" >> $GITHUB_ENV
           echo "AIKIDO_RPM=aikido-php-firewall.${{ env.ARCH }}.rpm" >> $GITHUB_ENV
-          echo "AIKIDO_ARTIFACT=aikido-php-firewall.${{ env.ARCH }}.deb" >> $GITHUB_ENV    
-      
+          echo "AIKIDO_ARTIFACT=aikido-php-firewall.${{ env.ARCH }}.deb" >> $GITHUB_ENV
+
       - name: Build deb
         run: |
           alien --to-deb --scripts --keep-version ${{ env.AIKIDO_RPM }}/${{ env.AIKIDO_RPM }}
           mv aikido-php-firewall_${{ env.AIKIDO_VERSION }}-1_${{ env.DEB_ARCH }}.deb temp-${{ env.AIKIDO_ARTIFACT }}
-          
+
           # Package contents into deb with gzip compression (because default zstd compression is not supported by older versions of dpkg)
           mkdir deb-temp
           dpkg-deb -R temp-${{ env.AIKIDO_ARTIFACT }} deb-temp/
           dpkg-deb -Zgzip -b deb-temp ${{ env.AIKIDO_ARTIFACT }}
           rm -rf deb-temp
-  
+
       - name: Archive deb package
         uses: actions/upload-artifact@v4
         with:
@@ -396,7 +396,7 @@ jobs:
           echo $AIKIDO_VERSION
           echo "AIKIDO_VERSION=$AIKIDO_VERSION" >> $GITHUB_ENV
           echo "AIKIDO_RPM=aikido-php-firewall.${{ env.ARCH }}.rpm" >> $GITHUB_ENV
-      
+
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
@@ -475,6 +475,7 @@ jobs:
           mysqld --user=root --datadir=/var/lib/mysql &
           sleep 10
           mysql -u root -e "CREATE DATABASE IF NOT EXISTS db;"
+          mysql -u root -e "SET PASSWORD FOR 'root'@'localhost' = PASSWORD('pwd'); FLUSH PRIVILEGES;"
 
       - name: Setup PHP
         uses: shivammathur/setup-php@27853eb8b46dc01c33bf9fef67d98df2683c3be2
@@ -544,4 +545,3 @@ jobs:
           if-no-files-found: ignore
           path: |
             ${{ github.workspace }}/tests/cli/**/*.diff
-            /var/log/apache2/*

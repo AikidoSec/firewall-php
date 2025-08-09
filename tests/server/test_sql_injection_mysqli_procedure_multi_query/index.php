@@ -3,7 +3,7 @@
 \aikido\set_user("12345", "Tudor");
 
 // Connect to MySQL (adjust credentials as needed)
-$conn = mysqli_connect("localhost", "root", "", "db");
+$conn = mysqli_connect("127.0.0.1", "root", "pwd", "db");
 
 // Check connection
 if (!$conn) {
