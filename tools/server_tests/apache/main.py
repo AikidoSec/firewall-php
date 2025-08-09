@@ -89,6 +89,13 @@ LogFormat "%h %l %u %t %r %>s %b" combined
 
     ErrorLog {log_dir}/error_{name}.log
     CustomLog {log_dir}/access_{name}.log combined
+
+    php_admin_value error_reporting "E_ALL"
+    php_admin_flag  log_errors On
+    php_admin_flag  display_errors On
+    php_admin_value error_log "/proc/self/fd/2"
+    LogLevel debug
+
 </VirtualHost>
 """
 
