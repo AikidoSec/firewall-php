@@ -372,7 +372,7 @@ jobs:
       - name: Test MySQL connection with mysqli
         run: |
           php -r '
-            $mysqli = new mysqli("localhost", "root", "", "db");
+            $mysqli = new mysqli("localhost", "root", "pwd", "db");
             if ($mysqli->connect_error) {
               echo "MySQL connection failed: " . $mysqli->connect_error . "\n";
               exit(1);
@@ -488,7 +488,7 @@ jobs:
       - name: Test MySQL connection with mysqli
         run: |
           php -r '
-            $mysqli = new mysqli("localhost", "root", "", "db");
+            $mysqli = new mysqli("localhost", "root", "pwd", "db");
             if ($mysqli->connect_error) {
               echo "MySQL connection failed: " . $mysqli->connect_error . "\n";
               exit(1);
