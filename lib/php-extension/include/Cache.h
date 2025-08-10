@@ -27,6 +27,8 @@ class EventCache {
     std::string sqlQuery;
     std::string sqlDialect;
 
+    unsigned int rateLimitGroup;
+
     EventCache() = default;
     void Reset();
 };

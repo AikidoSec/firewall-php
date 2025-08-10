@@ -18,6 +18,7 @@ type RequestContextData struct {
 	URL                           *string
 	StatusCode                    *int
 	IP                            *string
+	RateLimitGroup                *string
 	EndpointConfig                **EndpointData
 	WildcardEndpointsConfigs      *[]EndpointData
 	IsIpBypassed                  *bool
@@ -143,6 +144,10 @@ func GetUserId() string {
 
 func GetUserName() string {
 	return GetFromCache(ContextSetUserName, &Context.UserName)
+}
+
+func GetRateLimitGroup() string {
+	return GetFromCache(ContextSetRateLimitGroup, &Context.RateLimitGroup)
 }
 
 func GetEndpointConfig() *EndpointData {
