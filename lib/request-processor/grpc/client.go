@@ -101,7 +101,7 @@ func OnPackages(packages map[string]string) {
 }
 
 /* Send request metadata (route & method) to Aikido Agent via gRPC */
-func GetRateLimitingStatus(method string, route string, routeParsed string, user string, ip string, timeout time.Duration) *protos.RateLimitingStatus {
+func GetRateLimitingStatus(method string, route string, routeParsed string, user string, ip string, rateLimitGroup string, timeout time.Duration) *protos.RateLimitingStatus {
 	if client == nil {
 		return nil
 	}
@@ -109,7 +109,7 @@ func GetRateLimitingStatus(method string, route string, routeParsed string, user
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	RateLimitingStatus, err := client.GetRateLimitingStatus(ctx, &protos.RateLimitingInfo{Method: method, Route: route, RouteParsed: routeParsed, User: user, Ip: ip})
+	RateLimitingStatus, err := client.GetRateLimitingStatus(ctx, &protos.RateLimitingInfo{Method: method, Route: route, RouteParsed: routeParsed, User: user, Ip: ip, RateLimitGroup: rateLimitGroup})
 	if err != nil {
 		log.Warnf("Cannot get rate limiting status %v %v: %v", method, route, err)
 		return nil

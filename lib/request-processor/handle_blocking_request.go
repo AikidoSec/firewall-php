@@ -55,11 +55,12 @@ func OnGetBlockingStatus() string {
 		method := context.GetMethod()
 		route := context.GetRoute()
 		ip := context.GetIp()
+		rateLimitGroup := context.GetRateLimitGroup()
 		routeParsed := context.GetParsedRoute()
 		if method == "" || route == "" {
 			return ""
 		}
-		rateLimitingStatus := grpc.GetRateLimitingStatus(method, route, routeParsed, userId, ip, 10*time.Millisecond)
+		rateLimitingStatus := grpc.GetRateLimitingStatus(method, route, routeParsed, userId, ip, rateLimitGroup, 10*time.Millisecond)
 		if rateLimitingStatus != nil && rateLimitingStatus.Block {
 			context.ContextSetIsEndpointRateLimited()
 			log.Infof("Request made from IP \"%s\" is ratelimited by \"%s\"!", ip, rateLimitingStatus.Trigger)
