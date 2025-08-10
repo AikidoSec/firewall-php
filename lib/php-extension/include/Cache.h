@@ -4,6 +4,7 @@ class RequestCache {
    public:
     std::string userId;
     std::string userName;
+    std::string rateLimitGroup;
 
     RequestCache() = default;
     void Reset();
@@ -26,8 +27,6 @@ class EventCache {
 
     std::string sqlQuery;
     std::string sqlDialect;
-
-    unsigned int rateLimitGroup;
 
     EventCache() = default;
     void Reset();

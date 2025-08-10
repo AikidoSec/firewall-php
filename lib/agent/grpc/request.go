@@ -267,7 +267,7 @@ func getRateLimitingStatus(method, route, routeParsed, user, ip, rateLimitGroup 
 		// If the rate limit group exists, we only try to rate limit by rate limit group
 		if isRateLimitingThresholdExceeded(&rateLimitingDataMatch.Config, rateLimitingDataMatch.RateLimitGroupCounts, rateLimitGroup) {
 			log.Infof("Rate limited request for rate limit group %s - %s %s - %v", rateLimitGroup, method, routeParsed, rateLimitingDataMatch.RateLimitGroupCounts[rateLimitGroup])
-			return &protos.RateLimitingStatus{Block: true, Trigger: "rate limit group"}
+			return &protos.RateLimitingStatus{Block: true, Trigger: "group"}
 		}
 	} else if user != "" {
 		// Otherwise, if the user exists, we try to rate limit by user

@@ -72,6 +72,10 @@ char* GoContextCallback(int callbackId) {
                 ctx = "USER_NAME";
                 ret = requestCache.userName;
                 break;
+            case CONTEXT_RATE_LIMIT_GROUP:
+                ctx = "RATE_LIMIT_GROUP";
+                ret = requestCache.rateLimitGroup;
+                break;
             case FUNCTION_NAME:
                 ctx = "FUNCTION_NAME";
                 ret = eventCache.functionName;
