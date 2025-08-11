@@ -73,7 +73,7 @@ class AikidoMiddleware implements MiddlewareInterface
                 $message = "Your IP ({$decision->ip}) exceeded the rate limit for this endpoint!";
             }
             else if ($decision->trigger == "group") {
-                $message = "Your rate limit group exceeded the rate limit for this endpoint!";
+                $message = "Your group exceeded the rate limit for this endpoint!";
             }
             return new Response([
                 'message' => $message,
