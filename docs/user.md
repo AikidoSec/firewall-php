@@ -24,7 +24,5 @@ To limit the number of requests for a group of users, you can use the `set_rate_
 Please note that if a rate limit group is set, the configured rate limits are only applied to the group and not to individual users or IP addresses.
 
 ```php
-\aikido\set_rate_limit_group({
-  id: "123",
-});
+\aikido\set_rate_limit_group("123");
 ```
