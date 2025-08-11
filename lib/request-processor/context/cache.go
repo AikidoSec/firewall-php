@@ -123,6 +123,14 @@ func ContextSetUserName() {
 	ContextSetString(C.CONTEXT_USER_NAME, &Context.UserName)
 }
 
+func ContextSetRateLimitGroup() {
+	if Context.RateLimitGroup != nil {
+		return
+	}
+	rateLimitGroup := Context.Callback(C.CONTEXT_RATE_LIMIT_GROUP)
+	Context.RateLimitGroup = &rateLimitGroup
+}
+
 func ContextSetEndpointConfig() {
 	if Context.EndpointConfig != nil {
 		return

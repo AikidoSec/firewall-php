@@ -91,8 +91,9 @@ func UpdateRateLimitingConfig() {
 			Config: RateLimitingConfig{
 				MaxRequests:         newEndpointConfig.RateLimiting.MaxRequests,
 				WindowSizeInMinutes: newEndpointConfig.RateLimiting.WindowSizeInMS / MinRateLimitingIntervalInMs},
-			UserCounts: make(map[string]*RateLimitingCounts),
-			IpCounts:   make(map[string]*RateLimitingCounts),
+			UserCounts:           make(map[string]*RateLimitingCounts),
+			IpCounts:             make(map[string]*RateLimitingCounts),
+			RateLimitGroupCounts: make(map[string]*RateLimitingCounts),
 		}
 
 		if isWildcardEndpoint(k.Route) {

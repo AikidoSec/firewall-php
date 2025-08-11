@@ -48,9 +48,9 @@ func (s *server) OnDomain(ctx context.Context, req *protos.Domain) (*emptypb.Emp
 }
 
 func (s *server) GetRateLimitingStatus(ctx context.Context, req *protos.RateLimitingInfo) (*protos.RateLimitingStatus, error) {
-	log.Debugf("Received rate limiting info: %s %s %s %s %s", req.GetMethod(), req.GetRoute(), req.GetRouteParsed(), req.GetUser(), req.GetIp())
+	log.Debugf("Received rate limiting info: %s %s %s %s %s %s", req.GetMethod(), req.GetRoute(), req.GetRouteParsed(), req.GetUser(), req.GetIp(), req.GetRateLimitGroup())
 
-	return getRateLimitingStatus(req.GetMethod(), req.GetRoute(), req.GetRouteParsed(), req.GetUser(), req.GetIp()), nil
+	return getRateLimitingStatus(req.GetMethod(), req.GetRoute(), req.GetRouteParsed(), req.GetUser(), req.GetIp(), req.GetRateLimitGroup()), nil
 }
 
 func (s *server) OnRequestShutdown(ctx context.Context, req *protos.RequestMetadataShutdown) (*emptypb.Empty, error) {
@@ -58,7 +58,7 @@ func (s *server) OnRequestShutdown(ctx context.Context, req *protos.RequestMetad
 
 	go storeTotalStats(req.GetRateLimited())
 	go storeRoute(req.GetMethod(), req.GetRouteParsed(), req.GetApiSpec(), req.GetRateLimited())
-	go updateRateLimitingCounts(req.GetMethod(), req.GetRoute(), req.GetRouteParsed(), req.GetUser(), req.GetIp())
+	go updateRateLimitingCounts(req.GetMethod(), req.GetRoute(), req.GetRouteParsed(), req.GetUser(), req.GetIp(), req.GetRateLimitGroup())
 
 	atomic.StoreUint32(&globals.GotTraffic, 1)
 	return &emptypb.Empty{}, nil

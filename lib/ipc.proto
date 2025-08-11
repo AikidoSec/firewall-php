@@ -44,6 +44,7 @@ message RateLimitingInfo {
   string routeParsed = 3;
   string user = 4;
   string ip = 5;
+  string rateLimitGroup = 6;
 }
 
 message RequestMetadataShutdown {
@@ -53,8 +54,9 @@ message RequestMetadataShutdown {
   int32 statusCode = 4;
   string user = 5;
   string ip = 6;
-  APISpec apiSpec = 7;
-  bool rateLimited = 8;
+  string rateLimitGroup = 7;
+  APISpec apiSpec = 8;
+  bool rateLimited = 9;
 }
 
 message MonitoredSinkStats {

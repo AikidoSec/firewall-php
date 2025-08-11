@@ -44,6 +44,7 @@ func AdvanceRateLimitingQueues() {
 	for _, endpoint := range globals.RateLimitingMap {
 		advanceRateLimitingQueuesForMap(&endpoint.Config, endpoint.UserCounts)
 		advanceRateLimitingQueuesForMap(&endpoint.Config, endpoint.IpCounts)
+		advanceRateLimitingQueuesForMap(&endpoint.Config, endpoint.RateLimitGroupCounts)
 	}
 }
 

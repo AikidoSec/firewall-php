@@ -100,6 +100,7 @@ static const zend_function_entry ext_functions[] = {
     ZEND_NS_FE("aikido", should_block_request, arginfo_aikido_should_block_request)
     ZEND_NS_FE("aikido", auto_block_request, arginfo_aikido_auto_block_request)
     ZEND_NS_FE("aikido", set_token, arginfo_aikido_set_token)
+    ZEND_NS_FE("aikido", set_rate_limit_group, arginfo_aikido_set_rate_limit_group)
     ZEND_FE_END
 };
 

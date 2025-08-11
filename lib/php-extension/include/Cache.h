@@ -4,6 +4,7 @@ class RequestCache {
    public:
     std::string userId;
     std::string userName;
+    std::string rateLimitGroup;
 
     RequestCache() = default;
     void Reset();
