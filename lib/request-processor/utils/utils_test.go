@@ -422,7 +422,7 @@ func TestIsUserAgentBlocked(t *testing.T) {
 
 func TestIsIpBlockedByPrefix(t *testing.T) {
 	globals.CloudConfig.BlockedIps = map[string]aikido_types.IpList{}
-	IpList, _ := BuildIpList("test", []string{"1.3.0.0/16"})
+	IpList, _ := BuildIpList("test", []string{"1.2.0.0/16"})
 	globals.CloudConfig.BlockedIps["test"] = *IpList
 	ip := "1.2.3.4"
 	result, _ := IsIpBlocked(ip)
@@ -444,7 +444,7 @@ func TestIsIpBlockedByIp(t *testing.T) {
 
 func TestIsIpNotBlockedByPrefix(t *testing.T) {
 	globals.CloudConfig.BlockedIps = map[string]aikido_types.IpList{}
-	IpList, _ := BuildIpList("test", []string{"1.3.0.0/16"})
+	IpList, _ := BuildIpList("test", []string{"1.2.0.0/16"})
 	globals.CloudConfig.BlockedIps["test"] = *IpList
 	ip := "2.3.4.5"
 	result, _ := IsIpBlocked(ip)
