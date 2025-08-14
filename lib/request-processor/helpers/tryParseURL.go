@@ -1,13 +1,14 @@
 package helpers
 
 import (
+	"net"
 	"net/url"
 
 	"golang.org/x/net/idna"
 )
 
 func TryParseURL(input string) *url.URL {
-	parsedURL, err := url.ParseRequestURI(input)
+	parsedURL, err := url.Parse(input)
 	if err != nil {
 		return nil
 	}
@@ -17,5 +18,16 @@ func TryParseURL(input string) *url.URL {
 	if err == nil {
 		parsedURL.Host = parsedHost
 	}
+
+	host, port, err := net.SplitHostPort(parsedURL.Host)
+	if err == nil {
+		ip := net.ParseIP(host)
+		if ip != nil {
+			parsedURL.Host = ip.String() + ":" + port
+		} else {
+			parsedURL.Host = host + ":" + port
+		}
+	}
+
 	return parsedURL
 }

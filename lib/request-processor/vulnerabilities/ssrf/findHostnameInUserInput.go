@@ -2,25 +2,42 @@ package ssrf
 
 import (
 	"main/helpers"
+	"main/log"
+	"net/url"
+	"strconv"
 	"strings"
 )
 
 func findHostnameInUserInput(userInput string, hostname string, port uint32) bool {
-
+	userInput = helpers.NormalizeRawUrl(userInput)
+	log.Debugf("findHostnameInUserInput: userInput: %s, hostname: %s, port: %d", userInput, hostname, port)
 	if len(userInput) <= 1 {
 		return false
 	}
+	// if hostname contains : we need to add the [ and ] to the hostname (ipv6)
+	if strings.Contains(hostname, ":") {
+		hostname = "[" + hostname + "]"
+	}
 
-	hostnameURL := helpers.TryParseURL("http://" + hostname)
+	hostnameURL := helpers.TryParseURL("http://" + hostname + ":" + strconv.Itoa(int(port)))
 	if hostnameURL == nil {
 		return false
 	}
 
 	userInput = helpers.ExtractResourceOrOriginal(userInput)
 	variants := []string{userInput, "http://" + userInput, "https://" + userInput}
+	// if decoded user input is different, we need to add the decoded variant to the variants
+	decodedUserInput, err := url.QueryUnescape(userInput)
+	if err == nil && decodedUserInput != userInput {
+		variants = append(variants, decodedUserInput, "http://"+decodedUserInput, "https://"+decodedUserInput)
+	}
 
 	for _, variant := range variants {
 		userInputURL := helpers.TryParseURL(variant)
+		if userInputURL == nil {
+			continue
+		}
+
 		// https://datatracker.ietf.org/doc/html/rfc3986#section-3.2.2
 		// "The host subcomponent is case-insensitive."
 		if userInputURL != nil && strings.EqualFold(userInputURL.Hostname(), hostnameURL.Hostname()) {
