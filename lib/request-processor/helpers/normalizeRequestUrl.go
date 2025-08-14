@@ -11,7 +11,8 @@ func removeCTLByte(urlStr string) string {
 	return urlStr
 }
 
-// \@ -> @
+// If the urlStr contains \@ we need to replace it with @
+// because the URL.Parse will fail to parse the url (invalid userinfo)
 func removeBackslashAt(urlStr string) string {
 	return strings.ReplaceAll(urlStr, "\\@", "@")
 }

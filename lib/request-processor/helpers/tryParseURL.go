@@ -9,7 +9,7 @@ import (
 
 func TryParseURL(input string) *url.URL {
 	parsedURL, err := url.Parse(input)
-	if err != nil {
+	if err != nil || parsedURL.Host == "" {
 		return nil
 	}
 
