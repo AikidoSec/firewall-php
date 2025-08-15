@@ -8,17 +8,16 @@ import (
 	"strings"
 )
 
-func getVariants(str string) []string {
-	variants := []string{str, "http://" + str, "https://" + str}
-	decodedUserInput, err := url.QueryUnescape(str)
-	if err == nil && decodedUserInput != str {
+func getVariants(userInput string) []string {
+	variants := []string{userInput, "http://" + userInput, "https://" + userInput}
+	decodedUserInput, err := url.QueryUnescape(userInput)
+	if err == nil && decodedUserInput != userInput {
 		variants = append(variants, decodedUserInput, "http://"+decodedUserInput, "https://"+decodedUserInput)
 	}
 	return variants
 }
 
 func findHostnameInUserInput(userInput string, hostname string, port uint32) bool {
-	userInput = helpers.NormalizeRawUrl(userInput)
 	log.Debugf("findHostnameInUserInput: userInput: %s, hostname: %s, port: %d", userInput, hostname, port)
 	if len(userInput) <= 1 {
 		return false
@@ -34,6 +33,8 @@ func findHostnameInUserInput(userInput string, hostname string, port uint32) boo
 	}
 
 	userInput = helpers.ExtractResourceOrOriginal(userInput)
+	userInput = helpers.NormalizeRawUrl(userInput)
+
 	variants := getVariants(userInput)
 
 	for _, variant := range variants {
