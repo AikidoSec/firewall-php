@@ -6,7 +6,7 @@ import (
 )
 
 // TrimInvisible trims leading/trailing whitespace, control, and specific
-// invisible/format runes similar to your PHP StringHelper::trim.
+// invisible/format runes similar to PHP Illuminate\Support\Str::trim.
 func TrimInvisible(s string) string {
 	return strings.TrimFunc(s, isTrimRune)
 }
