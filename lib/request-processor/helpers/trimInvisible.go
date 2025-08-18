@@ -20,7 +20,8 @@ func isTrimRune(r rune) bool {
 	if unicode.IsControl(r) {
 		return true
 	}
-	// 3) Specific invisible/format chars from your PHP constant
+	// 3) invisible/format chars
+	// https://github.com/laravel/framework/blob/7796b9b4f27a4c1bc1a5f5ae4a923ea5595fbb93/src/Illuminate/Support/Str.php#L32
 	switch r {
 	// Soft hyphen, combining grapheme joiner, Arabic mark, Hangul fillers, Khmer indep. vowels, Mongolian, etc.
 	case 0x00AD, 0x034F, 0x061C, 0x115F, 0x1160, 0x17B4, 0x17B5, 0x180E,
