@@ -13,7 +13,7 @@ jobs:
   build_libs:
     runs-on: ${{ matrix.os }}
     container:
-      image: ubuntu:20.04
+      image: ghcr.io/aikidosec/firewall-php-build-libs:v1  
     strategy:
       matrix:
         os: [ ubuntu-24.04, ubuntu-24.04-arm ]
@@ -25,20 +25,6 @@ jobs:
 
     - name: Get Arch
       run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
-
-    - name: Install dependencies
-      run: |
-        apt-get update
-        apt-get install -y software-properties-common
-        add-apt-repository ppa:longsleep/golang-backports
-        apt-get update
-        apt-get install -y golang-go protobuf-compiler protobuf-compiler-grpc
-
-    - name: GO setup
-      run: |
-        go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
-        go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
-        echo "$HOME/go/bin" >> $GITHUB_PATH
 
     - name: Get Aikido version
       run: |
