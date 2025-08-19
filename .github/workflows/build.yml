@@ -124,7 +124,7 @@ jobs:
 
     - name: Clone php-src
       run: |
-        git clone --depth=1 --branch ${{ matrix.php_version }} https://github.com/php/php-src.git
+        git clone --depth=1 --branch PHP-${{ matrix.php_version }} https://github.com/php/php-src.git
         cd php-src
         ./buildconf
 
