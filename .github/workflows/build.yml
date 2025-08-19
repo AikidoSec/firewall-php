@@ -26,11 +26,22 @@ jobs:
     - name: Get Arch
       run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
 
-    - name: Install dependencies
+
+    - uses: actions/setup-go@v5
+      with:
+        go-version: '1.25.0'
+        check-latest: true
+
+    - name: Install protoc
       run: |
-        apt-get update
-        apt-get install -y software-properties-common
-        apt-get install -y golang-go protobuf-compiler protobuf-compiler-grpc
+        sudo apt-get update
+        sudo apt-get install -y protobuf-compiler
+
+    # - name: Install dependencies
+    #   run: |
+    #     apt-get update
+    #     apt-get install -y software-properties-common
+    #     apt-get install -y golang-go protobuf-compiler protobuf-compiler-grpc
 
         
     - name: GO setup
