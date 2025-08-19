@@ -517,9 +517,6 @@ jobs:
           php-version: ${{ matrix.php_version }}
           extensions: curl, sqlite3, mysqli
           coverage: none
-        env:
-          runner: self-hosted
-          debug: true
 
       - name: Test MySQL connection with mysqli
         run: |
