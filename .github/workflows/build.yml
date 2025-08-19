@@ -9,6 +9,10 @@ on:
       - main
   workflow_call:
 
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: aikidosec/firewall-php-build-extension
+
 jobs:
   build_libs:
     runs-on: ${{ matrix.os }}
@@ -92,28 +96,17 @@ jobs:
 
   build_php_extension:
     runs-on: ${{ matrix.os }}
-    container: ubuntu:20.04
     strategy:
       matrix:
         php_version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4']
         os: [ ubuntu-24.04, ubuntu-24.04-arm ]
       fail-fast: false
+    container: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.php_version }}
+
 
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
-
-    - name: Install dependencies
-      run: |
-        DEBIAN_FRONTEND=noninteractive apt-get update
-        DEBIAN_FRONTEND=noninteractive apt-get install -y tzdata
-        ln -fs /usr/share/zoneinfo/Etc/UTC /etc/localtime
-        echo "Etc/UTC" > /etc/timezone
-        DEBIAN_FRONTEND=noninteractive dpkg-reconfigure -f noninteractive tzdata
-        apt-get install -y --no-install-recommends build-essential autoconf bison re2c pkg-config libxml2-dev libsqlite3-dev libcurl4-openssl-dev libssl-dev libzip-dev libonig-dev libjpeg-dev libpng-dev libwebp-dev libicu-dev libreadline-dev libxslt1-dev default-libmysqlclient-dev git wget tar ca-certificates
-        update-ca-certificates
-        git config --global http.sslCAInfo /etc/ssl/certs/ca-certificates.crt
-        git config --global http.sslVerify true
 
     - name: Get Arch
       run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
@@ -121,52 +114,14 @@ jobs:
     - name: Get Aikido version
       run: |
         AIKIDO_VERSION=$(grep '#define PHP_AIKIDO_VERSION' lib/php-extension/include/php_aikido.h | awk -F'"' '{print $2}')
-        echo $AIKIDO_VERSION
         echo "AIKIDO_VERSION=$AIKIDO_VERSION" >> $GITHUB_ENV
         echo "AIKIDO_ARTIFACT=aikido-extension-php-${{ matrix.php_version }}" >> $GITHUB_ENV
 
-    - name: Checkout php-src
-      uses: actions/checkout@v4
-      with:
-        repository: php/php-src
-        ref: PHP-${{ matrix.php_version }}
-        path: php-src
-        fetch-depth: 1
-
-    - name: Clone php-src
-      run: |
-        cd php-src
-        ./buildconf --force
-
-    - name: Configure & build PHP
-      run: |
-        cd php-src
-        ./configure \
-          --prefix=/usr/local \
-          --with-config-file-path=/usr/local/lib \
-          --with-config-file-scan-dir=/usr/local/etc/php/conf.d \
-          --enable-mbstring \
-          --enable-pcntl \
-          --enable-intl \
-          --with-curl \
-          --with-mysqli \
-          --with-openssl \
-          --with-zlib \
-          --with-zip
-        make -j"$(nproc)"
-        make install
-
-    - name: Verify PHP build
-      run: |
-        php -v
-        php -m | grep -E 'curl|mysqli' || (echo "Required extensions missing" && php -m && exit 1)
-
-        
     - name: Check PHP setup
       run: |
         which php
         php -v
-        php -i
+        php -m | grep -E 'curl|mysqli' || (echo "Required extensions missing" && php -m && exit 1)
 
     - name: Build extension
       run: |
@@ -176,7 +131,7 @@ jobs:
         phpize
         cd ../../build
         CXX=g++ CXXFLAGS="-fPIC -O2 -I../lib/php-extension/include" LDFLAGS="-lstdc++" ../lib/php-extension/configure
-        make
+        make -j"$(nproc)"
 
     - name: Version Aikido extension
       run: |
