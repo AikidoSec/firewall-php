@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - Dockerfile.build-extension
+      - .github/workflows/Dockerfile.build-extension
       - .github/workflows/build-extension-images.yml
 
 env:
@@ -50,7 +50,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: Dockerfile.build-extension
+          file: .github/workflows/Dockerfile.build-extension
           target: dev
           build-args: |
             PHP_VERSION=${{ matrix.php_version }}
