@@ -36,8 +36,8 @@ jobs:
 
     - name: Install dependencies
       run: |
-        sudo apt-get update
-        sudo apt-get install -y protobuf-compiler
+        apt-get update
+        apt-get install -y protobuf-compiler curl
         protoc --version
 
     # Install a modern Go without actions/setup-go
@@ -45,8 +45,8 @@ jobs:
       run: |
         GO_VERSION=1.23.3
         curl -fsSL https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz -o /tmp/go.tgz
-        sudo rm -rf /usr/local/go
-        sudo tar -C /usr/local -xzf /tmp/go.tgz
+        rm -rf /usr/local/go
+        tar -C /usr/local -xzf /tmp/go.tgz
         echo "/usr/local/go/bin" >> "$GITHUB_PATH"
         echo "$HOME/go/bin" >> "$GITHUB_PATH"
         # Force module mode everywhere
