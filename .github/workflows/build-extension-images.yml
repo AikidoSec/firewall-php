@@ -5,7 +5,7 @@ on:
   push:
     paths:
       - Dockerfile.build-extension
-      - .github/workflows/build-images/build-extension-images.yml
+      - .github/workflows/build-extension-images.yml
 
 env:
   REGISTRY: ghcr.io
