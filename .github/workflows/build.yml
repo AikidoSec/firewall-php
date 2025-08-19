@@ -13,7 +13,7 @@ jobs:
   build_libs:
     runs-on: ${{ matrix.os }}
     container:
-      image: ubuntu:20.04
+      image: debian:11
     strategy:
       matrix:
         os: [ ubuntu-24.04, ubuntu-24.04-arm ]
@@ -92,7 +92,7 @@ jobs:
 
   build_php_extension:
     runs-on: ${{ matrix.os }}
-    container: ubuntu:20.04
+    container: debian:11
     strategy:
       matrix:
         php_version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4']
@@ -257,7 +257,7 @@ jobs:
   build_deb:
     runs-on: ${{ matrix.os }}
     container:
-      image: ubuntu:20.04
+      image: debian:11
     strategy:
       matrix:
         os: [ ubuntu-24.04, ubuntu-24.04-arm ]
