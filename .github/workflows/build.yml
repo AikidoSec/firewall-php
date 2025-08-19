@@ -29,7 +29,7 @@ jobs:
     - name: Install dependencies
       run: |
         apt-get update
-        apt-get install gnupg
+        apt-get install gnupg -y
         apt-get install -y software-properties-common
         add-apt-repository ppa:longsleep/golang-backports
         apt-get update
