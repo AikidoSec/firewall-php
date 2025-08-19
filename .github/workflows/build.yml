@@ -124,10 +124,10 @@ jobs:
 
     - name: Prepare APT (add ondrej/php PPA for multiple PHP versions)
       run: |
-        sudo apt-get update -y
-        sudo apt-get install -y --no-install-recommends software-properties-common ca-certificates lsb-release apt-transport-https
-        sudo add-apt-repository -y ppa:ondrej/php
-        sudo apt-get update -y
+        apt-get update -y
+        apt-get install -y --no-install-recommends software-properties-common ca-certificates lsb-release apt-transport-https
+        add-apt-repository -y ppa:ondrej/php
+        apt-get update -y
 
     - name: Install PHP ${{ matrix.php_version }} and dev extensions (no coverage)
       env:
@@ -135,16 +135,16 @@ jobs:
       run: |
         set -euxo pipefail
         # Core + common dev extensions
-        sudo apt-get install -y --no-install-recommends \
+        apt-get install -y --no-install-recommends \
           php$PHPV php$PHPV-cli php$PHPV-common php$PHPV-opcache \
           php$PHPV-curl php$PHPV-mysql php$PHPV-mbstring php$PHPV-xml php$PHPV-zip \
           php$PHPV-dev php$PHPV-pear
 
         # Make this PHP the default "php"
-        sudo update-alternatives --set php /usr/bin/php$PHPV
+        update-alternatives --set php /usr/bin/php$PHPV
         # (Optional but handy for building/ext tooling)
-        if [[ -x /usr/bin/phpize$PHPV ]]; then sudo update-alternatives --set phpize /usr/bin/phpize$PHPV; fi
-        if [[ -x /usr/bin/php-config$PHPV ]]; then sudo update-alternatives --set php-config /usr/bin/php-config$PHPV; fi
+        if [[ -x /usr/bin/phpize$PHPV ]]; then update-alternatives --set phpize /usr/bin/phpize$PHPV; fi
+        if [[ -x /usr/bin/php-config$PHPV ]]; then update-alternatives --set php-config /usr/bin/php-config$PHPV; fi
 
         php -v
         php -m | grep -E 'curl|mysqli' || (echo "Required extensions missing" && php -m && exit 1)
