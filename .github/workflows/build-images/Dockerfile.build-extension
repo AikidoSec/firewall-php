@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.7
 # Build arguments let you target any PHP ref
 ARG BASE_IMAGE=ubuntu:20.04
-ARG PHP_VERSION=7.1
+ARG PHP_VERSION=8.3
 # Default ref is PHP-${PHP_VERSION} but can be overridden if needed
 ARG PHP_SRC_REF=PHP-${PHP_VERSION}
 
