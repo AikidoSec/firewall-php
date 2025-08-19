@@ -133,7 +133,6 @@ jobs:
       env:
         PHPV: ${{ matrix.php_version }}
       run: |
-        set -euxo pipefail
         # Core + common dev extensions
         apt-get install -y --no-install-recommends \
           php$PHPV php$PHPV-cli php$PHPV-common php$PHPV-opcache \
