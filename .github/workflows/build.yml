@@ -37,21 +37,29 @@ jobs:
     - name: Install dependencies
       run: |
         apt-get update
-        apt-get install -y protobuf-compiler curl
+        apt-get install -y protobuf-compiler curl git ca-certificates
         protoc --version
-
-    # Install a modern Go without actions/setup-go
+    
+    # Install Go matching the container architecture (amd64/arm64)
     - name: Install Go (tarball)
       run: |
+        set -euo pipefail
         GO_VERSION=1.23.3
-        curl -fsSL https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz -o /tmp/go.tgz
+        uname_m="$(uname -m)"
+        case "$uname_m" in
+          x86_64)  GO_ARCH=amd64 ;;
+          aarch64) GO_ARCH=arm64 ;;
+          arm64)   GO_ARCH=arm64 ;;
+          *) echo "Unsupported arch: $uname_m"; exit 1 ;;
+        esac
+        curl -fsSL "https://go.dev/dl/go${GO_VERSION}.linux-${GO_ARCH}.tar.gz" -o /tmp/go.tgz
         rm -rf /usr/local/go
         tar -C /usr/local -xzf /tmp/go.tgz
         echo "/usr/local/go/bin" >> "$GITHUB_PATH"
         echo "$HOME/go/bin" >> "$GITHUB_PATH"
-        # Force module mode everywhere
         /usr/local/go/bin/go env -w GO111MODULE=on
-        /usr/local/go/bin/go version
+        /usr/local/go/bin/go version && /usr/local/go/bin/go env
+
    
     - name: GO setup
       run: |
