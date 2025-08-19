@@ -18,7 +18,7 @@ jobs:
       matrix:
         os: [ ubuntu-24.04, ubuntu-24.04-arm ]
       fail-fast: false
-
+    
     steps:
     - name: Checkout repository
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
@@ -36,28 +36,35 @@ jobs:
     - name: Build Aikido Agent
       run: |
         cd lib
-        protoc --go_out=agent --go-grpc_out=agent ipc.proto
+        protoc -I . -I /usr/local/include \
+          --go_out=paths=source_relative:agent \
+          --go-grpc_out=paths=source_relative:agent \
+          ipc.proto
         cd agent
         go get main/ipc/protos
         go get google.golang.org/grpc
         go get github.com/stretchr/testify/assert
         go test ./...
-        go build -ldflags "-s -w" -o ../../build/aikido-agent
+        go build -buildvcs=false -ldflags "-s -w" -o ../../build/aikido-agent
         ls -l ../../build
+    
 
     - name: Build Aikido Request Processor
       run: |
         cd lib
-        protoc --go_out=request-processor --go-grpc_out=request-processor ipc.proto
+        protoc -I . -I /usr/local/include \
+          --go_out=paths=source_relative:request-processor \
+          --go-grpc_out=paths=source_relative:request-processor \
+          ipc.proto
         cd request-processor
         go mod tidy
         go get google.golang.org/grpc
         go get github.com/stretchr/testify/assert
         go get main/ipc/protos
         go test ./...
-        go build -ldflags "-s -w" -buildmode=c-shared -o ../../build/aikido-request-processor.so
+        go build -buildvcs=false -ldflags "-s -w" -buildmode=c-shared -o ../../build/aikido-request-processor.so
         ls -l ../../build
-
+    
     - name: Archive agent
       uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4
       if: always()
