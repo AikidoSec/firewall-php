@@ -101,8 +101,8 @@ jobs:
         php_version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4']
         os: [ ubuntu-24.04, ubuntu-24.04-arm ]
       fail-fast: false
-    container: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.php_version }}
-
+    container:
+      image: ${{ vars.REGISTRY }}/${{ vars.IMAGE_NAME }}:${{ matrix.php_version }}
 
     steps:
     - name: Checkout repository
