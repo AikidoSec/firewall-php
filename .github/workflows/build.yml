@@ -136,7 +136,7 @@ jobs:
     - name: Clone php-src
       run: |
         cd php-src
-        ./buildconf
+        ./buildconf --force
 
     - name: Configure & build PHP
       run: |
