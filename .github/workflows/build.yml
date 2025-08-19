@@ -263,7 +263,7 @@ jobs:
           mv ~/rpmbuild/RPMS/${{ env.ARCH }}/${{ env.AIKIDO_ARTIFACT }} ~/rpmbuild/RPMS/${{ env.ARCH }}/${{ env.AIKIDO_ARTIFACT_RELEASE }}
 
       - name: Check rpm dependencies
-        if: matrix.os == 'ubuntu-22.04'
+        if: matrix.os == 'ubuntu-24.04'
         run: |
           yum deplist ~/rpmbuild/RPMS/${{ env.ARCH }}/${{ env.AIKIDO_ARTIFACT_RELEASE }} | grep -E "GLIBC_2.32|GLIBC_2.34|GLIBCXX_3.4.29" && exit 1 || exit 0
 
