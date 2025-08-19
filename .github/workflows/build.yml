@@ -18,6 +18,8 @@ jobs:
       matrix:
         os: [ ubuntu-24.04, ubuntu-24.04-arm ]
       fail-fast: false
+    env:
+      GOTOOLCHAIN: local
     
     steps:
     - name: Checkout repository
@@ -36,10 +38,7 @@ jobs:
     - name: Build Aikido Agent
       run: |
         cd lib
-        protoc -I . -I /usr/local/include \
-          --go_out=paths=source_relative:agent \
-          --go-grpc_out=paths=source_relative:agent \
-          ipc.proto
+        protoc --go_out=agent --go-grpc_out=agent ipc.proto
         cd agent
         go get main/ipc/protos
         go get google.golang.org/grpc
@@ -52,17 +51,14 @@ jobs:
     - name: Build Aikido Request Processor
       run: |
         cd lib
-        protoc -I . -I /usr/local/include \
-          --go_out=paths=source_relative:request-processor \
-          --go-grpc_out=paths=source_relative:request-processor \
-          ipc.proto
+        protoc --go_out=request-processor --go-grpc_out=request-processor ipc.proto
         cd request-processor
         go mod tidy
         go get google.golang.org/grpc
         go get github.com/stretchr/testify/assert
         go get main/ipc/protos
         go test ./...
-        go build -buildvcs=false -ldflags "-s -w" -buildmode=c-shared -o ../../build/aikido-request-processor.so
+        go build -ldflags "-s -w" -buildmode=c-shared -o ../../build/aikido-request-processor.so
         ls -l ../../build
     
     - name: Archive agent
