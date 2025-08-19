@@ -122,29 +122,29 @@ jobs:
         echo "AIKIDO_VERSION=$AIKIDO_VERSION" >> $GITHUB_ENV
         echo "AIKIDO_ARTIFACT=aikido-extension-php-${{ matrix.php_version }}" >> $GITHUB_ENV
 
-        - name: Clone php-src
-        run: |
-          git clone --depth=1 --branch ${{ matrix.php_version }} https://github.com/php/php-src.git
-          cd php-src
-          ./buildconf
+    - name: Clone php-src
+      run: |
+        git clone --depth=1 --branch ${{ matrix.php_version }} https://github.com/php/php-src.git
+        cd php-src
+        ./buildconf
 
-        - name: Configure & build PHP
-          run: |
-            cd php-src
-            ./configure \
-              --prefix=/usr/local \
-              --with-config-file-path=/usr/local/lib \
-              --with-config-file-scan-dir=/usr/local/etc/php/conf.d \
-              --enable-mbstring \
-              --enable-pcntl \
-              --enable-intl \
-              --with-curl \
-              --with-mysqli \
-              --with-openssl \
-              --with-zlib \
-              --with-zip
-            make -j"$(nproc)"
-            make install
+    - name: Configure & build PHP
+      run: |
+        cd php-src
+        ./configure \
+          --prefix=/usr/local \
+          --with-config-file-path=/usr/local/lib \
+          --with-config-file-scan-dir=/usr/local/etc/php/conf.d \
+          --enable-mbstring \
+          --enable-pcntl \
+          --enable-intl \
+          --with-curl \
+          --with-mysqli \
+          --with-openssl \
+          --with-zlib \
+          --with-zip
+        make -j"$(nproc)"
+        make install
 
     - name: Verify PHP build
       run: |
