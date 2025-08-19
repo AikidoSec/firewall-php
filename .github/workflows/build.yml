@@ -28,14 +28,36 @@ jobs:
 
     - name: Install dependencies
       run: |
+        set -euo pipefail
+        # Backports for newer Go on bullseye
+        echo "deb http://deb.debian.org/debian bullseye-backports main" | \
+          tee /etc/apt/sources.list.d/bullseye-backports.list
+          
         apt-get update
-        apt-get install gnupg -y
-        apt-get install -y software-properties-common
-        add-apt-repository ppa:longsleep/golang-backports
-        apt-get update
-        apt-get install -y golang-go protobuf-compiler protobuf-compiler-grpc
-       
+        apt-get install -y --no-install-recommends \
+          ca-certificates curl git gnupg build-essential pkg-config
 
+        # Go from backports
+        apt-get -t bullseye-backports install -y golang-go
+
+        # Protobuf compiler (protoc)
+        apt-get install -y --no-install-recommends protobuf-compiler
+
+        # Go plugins for protoc (avoids distro-specific packages)
+        export GOPATH=/root/go
+        export PATH=$PATH:/usr/local/go/bin:$GOPATH/bin
+
+        go version
+        protoc --version
+
+        # Install protoc-gen-go and protoc-gen-go-grpc
+        go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.34.1
+        go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.4.0
+
+        # Make them available system-wide
+        install -m 0755 -D "$GOPATH/bin/protoc-gen-go" /usr/local/bin/protoc-gen-go
+        install -m 0755 -D "$GOPATH/bin/protoc-gen-go-grpc" /usr/local/bin/protoc-gen-go-grpc
+        
     - name: GO setup
       run: |
         go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
