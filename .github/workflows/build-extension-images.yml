@@ -9,13 +9,13 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}-build-extension
+  IMAGE_NAME: aikidosec/firewall-php-build-extension
 
 jobs:
   build:
     runs-on: ubuntu-24.04
     strategy:
-      fail-fast: false
+      fail-fast: true 
       matrix:
         php_version: ['7.2','7.3','7.4','8.0','8.1','8.2','8.3','8.4']
 
