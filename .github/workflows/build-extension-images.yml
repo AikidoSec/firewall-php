@@ -50,7 +50,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./Dockerfile.build-extension
+          file: Dockerfile.build-extension
           target: dev
           build-args: |
             PHP_VERSION=${{ matrix.php_version }}
