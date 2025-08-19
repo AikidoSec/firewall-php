@@ -33,6 +33,7 @@ jobs:
         add-apt-repository ppa:longsleep/golang-backports
         apt-get update
         apt-get install -y golang-go protobuf-compiler protobuf-compiler-grpc
+        apt-get install gnupg
 
     - name: GO setup
       run: |
