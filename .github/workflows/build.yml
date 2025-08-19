@@ -13,7 +13,7 @@ jobs:
   build_libs:
     runs-on: ${{ matrix.os }}
     container:
-      image: debian:11
+      image: ubuntu:20.04
     strategy:
       matrix:
         os: [ ubuntu-24.04, ubuntu-24.04-arm ]
@@ -26,42 +26,14 @@ jobs:
     - name: Get Arch
       run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
 
-
-
-    # - name: Install dependencies
-    #   run: |
-    #     apt-get update
-    #     apt-get install -y software-properties-common
-    #     apt-get install -y golang-go protobuf-compiler protobuf-compiler-grpc
-
     - name: Install dependencies
       run: |
         apt-get update
-        apt-get install -y protobuf-compiler curl git ca-certificates
-        protoc --version
-    
-    # Install Go matching the container architecture (amd64/arm64)
-    - name: Install Go (tarball)
-      shell: bash
-      run: |
-        set -euo pipefail
-        GO_VERSION=1.23.3
-        uname_m="$(uname -m)"
-        case "$uname_m" in
-          x86_64)  GO_ARCH=amd64 ;;
-          aarch64) GO_ARCH=arm64 ;;
-          arm64)   GO_ARCH=arm64 ;;
-          *) echo "Unsupported arch: $uname_m"; exit 1 ;;
-        esac
-        curl -fsSL "https://go.dev/dl/go${GO_VERSION}.linux-${GO_ARCH}.tar.gz" -o /tmp/go.tgz
-        rm -rf /usr/local/go
-        tar -C /usr/local -xzf /tmp/go.tgz
-        echo "/usr/local/go/bin" >> "$GITHUB_PATH"
-        echo "$HOME/go/bin" >> "$GITHUB_PATH"
-        /usr/local/go/bin/go env -w GO111MODULE=on
-        /usr/local/go/bin/go version && /usr/local/go/bin/go env
+        apt-get install -y software-properties-common
+        add-apt-repository ppa:longsleep/golang-backports
+        apt-get update
+        apt-get install -y golang-go protobuf-compiler protobuf-compiler-grpc
 
-   
     - name: GO setup
       run: |
         go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
@@ -69,7 +41,6 @@ jobs:
         echo "$HOME/go/bin" >> $GITHUB_PATH
 
     - name: Get Aikido version
-      shell: bash
       run: |
         AIKIDO_VERSION=$(grep '#define PHP_AIKIDO_VERSION' lib/php-extension/include/php_aikido.h | awk -F'"' '{print $2}')
         echo $AIKIDO_VERSION
@@ -77,7 +48,6 @@ jobs:
         echo "AIKIDO_INTERNALS_REPO=https://api.github.com/repos/AikidoSec/zen-internals" >> $GITHUB_ENV
 
     - name: Build Aikido Agent
-      shell: bash
       run: |
         cd lib
         protoc --go_out=agent --go-grpc_out=agent ipc.proto
@@ -122,7 +92,7 @@ jobs:
 
   build_php_extension:
     runs-on: ${{ matrix.os }}
-    container: debian:11
+    container: ubuntu:20.04
     strategy:
       matrix:
         php_version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4']
@@ -158,7 +128,9 @@ jobs:
         php-version: ${{ matrix.php_version }}
         extensions: curl, mysqli
         coverage: none
-
+      env:
+        runner: self-hosted
+        
     - name: Check PHP setup
       run: |
         which php
@@ -287,7 +259,7 @@ jobs:
   build_deb:
     runs-on: ${{ matrix.os }}
     container:
-      image: debian:11
+      image: ubuntu:20.04
     strategy:
       matrix:
         os: [ ubuntu-24.04, ubuntu-24.04-arm ]
@@ -514,6 +486,8 @@ jobs:
           php-version: ${{ matrix.php_version }}
           extensions: curl, sqlite3, mysqli
           coverage: none
+        env:
+          runner: self-hosted
 
       - name: Test MySQL connection with mysqli
         run: |
