@@ -130,6 +130,7 @@ jobs:
         coverage: none
       env:
         runner: self-hosted
+        debug: true
         
     - name: Check PHP setup
       run: |
@@ -488,6 +489,7 @@ jobs:
           coverage: none
         env:
           runner: self-hosted
+          debug: true
 
       - name: Test MySQL connection with mysqli
         run: |
