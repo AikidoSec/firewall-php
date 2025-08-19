@@ -46,7 +46,7 @@ jobs:
           V="${{ matrix.php_version }}"
           echo "tag_dev=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${V}" >> $GITHUB_OUTPUT
 
-      - name: Build & Push (dev)
+      - name: Build & Push
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -55,8 +55,8 @@ jobs:
           build-args: |
             PHP_VERSION=${{ matrix.php_version }}
             PHP_SRC_REF=PHP-${{ matrix.php_version }}
-          platforms: linux/amd64 #,linux/arm64
+          platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tag_dev }}
-        #  cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:cache-${{ matrix.php_version }}
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:cache-${{ matrix.php_version }}
          
