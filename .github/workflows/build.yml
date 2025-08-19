@@ -35,7 +35,8 @@ jobs:
     - name: Install protoc
       run: |
         apt-get update
-        apt-get install -y protobuf-compiler
+        apt-get install -y software-properties-common
+        apt-get install -y protobuf-compiler protobuf-compiler-grpc
 
     # - name: Install dependencies
     #   run: |
