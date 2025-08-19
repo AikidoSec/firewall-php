@@ -1,4 +1,4 @@
-name: Build extension images
+name: Create images for building extension
 
 on:
   workflow_dispatch:
