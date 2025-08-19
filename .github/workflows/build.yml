@@ -122,9 +122,16 @@ jobs:
         echo "AIKIDO_VERSION=$AIKIDO_VERSION" >> $GITHUB_ENV
         echo "AIKIDO_ARTIFACT=aikido-extension-php-${{ matrix.php_version }}" >> $GITHUB_ENV
 
+    - name: Checkout php-src
+      uses: actions/checkout@v4
+      with:
+        repository: php/php-src
+        ref: PHP-${{ matrix.php_version }}
+        path: php-src
+        fetch-depth: 1
+
     - name: Clone php-src
       run: |
-        git clone --depth=1 --branch PHP-${{ matrix.php_version }} https://github.com/php/php-src.git
         cd php-src
         ./buildconf
 
