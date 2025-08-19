@@ -110,7 +110,10 @@ jobs:
         ln -fs /usr/share/zoneinfo/Etc/UTC /etc/localtime
         echo "Etc/UTC" > /etc/timezone
         DEBIAN_FRONTEND=noninteractive dpkg-reconfigure -f noninteractive tzdata
-        apt-get install -y --no-install-recommends build-essential autoconf bison re2c pkg-config libxml2-dev libsqlite3-dev libcurl4-openssl-dev libssl-dev libzip-dev libonig-dev libjpeg-dev libpng-dev libwebp-dev libicu-dev libreadline-dev libxslt1-dev default-libmysqlclient-dev git wget tar
+        apt-get install -y --no-install-recommends build-essential autoconf bison re2c pkg-config libxml2-dev libsqlite3-dev libcurl4-openssl-dev libssl-dev libzip-dev libonig-dev libjpeg-dev libpng-dev libwebp-dev libicu-dev libreadline-dev libxslt1-dev default-libmysqlclient-dev git wget tar ca-certificates
+        update-ca-certificates
+        git config --global http.sslCAInfo /etc/ssl/certs/ca-certificates.crt
+        git config --global http.sslVerify true
 
     - name: Get Arch
       run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
