@@ -35,7 +35,6 @@ jobs:
 
     - name: Build Aikido Agent
       run: |
-        set -euo pipefail
         cd lib
         mkdir -p agent
         protoc -I . -I /usr/include -I /usr/local/include \
@@ -53,7 +52,6 @@ jobs:
 
     - name: Build Aikido Request Processor
       run: |
-        set -euo pipefail
         cd lib
         mkdir -p request-processor
         protoc -I . -I /usr/include -I /usr/local/include \
