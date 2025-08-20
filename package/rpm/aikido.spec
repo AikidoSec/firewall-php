@@ -1,5 +1,5 @@
 Name:           aikido-php-firewall
-Version:        1.3.1
+Version:        1.3.2
 Release:        1
 Summary:        Aikido PHP Extension
 License:        GPL
@@ -52,13 +52,13 @@ echo "Found PHP versions: ${PHP_VERSIONS[*]}"
 
 for PHP_VERSION in "${PHP_VERSIONS[@]}"; do
     echo "Installing for PHP $PHP_VERSION..."
-    
+
     # Get PHP paths using the specific version binary
     PHP_BIN="php$PHP_VERSION"
     if ! command -v $PHP_BIN >/dev/null 2>&1; then
         PHP_BIN="php"
     fi
-    
+
     PHP_EXT_DIR=$($PHP_BIN -i | grep "^extension_dir" | awk '{print $3}')
     PHP_MOD_DIR=$($PHP_BIN -i | grep "Scan this dir for additional .ini files" | awk -F"=> " '{print $2}')
 
@@ -141,13 +141,13 @@ echo "Found PHP versions: ${PHP_VERSIONS[*]}"
 
 for PHP_VERSION in "${PHP_VERSIONS[@]}"; do
     echo "Uninstalling for PHP $PHP_VERSION..."
-    
+
     # Get PHP paths using the specific version binary
     PHP_BIN="php$PHP_VERSION"
     if ! command -v $PHP_BIN >/dev/null 2>&1; then
         PHP_BIN="php"
     fi
-    
+
     PHP_EXT_DIR=$($PHP_BIN -i | grep "^extension_dir" | awk '{print $3}')
     PHP_MOD_DIR=$($PHP_BIN -i | grep "Scan this dir for additional .ini files" | awk -F"=> " '{print $2}')
 
