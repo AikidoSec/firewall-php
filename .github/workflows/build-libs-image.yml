@@ -10,7 +10,7 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME_LIBS: aikidosec/firewall-php-build-libs
-  TAG: v1                                         
+  VERSION: v1
 
 jobs:
   build-amd64:
@@ -34,9 +34,9 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LIBS }}:${{ env.TAG }}-amd64
-          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LIBS }}:cache-${{ env.TAG }}-amd64
-          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LIBS }}:cache-${{ env.TAG }}-amd64,mode=max
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LIBS }}:${{ env.VERSION }}-amd64
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LIBS }}:cache-${{ env.VERSION }}-amd64
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LIBS }}:cache-${{ env.VERSION }}-amd64,mode=max
 
   build-arm64:
     runs-on: ubuntu-24.04-arm
@@ -59,9 +59,9 @@ jobs:
           platforms: linux/arm64
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LIBS }}:${{ env.TAG }}-arm64
-          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LIBS }}:cache-${{ env.TAG }}-arm64
-          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LIBS }}:cache-${{ env.TAG }}-arm64,mode=max
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LIBS }}:${{ env.VERSION }}-arm64
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LIBS }}:cache-${{ env.VERSION }}-arm64
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LIBS }}:cache-${{ env.VERSION }}-arm64,mode=max
 
   publish-manifest:
     runs-on: ubuntu-24.04
@@ -79,9 +79,9 @@ jobs:
       - name: Create multi-arch manifest
         run: |
           IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LIBS }}
-          TAG=${{ env.TAG }}
+          VERSION=${{ env.VERSION }}
           docker buildx imagetools create \
-            --tag ${IMAGE}:${TAG} \
+            --tag ${IMAGE}:${VERSION} \
             --tag ${IMAGE}:latest \
-            ${IMAGE}:${TAG}-amd64 \
-            ${IMAGE}:${TAG}-arm64
+            ${IMAGE}:${VERSION}-amd64 \
+            ${IMAGE}:${VERSION}-arm64

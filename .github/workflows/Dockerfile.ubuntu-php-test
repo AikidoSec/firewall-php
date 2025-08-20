@@ -1,0 +1,56 @@
+# syntax=docker/dockerfile:1.7
+# Ubuntu 24.04 test image with PHP (from ppa:ondrej/php) per version,
+# plus nginx + php-fpm, Apache (mod_php), MariaDB, and Python deps.
+
+ARG BASE_IMAGE=ubuntu:24.04
+ARG PHP_VERSION=8.3
+FROM ${BASE_IMAGE}
+SHELL ["/bin/bash", "-euo", "pipefail", "-c"]
+
+ENV DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC \
+    LC_ALL=C.UTF-8 LANG=C.UTF-8 LANGUAGE=C.UTF-8
+
+# Base + PPA tools
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+      tzdata ca-certificates curl gnupg2 lsb-release apt-transport-https \
+      software-properties-common \
+ && ln -fs /usr/share/zoneinfo/${TZ} /etc/localtime \
+ && echo "${TZ}" > /etc/timezone \
+ && dpkg-reconfigure -f noninteractive tzdata \
+ && update-ca-certificates
+
+# PHP from Ondřej’s PPA (gives 7.2–8.4 on 24.04)
+RUN add-apt-repository -y ppa:ondrej/php \
+ && apt-get update
+
+# Server stacks + PHP (per version) + Python deps + MariaDB
+ARG PHP_VERSION
+RUN apt-get install -y --no-install-recommends \
+      # web servers
+      nginx apache2 \
+      # php core + cli + fpm + mysql extensions for this version
+      php${PHP_VERSION} php${PHP_VERSION}-cli php${PHP_VERSION}-common \
+      php${PHP_VERSION}-fpm \
+      php${PHP_VERSION}-mysql php${PHP_VERSION}-mysqli \
+      php${PHP_VERSION}-curl php${PHP_VERSION}-sqlite3 \
+      # Apache PHP module (may be absent for some versions -> don't fail)
+      libapache2-mod-php${PHP_VERSION} || true \
+ && apt-get install -y --no-install-recommends \
+      mariadb-server \
+      python3 python3-flask python3-pandas python3-psutil python3-requests \
+ && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Make the CLI 'php' point to the selected version
+RUN if command -v php${PHP_VERSION} >/dev/null 2>&1; then \
+      update-alternatives --install /usr/bin/php php /usr/bin/php${PHP_VERSION} 100 && \
+      update-alternatives --set php /usr/bin/php${PHP_VERSION}; \
+    fi
+
+# Apache: prefer prefork for mod_php and enable rewrite + versioned PHP module if present
+RUN a2dismod mpm_event mpm_worker || true \
+ && a2enmod mpm_prefork rewrite || true \
+ && a2enmod php${PHP_VERSION} || true
+
+WORKDIR /work
+CMD ["bash"]
