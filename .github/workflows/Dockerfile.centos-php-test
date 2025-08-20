@@ -1,0 +1,42 @@
+# syntax=docker/dockerfile:1.7
+# CentOS Stream 9 test image with PHP (from Remi) preinstalled per version,
+# plus httpd (mod_php), nginx + php-fpm, MySQL server and Python deps.
+
+ARG BASE_IMAGE=quay.io/centos/centos:stream9
+ARG PHP_VERSION=8.3
+
+FROM ${BASE_IMAGE}
+SHELL ["/bin/bash", "-euo", "pipefail", "-c"]
+
+# Base tools
+RUN dnf -y update-minimal --security --sec-severity=Important --sec-severity=Critical || true \
+ && dnf -y swap curl-minimal curl --allowerasing \
+ && dnf -y install \
+      dnf-plugins-core yum-utils \
+      gcc python3 python3-pip python3-devel \
+      procps-ng \
+      ca-certificates \
+      httpd nginx php-fpm \
+      mysql-server \
+ && dnf -y clean all
+
+# Remi repo + chosen PHP stream
+ARG PHP_VERSION
+RUN dnf -y install https://rpms.remirepo.net/enterprise/remi-release-9.rpm \
+ && dnf -y module reset php \
+ && dnf -y module enable php:remi-${PHP_VERSION} \
+ && dnf -y install \
+      php php-cli php-common php-pdo php-mysqlnd \
+      # Some setups still look for a dedicated mod_php package; make it best-effort:
+      mod_php || true \
+ && php -v \
+ && dnf -y clean all
+
+# Python deps used by your test harness
+RUN python3 -m pip install --no-cache-dir --upgrade pip \
+ && python3 -m pip install --no-cache-dir flask requests psutil
+
+# Quality-of-life
+ENV TZ=Etc/UTC
+WORKDIR /work
+CMD ["bash"]
