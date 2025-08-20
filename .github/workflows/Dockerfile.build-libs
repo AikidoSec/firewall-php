@@ -2,7 +2,7 @@
 # Multi-arch Go + Protobuf toolchain image for building the agent & request processor.
 
 ARG BASE_IMAGE=ubuntu:20.04
-ARG GO_VERSION=1.22.5
+ARG GO_VERSION=1.23.3 
 ARG PROTOC_VERSION=27.1
 ARG PROTOC_GEN_GO_VERSION=v1.34.2
 ARG PROTOC_GEN_GO_GRPC_VERSION=v1.4.0
