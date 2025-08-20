@@ -18,11 +18,6 @@ jobs:
       matrix:
         os: [ ubuntu-24.04, ubuntu-24.04-arm ]
       fail-fast: false
-    env:
-      GOTOOLCHAIN: local
-    defaults:
-      run:
-        shell: bash
     
     steps:
     - name: Checkout repository
