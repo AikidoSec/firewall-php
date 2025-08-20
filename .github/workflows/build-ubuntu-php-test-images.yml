@@ -30,7 +30,7 @@ jobs:
       - uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./Dockerfile.ubuntu-php-test
+          file: .github/workflows/Dockerfile.ubuntu-php-test
           platforms: linux/amd64
           push: true
           build-args: |
@@ -56,7 +56,7 @@ jobs:
       - uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./Dockerfile.ubuntu-php-test
+          file: .github/workflows/Dockerfile.ubuntu-php-test
           platforms: linux/arm64
           push: true
           build-args: |
