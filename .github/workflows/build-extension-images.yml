@@ -108,8 +108,8 @@ jobs:
       - name: Create multi-arch manifest
         run: |
           IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          V=${{ matrix.php_version }}-${{ env.VERSION }}
+          V=${{ matrix.php_version }}
           docker buildx imagetools create \
-            --tag ${IMAGE}:${V} \
+            --tag ${IMAGE}:${V}-${{ env.VERSION }} \
             ${IMAGE}:${V}-amd64-${{ env.VERSION }} \
             ${IMAGE}:${V}-arm64-${{ env.VERSION }}
