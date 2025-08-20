@@ -1,57 +1,29 @@
-# syntax=docker/dockerfile:1.7
-# Multi-arch Go + Protobuf toolchain image for building the agent & request processor.
+# Dockerfile
+# Matches your CI container image
+FROM ubuntu:20.04
 
-ARG BASE_IMAGE=ubuntu:20.04
-ARG GO_VERSION=1.23.3 
-ARG PROTOC_VERSION=27.1
-ARG PROTOC_GEN_GO_VERSION=v1.34.2
-ARG PROTOC_GEN_GO_GRPC_VERSION=v1.4.0
+ENV DEBIAN_FRONTEND=noninteractive
 
-FROM ${BASE_IMAGE} AS base
-SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
+# Base tools & dependencies for building Go c-shared libs and running protoc
+RUN apt-get update && \
+    apt-get install -y software-properties-common && \
+    add-apt-repository ppa:longsleep/golang-backports && \
+    apt-get update && \
+    apt-get install -y golang-go protobuf-compiler protobuf-compiler-grpc && \
+    rm -rf /var/lib/apt/lists/*
 
-ENV DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC \
-    LC_ALL=C.UTF-8 LANG=C.UTF-8 LANGUAGE=C.UTF-8
+# Go env (separate GOPATH to avoid cluttering /root)
+ENV GOPATH=/go
+ENV GOBIN=/go/bin
+ENV PATH=$GOBIN:/usr/local/go/bin:/usr/lib/go/bin:$PATH
 
-RUN apt-get update \
- && apt-get install -y --no-install-recommends \
-      ca-certificates tzdata curl unzip git build-essential pkg-config \
- && ln -fs /usr/share/zoneinfo/${TZ} /etc/localtime \
- && echo "${TZ}" > /etc/timezone && dpkg-reconfigure -f noninteractive tzdata \
- && update-ca-certificates \
- && rm -rf /var/lib/apt/lists/*
+# Install protoc Go plugins used in your workflow
+# (lock to latest at build time; pin versions here if you prefer reproducible builds)
+RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@latest && \
+    go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 
-# Map TARGETARCH to download names for Go/protoc
-ARG GO_VERSION PROTOC_VERSION
-ARG TARGETARCH
+# Create a clean workspace where you can mount your repo
+WORKDIR /workspace
 
-ENV GOPATH=/opt/go \
-    GOBIN=/usr/local/bin \
-    PATH=/usr/local/go/bin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-
-RUN set -eux; \
-  case "${TARGETARCH}" in \
-    amd64) GOARCH=amd64; PROTOC_ARCH=x86_64 ;; \
-    arm64) GOARCH=arm64; PROTOC_ARCH=aarch_64 ;; \
-    *) echo "Unsupported arch: ${TARGETARCH}" && exit 1 ;; \
-  esac; \
-  # Install Go
-  curl -fsSL "https://go.dev/dl/go${GO_VERSION}.linux-${GOARCH}.tar.gz" -o /tmp/go.tgz; \
-  tar -C /usr/local -xzf /tmp/go.tgz; rm /tmp/go.tgz; \
-  # Install protoc (bin -> /usr/local/bin, includes -> /usr/local/include)
-  curl -fsSL "https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-${PROTOC_ARCH}.zip" -o /tmp/protoc.zip; \
-  unzip -q /tmp/protoc.zip -d /usr/local; rm /tmp/protoc.zip; \
-  # Prep Go cache dirs
-  mkdir -p "${GOPATH}"/{pkg,bin,src}
-
-# Install Go plugins (pinned, overridable via build args)
-ARG PROTOC_GEN_GO_VERSION PROTOC_GEN_GO_GRPC_VERSION
-RUN go version \
- && protoc --version \
- && GOTOOLCHAIN=local go install google.golang.org/protobuf/cmd/protoc-gen-go@${PROTOC_GEN_GO_VERSION} \
- && GOTOOLCHAIN=local go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@${PROTOC_GEN_GO_GRPC_VERSION} \
- && which protoc-gen-go protoc-gen-go-grpc
-
-# Convenience
-WORKDIR /work
-CMD ["bash"]
+# Default shell
+CMD ["/bin/bash"]
