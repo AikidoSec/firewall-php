@@ -3,39 +3,28 @@
 # plus httpd (mod_php), nginx + php-fpm, MySQL server and Python deps.
 
 ARG BASE_IMAGE=quay.io/centos/centos:stream9
-ARG PHP_VERSION=7.4
+ARG PHP_VERSION=8.3
 
 FROM ${BASE_IMAGE}
 SHELL ["/bin/bash", "-euo", "pipefail", "-c"]
 
-# Base tools
-RUN dnf -y update-minimal --security --sec-severity=Important --sec-severity=Critical || true \
- && dnf -y install dnf-plugins-core yum-utils \
-                  gcc python3 python3-pip python3-devel procps-ng \
-                  ca-certificates httpd nginx mysql-server \
- && dnf -y clean all
 
-# Add Remi and switch PHP stream BEFORE installing any php-* packages
+# Remi repo + chosen PHP stream
 ARG PHP_VERSION
-RUN dnf -y install https://rpms.remirepo.net/enterprise/remi-release-9.rpm \
- && dnf -y module reset php \
- && dnf -y module enable php:remi-${PHP_VERSION}
+RUN dnf -y install https://rpms.remirepo.net/enterprise/remi-release-9.rpm 
+RUN yum install -y yum-utils gcc python3-devel httpd
+RUN dnf --assumeyes module reset php
+RUN dnf --assumeyes --nogpgcheck module install php:remi-${PHP_VERSION}
+RUN dnf --assumeyes install php-pdo
+RUN dnf --assumeyes install php-mysqlnd
+RUN yum install -y mod_php nginx php-fpm procps-ng mysql-server
 
-# Safety: if something dragged in AppStream PHP, purge it first
-RUN dnf -y remove 'php*' || true
 
-# Now install PHP from the selected Remi stream.
-# --allowerasing replaces any lingering 8.x deps with the target stream.
-RUN dnf -y install --setopt=install_weak_deps=False --allowerasing \
-        php php-cli php-common php-pdo php-mysqlnd php-fpm \
-    || (dnf -y install --setopt=install_weak_deps=False --allowerasing \
-        php-cli php-common php-pdo php-mysqlnd php-fpm && true) \
- && php -v \
- && dnf -y clean all
-
-# Python libs for your test harness
+# Python deps used by your test harness
 RUN python3 -m pip install --no-cache-dir --upgrade pip \
  && python3 -m pip install --no-cache-dir flask requests psutil
 
+# Quality-of-life
+ENV TZ=Etc/UTC
 WORKDIR /work
 CMD ["bash"]
