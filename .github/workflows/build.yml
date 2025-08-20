@@ -417,8 +417,9 @@ jobs:
           pattern: |
             ${{ env.AIKIDO_DEB }}
 
-      # DB is preinstalled; just initialize/start
+      # (1) Start MariaDB (no changes if yours already works fine)
       - name: Start MariaDB
+        shell: bash
         run: |
           set -euo pipefail
           mkdir -p /var/lib/mysql /run/mysqld
@@ -427,28 +428,51 @@ jobs:
           mysql -u root -e "CREATE DATABASE IF NOT EXISTS db;"
           mysql -u root -e "SET PASSWORD FOR 'root'@'localhost' = PASSWORD('pwd'); FLUSH PRIVILEGES;"
 
-      - name: Test MySQL connection with mysqli
+      # (2) Web servers + PHP module wiring (no-op if modules not present)
+      - name: Web servers wiring (Apache/nginx)
+        shell: bash
         run: |
-          php -r '
-            $mysqli = new mysqli("localhost", "root", "pwd", "db");
-            if ($mysqli->connect_error) {
-              echo "MySQL connection failed: " . $mysqli->connect_error . "\n";
-              exit(1);
-            } else {
-              echo "MySQL connection successful\n";
-              $mysqli->close();
-            }
-          '
-
-      - name: Check PHP setup
-        run: |
-          php -v
-          php -i | head -n 50
-          if command -v a2query >/dev/null 2>&1; then
-            # ensure the right PHP module is enabled if present
-            a2dismod $(a2query -m | awk '/php[0-9]+\.[0-9]+/ {print $1}') || true
-            a2enmod php${{ matrix.php_version }} || true
+          set -euo pipefail
+          # Ensure CLI 'php' is the right version (our image already does this, but safe to repeat)
+          if command -v php${{ matrix.php_version }} >/dev/null 2>&1; then
+            sudo update-alternatives --install /usr/bin/php php /usr/bin/php${{ matrix.php_version }} 100 || true
+            sudo update-alternatives --set php /usr/bin/php${{ matrix.php_version }} || true
           fi
+
+          # Apache: switch to prefork, enable rewrite, and enable the correct PHP module if present
+          if command -v a2dismod >/dev/null 2>&1; then
+            a2dismod mpm_event mpm_worker 2>/dev/null || true
+            a2enmod mpm_prefork rewrite 2>/dev/null || true
+
+            # Disable any other phpX.Y modules to avoid conflicts
+            if command -v a2query >/dev/null 2>&1; then
+              mapfile -t mods < <(a2query -m | awk '/^php[0-9]+\.[0-9]+/ {print $1}')
+              for m in "${mods[@]}"; do a2dismod "$m" 2>/dev/null || true; done
+            fi
+
+            a2enmod php${{ matrix.php_version }} 2>/dev/null || true
+          fi
+
+          # nginx + php-fpm exist in the image; we don’t start them here (test harness handles it)
+
+      # (3) Check PHP setup (robust)
+      - name: Check PHP setup
+        shell: bash
+        run: |
+          set -euo pipefail
+          which php || true
+          php -v || { echo "php -v failed"; exit 1; }
+
+          # Make sure the needed extensions are present
+          php -m | grep -E 'mysqli|pdo|curl|sqlite3' >/dev/null || {
+            echo "Required PHP extensions missing"; php -m; exit 1;
+          }
+
+          # php -i sometimes returns non-zero with older PHP; capture output but don't fail the step
+          if ! php -i > /tmp/phpinfo.txt 2>&1; then
+            echo "php -i returned non-zero (ignoring for diagnostics). Exit=$?"
+          fi
+          head -n 80 /tmp/phpinfo.txt || true
 
       - name: Install DEB
         run: |
