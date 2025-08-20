@@ -20,6 +20,10 @@ jobs:
       fail-fast: false
     env:
       GOTOOLCHAIN: local
+    defaults:
+      run:
+        shell: bash
+     
     
     steps:
     - name: Checkout repository
