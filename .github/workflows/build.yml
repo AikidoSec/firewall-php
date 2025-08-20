@@ -23,7 +23,6 @@ jobs:
     defaults:
       run:
         shell: bash
-     
     
     steps:
     - name: Checkout repository
@@ -38,6 +37,7 @@ jobs:
         echo "$AIKIDO_VERSION"
         echo "AIKIDO_VERSION=$AIKIDO_VERSION" >> $GITHUB_ENV
         echo "AIKIDO_INTERNALS_REPO=https://api.github.com/repos/AikidoSec/zen-internals" >> $GITHUB_ENV
+        git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
     - name: Build Aikido Agent
       run: |
