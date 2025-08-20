@@ -45,7 +45,7 @@ jobs:
             PHP_VERSION=${{ matrix.php_version }}
             PHP_SRC_REF=PHP-${{ matrix.php_version }}
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.php_version }}-amd64-${{ env.VERSION }}s
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.php_version }}-amd64-${{ env.VERSION }}
           cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:cache-${{ matrix.php_version }}-amd64-${{ env.VERSION }}
           cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:cache-${{ matrix.php_version }}-amd64-${{ env.VERSION }},mode=max
 
