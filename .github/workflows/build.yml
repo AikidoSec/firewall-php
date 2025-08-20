@@ -305,7 +305,7 @@ jobs:
           server: ['nginx-php-fpm','apache-mod-php','php-built-in']
           os: ['ubuntu-24.04','ubuntu-24.04-arm']
         fail-fast: false
-        
+
       steps:
       - name: Checkout repository
         uses: actions/checkout@v4
