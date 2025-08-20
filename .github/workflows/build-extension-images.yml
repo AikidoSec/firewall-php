@@ -10,6 +10,7 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: aikidosec/firewall-php-build-extension
+  VERSION: v1
 
 jobs:
   # ---- amd64 native builds on x64 runner ----
@@ -44,9 +45,9 @@ jobs:
             PHP_VERSION=${{ matrix.php_version }}
             PHP_SRC_REF=PHP-${{ matrix.php_version }}
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.php_version }}-amd64
-          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:cache-${{ matrix.php_version }}-amd64
-          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:cache-${{ matrix.php_version }}-amd64,mode=max
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.php_version }}-amd64-${{ env.VERSION }}s
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:cache-${{ matrix.php_version }}-amd64-${{ env.VERSION }}
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:cache-${{ matrix.php_version }}-amd64-${{ env.VERSION }},mode=max
 
   # ---- arm64 native builds on ARM runner ----
   build-arm64:
@@ -80,9 +81,9 @@ jobs:
             PHP_VERSION=${{ matrix.php_version }}
             PHP_SRC_REF=PHP-${{ matrix.php_version }}
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.php_version }}-arm64
-          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:cache-${{ matrix.php_version }}-arm64
-          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:cache-${{ matrix.php_version }}-arm64,mode=max
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.php_version }}-arm64-${{ env.VERSION }}
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:cache-${{ matrix.php_version }}-arm64-${{ env.VERSION }}
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:cache-${{ matrix.php_version }}-arm64-${{ env.VERSION }},mode=max
 
 
   # ---- stitch images into multi-arch manifests ----
@@ -107,8 +108,8 @@ jobs:
       - name: Create multi-arch manifest
         run: |
           IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          V=${{ matrix.php_version }}
+          V=${{ matrix.php_version }}-${{ env.VERSION }}
           docker buildx imagetools create \
             --tag ${IMAGE}:${V} \
-            ${IMAGE}:${V}-amd64 \
-            ${IMAGE}:${V}-arm64
+            ${IMAGE}:${V}-amd64-${{ env.VERSION }} \
+            ${IMAGE}:${V}-arm64-${{ env.VERSION }}

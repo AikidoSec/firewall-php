@@ -85,7 +85,7 @@ jobs:
         php_version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4']
         os: [ ubuntu-24.04, ubuntu-24.04-arm ]
       fail-fast: false
-    container: ghcr.io/aikidosec/firewall-php-build-extension:${{ matrix.php_version }}
+    container: ghcr.io/aikidosec/firewall-php-build-extension:${{ matrix.php_version }}-v1
 
 
     steps:
