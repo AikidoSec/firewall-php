@@ -323,6 +323,15 @@ jobs:
           which php-fpm && php-fpm -v || true
           rpm -qa | grep -E '^php(-|$)' | sort
 
+      - name: Start MySQL
+        run: |
+          mkdir -p /var/lib/mysql
+           mysqld --initialize-insecure --datadir=/var/lib/mysql
+          mysqld -u root --datadir=/var/lib/mysql --socket=/var/lib/mysql/mysql.sock &
+          sleep 10
+          mysql -u root -e "CREATE DATABASE IF NOT EXISTS db;"
+          mysql -u root -e "ALTER USER 'root'@'localhost' IDENTIFIED BY 'pwd';"
+
       - name: Test MySQL connection with mysqli
         run: |
           php -r '

@@ -37,14 +37,5 @@ RUN dnf -y install --setopt=install_weak_deps=False --allowerasing \
 RUN python3 -m pip install --no-cache-dir --upgrade pip \
  && python3 -m pip install --no-cache-dir flask requests psutil
 
-
-# Setup MySQL
-RUN mkdir -p /var/lib/mysql 
-RUN mysqld --initialize-insecure --datadir=/var/lib/mysql \
- && mysqld -u root --datadir=/var/lib/mysql --socket=/var/lib/mysql/mysql.sock & \
- && sleep 10 \
- && mysql -u root -e "CREATE DATABASE IF NOT EXISTS db;" \
- && mysql -u root -e "ALTER USER 'root'@'localhost' IDENTIFIED BY 'pwd';"
-
 WORKDIR /work
 CMD ["bash"]
