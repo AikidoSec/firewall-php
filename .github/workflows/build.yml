@@ -294,41 +294,34 @@ jobs:
             ${{ env.AIKIDO_ARTIFACT }}
 
   test_php_centos:
-    runs-on: ${{ matrix.os }}
-    container:
-      image: quay.io/centos/centos:stream9
-      options: --privileged
-    needs: [ build_rpm ]
-    strategy:
-      matrix:
-        php_version: ['7.4', '8.0', '8.1', '8.2', '8.3', '8.4']
-        server: ['nginx-php-fpm', 'apache-mod-php', 'php-built-in']
-        os: ['ubuntu-24.04', 'ubuntu-24.04-arm']
-      fail-fast: false
-    steps:
+      runs-on: ${{ matrix.os }}
+      container:
+        image: ghcr.io/aikidosec/firewall-php-test-centos:${{ matrix.php_version }}-v1
+        options: --privileged
+      needs: [ build_rpm ]
+      strategy:
+        matrix:
+          php_version: ['7.4','8.0','8.1','8.2','8.3','8.4']
+          server: ['nginx-php-fpm','apache-mod-php','php-built-in']
+          os: ['ubuntu-24.04','ubuntu-24.04-arm']
+        fail-fast: false
+      defaults:
+        run:
+          shell: bash
+
+      steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup
+      - name: Setup (sanity only — everything is preinstalled)
         run: |
           uname -a
           cat /etc/centos-release
-          yum install -y yum-utils
-          dnf install -y https://rpms.remirepo.net/enterprise/remi-release-9.rpm
-          yum install -y gcc
-          yum install -y python3-devel
-          pip3 install flask
-          pip3 install requests
-          pip3 install psutil
-          yum install -y httpd
-          dnf --assumeyes module reset php
-          dnf --assumeyes --nogpgcheck module install php:remi-${{ matrix.php_version }}
-          dnf --assumeyes install php-pdo
-          dnf --assumeyes install php-mysqlnd
-          yum install -y mod_php
-          yum install -y nginx
-          yum install -y php-fpm
-          dnf install -y procps-ng
+          php -v
+          httpd -v || true
+          nginx -v || true
+          which php-fpm && php-fpm -v || true
+          rpm -qa | grep -E '^php(-|$)' | sort
 
       - name: Install and start MySQL
         run: |
