@@ -11,8 +11,10 @@ SHELL ["/bin/bash", "-euo", "pipefail", "-c"]
 
 # Remi repo + chosen PHP stream
 ARG PHP_VERSION
+RUN yum install -y yum-utils
 RUN dnf -y install https://rpms.remirepo.net/enterprise/remi-release-9.rpm 
-RUN yum install -y yum-utils gcc python3-devel httpd
+RUN yum install -y gcc 
+RUN yum install -y python3-devel
 RUN dnf --assumeyes module reset php
 RUN dnf --assumeyes --nogpgcheck module install php:remi-${PHP_VERSION}
 RUN dnf --assumeyes install php-pdo
@@ -24,6 +26,7 @@ RUN yum install -y mod_php nginx php-fpm procps-ng mysql-server
 RUN python3 -m pip install --no-cache-dir --upgrade pip \
  && python3 -m pip install --no-cache-dir flask requests psutil
 
+ RUN yum install -y httpd
 # Quality-of-life
 ENV TZ=Etc/UTC
 WORKDIR /work
