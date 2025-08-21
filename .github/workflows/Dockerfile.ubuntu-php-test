@@ -13,7 +13,7 @@ RUN apt-get update && \
     ln -fs /usr/share/zoneinfo/${TZ} /etc/localtime && \
     dpkg-reconfigure -f noninteractive tzdata
 
-# PHP (all versions via Ondřej Surý PPA)
+
 RUN add-apt-repository -y ppa:ondrej/php && \
     apt-get update && \
     apt-get install -y --no-install-recommends \
@@ -26,7 +26,10 @@ RUN add-apt-repository -y ppa:ondrej/php && \
       php${PHP_VERSION}-mbstring \
       php${PHP_VERSION}-xml \
       php${PHP_VERSION}-zip \
-      libapache2-mod-php${PHP_VERSION}
+      php${PHP_VERSION}-cgi \
+      libapache2-mod-php${PHP_VERSION} \
+      libapache2-mod-fcgid \
+      libfcgi-bin
 
 # Clean apt caches
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
