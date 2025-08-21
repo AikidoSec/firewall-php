@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.7
 
 ARG BASE_IMAGE=ubuntu:24.04
-ARG PHP_VERSION=8.4
+ARG PHP_VERSION=8.3
 # Default ref is PHP-${PHP_VERSION} but can be overridden if needed
 ARG PHP_SRC_REF=PHP-${PHP_VERSION}
 
@@ -103,13 +103,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     software-properties-common ca-certificates lsb-release apt-transport-https \
  && add-apt-repository ppa:ondrej/php -y \
  && apt-get update \
- && apt-get install -y --no-install-recommends \
-    php${PHP_VERSION} \
-    php${PHP_VERSION}-mysqli \
-    php${PHP_VERSION}-pdo \
+ && apt-get install -y libapache2-mod-php${PHP_VERSION} \
  && a2enmod php${PHP_VERSION} \
+ && apt-get install -y php${PHP_VERSION}-mysqli \
+ && apt-get install -y php${PHP_VERSION}-pdo \
  && php -i
-
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 python3-flask python3-pandas python3-psutil python3-requests \
