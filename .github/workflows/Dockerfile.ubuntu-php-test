@@ -1,119 +1,103 @@
 # syntax=docker/dockerfile:1.7
+FROM ubuntu:24.04
 
-ARG BASE_IMAGE=ubuntu:24.04
-ARG PHP_VERSION=8.3
-# Default ref is PHP-${PHP_VERSION} but can be overridden if needed
-ARG PHP_SRC_REF=PHP-${PHP_VERSION}
+ARG PHP_VERSION=8.2
+ENV DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC
 
-############################
-# Base: common OS setup
-############################
-FROM ${BASE_IMAGE} AS base
-SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
+# Base OS + tools
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+      tzdata ca-certificates curl git gnupg lsb-release software-properties-common \
+      python3 python3-pip python3-flask python3-pandas python3-psutil python3-requests \
+      nginx apache2 mariadb-server && \
+    ln -fs /usr/share/zoneinfo/${TZ} /etc/localtime && \
+    dpkg-reconfigure -f noninteractive tzdata
 
-ENV DEBIAN_FRONTEND=noninteractive \
-    TZ=Etc/UTC \
-    LC_ALL=C.UTF-8 \
-    LANG=C.UTF-8 \
-    LANGUAGE=C.UTF-8
+# PHP (all versions via Ondřej Surý PPA)
+RUN add-apt-repository -y ppa:ondrej/php && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+      php${PHP_VERSION} \
+      php${PHP_VERSION}-fpm \
+      php${PHP_VERSION}-curl \
+      php${PHP_VERSION}-sqlite3 \
+      php${PHP_VERSION}-mysqli \
+      php${PHP_VERSION}-mysql \
+      php${PHP_VERSION}-mbstring \
+      php${PHP_VERSION}-xml \
+      php${PHP_VERSION}-zip \
+      libapache2-mod-php${PHP_VERSION}
 
-RUN apt-get update \
- && apt-get install -y --no-install-recommends tzdata ca-certificates git wget curl xz-utils \
- && ln -fs /usr/share/zoneinfo/${TZ} /etc/localtime \
- && echo "${TZ}" > /etc/timezone \
- && dpkg-reconfigure -f noninteractive tzdata \
- && update-ca-certificates \
- && git config --global http.sslCAInfo /etc/ssl/certs/ca-certificates.crt \
- && git config --global http.sslVerify true \
- && rm -rf /var/lib/apt/lists/*
+# Clean apt caches
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
-############################
-# Builder: toolchain + dev libs
-############################
-FROM base AS build-deps
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential autoconf bison re2c pkg-config \
-    libxml2-dev libsqlite3-dev libcurl4-openssl-dev libssl-dev \
-    libzip-dev libonig-dev libjpeg-dev libpng-dev libwebp-dev \
-    libicu-dev libreadline-dev libxslt1-dev default-libmysqlclient-dev \
-    wget tar \
- && rm -rf /var/lib/apt/lists/*
+# Nginx default fastcgi config for php-fpm
+RUN mkdir -p /etc/nginx/snippets && \
+    printf '%s\n' \
+      'fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;' \
+      'include fastcgi_params;' \
+    > /etc/nginx/snippets/fastcgi-php.conf && \
+    printf '%s\n' \
+      'server {' \
+      '  listen 80 default_server;' \
+      '  root /var/www/html;' \
+      '  index index.php index.html;' \
+      '  location / { try_files $uri /index.php$is_args$args; }' \
+      '  location ~ \.php$ {' \
+      '    include snippets/fastcgi-php.conf;' \
+      "    fastcgi_pass unix:/run/php/php${PHP_VERSION}-fpm.sock;" \
+      '  }' \
+      '}' \
+    > /etc/nginx/sites-available/default
 
-############################
-# Fetch php-src
-############################
-FROM build-deps AS php-src
-ARG PHP_SRC_REF
-WORKDIR /usr/src
-RUN git clone --depth 1 --branch "${PHP_SRC_REF}" https://github.com/php/php-src.git
-WORKDIR /usr/src/php-src
-RUN ./buildconf --force
+# Apache: prefer prefork + mod_php for compatibility (disable event/worker)
+RUN a2dismod mpm_event || true && a2dismod mpm_worker || true && \
+    a2enmod mpm_prefork rewrite && \
+    a2enmod php${PHP_VERSION}
 
-############################
-# Build PHP
-############################
-FROM php-src AS php-build
-# Configure flags mirror your workflow; adjust as needed
-RUN ./configure \
-      --prefix=/usr/local \
-      --with-config-file-path=/usr/local/lib \
-      --with-config-file-scan-dir=/usr/local/etc/php/conf.d \
-      --enable-mbstring \
-      --enable-pcntl \
-      --enable-intl \
-      --with-curl \
-      --with-mysqli \
-      --with-sqlite3 \
-      --with-openssl \
-      --with-zlib \
-      --with-zip \
- && make -j"$(nproc)" \
- && make install \
- && strip /usr/local/bin/php || true
+# Helper scripts used inside the CI job
+# 1) init-mysql: start mysqld and prep a test DB and root password (matches your job)
+# 2) select-php-apache: disable other PHP mods and enable the requested version
+COPY <<'BASH' /usr/local/bin/init-mysql
+#!/usr/bin/env bash
+set -euo pipefail
+mkdir -p /var/lib/mysql /run/mysqld
+chown -R mysql:mysql /var/lib/mysql /run/mysqld
+# Initialize DB if missing
+if [ ! -d /var/lib/mysql/mysql ]; then
+  mysqld --initialize-insecure --user=mysql --datadir=/var/lib/mysql
+fi
+# Start mysqld in background for setup
+mysqld --user=mysql --datadir=/var/lib/mysql --socket=/run/mysqld/mysqld.sock &
+MYSQL_PID=$!
+# wait for socket
+for i in {1..30}; do
+  mysqladmin ping --silent && break || sleep 1
+done
+# Create db and set root password like your workflow
+mysql -u root -e "CREATE DATABASE IF NOT EXISTS db;"
+mysql -u root -e "ALTER USER 'root'@'localhost' IDENTIFIED BY 'pwd'; FLUSH PRIVILEGES;"
+wait $MYSQL_PID || true
+BASH
+RUN chmod +x /usr/local/bin/init-mysql
 
-############################
-# Final: DEV image (keeps toolchain so you can phpize/build extensions fast)
-############################
-FROM build-deps AS dev
-ARG PHP_VERSION
-COPY --from=php-build /usr/local /usr/local
-# Sanity check and helpful defaults
-RUN php -v && php -m | grep -E 'curl|mysqli|sqlite3' >/dev/null
-ENV PATH="/usr/local/bin:${PATH}"
-# phpize is available from the source build in /usr/local/bin
-# Create extension config dir
-RUN mkdir -p /usr/local/etc/php/conf.d
+COPY <<'BASH' /usr/local/bin/select-php-apache
+#!/usr/bin/env bash
+set -euo pipefail
+PHPV="${1:-${PHP_VERSION}}"
+# Disable any other php modules if present
+for v in 7.2 7.3 7.4 8.0 8.1 8.2 8.3 8.4; do
+  if a2query -m "php${v}" >/dev/null 2>&1; then
+    a2dismod "php${v}" || true
+  fi
+done
+a2enmod "php${PHPV}" || true
+php -v
+BASH
+RUN chmod +x /usr/local/bin/select-php-apache
 
+# Default workdir where your repo will be checked out
+WORKDIR /workspace
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    nginx php-fpm \
- && rm -rf /var/lib/apt/lists/*
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    apache2 \
- && rm -rf /var/lib/apt/lists/*
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    mariadb-server \
- && mkdir -p /var/lib/mysql \
- && mkdir -p /run/mysqld
-
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    software-properties-common ca-certificates lsb-release apt-transport-https \
- && add-apt-repository ppa:ondrej/php -y \
- && apt-get update \
- && apt-get install -y libapache2-mod-php${PHP_VERSION} \
- && a2enmod php${PHP_VERSION} \
- && apt-get install -y php${PHP_VERSION}-mysqli \
- && apt-get install -y php${PHP_VERSION}-pdo \
- && php -i
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3 python3-flask python3-pandas python3-psutil python3-requests \
- && rm -rf /var/lib/apt/lists/*
-
-
-WORKDIR /work
-CMD ["php", "-v"]
-
+# No long-running service by default; CI steps will start what they need.
+CMD ["bash", "-lc", "php -v && nginx -v && apache2 -v && mysqld --version"]
