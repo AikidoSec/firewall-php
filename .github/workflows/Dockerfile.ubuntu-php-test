@@ -1,103 +1,117 @@
-FROM ubuntu:24.04 AS build-deps
+# syntax=docker/dockerfile:1.7
 
-ENV DEBIAN_FRONTEND=noninteractive
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates curl git pkg-config build-essential \
-    autoconf automake libtool bison re2c \
-    # Core PHP deps
-    libxml2-dev libsqlite3-dev libssl-dev zlib1g-dev libzip-dev \
-    libcurl4-openssl-dev libreadline-dev libicu-dev \
-    # For PHP ≤7.x mbstring needs oniguruma:
-    libonig-dev \
-    # GD (often useful; safe to have)
-    libjpeg-dev libpng-dev libwebp-dev \
-    # SAPI integrations
-    apache2-dev \
+ARG BASE_IMAGE=ubuntu:24.04
+ARG PHP_VERSION=8.3
+# Default ref is PHP-${PHP_VERSION} but can be overridden if needed
+ARG PHP_SRC_REF=PHP-${PHP_VERSION}
+
+############################
+# Base: common OS setup
+############################
+FROM ${BASE_IMAGE} AS base
+SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    TZ=Etc/UTC \
+    LC_ALL=C.UTF-8 \
+    LANG=C.UTF-8 \
+    LANGUAGE=C.UTF-8
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends tzdata ca-certificates git wget curl xz-utils \
+ && ln -fs /usr/share/zoneinfo/${TZ} /etc/localtime \
+ && echo "${TZ}" > /etc/timezone \
+ && dpkg-reconfigure -f noninteractive tzdata \
+ && update-ca-certificates \
+ && git config --global http.sslCAInfo /etc/ssl/certs/ca-certificates.crt \
+ && git config --global http.sslVerify true \
  && rm -rf /var/lib/apt/lists/*
 
- 
+############################
+# Builder: toolchain + dev libs
+############################
+FROM base AS build-deps
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential autoconf bison re2c pkg-config \
+    libxml2-dev libsqlite3-dev libcurl4-openssl-dev libssl-dev \
+    libzip-dev libonig-dev libjpeg-dev libpng-dev libwebp-dev \
+    libicu-dev libreadline-dev libxslt1-dev default-libmysqlclient-dev \
+    wget tar \
+ && rm -rf /var/lib/apt/lists/*
+
+############################
+# Fetch php-src
+############################
 FROM build-deps AS php-src
-ARG PHP_SRC_REF=php-8.3.10
+ARG PHP_SRC_REF
 WORKDIR /usr/src
 RUN git clone --depth 1 --branch "${PHP_SRC_REF}" https://github.com/php/php-src.git
 WORKDIR /usr/src/php-src
 RUN ./buildconf --force
 
-# ============================================================
-# Build PHP (CLI + FPM + Apache module), common extensions
-# ============================================================
+############################
+# Build PHP
+############################
 FROM php-src AS php-build
-
-# Configure flags roughly mirror what your tests need:
-# - CLI (for built-in server)  - always present
-# - FPM (for nginx)            - --enable-fpm
-# - Apache module              - --with-apxs2
-# - Extensions: curl, intl, mbstring, mysqli, pdo_mysql, zip, opcache, etc.
+# Configure flags mirror your workflow; adjust as needed
 RUN ./configure \
       --prefix=/usr/local \
-      --with-config-file-path=/usr/local/etc \
+      --with-config-file-path=/usr/local/lib \
       --with-config-file-scan-dir=/usr/local/etc/php/conf.d \
-      --enable-cli \
-      --enable-fpm \
-      --with-fpm-user=www-data --with-fpm-group=www-data \
-      --with-apxs2=/usr/bin/apxs2 \
-      --enable-opcache \
       --enable-mbstring \
       --enable-pcntl \
       --enable-intl \
       --with-curl \
+      --with-mysqli \
+      --with-sqlite3 \
+      --with-openssl \
       --with-zlib \
       --with-zip \
-      --with-openssl \
-      --with-mysqli \
-      --with-pdo-mysql \
-      --with-readline \
-      --with-jpeg \
-      --with-webp \
-      --with-png \
-  && make -j"$(nproc)" \
-  && make install \
-  && strip /usr/local/bin/php || true \
-  && strip /usr/local/sbin/php-fpm || true \
-  && install -d /usr/local/etc/php/conf.d
+ && make -j"$(nproc)" \
+ && make install \
+ && strip /usr/local/bin/php || true
 
-# ============================================================
-# Runtime image with servers, DB, Python deps, and PHP installed
-# ============================================================
-FROM ubuntu:24.04 AS runtime
+############################
+# Final: DEV image (keeps toolchain so you can phpize/build extensions fast)
+############################
+FROM build-deps AS dev
+ARG PHP_VERSION
+COPY --from=php-build /usr/local /usr/local
+# Sanity check and helpful defaults
+RUN php -v && php -m | grep -E 'curl|mysqli|sqlite3' >/dev/null
+ENV PATH="/usr/local/bin:${PATH}"
+# phpize is available from the source build in /usr/local/bin
+# Create extension config dir
+RUN mkdir -p /usr/local/etc/php/conf.d
 
-ENV DEBIAN_FRONTEND=noninteractive
-# Core utils + servers + DB + Python libs used by tests
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    tzdata gnupg ca-certificates curl git procps lsb-release \
-    # Web servers
-    nginx apache2 \
-    # DB
+    nginx php-fpm \
+ && rm -rf /var/lib/apt/lists/*
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    apache2 \
+ && rm -rf /var/lib/apt/lists/*
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
     mariadb-server \
-    # For your "Check PHP setup" step
-    apache2-bin \
-    # Python deps in the workflow
+ && mkdir -p /var/lib/mysql \
+ && mkdir -p /run/mysqld
+
+ 
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libapache2-mod-php${PHP_VERSION} \
+ && a2enmod php${PHP_VERSION} \
+ && apt-get install -y php${PHP_VERSION}-mysqli \
+ && apt-get install -y php${PHP_VERSION}-pdo \
+ && rm -rf /var/lib/apt/lists/*
+
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 python3-flask python3-pandas python3-psutil python3-requests \
-  && rm -rf /var/lib/apt/lists/*
+ && rm -rf /var/lib/apt/lists/*
 
-# Timezone config (your CI steps set UTC explicitly)
-RUN ln -fs /usr/share/zoneinfo/Etc/UTC /etc/localtime && \
-    echo "Etc/UTC" > /etc/timezone && \
-    dpkg-reconfigure -f noninteractive tzdata
 
-# Copy PHP built artifacts
-COPY --from=php-build /usr/local/ /usr/local/
+WORKDIR /work
+CMD ["php", "-v"]
 
-# Make sure apache sees libphp*.so from our build (apxs2 installed it under /usr/lib/apache2/modules)
-# Enable rewrite (your workflow does this), and leave MPM decisions to your steps.
-RUN a2enmod rewrite || true
-
-# Create directories MariaDB and php-fpm often expect
-RUN mkdir -p /var/lib/mysql /run/mysqld /var/www/html /usr/local/etc/php/conf.d
-
-# Minimal health helpers & defaults
-EXPOSE 80 9000
-WORKDIR /workspace
-
-# Default command: just a shell — your workflow will run the same commands you already have
-CMD ["bash"]
