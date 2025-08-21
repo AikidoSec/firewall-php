@@ -90,17 +90,31 @@ RUN mkdir -p /usr/local/bin /var/lib/mysql /run/mysqld && \
     > /usr/local/bin/start-mariadb && \
     chmod +x /usr/local/bin/start-mariadb
 
-# Helper: switch Apache PHP module safely (useful if you extend/rerun)
+# Robust Apache PHP switcher (handles module names, MPM, restart, verification)
 RUN printf '%s\n' '#!/usr/bin/env bash' \
       'set -euo pipefail' \
-      'ver="${1:-$PHP_VERSION}"' \
-      'for m in php7.2 php7.3 php7.4 php8.0 php8.1 php8.2 php8.3 php8.4; do' \
-      '  a2query -m "$m" >/dev/null 2>&1 && a2dismod "$m" || true' \
+      'ver="${1:-${PHP_VERSION:-8.2}}"' \
+      'a2dismod mpm_event >/dev/null 2>&1 || true' \
+      'a2dismod mpm_worker >/dev/null 2>&1 || true' \
+      'a2enmod  mpm_prefork >/dev/null 2>&1 || true' \
+      'if ! a2query -m "php${ver}" >/dev/null 2>&1; then' \
+      '  apt-get update && apt-get install -y --no-install-recommends "libapache2-mod-php${ver}"' \
+      'fi' \
+      'for m in php5 php7 php7.0 php7.1 php7.2 php7.3 php7.4 php8 php8.0 php8.1 php8.2 php8.3 php8.4; do' \
+      '  a2query -m "$m" >/dev/null 2>&1 && a2dismod "$m" >/dev/null 2>&1 || true' \
       'done' \
       'a2enmod "php${ver}"' \
-      'apache2ctl -M | grep -q "php${ver}_module" && echo "Apache now using PHP ${ver}" || (echo "Failed to enable php${ver} for Apache" && exit 1)' \
+      'apache2ctl -t' \
+      'apache2ctl -k graceful || apache2ctl -k restart' \
+      'if ! apache2ctl -M 2>/dev/null | grep -Eiq "php[0-9]*_module"; then' \
+      '  echo "Apache does not have a PHP module loaded:"' \
+      '  apache2ctl -M || true' \
+      '  exit 1' \
+      'fi' \
+      'echo "Apache now using mod_php for PHP ${ver}"' \
     > /usr/local/bin/a2-switch-php && \
     chmod +x /usr/local/bin/a2-switch-php
+
 
 # Default workdir (matches GH Actions checkout)
 WORKDIR /work
