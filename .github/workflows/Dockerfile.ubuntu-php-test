@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.7
 FROM ubuntu:24.04
 
-ARG PHP_VERSION=8.2
+ARG PHP_VERSION=7.2
 ENV DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC
 
 # Base OS + tools
@@ -35,6 +35,7 @@ RUN add-apt-repository -y ppa:ondrej/php && \
 WORKDIR /workspace
 
 RUN mkdir -p /var/lib/mysql /run/mysqld
+RUN php -m | grep -E 'curl|mysqli|sqlite3' >/dev/null
 
 # No long-running service by default; CI steps will start what they need.
 CMD ["bash", "-lc", "php -v && nginx -v && apache2 -v && mysqld --version"]
