@@ -100,10 +100,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
  && mkdir -p /run/mysqld
 
 
-# RUN apt-get update && apt-get install -y --no-install-recommends \
-#     software-properties-common ca-certificates lsb-release apt-transport-https \
-#  && add-apt-repository ppa:ondrej/php -y \
-#  && apt-get update \
+RUN apt-get update && apt-get install -y --no-install-recommends \
+   software-properties-common ca-certificates lsb-release apt-transport-https \
+    && add-apt-repository ppa:ondrej/php -y \
+    && apt-get update 
 #  && apt-get install -y libapache2-mod-php${PHP_VERSION} \
 #  && a2enmod php${PHP_VERSION} \
 #  && apt-get install -y php${PHP_VERSION}-mysqli \
