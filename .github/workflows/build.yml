@@ -413,6 +413,14 @@ jobs:
           pattern: |
             ${{ env.AIKIDO_DEB }}
 
+      - name: Setup Apache (mod_php)
+        run: |
+          a2dismod mpm_event
+          a2dismod mpm_worker
+          a2enmod mpm_prefork
+          a2enmod rewrite
+
+
       # (1) Start MariaDB (no changes if yours already works fine)
       - name: Start MariaDB
         shell: bash
