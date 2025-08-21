@@ -59,15 +59,15 @@ RUN ./configure \
       --with-config-file-path=/usr/local/lib \
       --with-config-file-scan-dir=/usr/local/etc/php/conf.d \
       --enable-mbstring \
-      --enable-pcntl \
-      --enable-intl \
-      --enable-cli \
-      --with-curl \
-      --with-mysqli \
-      --with-sqlite3 \
-      --with-openssl \
-      --with-zlib \
-      --with-zip \
+       --enable-pcntl \
+      # --enable-intl \
+       --enable-cli \
+       --with-curl \
+       --with-mysqli \
+        --with-sqlite3 \
+    #    --with-openssl \
+       --with-zlib \
+       --with-zip \
  && make -j"$(nproc)" \
  && make install \
  && strip /usr/local/bin/php || true
