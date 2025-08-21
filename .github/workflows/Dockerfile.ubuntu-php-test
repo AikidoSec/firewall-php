@@ -100,18 +100,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
  && mkdir -p /run/mysqld
 
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    software-properties-common ca-certificates lsb-release apt-transport-https \
- && add-apt-repository ppa:ondrej/php -y \
- && apt-get update \
- && apt-get install -y libapache2-mod-php${PHP_VERSION} \
- && a2enmod php${PHP_VERSION} \
- && apt-get install -y php${PHP_VERSION}-mysqli \
- && apt-get install -y php${PHP_VERSION}-pdo \
- && apt-get install -y php${PHP_VERSION}-cgi \
- && apt-get install -y libapache2-mod-fcgid \
- && apt-get install -y libfcgi-bin \    
- && php -i
+# RUN apt-get update && apt-get install -y --no-install-recommends \
+#     software-properties-common ca-certificates lsb-release apt-transport-https \
+#  && add-apt-repository ppa:ondrej/php -y \
+#  && apt-get update \
+#  && apt-get install -y libapache2-mod-php${PHP_VERSION} \
+#  && a2enmod php${PHP_VERSION} \
+#  && apt-get install -y php${PHP_VERSION}-mysqli \
+#  && apt-get install -y php${PHP_VERSION}-pdo \
+#  && apt-get install -y php${PHP_VERSION}-cgi \
+#  && apt-get install -y libapache2-mod-fcgid \
+#  && apt-get install -y libfcgi-bin \    
+#  && php -i
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 python3-flask python3-pandas python3-psutil python3-requests \
