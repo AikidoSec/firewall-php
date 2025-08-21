@@ -399,7 +399,6 @@ jobs:
       - name: Set env
         run: |
           AIKIDO_VERSION=$(grep '#define PHP_AIKIDO_VERSION' lib/php-extension/include/php_aikido.h | awk -F'"' '{print $2}')
-          echo $AIKIDO_VERSION
           echo "AIKIDO_VERSION=$AIKIDO_VERSION" >> $GITHUB_ENV
           echo "AIKIDO_DEB=aikido-php-firewall.${{ env.ARCH }}.deb" >> $GITHUB_ENV
 
@@ -409,78 +408,19 @@ jobs:
           pattern: |
             ${{ env.AIKIDO_DEB }}
 
-      # - name: Setup nginx & php-fpm
-      #   run: |
-      #     DEBIAN_FRONTEND=noninteractive apt-get update
-      #     DEBIAN_FRONTEND=noninteractive apt-get install -y tzdata
-      #     ln -fs /usr/share/zoneinfo/Etc/UTC /etc/localtime
-      #     echo "Etc/UTC" > /etc/timezone
-      #     DEBIAN_FRONTEND=noninteractive dpkg-reconfigure -f noninteractive tzdata
-      #     apt-get install -y nginx php-fpm
-
-      # - name: Setup Apache (mod_php)
-      #   run: |
-      #     apt-get install -y apache2
-      #     a2dismod mpm_event
-      #     a2dismod mpm_worker
-      #     a2enmod mpm_prefork
-      #     a2enmod rewrite
-
-      # - name: Install MariaDB server
-      #   run: |
-      #     apt-get install -y mariadb-server
-      #     mkdir -p /var/lib/mysql
-      #     mkdir -p /run/mysqld
-      #     mysqld --user=root --datadir=/var/lib/mysql &
-      #     sleep 10
-      #     mysql -u root -e "CREATE DATABASE IF NOT EXISTS db;"
-      #     mysql -u root -e "SET PASSWORD FOR 'root'@'localhost' = PASSWORD('pwd'); FLUSH PRIVILEGES;"
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@27853eb8b46dc01c33bf9fef67d98df2683c3be2
-        with:
-          php-version: ${{ matrix.php_version }}
-          extensions: curl, sqlite3, mysqli
-          coverage: none
-
-      - name: Test MySQL connection with mysqli
+      # MariaDB startup compatible with your current approach
+      - name: Start MariaDB (background)
         run: |
-          php -r '
-           $mysqli = new mysqli("127.0.0.1", "root", "pwd", "db");
-            if ($mysqli->connect_error) {
-              echo "MySQL connection failed: " . $mysqli->connect_error . "\n";
-              exit(1);
-            } else {
-              echo "MySQL connection successful\n";
-              $mysqli->close();
-            }
-          '
+          start-mariadb &   # provided by the image
+          sleep 5
+          mysql -u root -ppwd -e "SELECT 1" || (echo "MySQL not up" && exit 1)
 
-      - name: Check PHP setup
+      # For Apache mod_php tests, ensure the right PHP module is active
+      - name: Ensure Apache uses PHP ${{ matrix.php_version }}
+        if: matrix.server == 'apache-mod-php'
         run: |
-          php_versions="php7.3 php7.4 php8.0 php8.1 php8.2 php8.3"
-          for version in $php_versions; do
-              if a2query -m "$version" > /dev/null 2>&1; then
-                  echo "Disabling $version..."
-                  a2dismod "$version"
-              else
-                  echo "$version is not installed."
-              fi
-          done
-          DEBIAN_FRONTEND=noninteractive apt-get update
-          DEBIAN_FRONTEND=noninteractive apt-get install -y tzdata
-          ln -fs /usr/share/zoneinfo/Etc/UTC /etc/localtime
-          echo "Etc/UTC" > /etc/timezone
-          DEBIAN_FRONTEND=noninteractive dpkg-reconfigure -f noninteractive tzdata
-          apt-get install -y libapache2-mod-php${{ matrix.php_version }}
-          a2enmod php${{ matrix.php_version }}
-          apt-get install -y php${{ matrix.php_version }}-mysqli
-          apt-get install -y php${{ matrix.php_version }}-pdo
-          php -i
-
-      # - name: Setup Python
-      #   run: |
-      #     apt-get install -y python3 python3-flask python3-pandas python3-psutil python3-requests
+          a2-switch-php ${{ matrix.php_version }}
+          apachectl -t
 
       - name: Install DEB
         run: |

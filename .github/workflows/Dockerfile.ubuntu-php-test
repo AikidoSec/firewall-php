@@ -1,123 +1,107 @@
 # syntax=docker/dockerfile:1.7
+FROM ubuntu:24.04
 
-ARG BASE_IMAGE=ubuntu:24.04
+ARG DEBIAN_FRONTEND=noninteractive
+# Accepts: 7.2, 7.3, 7.4, 8.0, 8.1, 8.2, 8.3, 8.4
 ARG PHP_VERSION=7.2
-# Default ref is PHP-${PHP_VERSION} but can be overridden if needed
-ARG PHP_SRC_REF=PHP-${PHP_VERSION}
 
-############################
-# Base: common OS setup
-############################
-FROM ${BASE_IMAGE} AS base
-SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
+# Keep PHP_VERSION visible at runtime too
+ENV PHP_VERSION=${PHP_VERSION}
 
-ENV DEBIAN_FRONTEND=noninteractive \
-    TZ=Etc/UTC \
-    LC_ALL=C.UTF-8 \
-    LANG=C.UTF-8 \
-    LANGUAGE=C.UTF-8
+# Base OS + tooling
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+      ca-certificates curl gnupg lsb-release tzdata locales \
+      software-properties-common apt-transport-https \
+      git make unzip xz-utils \
+      # web servers & DB (installed later after PPA)
+      && rm -rf /var/lib/apt/lists/*
 
-RUN apt-get update \
- && apt-get install -y --no-install-recommends tzdata ca-certificates git wget curl xz-utils \
- && ln -fs /usr/share/zoneinfo/${TZ} /etc/localtime \
- && echo "${TZ}" > /etc/timezone \
- && dpkg-reconfigure -f noninteractive tzdata \
- && update-ca-certificates \
- && git config --global http.sslCAInfo /etc/ssl/certs/ca-certificates.crt \
- && git config --global http.sslVerify true \
- && rm -rf /var/lib/apt/lists/*
+# Timezone to UTC
+RUN ln -fs /usr/share/zoneinfo/Etc/UTC /etc/localtime && \
+    echo "Etc/UTC" > /etc/timezone && \
+    dpkg-reconfigure -f noninteractive tzdata
 
-############################
-# Builder: toolchain + dev libs
-############################
-FROM base AS build-deps
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential autoconf bison re2c pkg-config \
-    libxml2-dev libsqlite3-dev libcurl4-openssl-dev libssl-dev \
-    libzip-dev libonig-dev libjpeg-dev libpng-dev libwebp-dev \
-    libicu-dev libreadline-dev libxslt1-dev default-libmysqlclient-dev \
-    wget tar \
- && rm -rf /var/lib/apt/lists/*
+# Enable universe (some php deps) and add Ondřej Surý PHP PPA
+RUN add-apt-repository -y universe && \
+    add-apt-repository -y ppa:ondrej/php
 
-############################
-# Fetch php-src
-############################
-FROM build-deps AS php-src
-ARG PHP_SRC_REF
-WORKDIR /usr/src
-RUN git clone --depth 1 --branch "${PHP_SRC_REF}" https://github.com/php/php-src.git
-WORKDIR /usr/src/php-src
-RUN ./buildconf --force
+# Refresh indexes after adding PPA
+RUN apt-get update
 
-############################
-# Build PHP
-############################
-FROM php-src AS php-build
-# Configure flags mirror your workflow; adjust as needed
-RUN ./configure \
-      --prefix=/usr/local \
-      --with-config-file-path=/usr/local/lib \
-      --with-config-file-scan-dir=/usr/local/etc/php/conf.d \
-      --enable-mbstring \
-       --enable-pcntl \
-      # --enable-intl \
-       --enable-cli \
-       --with-curl \
-       --with-mysqli \
-        --with-sqlite3 \
-    #    --with-openssl \
-       --with-zlib \
-       --with-zip \
- && make -j"$(nproc)" \
- && make install \
- && strip /usr/local/bin/php || true
+# ---- PHP + servers ----
+# NB: On Ubuntu/Debian, phpX.Y-mysql provides both mysqli and pdo_mysql.
+# phpX.Y-common pulls in core pieces; add other common extensions used by many apps.
+RUN set -eux; \
+    PHP_PKG="php${PHP_VERSION}"; \
+    apt-get install -y --no-install-recommends \
+      nginx \
+      apache2 \
+      mariadb-server \
+      ${PHP_PKG} ${PHP_PKG}-cli ${PHP_PKG}-common ${PHP_PKG}-fpm \
+      ${PHP_PKG}-curl ${PHP_PKG}-sqlite3 ${PHP_PKG}-mysql \
+      ${PHP_PKG}-mbstring ${PHP_PKG}-xml ${PHP_PKG}-zip ${PHP_PKG}-opcache \
+      libapache2-mod-php${PHP_VERSION} \
+    ; \
+    # Apache: switch to prefork for mod_php scenario and enable rewrite
+    a2dismod mpm_event || true; \
+    a2dismod mpm_worker || true; \
+    a2enmod mpm_prefork rewrite || true
 
-############################
-# Final: DEV image (keeps toolchain so you can phpize/build extensions fast)
-############################
-FROM build-deps AS dev
-ARG PHP_VERSION
-COPY --from=php-build /usr/local /usr/local
-# Sanity check and helpful defaults
-RUN php -v && php -m | grep -E 'curl|mysqli|sqlite3' >/dev/null
-ENV PATH="/usr/local/bin:${PATH}"
-# phpize is available from the source build in /usr/local/bin
-# Create extension config dir
-RUN mkdir -p /usr/local/etc/php/conf.d
-
+# ---- Python toolchain used by tests ----
+ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
+  PYTHONDONTWRITEBYTECODE=1 \
+  VIRTUAL_ENV=/opt/ci-venv \
+  PATH="/opt/ci-venv/bin:${PATH}"
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    nginx php-fpm \
- && rm -rf /var/lib/apt/lists/*
+    python3 python3-venv python3-pip python3-dev \
+  && python3 -m venv "$VIRTUAL_ENV" \
+  && "$VIRTUAL_ENV/bin/pip" install --no-cache-dir \
+       flask pandas psutil requests \
+  && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    apache2 \
- && rm -rf /var/lib/apt/lists/*
+#  PHP-CGI + Apache CGI modules for tests that require CGI
+RUN set -eux; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends \
+      php${PHP_VERSION}-cgi \
+      apache2-bin; \
+    a2enmod cgi cgid || true; \
+    mkdir -p /usr/lib/cgi-bin; \
+    # Provide a php-cgi wrapper in the standard location
+    ln -sf /usr/bin/php-cgi /usr/lib/cgi-bin/php-cgi
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    mariadb-server \
- && mkdir -p /var/lib/mysql \
- && mkdir -p /run/mysqld
+# Helper: start MariaDB like your CI step (no systemd required)
+RUN mkdir -p /usr/local/bin /var/lib/mysql /run/mysqld && \
+    printf '%s\n' '#!/usr/bin/env bash' \
+      'set -euo pipefail' \
+      'mkdir -p /var/lib/mysql /run/mysqld' \
+      'chown -R mysql:mysql /var/lib/mysql /run/mysqld' \
+      'if [ ! -d /var/lib/mysql/mysql ]; then' \
+      '  mysqld --initialize-insecure --user=mysql --datadir=/var/lib/mysql' \
+      'fi' \
+      'mysqld --user=mysql --datadir=/var/lib/mysql &' \
+      'pid=$!' \
+      'for i in {1..30}; do mysqladmin ping --silent && break; sleep 1; done' \
+      'mysql -u root -e "CREATE DATABASE IF NOT EXISTS db;" || true' \
+      'mysql -u root -e "ALTER USER '\''root'\''@'\''localhost'\'' IDENTIFIED BY '\''pwd'\''; FLUSH PRIVILEGES;" || true' \
+      'wait $pid' \
+    > /usr/local/bin/start-mariadb && \
+    chmod +x /usr/local/bin/start-mariadb
 
+# Helper: switch Apache PHP module safely (useful if you extend/rerun)
+RUN printf '%s\n' '#!/usr/bin/env bash' \
+      'set -euo pipefail' \
+      'ver="${1:-$PHP_VERSION}"' \
+      'for m in php7.2 php7.3 php7.4 php8.0 php8.1 php8.2 php8.3 php8.4; do' \
+      '  a2query -m "$m" >/dev/null 2>&1 && a2dismod "$m" || true' \
+      'done' \
+      'a2enmod "php${ver}"' \
+      'apache2ctl -M | grep -q "php${ver}_module" && echo "Apache now using PHP ${ver}" || (echo "Failed to enable php${ver} for Apache" && exit 1)' \
+    > /usr/local/bin/a2-switch-php && \
+    chmod +x /usr/local/bin/a2-switch-php
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-   software-properties-common ca-certificates lsb-release apt-transport-https \
-    && add-apt-repository ppa:ondrej/php -y \
-    && apt-get update 
-#  && apt-get install -y libapache2-mod-php${PHP_VERSION} \
-#  && a2enmod php${PHP_VERSION} \
-#  && apt-get install -y php${PHP_VERSION}-mysqli \
-#  && apt-get install -y php${PHP_VERSION}-pdo \
-#  && apt-get install -y php${PHP_VERSION}-cgi \
-#  && apt-get install -y libapache2-mod-fcgid \
-#  && apt-get install -y libfcgi-bin \    
-#  && php -i
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3 python3-flask python3-pandas python3-psutil python3-requests \
- && rm -rf /var/lib/apt/lists/*
-
-
+# Default workdir (matches GH Actions checkout)
 WORKDIR /work
-CMD ["php", "-v"]
 
