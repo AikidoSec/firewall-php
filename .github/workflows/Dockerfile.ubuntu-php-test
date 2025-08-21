@@ -34,5 +34,7 @@ RUN add-apt-repository -y ppa:ondrej/php && \
 # Default workdir where your repo will be checked out
 WORKDIR /workspace
 
+RUN mkdir -p /var/lib/mysql /run/mysqld
+
 # No long-running service by default; CI steps will start what they need.
 CMD ["bash", "-lc", "php -v && nginx -v && apache2 -v && mysqld --version"]
