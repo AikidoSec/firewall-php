@@ -1,14 +1,9 @@
 # syntax=docker/dockerfile:1.7
-# Build arguments let you target any PHP ref
 
 ARG BASE_IMAGE=ubuntu:20.04
 ARG PHP_VERSION=8.3
-# Default ref is PHP-${PHP_VERSION} but can be overridden if needed
 ARG PHP_SRC_REF=PHP-${PHP_VERSION}
 
-############################
-# Base: common OS setup
-############################
 FROM ${BASE_IMAGE} AS base
 SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
 
@@ -28,9 +23,7 @@ RUN apt-get update \
  && git config --global http.sslVerify true \
  && rm -rf /var/lib/apt/lists/*
 
-############################
 # Builder: toolchain + dev libs
-############################
 FROM base AS build-deps
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential autoconf bison re2c pkg-config \
@@ -40,9 +33,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     wget tar \
  && rm -rf /var/lib/apt/lists/*
 
-############################
+
 # Fetch php-src
-############################
 FROM build-deps AS php-src
 ARG PHP_SRC_REF
 WORKDIR /usr/src
@@ -50,9 +42,8 @@ RUN git clone --depth 1 --branch "${PHP_SRC_REF}" https://github.com/php/php-src
 WORKDIR /usr/src/php-src
 RUN ./buildconf --force
 
-############################
+
 # Build PHP
-############################
 FROM php-src AS php-build
 # Configure flags mirror your workflow; adjust as needed
 RUN ./configure \
@@ -71,16 +62,13 @@ RUN ./configure \
  && make install \
  && strip /usr/local/bin/php || true
 
-############################
-# Final: DEV image (keeps toolchain so you can phpize/build extensions fast)
-############################
+
 FROM build-deps AS dev
 COPY --from=php-build /usr/local /usr/local
 # Sanity check and helpful defaults
 RUN php -v && php -m | grep -E 'curl|mysqli' >/dev/null
 ENV PATH="/usr/local/bin:${PATH}"
-# phpize is available from the source build in /usr/local/bin
-# Create extension config dir
+
 RUN mkdir -p /usr/local/etc/php/conf.d
 WORKDIR /work
 CMD ["php", "-v"]

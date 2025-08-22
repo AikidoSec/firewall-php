@@ -13,7 +13,6 @@ env:
   VERSION: v1
 
 jobs:
-  # ---- amd64 native builds on x64 runner ----
   build-amd64:
     runs-on: ubuntu-24.04
     strategy:
@@ -49,7 +48,6 @@ jobs:
           cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:cache-${{ matrix.php_version }}-amd64-${{ env.VERSION }}
           cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:cache-${{ matrix.php_version }}-amd64-${{ env.VERSION }},mode=max
 
-  # ---- arm64 native builds on ARM runner ----
   build-arm64:
     runs-on: ubuntu-24.04-arm
     strategy:

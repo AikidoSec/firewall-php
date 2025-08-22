@@ -1,5 +1,4 @@
 # Dockerfile
-# Matches your CI container image
 FROM ubuntu:20.04
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -12,18 +11,15 @@ RUN apt-get update && \
     apt-get install -y golang-go protobuf-compiler protobuf-compiler-grpc && \
     rm -rf /var/lib/apt/lists/*
 
-# Go env (separate GOPATH to avoid cluttering /root)
+# Go env 
 ENV GOPATH=/go
 ENV GOBIN=/go/bin
 ENV PATH=$GOBIN:/usr/local/go/bin:/usr/lib/go/bin:$PATH
 
-# Install protoc Go plugins used in your workflow
-# (lock to latest at build time; pin versions here if you prefer reproducible builds)
+# Install protoc Go plugins
 RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@latest && \
     go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 
-# Create a clean workspace where you can mount your repo
 WORKDIR /workspace
 
-# Default shell
 CMD ["/bin/bash"]

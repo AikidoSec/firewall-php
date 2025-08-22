@@ -18,7 +18,7 @@ jobs:
       matrix:
         os: [ ubuntu-24.04, ubuntu-24.04-arm ]
       fail-fast: false
-    
+
     steps:
     - name: Checkout repository
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
@@ -29,7 +29,7 @@ jobs:
     - name: Get Aikido version
       run: |
         AIKIDO_VERSION=$(grep '#define PHP_AIKIDO_VERSION' lib/php-extension/include/php_aikido.h | awk -F'"' '{print $2}')
-        echo "$AIKIDO_VERSION"
+        echo $AIKIDO_VERSION
         echo "AIKIDO_VERSION=$AIKIDO_VERSION" >> $GITHUB_ENV
         echo "AIKIDO_INTERNALS_REPO=https://api.github.com/repos/AikidoSec/zen-internals" >> $GITHUB_ENV
 
@@ -58,7 +58,7 @@ jobs:
         go test ./...
         go build -ldflags "-s -w" -buildmode=c-shared -o ../../build/aikido-request-processor.so
         ls -l ../../build
-    
+
     - name: Archive agent
       uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4
       if: always()
@@ -79,13 +79,12 @@ jobs:
 
   build_php_extension:
     runs-on: ${{ matrix.os }}
+    container: ghcr.io/aikidosec/firewall-php-build-extension:${{ matrix.php_version }}-v1
     strategy:
       matrix:
         php_version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4']
         os: [ ubuntu-24.04, ubuntu-24.04-arm ]
       fail-fast: false
-    container: ghcr.io/aikidosec/firewall-php-build-extension:${{ matrix.php_version }}-v1
-
 
     steps:
     - name: Checkout repository
@@ -97,6 +96,7 @@ jobs:
     - name: Get Aikido version
       run: |
         AIKIDO_VERSION=$(grep '#define PHP_AIKIDO_VERSION' lib/php-extension/include/php_aikido.h | awk -F'"' '{print $2}')
+        echo $AIKIDO_VERSION
         echo "AIKIDO_VERSION=$AIKIDO_VERSION" >> $GITHUB_ENV
         echo "AIKIDO_ARTIFACT=aikido-extension-php-${{ matrix.php_version }}" >> $GITHUB_ENV
 
@@ -104,6 +104,7 @@ jobs:
       run: |
         which php
         php -v
+        php -i
         php -m | grep -E 'curl|mysqli' || (echo "Required extensions missing" && php -m && exit 1)
 
     - name: Build extension
@@ -300,9 +301,9 @@ jobs:
     needs: [ build_rpm ]
     strategy:
       matrix:
-        php_version: ['7.4','8.0','8.1','8.2','8.3','8.4']
-        server: ['nginx-php-fpm','apache-mod-php','php-built-in']
-        os: ['ubuntu-24.04','ubuntu-24.04-arm']
+        php_version: ['7.4', '8.0', '8.1', '8.2', '8.3', '8.4']
+        server: ['nginx-php-fpm', 'apache-mod-php', 'php-built-in']
+        os: ['ubuntu-24.04', 'ubuntu-24.04-arm']
       fail-fast: false
 
     steps:
@@ -399,6 +400,7 @@ jobs:
       - name: Set env
         run: |
           AIKIDO_VERSION=$(grep '#define PHP_AIKIDO_VERSION' lib/php-extension/include/php_aikido.h | awk -F'"' '{print $2}')
+          echo $AIKIDO_VERSION
           echo "AIKIDO_VERSION=$AIKIDO_VERSION" >> $GITHUB_ENV
           echo "AIKIDO_DEB=aikido-php-firewall.${{ env.ARCH }}.deb" >> $GITHUB_ENV
 

@@ -2,13 +2,10 @@
 FROM ubuntu:24.04
 
 ARG DEBIAN_FRONTEND=noninteractive
-# Accepts: 7.2, 7.3, 7.4, 8.0, 8.1, 8.2, 8.3, 8.4
 ARG PHP_VERSION=7.2
 
-# Keep PHP_VERSION visible at runtime too
 ENV PHP_VERSION=${PHP_VERSION}
 
-# Base OS + tooling
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
       ca-certificates curl gnupg lsb-release tzdata locales \
@@ -22,16 +19,12 @@ RUN ln -fs /usr/share/zoneinfo/Etc/UTC /etc/localtime && \
     echo "Etc/UTC" > /etc/timezone && \
     dpkg-reconfigure -f noninteractive tzdata
 
-# Enable universe (some php deps) and add Ondřej Surý PHP PPA
+
 RUN add-apt-repository -y universe && \
     add-apt-repository -y ppa:ondrej/php
 
-# Refresh indexes after adding PPA
 RUN apt-get update
 
-# ---- PHP + servers ----
-# NB: On Ubuntu/Debian, phpX.Y-mysql provides both mysqli and pdo_mysql.
-# phpX.Y-common pulls in core pieces; add other common extensions used by many apps.
 RUN set -eux; \
     PHP_PKG="php${PHP_VERSION}"; \
     apt-get install -y --no-install-recommends \
@@ -72,7 +65,7 @@ RUN set -eux; \
     # Provide a php-cgi wrapper in the standard location
     ln -sf /usr/bin/php-cgi /usr/lib/cgi-bin/php-cgi
 
-# Helper: start MariaDB like your CI step (no systemd required)
+# Helper: start MariaDB 
 RUN mkdir -p /usr/local/bin /var/lib/mysql /run/mysqld && \
     printf '%s\n' '#!/usr/bin/env bash' \
       'set -euo pipefail' \
@@ -116,6 +109,5 @@ RUN printf '%s\n' '#!/usr/bin/env bash' \
     chmod +x /usr/local/bin/a2-switch-php
 
 
-# Default workdir (matches GH Actions checkout)
 WORKDIR /work
 
