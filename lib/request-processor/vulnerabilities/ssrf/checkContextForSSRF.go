@@ -2,17 +2,19 @@ package ssrf
 
 import (
 	"main/context"
+	"main/helpers"
 	"main/utils"
 )
 
 /* This is called before a request is made to check for SSRF and block the request (not execute it) if SSRF found */
 func CheckContextForSSRF(hostname string, port uint32, operation string) *utils.InterceptorResult {
+	trimmedHostname := helpers.TrimInvisible(hostname)
 	for _, source := range context.SOURCES {
 		mapss := source.CacheGet()
 
 		for str, path := range mapss {
-
-			if findHostnameInUserInput(str, hostname, port) {
+			trimmedInputString := helpers.TrimInvisible(str)
+			if findHostnameInUserInput(trimmedInputString, trimmedHostname, port) {
 				interceptorResult := utils.InterceptorResult{
 					Operation:     operation,
 					Kind:          utils.Ssrf,
@@ -22,13 +24,13 @@ func CheckContextForSSRF(hostname string, port uint32, operation string) *utils.
 					Payload:       str,
 				}
 
-				if containsPrivateIPAddress(hostname) {
+				if containsPrivateIPAddress(trimmedHostname) {
 					// Hostname was found in user input and is actually a private IP address (http://127.0.0.1) -> SSRF
 					interceptorResult.Metadata["isPrivateIp"] = "true"
 					return &interceptorResult
 				}
 
-				resolvedIpStatus := getResolvedIpStatusForHostname(hostname)
+				resolvedIpStatus := getResolvedIpStatusForHostname(trimmedHostname)
 				if resolvedIpStatus != nil {
 					interceptorResult.Metadata["resolvedIp"] = resolvedIpStatus.ip
 					if resolvedIpStatus.isIMDS {

@@ -2,6 +2,7 @@ package sql_injection
 
 import (
 	"main/context"
+	"main/helpers"
 	"main/utils"
 )
 
@@ -10,13 +11,15 @@ import (
  * if it's a possible SQL Injection, if so the function returns an InterceptorResult
  */
 func CheckContextForSqlInjection(sql string, operation string, dialect string) *utils.InterceptorResult {
+	trimmedSql := helpers.TrimInvisible(sql)
 	dialectId := utils.GetSqlDialectFromString(dialect)
 
 	for _, source := range context.SOURCES {
 		mapss := source.CacheGet()
 
 		for str, path := range mapss {
-			if detectSQLInjection(sql, str, dialectId) {
+			trimmedInputString := helpers.TrimInvisible(str)
+			if detectSQLInjection(trimmedSql, trimmedInputString, dialectId) {
 				return &utils.InterceptorResult{
 					Operation:     operation,
 					Kind:          utils.Sql_injection,
