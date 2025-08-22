@@ -12,6 +12,7 @@ func TestNormalizeRequestUrl(t *testing.T) {
 		{"http://localhost:4000" + "\x00", "http://localhost:4000"},
 		{"http://\\@localhost:4000", "http://localhost:4000"},
 		{"http://127.1.1.1:4000\\\\\\@127.0.0.1:80/", "http://127.0.0.1:80/"},
+		{"https:/localhost:4000", "https://localhost:4000"},
 	}
 	for _, test := range tests {
 		result := NormalizeRawUrl(test.input)

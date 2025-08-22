@@ -57,9 +57,10 @@ func removeUserInfo(raw string) string {
 }
 
 func NormalizeRawUrl(urlStr string) string {
-	urlStr = removeUserInfo(urlStr)
 	urlStr = removeCTLByte(urlStr)
 	urlStr = removeBackslashAt(urlStr)
 	urlStr = removeWhitespace(urlStr)
+	urlStr = FixURL(urlStr)
+	urlStr = removeUserInfo(urlStr)
 	return urlStr
 }

@@ -11,6 +11,7 @@ func TestFindHostnameInUserInput(t *testing.T) {
 		port      uint32
 		expected  bool
 	}{
+		{"aa:@localhost:8080", "localhost", 8080, true},
 		{"http://127.1.1.1:4000∖@127.0.0.1:80/", "127.0.0.1", 80, true},
 		{"http://127.1.1.1:4000\\\\@127.0.0.1:8080/", "127.0.0.1", 8080, true},
 		{"http://[0:0:0:0:0:ffff:127.0.0.1]/thefile", "0:0:0:0:0:ffff:127.0.0.1", 80, true},
