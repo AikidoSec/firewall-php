@@ -49,6 +49,8 @@ func GetModule() string {
 
 func getHostNameAndPort(urlCallbackId int) (string, uint32) { // urlcallbackid is the type of data we request, eg C.OUTGOING_REQUEST_URL
 	urlStr := Context.Callback(urlCallbackId)
+	// remove all control characters (< 32) and 0x7f(DEL) also replace \@ with @ and remove all whitespace
+	urlStr = helpers.NormalizeRawUrl(urlStr)
 	urlParsed, err := url.Parse(urlStr)
 	if err != nil {
 		return "", 0
