@@ -1,0 +1,113 @@
+# syntax=docker/dockerfile:1.7
+FROM ubuntu:24.04
+
+ARG DEBIAN_FRONTEND=noninteractive
+ARG PHP_VERSION=7.2
+
+ENV PHP_VERSION=${PHP_VERSION}
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+      ca-certificates curl gnupg lsb-release tzdata locales \
+      software-properties-common apt-transport-https \
+      git make unzip xz-utils \
+      # web servers & DB (installed later after PPA)
+      && rm -rf /var/lib/apt/lists/*
+
+# Timezone to UTC
+RUN ln -fs /usr/share/zoneinfo/Etc/UTC /etc/localtime && \
+    echo "Etc/UTC" > /etc/timezone && \
+    dpkg-reconfigure -f noninteractive tzdata
+
+
+RUN add-apt-repository -y universe && \
+    add-apt-repository -y ppa:ondrej/php
+
+RUN apt-get update
+
+RUN set -eux; \
+    PHP_PKG="php${PHP_VERSION}"; \
+    apt-get install -y --no-install-recommends \
+      nginx \
+      apache2 \
+      mariadb-server \
+      ${PHP_PKG} ${PHP_PKG}-cli ${PHP_PKG}-common ${PHP_PKG}-fpm \
+      ${PHP_PKG}-curl ${PHP_PKG}-sqlite3 ${PHP_PKG}-mysql \
+      ${PHP_PKG}-mbstring ${PHP_PKG}-xml ${PHP_PKG}-zip ${PHP_PKG}-opcache \
+      libapache2-mod-php${PHP_VERSION} \
+    ; \
+    # Apache: switch to prefork for mod_php scenario and enable rewrite
+    a2dismod mpm_event || true; \
+    a2dismod mpm_worker || true; \
+    a2enmod mpm_prefork rewrite || true
+
+# ---- Python toolchain used by tests ----
+ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
+  PYTHONDONTWRITEBYTECODE=1 \
+  VIRTUAL_ENV=/opt/ci-venv \
+  PATH="/opt/ci-venv/bin:${PATH}"
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 python3-venv python3-pip python3-dev \
+  && python3 -m venv "$VIRTUAL_ENV" \
+  && "$VIRTUAL_ENV/bin/pip" install --no-cache-dir \
+       flask pandas psutil requests \
+  && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+#  PHP-CGI + Apache CGI modules for tests that require CGI
+RUN set -eux; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends \
+      php${PHP_VERSION}-cgi \
+      apache2-bin; \
+    a2enmod cgi cgid || true; \
+    mkdir -p /usr/lib/cgi-bin; \
+    # Provide a php-cgi wrapper in the standard location
+    ln -sf /usr/bin/php-cgi /usr/lib/cgi-bin/php-cgi
+
+# Helper: start MariaDB 
+RUN mkdir -p /usr/local/bin /var/lib/mysql /run/mysqld && \
+    printf '%s\n' '#!/usr/bin/env bash' \
+      'set -euo pipefail' \
+      'mkdir -p /var/lib/mysql /run/mysqld' \
+      'chown -R mysql:mysql /var/lib/mysql /run/mysqld' \
+      'if [ ! -d /var/lib/mysql/mysql ]; then' \
+      '  mysqld --initialize-insecure --user=mysql --datadir=/var/lib/mysql' \
+      'fi' \
+      'mysqld --user=mysql --datadir=/var/lib/mysql &' \
+      'pid=$!' \
+      'for i in {1..30}; do mysqladmin ping --silent && break; sleep 1; done' \
+      'mysql -u root -e "CREATE DATABASE IF NOT EXISTS db;" || true' \
+      'mysql -u root -e "ALTER USER '\''root'\''@'\''localhost'\'' IDENTIFIED BY '\''pwd'\''; FLUSH PRIVILEGES;" || true' \
+      'wait $pid' \
+    > /usr/local/bin/start-mariadb && \
+    chmod +x /usr/local/bin/start-mariadb
+
+# Robust Apache PHP switcher (handles module names, MPM, restart, verification)
+RUN printf '%s\n' '#!/usr/bin/env bash' \
+      'set -euo pipefail' \
+      'ver="${1:-${PHP_VERSION:-8.2}}"' \
+      'a2dismod mpm_event >/dev/null 2>&1 || true' \
+      'a2dismod mpm_worker >/dev/null 2>&1 || true' \
+      'a2enmod  mpm_prefork >/dev/null 2>&1 || true' \
+      'if ! a2query -m "php${ver}" >/dev/null 2>&1; then' \
+      '  apt-get update && apt-get install -y --no-install-recommends "libapache2-mod-php${ver}"' \
+      'fi' \
+      'for m in php5 php7 php7.0 php7.1 php7.2 php7.3 php7.4 php8 php8.0 php8.1 php8.2 php8.3 php8.4; do' \
+      '  a2query -m "$m" >/dev/null 2>&1 && a2dismod "$m" >/dev/null 2>&1 || true' \
+      'done' \
+      'a2enmod "php${ver}"' \
+      'apache2ctl -t' \
+      'apache2ctl -k graceful || apache2ctl -k restart' \
+      'if ! apache2ctl -M 2>/dev/null | grep -Eiq "php[0-9]*_module"; then' \
+      '  echo "Apache does not have a PHP module loaded:"' \
+      '  apache2ctl -M || true' \
+      '  exit 1' \
+      'fi' \
+      'echo "Apache now using mod_php for PHP ${ver}"' \
+    > /usr/local/bin/a2-switch-php && \
+    chmod +x /usr/local/bin/a2-switch-php
+
+
+WORKDIR /work
+
