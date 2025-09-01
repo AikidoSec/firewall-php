@@ -1,5 +1,5 @@
 Name:           aikido-php-firewall
-Version:        1.3.2
+Version:        1.3.3
 Release:        1
 Summary:        Aikido PHP Extension
 License:        GPL
