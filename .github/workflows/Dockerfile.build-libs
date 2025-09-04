@@ -1,0 +1,25 @@
+# Dockerfile
+FROM ubuntu:20.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Base tools & dependencies for building Go c-shared libs and running protoc
+RUN apt-get update && \
+    apt-get install -y software-properties-common && \
+    add-apt-repository ppa:longsleep/golang-backports && \
+    apt-get update && \
+    apt-get install -y golang-go protobuf-compiler protobuf-compiler-grpc && \
+    rm -rf /var/lib/apt/lists/*
+
+# Go env 
+ENV GOPATH=/go
+ENV GOBIN=/go/bin
+ENV PATH=$GOBIN:/usr/local/go/bin:/usr/lib/go/bin:$PATH
+
+# Install protoc Go plugins
+RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@latest && \
+    go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+
+WORKDIR /workspace
+
+CMD ["/bin/bash"]
