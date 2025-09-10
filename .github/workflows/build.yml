@@ -578,3 +578,41 @@ jobs:
           if-no-files-found: ignore
           path: |
             ${{ github.workspace }}/tests/cli/**/*.diff
+  
+  test_php_qa_action:
+    runs-on: ubuntu-latest
+    container:
+      image: ubuntu:24.04
+    needs: [ build_deb ]
+    steps:
+
+      - name: Checkout zen-demo-php
+        uses: actions/checkout@v4
+        with:
+          repository: Aikido-demo-apps/zen-demo-php
+          path: zen-demo-php
+          ref: dev-testing
+          submodules: true
+     
+      # download aikido-php-firewall.x86_64.deb artifact
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: |
+            aikido-php-firewall.x86_64.deb
+
+      - name: Delete line
+        run: |
+          sed -i '/^curl /d' .fly/scripts/aikido.sh
+    
+      - name: Run Firewall QA Tests
+        uses: AikidoSec/firewall-tester-action@releases/v1
+        with:
+          dockerfile_path: ./zen-demo-php/Dockerfile
+          extra_args: '--env-file=./zen-demo-php/.env.example -e APP_KEY=base64:W2v6u6VR4lURkxuMT9xZ6pdhXSt5rxsmWTbd1HGqlIM='
+          sleep_before_test: 20
+          skip_tests: test_wave_attack,test_rate_limiting_group_id_1_minute
+          max_parallel_tests: 1
+          ignore_failures: true
+     
+     
