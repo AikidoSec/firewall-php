@@ -45,7 +45,7 @@ func findHostnameInUserInput(userInput string, hostname string, port uint32) boo
 
 		// https://datatracker.ietf.org/doc/html/rfc3986#section-3.2.2
 		// "The host subcomponent is case-insensitive."
-		if userInputURL != nil && strings.EqualFold(userInputURL.Hostname(), hostnameURL.Hostname()) {
+		if strings.EqualFold(userInputURL.Hostname(), hostnameURL.Hostname()) {
 			userPort := helpers.GetPortFromURL(userInputURL)
 
 			if port == 0 {
