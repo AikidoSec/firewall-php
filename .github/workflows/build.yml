@@ -581,8 +581,6 @@ jobs:
   
   test_php_qa_action:
     runs-on: ubuntu-latest
-    container:
-      image: ubuntu:24.04
     needs: [ build_deb ]
     steps:
 
