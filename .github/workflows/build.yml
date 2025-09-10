@@ -598,6 +598,7 @@ jobs:
         with:
           pattern: |
             aikido-php-firewall.x86_64.deb
+          path: ./zen-demo-php
 
       - name: Delete line
         run: |
