@@ -592,7 +592,7 @@ jobs:
           repository: Aikido-demo-apps/zen-demo-php
           path: zen-demo-php
           ref: dev-testing
-          submodules: true
+          submodules: recursive
      
       # download aikido-php-firewall.x86_64.deb artifact
       - name: Download artifacts
