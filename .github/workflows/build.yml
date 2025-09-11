@@ -606,6 +606,9 @@ jobs:
           ls -la ./zen-demo-php
          
           echo '#!/usr/bin/env bash' > ./zen-demo-php/.fly/scripts/aikido.sh
+          echo "echo \"Installing Aikido PHP Firewall\"" >> ./zen-demo-php/.fly/scripts/aikido.sh
+          echo "echo \"$(uname -i)\"" >> ./zen-demo-php/.fly/scripts/aikido.sh
+          echo "ls -la /var/www/html" >> ./zen-demo-php/.fly/scripts/aikido.sh
           echo "dpkg -i -E \"/var/www/html/aikido-php-firewall.\$(uname -i).deb\"" >> ./zen-demo-php/.fly/scripts/aikido.sh
           ls -la ./zen-demo-php/.fly/scripts
           cat ./zen-demo-php/.fly/scripts/aikido.sh
