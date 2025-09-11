@@ -604,7 +604,11 @@ jobs:
         run: |
           ls -la
           ls -la ./zen-demo-php
-          echo "dpkg -i -E \"/var/www/html/aikido-php-firewall.\$(uname -i).deb\"" > ./zen-demo-php/.fly/scripts/aikido.sh
+         
+          echo '#!/usr/bin/env bash' > ./zen-demo-php/.fly/scripts/aikido.sh
+          echo "dpkg -i -E \"/var/www/html/aikido-php-firewall.\$(uname -i).deb\"" >> ./zen-demo-php/.fly/scripts/aikido.sh
+          ls -la ./zen-demo-php/.fly/scripts
+          cat ./zen-demo-php/.fly/scripts/aikido.sh
 
       - name: Run Firewall QA Tests
         uses: AikidoSec/firewall-tester-action@releases/v1
