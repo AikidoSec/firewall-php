@@ -592,6 +592,9 @@ jobs:
           ref: dev-testing
           submodules: recursive
      
+      - name: Get Arch
+        run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
+
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
