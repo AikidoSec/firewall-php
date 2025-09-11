@@ -603,8 +603,9 @@ jobs:
       - name: Overwrite aikido.sh script
         run: |
           ls -la
-          echo "dpkg -i -E \"/var/www/html/aikido-php-firewall.x86_64.deb\"" > ./zen-demo-php/.fly/scripts/aikido.sh
-    
+          ls -la ./zen-demo-php
+          echo "dpkg -i -E \"/var/www/html/aikido-php-firewall.\$(uname -i).deb\"" > ./zen-demo-php/.fly/scripts/aikido.sh
+
       - name: Run Firewall QA Tests
         uses: AikidoSec/firewall-tester-action@releases/v1
         with:
