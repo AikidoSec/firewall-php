@@ -596,8 +596,7 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
-          pattern: |
-            aikido-php-firewall.x86_64.deb
+          name: aikido-php-firewall.x86_64.deb
           path: ./zen-demo-php
 
       - name: Overwrite aikido.sh script
