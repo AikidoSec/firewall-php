@@ -35,7 +35,7 @@ func removeUserInfo(raw string) string {
 	authority := rest[:authorityEnd]
 	path := rest[authorityEnd:]
 
-	// Remove userinfo if present (use LAST @)
+	// Remove userinfo if present
 	if at := strings.LastIndex(authority, "@"); at != -1 {
 		authority = authority[at+1:]
 	}
