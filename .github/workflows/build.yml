@@ -600,10 +600,10 @@ jobs:
             aikido-php-firewall.x86_64.deb
           path: ./zen-demo-php
 
-      - name: Delete line
+      - name: Overwrite aikido.sh script
         run: |
-          sed -i '/^curl /d' ./zen-demo-php/.fly/scripts/aikido.sh
-          sed -i '/^cd /d' ./zen-demo-php/.fly/scripts/aikido.sh
+          ls -la
+          echo "dpkg -i -E \"/var/www/html/aikido-php-firewall.x86_64.deb\"" > ./zen-demo-php/.fly/scripts/aikido.sh
     
       - name: Run Firewall QA Tests
         uses: AikidoSec/firewall-tester-action@releases/v1
