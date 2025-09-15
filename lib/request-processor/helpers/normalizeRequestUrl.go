@@ -1,6 +1,7 @@
 package helpers
 
 import (
+	"net/url"
 	"strings"
 )
 
@@ -43,7 +44,16 @@ func removeUserInfo(raw string) string {
 	return scheme + authority + path
 }
 
+func UnescapeUrl(urlStr string) string {
+	unescapedUrl, err := url.QueryUnescape(urlStr)
+	if err != nil {
+		return urlStr
+	}
+	return unescapedUrl
+}
+
 func NormalizeRawUrl(urlStr string) string {
+	urlStr = UnescapeUrl(urlStr)
 	urlStr = removeCTLByte(urlStr)
 	urlStr = FixURL(urlStr)
 	urlStr = removeUserInfo(urlStr)
