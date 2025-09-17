@@ -19,6 +19,15 @@ func GetOutgoingRequestResolvedIp() string {
 	return Context.Callback(C.OUTGOING_REQUEST_RESOLVED_IP)
 }
 
+func GetOutgoingRequestResponseCode() string {
+	return Context.Callback(C.OUTGOING_REQUEST_RESPONSE_CODE)
+}
+
+func GetOutgoingRequestRedirectUrl() string {
+	host, _ := getHostNameAndPort(C.OUTGOING_REQUEST_REDIRECT_URL)
+	return host
+}
+
 func GetFunctionName() string {
 	return Context.Callback(C.FUNCTION_NAME)
 }
