@@ -14,5 +14,5 @@ var CloudConfigMutex sync.Mutex
 var MiddlewareInstalled bool
 
 const (
-	Version = "1.3.4"
+	Version = "1.3.5"
 )

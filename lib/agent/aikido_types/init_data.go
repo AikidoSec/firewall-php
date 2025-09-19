@@ -16,13 +16,13 @@ type EnvironmentConfigData struct {
 	PlatformVersion string `json:"platform_version"`          // PHP version
 	Endpoint        string `json:"endpoint,omitempty"`        // default: 'https://guard.aikido.dev/'
 	ConfigEndpoint  string `json:"config_endpoint,omitempty"` // default: 'https://runtime.aikido.dev/'
-	DiskLogs        bool   `json:"disk_logs,omitempty"`       // default: false
 }
 
 type AikidoConfigData struct {
 	ConfigMutex               sync.Mutex
 	Token                     string `json:"token,omitempty"`                        // default: ''
 	LogLevel                  string `json:"log_level,omitempty"`                    // default: 'INFO'
+	DiskLogs                  bool   `json:"disk_logs,omitempty"`                    // default: false
 	Blocking                  bool   `json:"blocking,omitempty"`                     // default: false
 	LocalhostAllowedByDefault bool   `json:"localhost_allowed_by_default,omitempty"` // default: true
 	CollectApiSchema          bool   `json:"collect_api_schema,omitempty"`           // default: true

@@ -24,9 +24,10 @@ service Aikido {
 message Config {
 	string token = 1;
   string log_level = 2;
-  bool blocking = 3;
-  bool localhost_allowed_by_default = 4;
-  bool collect_api_schema = 5;
+  bool disk_logs = 3;
+  bool blocking = 4;
+  bool localhost_allowed_by_default = 5;
+  bool collect_api_schema = 6;
 }
 
 message Packages {
