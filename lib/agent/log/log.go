@@ -116,6 +116,9 @@ func Init() {
 	if !globals.AikidoConfig.DiskLogs {
 		return
 	}
+	if logFile != nil {
+		return
+	}
 	currentTime := time.Now()
 	timeStr := currentTime.Format("20060102150405")
 	logFilePath := fmt.Sprintf("/var/log/aikido-%s/aikido-agent-%s-%d.log", globals.Version, timeStr, os.Getpid())
