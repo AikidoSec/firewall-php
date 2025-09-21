@@ -214,17 +214,56 @@ func IsIpBypassed(ip string) bool {
 }
 
 func getIpFromXForwardedFor(value string) string {
-	forwardedIps := strings.Split(value, ",")
-	for _, ip := range forwardedIps {
-		ip = strings.TrimSpace(ip)
-		if strings.Contains(ip, ":") {
-			parts := strings.Split(ip, ":")
-			if len(parts) == 2 {
-				ip = parts[0]
+	if strings.TrimSpace(value) == "" {
+		return ""
+	}
+
+	parts := strings.Split(value, ",")
+	for i := range parts {
+		ip := strings.TrimSpace(parts[i])
+
+		// If it's already a valid IP (prevents splitting on ':' for IPv6)
+		if isIP(ip) {
+			parts[i] = ip
+			continue
+		}
+
+		// Normalize bracketed IPv6 without port: "[2001:db8::1]" -> "2001:db8::1"
+		if strings.HasPrefix(ip, "[") && strings.HasSuffix(ip, "]") {
+			ip = ip[1 : len(ip)-1]
+			parts[i] = ip
+			continue
+		}
+
+		// IPv6 with port: "[2001:db8::1]:443" -> "2001:db8::1"
+		if strings.HasPrefix(ip, "[") {
+			if idx := strings.Index(ip, "]:"); idx > 0 {
+				ip = ip[1:idx]
+				parts[i] = ip
+				continue
 			}
 		}
-		if isIP(ip) {
-			return ip
+
+		// IPv4 with port: "203.0.113.5:1234" -> "203.0.113.5"
+		if strings.Count(ip, ":") == 1 {
+			if host, _, err := net.SplitHostPort(ip); err == nil {
+				ip = host
+				parts[i] = ip
+				continue
+			}
+		}
+
+		// Leave as-is; will validate below
+		parts[i] = ip
+	}
+
+	// Pick the first valid, non-private IP
+	for _, cand := range parts {
+		if !isIP(cand) {
+			continue
+		}
+		if !helpers.IsPrivateIP(cand) {
+			return cand
 		}
 	}
 	return ""
