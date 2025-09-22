@@ -35,32 +35,6 @@ std::string Server::GetVar(const char* var) {
     return Z_STRVAL_P(data);
 }
 
-
-
-int is_symfony_request_loaded(void) {
-    zend_string *classname = zend_string_init("Symfony\\Component\\HttpFoundation\\Request", sizeof("Symfony\\Component\\HttpFoundation\\Request") - 1, 0);
-  
-    /* Option A: lookup with autoload (if PHP version supports autoload in zend_lookup_class) */
-    if (zend_lookup_class(classname) != NULL) {
-        php_printf("Option A: Symfony\\Component\\HttpFoundation\\Request class is loaded\n");
-        // class exists (maybe just loaded, or already loaded)
-        return 1;
-    }
-
-    /* Option B: check class table without triggering autoload */
-    zend_class_entry *ce_nt = (zend_class_entry *)zend_hash_str_find_ptr(
-        CG(class_table),
-        ZSTR_VAL(classname),
-        ZSTR_LEN(classname)
-    );
-    if (ce_nt) {
-        php_printf("Option B: Symfony\\Component\\HttpFoundation\\Request class is loaded\n");
-        return 1;
-    }
-    php_printf("Symfony\\Component\\HttpFoundation\\Request class is not loaded\n");
-    return 0;
-}
-
 // Return the method from the query param _method (_GET["_method"])
 std::string Server::getMethodFromQuery() {
     zval *get_array;
@@ -88,12 +62,8 @@ std::string Server::getMethodFromQuery() {
 std::string Server::GetMethod() {
     std::string method = ToUppercase(this->GetVar("REQUEST_METHOD"));
     
-   // TODO: Add a check here to see if the request is from Symfony or Laravel
-   if (!is_symfony_request_loaded()) {
-
-       return method;
-   }
-    
+    // TODO: Add a check here to see if the request is from Symfony or Laravel
+   
     if (method != "POST") {
         return method;
     }
