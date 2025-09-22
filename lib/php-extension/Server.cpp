@@ -35,6 +35,52 @@ std::string Server::GetVar(const char* var) {
     return Z_STRVAL_P(data);
 }
 
+// Symfony/Component/HttpFoundation/Request class
+// Methood getMethod() from this class is used to get the request method
+// and also does the method override check, so we need to check if the class is loaded
+bool isSymfonyRequestClassLoaded() {
+    // check if the class Symfony\Component\HttpFoundation\Request is loaded
+    if (zend_lookup_class(
+        zend_string_init("Symfony\\Component\\HttpFoundation\\Request", sizeof("Symfony\\Component\\HttpFoundation\\Request")-1, 0)
+    ) != NULL) {
+        php_printf("Symfony\\Component\\HttpFoundation\\Request class is loaded\n");
+        return true;
+    }
+    php_printf("Symfony\\Component\\HttpFoundation\\Request class is not loaded\n");
+    return false;
+}
+ 
+// For frameworks like Symfony, Laravel, method override is supported using X-HTTP-METHOD-OVERRIDE or _method query param
+// https://github.com/symfony/symfony/blob/b8eaa4be31f2159918e79e5694bc9ff241e0d692/src/Symfony/Component/HttpFoundation/Request.php#L1169-L1215
+std::string Server::GetMethod() {
+    std::string method = ToUppercase(this->GetVar("REQUEST_METHOD"));
+    
+    if (!isSymfonyRequestClassLoaded()) {
+        return method;
+    }
+    
+    if (method != "POST") {
+        return method;
+    }
+
+    // X-HTTP-METHOD-OVERRIDE
+    std::string x_http_method_override = ToUppercase(this->GetVar("HTTP_X_HTTP_METHOD_OVERRIDE"));
+    if (x_http_method_override != "") {
+        method = x_http_method_override;
+    }
+
+    // in case of X-HTTP-METHOD-OVERRIDE is not set, we check the query param _method
+    if (x_http_method_override == "") {
+        json query = GetQuery();
+        std::string query_method = ToUppercase(query["_method"]);
+        if (query_method != "") {
+            method = query_method;
+        }
+    }
+   
+    return method;
+}
+
 std::string Server::GetRoute() {
     std::string route = this->GetVar("REQUEST_URI");
     size_t pos = route.find("?");
