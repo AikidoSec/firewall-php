@@ -11,7 +11,7 @@ class Server {
 
     std::string GetMethod();
     
-    std::string getMethodFromQuery();
+    std::string GetMethodFromQuery();
 
     std::string GetRoute();
 

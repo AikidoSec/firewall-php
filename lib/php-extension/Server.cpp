@@ -36,7 +36,7 @@ std::string Server::GetVar(const char* var) {
 }
 
 // Return the method from the query param _method (_GET["_method"])
-std::string Server::getMethodFromQuery() {
+std::string Server::GetMethodFromQuery() {
     zval *get_array;
     get_array = zend_hash_str_find(&EG(symbol_table), "_GET", sizeof("_GET") - 1);
     if (!get_array) {
@@ -50,11 +50,8 @@ std::string Server::getMethodFromQuery() {
     if (Z_TYPE_P(query_method) != IS_STRING) {
         return "";
     }
-    if (Z_STRVAL_P(query_method) != "") {
-        return Z_STRVAL_P(query_method);
-    }
-    return "";
-
+    std::string query_method_str = Z_STRVAL_P(query_method);
+    return ToUppercase(query_method_str);
 }
  
 // For frameworks like Symfony, Laravel, method override is supported using X-HTTP-METHOD-OVERRIDE or _method query param
@@ -76,7 +73,7 @@ std::string Server::GetMethod() {
 
     // in case of X-HTTP-METHOD-OVERRIDE is not set, we check the query param _method
     if (x_http_method_override == "") {
-        std::string query_method = ToUppercase(this->getMethodFromQuery());
+        std::string query_method = this->GetMethodFromQuery();
         if (query_method != "") {
             method = query_method;
         }
