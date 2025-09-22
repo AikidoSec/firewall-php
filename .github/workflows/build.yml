@@ -13,7 +13,7 @@ jobs:
   build_libs:
     runs-on: ${{ matrix.os }}
     container:
-      image: ubuntu:20.04
+      image: ghcr.io/aikidosec/firewall-php-build-libs:v1  
     strategy:
       matrix:
         os: [ ubuntu-24.04, ubuntu-24.04-arm ]
@@ -25,20 +25,6 @@ jobs:
 
     - name: Get Arch
       run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
-
-    - name: Install dependencies
-      run: |
-        apt-get update
-        apt-get install -y software-properties-common
-        add-apt-repository ppa:longsleep/golang-backports
-        apt-get update
-        apt-get install -y golang-go protobuf-compiler protobuf-compiler-grpc
-
-    - name: GO setup
-      run: |
-        go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
-        go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
-        echo "$HOME/go/bin" >> $GITHUB_PATH
 
     - name: Get Aikido version
       run: |
@@ -56,8 +42,9 @@ jobs:
         go get google.golang.org/grpc
         go get github.com/stretchr/testify/assert
         go test ./...
-        go build -ldflags "-s -w" -o ../../build/aikido-agent
+        go build -buildvcs=false -ldflags "-s -w" -o ../../build/aikido-agent
         ls -l ../../build
+    
 
     - name: Build Aikido Request Processor
       run: |
@@ -92,7 +79,7 @@ jobs:
 
   build_php_extension:
     runs-on: ${{ matrix.os }}
-    container: ubuntu:20.04
+    container: ghcr.io/aikidosec/firewall-php-build-extension:${{ matrix.php_version }}-v1
     strategy:
       matrix:
         php_version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4']
@@ -102,18 +89,6 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
-
-    - name: Install dependencies
-      run: |
-        DEBIAN_FRONTEND=noninteractive apt-get update
-        DEBIAN_FRONTEND=noninteractive apt-get install -y tzdata
-        ln -fs /usr/share/zoneinfo/Etc/UTC /etc/localtime
-        echo "Etc/UTC" > /etc/timezone
-        DEBIAN_FRONTEND=noninteractive dpkg-reconfigure -f noninteractive tzdata
-        apt-get install -y --no-install-recommends build-essential autoconf bison re2c pkg-config libxml2-dev libsqlite3-dev libcurl4-openssl-dev libssl-dev libzip-dev libonig-dev libjpeg-dev libpng-dev libwebp-dev libicu-dev libreadline-dev libxslt1-dev default-libmysqlclient-dev git wget tar ca-certificates
-        update-ca-certificates
-        git config --global http.sslCAInfo /etc/ssl/certs/ca-certificates.crt
-        git config --global http.sslVerify true
 
     - name: Get Arch
       run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
@@ -125,48 +100,12 @@ jobs:
         echo "AIKIDO_VERSION=$AIKIDO_VERSION" >> $GITHUB_ENV
         echo "AIKIDO_ARTIFACT=aikido-extension-php-${{ matrix.php_version }}" >> $GITHUB_ENV
 
-    - name: Checkout php-src
-      uses: actions/checkout@v4
-      with:
-        repository: php/php-src
-        ref: PHP-${{ matrix.php_version }}
-        path: php-src
-        fetch-depth: 1
-
-    - name: Clone php-src
-      run: |
-        cd php-src
-        ./buildconf --force
-
-    - name: Configure & build PHP
-      run: |
-        cd php-src
-        ./configure \
-          --prefix=/usr/local \
-          --with-config-file-path=/usr/local/lib \
-          --with-config-file-scan-dir=/usr/local/etc/php/conf.d \
-          --enable-mbstring \
-          --enable-pcntl \
-          --enable-intl \
-          --with-curl \
-          --with-mysqli \
-          --with-openssl \
-          --with-zlib \
-          --with-zip
-        make -j"$(nproc)"
-        make install
-
-    - name: Verify PHP build
-      run: |
-        php -v
-        php -m | grep -E 'curl|mysqli' || (echo "Required extensions missing" && php -m && exit 1)
-
-        
     - name: Check PHP setup
       run: |
         which php
         php -v
         php -i
+        php -m | grep -E 'curl|mysqli' || (echo "Required extensions missing" && php -m && exit 1)
 
     - name: Build extension
       run: |
@@ -176,7 +115,7 @@ jobs:
         phpize
         cd ../../build
         CXX=g++ CXXFLAGS="-fPIC -O2 -I../lib/php-extension/include" LDFLAGS="-lstdc++" ../lib/php-extension/configure
-        make
+        make -j"$(nproc)"
 
     - name: Version Aikido extension
       run: |
@@ -357,7 +296,7 @@ jobs:
   test_php_centos:
     runs-on: ${{ matrix.os }}
     container:
-      image: quay.io/centos/centos:stream9
+      image: ghcr.io/aikidosec/firewall-php-test-centos:${{ matrix.php_version }}-v1
       options: --privileged
     needs: [ build_rpm ]
     strategy:
@@ -366,6 +305,7 @@ jobs:
         server: ['nginx-php-fpm', 'apache-mod-php', 'php-built-in']
         os: ['ubuntu-24.04', 'ubuntu-24.04-arm']
       fail-fast: false
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -374,26 +314,14 @@ jobs:
         run: |
           uname -a
           cat /etc/centos-release
-          yum install -y yum-utils
-          dnf install -y https://rpms.remirepo.net/enterprise/remi-release-9.rpm
-          yum install -y gcc
-          yum install -y python3-devel
-          pip3 install flask
-          pip3 install requests
-          pip3 install psutil
-          yum install -y httpd
-          dnf --assumeyes module reset php
-          dnf --assumeyes --nogpgcheck module install php:remi-${{ matrix.php_version }}
-          dnf --assumeyes install php-pdo
-          dnf --assumeyes install php-mysqlnd
-          yum install -y mod_php
-          yum install -y nginx
-          yum install -y php-fpm
-          dnf install -y procps-ng
+          php -v
+          httpd -v || true
+          nginx -v || true
+          which php-fpm && php-fpm -v || true
+          rpm -qa | grep -E '^php(-|$)' | sort
 
       - name: Install and start MySQL
         run: |
-          yum install -y mysql-server
           mkdir -p /var/lib/mysql
           mysqld --initialize-insecure --datadir=/var/lib/mysql
           mysqld -u root --datadir=/var/lib/mysql --socket=/var/lib/mysql/mysql.sock &
@@ -453,12 +381,11 @@ jobs:
   test_php_ubuntu:
     runs-on: ${{ matrix.os }}
     container:
-      image: ${{ matrix.container }}
+      image: ghcr.io/aikidosec/firewall-php-test-ubuntu:${{ matrix.php_version }}-v1
       options: --privileged
     needs: [ build_deb ]
     strategy:
       matrix:
-        container: ['ubuntu:24.04']
         os: ['ubuntu-24.04', 'ubuntu-24.04-arm']
         php_version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4']
         server: ['nginx-php-fpm', 'apache-mod-php', 'php-built-in']
@@ -483,78 +410,19 @@ jobs:
           pattern: |
             ${{ env.AIKIDO_DEB }}
 
-      - name: Setup nginx & php-fpm
+      # MariaDB startup compatible with your current approach
+      - name: Start MariaDB (background)
         run: |
-          DEBIAN_FRONTEND=noninteractive apt-get update
-          DEBIAN_FRONTEND=noninteractive apt-get install -y tzdata
-          ln -fs /usr/share/zoneinfo/Etc/UTC /etc/localtime
-          echo "Etc/UTC" > /etc/timezone
-          DEBIAN_FRONTEND=noninteractive dpkg-reconfigure -f noninteractive tzdata
-          apt-get install -y nginx php-fpm
+          start-mariadb &   # provided by the image
+          sleep 5
+          mysql -u root -ppwd -e "SELECT 1" || (echo "MySQL not up" && exit 1)
 
-      - name: Setup Apache (mod_php)
+      # For Apache mod_php tests, ensure the right PHP module is active
+      - name: Ensure Apache uses PHP ${{ matrix.php_version }}
+        if: matrix.server == 'apache-mod-php'
         run: |
-          apt-get install -y apache2
-          a2dismod mpm_event
-          a2dismod mpm_worker
-          a2enmod mpm_prefork
-          a2enmod rewrite
-
-      - name: Install MariaDB server
-        run: |
-          apt-get install -y mariadb-server
-          mkdir -p /var/lib/mysql
-          mkdir -p /run/mysqld
-          mysqld --user=root --datadir=/var/lib/mysql &
-          sleep 10
-          mysql -u root -e "CREATE DATABASE IF NOT EXISTS db;"
-          mysql -u root -e "SET PASSWORD FOR 'root'@'localhost' = PASSWORD('pwd'); FLUSH PRIVILEGES;"
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@27853eb8b46dc01c33bf9fef67d98df2683c3be2
-        with:
-          php-version: ${{ matrix.php_version }}
-          extensions: curl, sqlite3, mysqli
-          coverage: none
-
-      - name: Test MySQL connection with mysqli
-        run: |
-          php -r '
-            $mysqli = new mysqli("localhost", "root", "pwd", "db");
-            if ($mysqli->connect_error) {
-              echo "MySQL connection failed: " . $mysqli->connect_error . "\n";
-              exit(1);
-            } else {
-              echo "MySQL connection successful\n";
-              $mysqli->close();
-            }
-          '
-
-      - name: Check PHP setup
-        run: |
-          php_versions="php7.3 php7.4 php8.0 php8.1 php8.2 php8.3"
-          for version in $php_versions; do
-              if a2query -m "$version" > /dev/null 2>&1; then
-                  echo "Disabling $version..."
-                  a2dismod "$version"
-              else
-                  echo "$version is not installed."
-              fi
-          done
-          DEBIAN_FRONTEND=noninteractive apt-get update
-          DEBIAN_FRONTEND=noninteractive apt-get install -y tzdata
-          ln -fs /usr/share/zoneinfo/Etc/UTC /etc/localtime
-          echo "Etc/UTC" > /etc/timezone
-          DEBIAN_FRONTEND=noninteractive dpkg-reconfigure -f noninteractive tzdata
-          apt-get install -y libapache2-mod-php${{ matrix.php_version }}
-          a2enmod php${{ matrix.php_version }}
-          apt-get install -y php${{ matrix.php_version }}-mysqli
-          apt-get install -y php${{ matrix.php_version }}-pdo
-          php -i
-
-      - name: Setup Python
-        run: |
-          apt-get install -y python3 python3-flask python3-pandas python3-psutil python3-requests
+          a2-switch-php ${{ matrix.php_version }}
+    
 
       - name: Install DEB
         run: |
@@ -578,3 +446,39 @@ jobs:
           if-no-files-found: ignore
           path: |
             ${{ github.workspace }}/tests/cli/**/*.diff
+  
+  test_php_qa_action:
+    runs-on: ubuntu-latest
+    needs: [ build_deb ]
+    steps:
+
+      - name: Checkout zen-demo-php
+        uses: actions/checkout@v4
+        with:
+          repository: Aikido-demo-apps/zen-demo-php
+          path: zen-demo-php
+          ref: dev-testing
+          submodules: recursive
+     
+      - name: Get Arch
+        run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: aikido-php-firewall.${{ env.ARCH }}.deb
+          path: ./zen-demo-php
+
+      - name: Overwrite aikido.sh install script
+        run: |
+          echo "dpkg -i -E \"/var/www/html/aikido-php-firewall.\$(uname -i).deb\"" > ./zen-demo-php/.fly/scripts/aikido.sh
+        
+      - name: Run Firewall QA Tests
+        uses: AikidoSec/firewall-tester-action@releases/v1
+        with:
+          dockerfile_path: ./zen-demo-php/Dockerfile
+          extra_args: '--env-file=./zen-demo-php/.env.example -e APP_KEY=base64:W2v6u6VR4lURkxuMT9xZ6pdhXSt5rxsmWTbd1HGqlIM='
+          sleep_before_test: 20
+          skip_tests: test_wave_attack,test_rate_limiting_group_id_1_minute
+          max_parallel_tests: 7
+          ignore_failures: true
