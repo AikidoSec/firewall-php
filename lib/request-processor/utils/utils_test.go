@@ -506,3 +506,129 @@ func TestIsIpv6NotBlockedByIp(t *testing.T) {
 		t.Errorf("expected false, got %v", result)
 	}
 }
+
+func TestGetIpFromRequest(t *testing.T) {
+	//no headers and no remote address
+	globals.EnvironmentConfig.TrustProxy = false
+	if got := GetIpFromRequest("", ""); got != "" {
+		t.Errorf("expected empty, got %q", got)
+	}
+
+	globals.EnvironmentConfig.TrustProxy = true
+	if got := GetIpFromRequest("", ""); got != "" {
+		t.Errorf("expected empty, got %q", got)
+	}
+
+	//no headers and remote address
+	globals.EnvironmentConfig.TrustProxy = false
+	if got := GetIpFromRequest("1.2.3.4", ""); got != "1.2.3.4" {
+		t.Errorf("expected 1.2.3.4, got %q", got)
+	}
+
+	globals.EnvironmentConfig.TrustProxy = true
+	if got := GetIpFromRequest("1.2.3.4", ""); got != "1.2.3.4" {
+		t.Errorf("expected 1.2.3.4, got %q", got)
+	}
+
+	// x-forwarded-for without trust proxy
+	globals.EnvironmentConfig.TrustProxy = false
+	if got := GetIpFromRequest("1.2.3.4", "9.9.9.9"); got != "1.2.3.4" {
+		t.Errorf("expected 1.2.3.4, got %q", got)
+	}
+
+	if got := GetIpFromRequest("df89:84af:85e0:c55f:960c:341a:2cc6:734d", "a3ad:8f95:d2a8:454b:cf19:be6e:73c6:f880"); got != "df89:84af:85e0:c55f:960c:341a:2cc6:734d" {
+		t.Errorf("expected df89:84af:85e0:c55f:960c:341a:2cc6:734d, got %q", got)
+	}
+
+	// x-forwarded-for with trust proxy and "x-forwarded-for" is not an IP
+	globals.EnvironmentConfig.TrustProxy = true
+	if got := GetIpFromRequest("1.2.3.4", "invalid"); got != "1.2.3.4" {
+		t.Errorf("expected 1.2.3.4, got %q", got)
+	}
+
+	// x-forwarded-for with trust proxy and IP contains port
+	globals.EnvironmentConfig.TrustProxy = true
+	if got := GetIpFromRequest("1.2.3.4", "9.9.9.9:8080"); got != "9.9.9.9" {
+		t.Errorf("expected 9.9.9.9, got %q", got)
+	}
+	if got := GetIpFromRequest("1.2.3.4", "[a3ad:8f95:d2a8:454b:cf19:be6e:73c6:f880]:8080"); got != "a3ad:8f95:d2a8:454b:cf19:be6e:73c6:f880" {
+		t.Errorf("expected a3ad:8f95:d2a8:454b:cf19:be6e:73c6:f880, got %q", got)
+	}
+	if got := GetIpFromRequest("1.2.3.4", "[a3ad:8f95:d2a8:454b:cf19:be6e:73c6:f880]"); got != "a3ad:8f95:d2a8:454b:cf19:be6e:73c6:f880" {
+		t.Errorf("expected a3ad:8f95:d2a8:454b:cf19:be6e:73c6:f880, got %q", got)
+	}
+	// Invalid format
+	if got := GetIpFromRequest("df89:84af:85e0:c55f:960c:341a:2cc6:734d", "a3ad:8f95:d2a8:454b:cf19:be6e:73c6:f880:8080"); got != "df89:84af:85e0:c55f:960c:341a:2cc6:734d" {
+		t.Errorf("expected df89:84af:85e0:c55f:960c:341a:2cc6:734d, got %q", got)
+	}
+
+	// with trailing comma
+	globals.EnvironmentConfig.TrustProxy = true
+	if got := GetIpFromRequest("1.2.3.4", "9.9.9.9,"); got != "9.9.9.9" {
+		t.Errorf("expected 9.9.9.9, got %q", got)
+	}
+	if got := GetIpFromRequest("1.2.3.4", ",9.9.9.9"); got != "9.9.9.9" {
+		t.Errorf("expected 9.9.9.9, got %q", got)
+	}
+	if got := GetIpFromRequest("1.2.3.4", ",9.9.9.9,"); got != "9.9.9.9" {
+		t.Errorf("expected 9.9.9.9, got %q", got)
+	}
+	if got := GetIpFromRequest("1.2.3.4", ",9.9.9.9,,"); got != "9.9.9.9" {
+		t.Errorf("expected 9.9.9.9, got %q", got)
+	}
+
+	// x-forwarded-for with trust proxy and "x-forwarded-for" is a private IP
+	globals.EnvironmentConfig.TrustProxy = true
+	if got := GetIpFromRequest("1.2.3.4", "127.0.0.1"); got != "1.2.3.4" {
+		t.Errorf("expected 1.2.3.4, got %q", got)
+	}
+	if got := GetIpFromRequest("df89:84af:85e0:c55f:960c:341a:2cc6:734d", "::1"); got != "df89:84af:85e0:c55f:960c:341a:2cc6:734d" {
+		t.Errorf("expected df89:84af:85e0:c55f:960c:341a:2cc6:734d, got %q", got)
+	}
+
+	// x-forwarded-for with trust proxy and "x-forwarded-for" contains private IP
+	globals.EnvironmentConfig.TrustProxy = true
+	if got := GetIpFromRequest("1.2.3.4", "127.0.0.1, 9.9.9.9"); got != "9.9.9.9" {
+		t.Errorf("expected 9.9.9.9, got %q", got)
+	}
+	if got := GetIpFromRequest("df89:84af:85e0:c55f:960c:341a:2cc6:734d", "::1, a3ad:8f95:d2a8:454b:cf19:be6e:73c6:f880"); got != "a3ad:8f95:d2a8:454b:cf19:be6e:73c6:f880" {
+		t.Errorf("expected a3ad:8f95:d2a8:454b:cf19:be6e:73c6:f880, got %q", got)
+	}
+
+	// x-forwarded-for with trust proxy and "x-forwarded-for" is public IP
+	globals.EnvironmentConfig.TrustProxy = true
+	if got := GetIpFromRequest("1.2.3.4", "9.9.9.9"); got != "9.9.9.9" {
+		t.Errorf("expected 9.9.9.9, got %q", got)
+	}
+	if got := GetIpFromRequest("df89:84af:85e0:c55f:960c:341a:2cc6:734d", "a3ad:8f95:d2a8:454b:cf19:be6e:73c6:f880"); got != "a3ad:8f95:d2a8:454b:cf19:be6e:73c6:f880" {
+		t.Errorf("expected a3ad:8f95:d2a8:454b:cf19:be6e:73c6:f880, got %q", got)
+	}
+
+	// x-forwarded-for with trust proxy and "x-forwarded-for" contains private IP at the end
+	globals.EnvironmentConfig.TrustProxy = true
+	if got := GetIpFromRequest("1.2.3.4", "9.9.9.9, 127.0.0.1"); got != "9.9.9.9" {
+		t.Errorf("expected 9.9.9.9, got %q", got)
+	}
+	if got := GetIpFromRequest("df89:84af:85e0:c55f:960c:341a:2cc6:734d", "a3ad:8f95:d2a8:454b:cf19:be6e:73c6:f880, ::1"); got != "a3ad:8f95:d2a8:454b:cf19:be6e:73c6:f880" {
+		t.Errorf("expected a3ad:8f95:d2a8:454b:cf19:be6e:73c6:f880, got %q", got)
+	}
+
+	// x-forwarded-for with trust proxy and multiple IPs
+	globals.EnvironmentConfig.TrustProxy = true
+	if got := GetIpFromRequest("1.2.3.4", "9.9.9.9, 8.8.8.8, 7.7.7.7"); got != "9.9.9.9" {
+		t.Errorf("expected 9.9.9.9, got %q", got)
+	}
+	if got := GetIpFromRequest("df89:84af:85e0:c55f:960c:341a:2cc6:734d", "a3ad:8f95:d2a8:454b:cf19:be6e:73c6:f880, 3b07:2fba:0270:2149:5fc1:2049:5f04:2131, 791d:967e:428a:90b9:8f6f:4fcc:5d88:015d"); got != "a3ad:8f95:d2a8:454b:cf19:be6e:73c6:f880" {
+		t.Errorf("expected a3ad:8f95:d2a8:454b:cf19:be6e:73c6:f880, got %q", got)
+	}
+
+	// x-forwarded-for with trust proxy and many IPs
+	globals.EnvironmentConfig.TrustProxy = true
+	if got := GetIpFromRequest("1.2.3.4", "127.0.0.1, 192.168.0.1, 192.168.0.2, 9.9.9.9"); got != "9.9.9.9" {
+		t.Errorf("expected 9.9.9.9, got %q", got)
+	}
+	if got := GetIpFromRequest("1.2.3.4", "9.9.9.9, 127.0.0.1, 192.168.0.1, 192.168.0.2"); got != "9.9.9.9" {
+		t.Errorf("expected 9.9.9.9, got %q", got)
+	}
+
+}

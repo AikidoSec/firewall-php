@@ -19,6 +19,15 @@ func GetOutgoingRequestResolvedIp() string {
 	return Context.Callback(C.OUTGOING_REQUEST_RESOLVED_IP)
 }
 
+func GetOutgoingRequestResponseCode() string {
+	return Context.Callback(C.OUTGOING_REQUEST_RESPONSE_CODE)
+}
+
+func GetOutgoingRequestRedirectUrl() string {
+	host, _ := getHostNameAndPort(C.OUTGOING_REQUEST_REDIRECT_URL)
+	return host
+}
+
 func GetFunctionName() string {
 	return Context.Callback(C.FUNCTION_NAME)
 }
@@ -49,6 +58,9 @@ func GetModule() string {
 
 func getHostNameAndPort(urlCallbackId int) (string, uint32) { // urlcallbackid is the type of data we request, eg C.OUTGOING_REQUEST_URL
 	urlStr := Context.Callback(urlCallbackId)
+	// remove all control characters (< 32) and 0x7f(DEL) also replace \@ with @ and remove all whitespace
+	// url.Parse fails if the url contains control characters
+	urlStr = helpers.NormalizeRawUrl(urlStr)
 	urlParsed, err := url.Parse(urlStr)
 	if err != nil {
 		return "", 0

@@ -54,10 +54,11 @@ bool isSymfonyRequestClassLoaded() {
 // https://github.com/symfony/symfony/blob/b8eaa4be31f2159918e79e5694bc9ff241e0d692/src/Symfony/Component/HttpFoundation/Request.php#L1169-L1215
 std::string Server::GetMethod() {
     std::string method = ToUppercase(this->GetVar("REQUEST_METHOD"));
-    
+
     // if (!isSymfonyRequestClassLoaded()) {
     //     return method;
     // }
+
     
     if (method != "POST") {
         return method;
