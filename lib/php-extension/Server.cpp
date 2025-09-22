@@ -35,8 +35,6 @@ std::string Server::GetVar(const char* var) {
     return Z_STRVAL_P(data);
 }
 
-
-
 int is_symfony_request_loaded(void) {
     zend_string *classname = zend_string_init("Symfony\\Component\\HttpFoundation\\Request", sizeof("Symfony\\Component\\HttpFoundation\\Request") - 1, 0);
   
@@ -68,7 +66,7 @@ std::string Server::getMethodFromQuery() {
     if (!get_array) {
         return "";
     }
-
+  
     zval* query_method = zend_hash_str_find(Z_ARRVAL_P(get_array), "_method", sizeof("_method") - 1);
     if (!query_method) {
         return "";
@@ -87,6 +85,7 @@ std::string Server::getMethodFromQuery() {
 // https://github.com/symfony/symfony/blob/b8eaa4be31f2159918e79e5694bc9ff241e0d692/src/Symfony/Component/HttpFoundation/Request.php#L1169-L1215
 std::string Server::GetMethod() {
     std::string method = ToUppercase(this->GetVar("REQUEST_METHOD"));
+
     
    // TODO: Add a check here to see if the request is from Symfony or Laravel
    if (!is_symfony_request_loaded()) {
