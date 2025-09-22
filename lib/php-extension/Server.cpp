@@ -49,16 +49,31 @@ bool isSymfonyRequestClassLoaded() {
     php_printf("Symfony\\Component\\HttpFoundation\\Request class is not loaded\n");
     return false;
 }
- 
+
+// Return the method from the query param _method (_GET["_method"])
+std::string Server::getMethodFromQuery() {
+    zval *get_array;
+    get_array = zend_hash_str_find(&EG(symbol_table), "_GET", sizeof("_GET") - 1);
+    if (!get_array) {
+        return "";
+    }
+    std::string query_method = ToUppercase(Z_STRVAL_P(zend_hash_str_find(Z_ARRVAL_P(get_array), "_method", sizeof("_method") - 1)));
+    if (query_method != "") {
+        return query_method;
+    }
+    return "";
+
+}
+
 // For frameworks like Symfony, Laravel, method override is supported using X-HTTP-METHOD-OVERRIDE or _method query param
 // https://github.com/symfony/symfony/blob/b8eaa4be31f2159918e79e5694bc9ff241e0d692/src/Symfony/Component/HttpFoundation/Request.php#L1169-L1215
 std::string Server::GetMethod() {
     std::string method = ToUppercase(this->GetVar("REQUEST_METHOD"));
 
+
     // if (!isSymfonyRequestClassLoaded()) {
     //     return method;
     // }
-
     
     if (method != "POST") {
         return method;
@@ -72,8 +87,7 @@ std::string Server::GetMethod() {
 
     // in case of X-HTTP-METHOD-OVERRIDE is not set, we check the query param _method
     if (x_http_method_override == "") {
-        json query = GetQuery();
-        std::string query_method = ToUppercase(query["_method"]);
+        std::string query_method = getMethodFromQuery();
         if (query_method != "") {
             method = query_method;
         }
