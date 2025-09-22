@@ -39,7 +39,7 @@ std::string Server::GetVar(const char* var) {
 std::string Server::GetMethodFromQuery() {
     zval *get_array;
     get_array = zend_hash_str_find(&EG(symbol_table), "_GET", sizeof("_GET") - 1);
-    if (!get_array) {
+    if (!get_array || Z_TYPE_P(get_array) != IS_ARRAY) {
         return "";
     }
 
