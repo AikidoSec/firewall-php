@@ -9,6 +9,8 @@ class Server {
 
     std::string GetVar(const char* var);
 
+    std::string GetMethod();
+
     std::string GetRoute();
 
     std::string GetStatusCode();

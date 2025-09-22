@@ -4,6 +4,8 @@
 
 std::string ToLowercase(const std::string& str);
 
+std::string ToUppercase(const std::string& str);
+
 std::string GetRandomNumber();
 
 std::string GetTime();
