@@ -55,9 +55,9 @@ bool isSymfonyRequestClassLoaded() {
 std::string Server::GetMethod() {
     std::string method = ToUppercase(this->GetVar("REQUEST_METHOD"));
     
-    if (!isSymfonyRequestClassLoaded()) {
-        return method;
-    }
+    // if (!isSymfonyRequestClassLoaded()) {
+    //     return method;
+    // }
     
     if (method != "POST") {
         return method;
