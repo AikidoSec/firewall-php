@@ -2,15 +2,18 @@ package shell_injection
 
 import (
 	"main/context"
+	"main/helpers"
 	"main/utils"
 )
 
 func CheckContextForShellInjection(command string, operation string) *utils.InterceptorResult {
+	trimmedCommand := helpers.TrimInvisible(command)
 	for _, source := range context.SOURCES {
 		mapss := source.CacheGet()
 
 		for str, path := range mapss {
-			if detectShellInjection(command, str) {
+			trimmedInputString := helpers.TrimInvisible(str)
+			if detectShellInjection(trimmedCommand, trimmedInputString) {
 				return &utils.InterceptorResult{
 					Operation:     operation,
 					Kind:          utils.Shell_injection,
