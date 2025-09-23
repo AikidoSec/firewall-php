@@ -5,8 +5,8 @@ import (
 	"unicode"
 )
 
-// TrimInvisible trims leading/trailing whitespace, control, and specific
-// invisible/format runes similar to PHP Illuminate\Support\Str::trim.
+// TrimInvisible trims leading/trailing whitespace, control, etc.
+// It's similar to PHP Illuminate\Support\Str::trim
 func TrimInvisible(s string) string {
 	return strings.TrimFunc(s, isTrimRune)
 }
