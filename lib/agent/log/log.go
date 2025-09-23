@@ -113,7 +113,10 @@ func SetLogLevel(level string) error {
 }
 
 func Init() {
-	if !globals.EnvironmentConfig.DiskLogs {
+	if !globals.AikidoConfig.DiskLogs {
+		return
+	}
+	if logFile != nil {
 		return
 	}
 	currentTime := time.Now()
@@ -129,7 +132,7 @@ func Init() {
 }
 
 func Uninit() {
-	if !globals.EnvironmentConfig.DiskLogs {
+	if !globals.AikidoConfig.DiskLogs {
 		return
 	}
 	logger.SetOutput(os.Stdout)

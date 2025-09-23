@@ -139,6 +139,8 @@ bool RequestProcessor::Init() {
         return false;
     }
 
+    AIKIDO_GLOBAL(logger).Init();
+
     AIKIDO_LOG_INFO("Aikido Request Processor initialized successfully!\n");
     return true;
 }
