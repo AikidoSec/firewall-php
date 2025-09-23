@@ -6,6 +6,7 @@ import (
 	"main/grpc"
 	"main/log"
 	ssrf "main/vulnerabilities/ssrf"
+	"strings"
 )
 
 /*
@@ -86,9 +87,10 @@ func OnPostOutgoingRequest() string {
 		}
 	}
 
-	// if the response is 302, we need to check CURLINFO_REDIRECT_URL
+	// if the response starts with 3, we need to check CURLINFO_REDIRECT_URL
+	// this is the case for redirects where the Location: header is provided
 	responseCode := context.GetOutgoingRequestResponseCode()
-	if res == nil && responseCode == "302" {
+	if res == nil && strings.HasPrefix(responseCode, "3") {
 		redirectUrl := context.GetOutgoingRequestRedirectUrl()
 		if redirectUrl != "" {
 			res = ssrf.CheckEffectiveHostnameForSSRF(redirectUrl)
