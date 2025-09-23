@@ -22,7 +22,7 @@ char* GoContextCallback(int callbackId) {
                 break;
             case CONTEXT_METHOD:
                 ctx = "METHOD";
-                ret = server.GetVar("REQUEST_METHOD");
+                ret = server.GetMethod();
                 break;
             case CONTEXT_ROUTE:
                 ctx = "ROUTE";
@@ -95,6 +95,14 @@ char* GoContextCallback(int callbackId) {
             case OUTGOING_REQUEST_RESOLVED_IP:
                 ctx = "OUTGOING_REQUEST_RESOLVED_IP";
                 ret = eventCache.outgoingRequestResolvedIp;
+                break;
+            case OUTGOING_REQUEST_RESPONSE_CODE:
+                ctx = "OUTGOING_REQUEST_RESPONSE_CODE";
+                ret = eventCache.outgoingRequestResponseCode;
+                break;
+            case OUTGOING_REQUEST_REDIRECT_URL:
+                ctx = "OUTGOING_REQUEST_REDIRECT_URL";
+                ret = eventCache.outgoingRequestRedirectUrl;
                 break;
             case CMD:
                 ctx = "CMD";

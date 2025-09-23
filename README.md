@@ -1,6 +1,6 @@
 ![Zen by Aikido for PHP](./docs/banner.svg)
 
-# Zen, in-app firewall for PHP | by Aikido
+# Zen, in-app firewall for PHP | by Aikido 
 
 Zen, your in-app firewall for peace of mind– at runtime.
 

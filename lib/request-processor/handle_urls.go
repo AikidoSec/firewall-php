@@ -86,6 +86,15 @@ func OnPostOutgoingRequest() string {
 		}
 	}
 
+	// if the response is 302, we need to check CURLINFO_REDIRECT_URL
+	responseCode := context.GetOutgoingRequestResponseCode()
+	if res == nil && responseCode == "302" {
+		redirectUrl := context.GetOutgoingRequestRedirectUrl()
+		if redirectUrl != "" {
+			res = ssrf.CheckEffectiveHostnameForSSRF(redirectUrl)
+		}
+	}
+
 	if res != nil {
 		/* Throw exception to PHP layer if blocking is enabled -> Response content is not returned to the PHP code */
 		return attack.ReportAttackDetected(res)
