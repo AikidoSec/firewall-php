@@ -236,21 +236,11 @@ func getIpFromXForwardedFor(value string) string {
 		}
 
 		// IPv6 with port: "[2001:db8::1]:443" -> "2001:db8::1"
-		if strings.HasPrefix(ip, "[") {
-			if idx := strings.Index(ip, "]:"); idx > 0 {
-				ip = ip[1:idx]
-				parts[i] = ip
-				continue
-			}
-		}
-
 		// IPv4 with port: "203.0.113.5:1234" -> "203.0.113.5"
-		if strings.Count(ip, ":") == 1 {
-			if host, _, err := net.SplitHostPort(ip); err == nil {
-				ip = host
-				parts[i] = ip
-				continue
-			}
+		if host, _, err := net.SplitHostPort(ip); err == nil {
+			ip = host
+			parts[i] = ip
+			continue
 		}
 
 		// Leave as-is; will validate below
