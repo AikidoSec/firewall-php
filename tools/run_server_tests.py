@@ -96,7 +96,7 @@ def handle_test_scenario(data, root_tests_dir, test_lib_dir, server, benchmark, 
         # check if the server is running (by port)
         if not is_port_in_active_use(server_port):
             print(f"Error in starting {server} server for {test_name}:")
-            print(f"Server process returned code: {server_process.returncode}")
+            print(f"Server process returned code: {server_process.wait()}")
             failed_tests.append(test_name)
             return
         else:
