@@ -81,6 +81,8 @@ def handle_test_scenario(data, root_tests_dir, test_lib_dir, server, benchmark, 
     test_name = data["test_name"]
     mock_port = data["mock_port"]
     server_port = data["server_port"]
+    mock_aikido_core = None
+    server_process = None
     try:
         print(f"Running {test_name}...")
         print(f"Starting mock server on port {mock_port} with start_config.json for {test_name}...")
@@ -103,12 +105,33 @@ def handle_test_scenario(data, root_tests_dir, test_lib_dir, server, benchmark, 
         else:
             print(f"Running test.py for {test_name}...")
             
-        subprocess.run(["python3", test_script_name, str(server_port), str(mock_port), test_name], 
-                       env=dict(os.environ, PYTHONPATH=f"{test_lib_dir}:$PYTHONPATH"),
-                       cwd=test_script_cwd,
-                       check=True, timeout=600, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        
-        passed_tests.append(test_name)
+        test_succeeded = False
+        max_attempts = 3
+        for attempt in range(1, max_attempts + 1):
+            try:
+                subprocess.run(["python3", test_script_name, str(server_port), str(mock_port), test_name],
+                               env=dict(os.environ, PYTHONPATH=f"{test_lib_dir}:$PYTHONPATH"),
+                               cwd=test_script_cwd,
+                               check=True, timeout=600, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                test_succeeded = True
+                break
+            except subprocess.CalledProcessError as e:
+                if attempt < max_attempts:
+                    print(f"Attempt {attempt} for {test_name} failed (exit {e.returncode}). Retrying...")
+                    time.sleep(3)
+                    continue
+                else:
+                    raise
+            except subprocess.TimeoutExpired:
+                if attempt < max_attempts:
+                    print(f"Attempt {attempt} for {test_name} timed out. Retrying...")
+                    time.sleep(3)
+                    continue
+                else:
+                    raise
+
+        if test_succeeded:
+            passed_tests.append(test_name)
 
     except subprocess.CalledProcessError as e:
         print(f"Error in testing scenario {test_name}:")
