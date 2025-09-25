@@ -81,8 +81,6 @@ def handle_test_scenario(data, root_tests_dir, test_lib_dir, server, benchmark, 
     test_name = data["test_name"]
     mock_port = data["mock_port"]
     server_port = data["server_port"]
-    mock_aikido_core = None
-    server_process = None
     try:
         print(f"Running {test_name}...")
         print(f"Starting mock server on port {mock_port} with start_config.json for {test_name}...")
@@ -105,33 +103,12 @@ def handle_test_scenario(data, root_tests_dir, test_lib_dir, server, benchmark, 
         else:
             print(f"Running test.py for {test_name}...")
             
-        test_succeeded = False
-        max_attempts = 3
-        for attempt in range(1, max_attempts + 1):
-            try:
-                subprocess.run(["python3", test_script_name, str(server_port), str(mock_port), test_name],
-                               env=dict(os.environ, PYTHONPATH=f"{test_lib_dir}:$PYTHONPATH"),
-                               cwd=test_script_cwd,
-                               check=True, timeout=600, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                test_succeeded = True
-                break
-            except subprocess.CalledProcessError as e:
-                if attempt < max_attempts:
-                    print(f"Attempt {attempt} for {test_name} failed (exit {e.returncode}). Retrying...")
-                    time.sleep(3)
-                    continue
-                else:
-                    raise
-            except subprocess.TimeoutExpired:
-                if attempt < max_attempts:
-                    print(f"Attempt {attempt} for {test_name} timed out. Retrying...")
-                    time.sleep(3)
-                    continue
-                else:
-                    raise
-
-        if test_succeeded:
-            passed_tests.append(test_name)
+        subprocess.run(["python3", test_script_name, str(server_port), str(mock_port), test_name], 
+                       env=dict(os.environ, PYTHONPATH=f"{test_lib_dir}:$PYTHONPATH"),
+                       cwd=test_script_cwd,
+                       check=True, timeout=600, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        
+        passed_tests.append(test_name)
 
     except subprocess.CalledProcessError as e:
         print(f"Error in testing scenario {test_name}:")
@@ -209,7 +186,48 @@ def main(root_tests_dir, test_lib_dir, specific_test=None, server="php-built-in"
 
     for thread in threads:
         thread.join()
-        
+
+    # Rerun failed tests once more
+    if failed_tests:
+        print("Rerunning failed tests...")
+        initial_failed = failed_tests.copy()
+        failed_tests.clear()
+
+        # Map original test data by name for quick lookup
+        name_to_test_data = {t["test_name"]: t for t in tests_data}
+
+        rerun_tests_data = []
+        for test_name in initial_failed:
+            original = name_to_test_data.get(test_name)
+            if not original:
+                continue
+
+            # Create a fresh copy with new ports and updated env endpoints
+            mock_port = generate_unique_port()
+            server_port = generate_unique_port()
+
+            data = dict(original)
+            data["mock_port"] = mock_port
+            data["server_port"] = server_port
+
+            env = dict(original.get("env", {}))
+            env["AIKIDO_ENDPOINT"] = f"http://localhost:{mock_port}/"
+            env["AIKIDO_REALTIME_ENDPOINT"] = f"http://localhost:{mock_port}/"
+            data["env"] = env
+
+            rerun_tests_data.append(data)
+
+        threads = []
+        for test_data in rerun_tests_data:
+            args = (test_data, root_tests_dir, test_lib_dir, server, benchmark, valgrind, debug)
+            thread = threading.Thread(target=handle_test_scenario, args=args)
+            threads.append(thread)
+            thread.start()
+            time.sleep(10)
+
+        for thread in threads:
+            thread.join()
+
     server_uninit = servers[server][UNINIT]
     if server_uninit is not None:
         server_uninit()
