@@ -184,7 +184,13 @@ def nginx_php_fpm_pre_tests():
     create_folder(php_fpm_run_dir)
     create_folder(f'{log_dir}/php-fpm')
     modify_nginx_conf(nginx_global_conf)
-    subprocess.run(['nginx'], check=True)
+    try:
+        subprocess.run(['nginx'], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    except subprocess.CalledProcessError as e:
+        print("Error running nginx:")
+        print("stdout:", e.stdout)
+        print("stderr:", e.stderr)
+        raise
     print("nginx server restarted!")
     time.sleep(5)
 

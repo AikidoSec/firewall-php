@@ -81,6 +81,7 @@ def handle_test_scenario(data, root_tests_dir, test_lib_dir, server, benchmark, 
     test_name = data["test_name"]
     mock_port = data["mock_port"]
     server_port = data["server_port"]
+    server_process = None
     try:
         print(f"Running {test_name}...")
         print(f"Starting mock server on port {mock_port} with start_config.json for {test_name}...")
