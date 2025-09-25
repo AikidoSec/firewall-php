@@ -91,16 +91,12 @@ def handle_test_scenario(data, root_tests_dir, test_lib_dir, server, benchmark, 
         
         server_start = servers[server][START_SERVER]
         server_process = server_start(data, test_lib_dir, valgrind)
-
-        time.sleep(20)
-        # check if the server is running (by port)
-        if not is_port_in_active_use(server_port):
-            print(f"Error in starting {server} server for {test_name}:")
-            print(f"Server process returned code: {server_process.wait()}")
+  
+        time.sleep(20) 
+        if server_process.poll() is not None:
+            print(f"[{test_name}] {server} server failed to start, status: {server_process.poll()}")
             failed_tests.append(test_name)
             return
-        else:
-            print(f"{server} server started successfully for {test_name}")
 
         test_script_name = "test.py"
         test_script_cwd = data["test_dir"]
