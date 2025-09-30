@@ -2,17 +2,21 @@ package path_traversal
 
 import (
 	"main/context"
+	"main/helpers"
 	"main/utils"
 	"strings"
 )
 
 func CheckContextForPathTraversal(filename string, operation string, checkPathStart bool) *utils.InterceptorResult {
+	trimmedFilename := helpers.TrimInvisible(filename)
+	sanitizedPath := SanitizePath(trimmedFilename)
+
 	for _, source := range context.SOURCES {
 		mapss := source.CacheGet()
-		sanitizedPath := SanitizePath(filename)
 
 		for str, path := range mapss {
-			inputString := SanitizePath(str)
+			trimmedInputString := helpers.TrimInvisible(str)
+			inputString := SanitizePath(trimmedInputString)
 			if detectPathTraversal(sanitizedPath, inputString, checkPathStart) {
 				return &utils.InterceptorResult{
 					Operation:     operation,
