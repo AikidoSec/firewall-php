@@ -13,26 +13,20 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_curl_exec) {
 #endif
     ZEND_PARSE_PARAMETERS_END();
     
-    std::string outgoingRequestUrl =  CallPhpFunctionCurlGetInfo(curlHandle, CURLINFO_EFFECTIVE_URL);
+    eventCache.outgoingRequestUrl = CallPhpFunctionCurlGetInfo(curlHandle, CURLINFO_EFFECTIVE_URL);
   
     // if requestCache.outgoingRequestUrl is not empty, we check if it's a redirect
     if (!requestCache.outgoingRequestUrl.empty()) {
-        json outgoingRequestUrlJson = CallPhpFunctionParseUrl(outgoingRequestUrl);
+        json outgoingRequestUrlJson = CallPhpFunctionParseUrl(eventCache.outgoingRequestUrl);
         json outgoingRequestRedirectUrlJson = CallPhpFunctionParseUrl(requestCache.outgoingRequestRedirectUrl);
         
-        if (outgoingRequestUrlJson.empty() || outgoingRequestRedirectUrlJson.empty()) {
-            eventCache.outgoingRequestUrl = outgoingRequestUrl;
-        }
-
         // if the host and port are the same, we use the initial URL, otherwise we use the effective URL
-        else if (outgoingRequestUrlJson["host"] == outgoingRequestRedirectUrlJson["host"] && outgoingRequestUrlJson["port"] == outgoingRequestRedirectUrlJson["port"]) {
+        if (!outgoingRequestUrlJson.empty() && !outgoingRequestRedirectUrlJson.empty() &&
+            outgoingRequestUrlJson["host"] == outgoingRequestRedirectUrlJson["host"] && 
+            outgoingRequestUrlJson["port"] == outgoingRequestRedirectUrlJson["port"]) {
+
             eventCache.outgoingRequestUrl = requestCache.outgoingRequestUrl;
-        } else {
-            eventCache.outgoingRequestUrl = outgoingRequestUrl;
-        }
-    }
-    else {
-        eventCache.outgoingRequestUrl = outgoingRequestUrl;
+        } 
     }
 
     if (eventCache.outgoingRequestUrl.empty()) return;
