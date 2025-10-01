@@ -46,6 +46,7 @@ enum CALLBACK_ID {
                                      // URL were the request was actually made)
     OUTGOING_REQUEST_PORT,
     OUTGOING_REQUEST_RESOLVED_IP,
+
     CMD,
 
     FILENAME,
