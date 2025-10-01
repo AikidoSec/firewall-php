@@ -13,18 +13,25 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_curl_exec) {
 #endif
     ZEND_PARSE_PARAMETERS_END();
     
-    // if requestCache.outgoingRequestUrl is not empty, we use it, we check if it's a redirect
     std::string outgoingRequestUrl =  CallPhpFunctionCurlGetInfo(curlHandle, CURLINFO_EFFECTIVE_URL);
+  
+    // if requestCache.outgoingRequestUrl is not empty, we check if it's a redirect
     if (!requestCache.outgoingRequestUrl.empty()) {
         json outgoingRequestUrlJson = CallPhpFunctionParseUrl(outgoingRequestUrl);
         json outgoingRequestRedirectUrlJson = CallPhpFunctionParseUrl(requestCache.outgoingRequestRedirectUrl);
-        if (outgoingRequestUrlJson["host"] == outgoingRequestRedirectUrlJson["host"] && outgoingRequestUrlJson["port"] == outgoingRequestRedirectUrlJson["port"]) {
+        
+        if (outgoingRequestUrlJson.empty() || outgoingRequestRedirectUrlJson.empty()) {
+            eventCache.outgoingRequestUrl = outgoingRequestUrl;
+        }
+
+        // if the host and port are the same, we use the initial URL, otherwise we use the effective URL
+        else if (outgoingRequestUrlJson["host"] == outgoingRequestRedirectUrlJson["host"] && outgoingRequestUrlJson["port"] == outgoingRequestRedirectUrlJson["port"]) {
             eventCache.outgoingRequestUrl = requestCache.outgoingRequestUrl;
-        }else{
+        } else {
             eventCache.outgoingRequestUrl = outgoingRequestUrl;
         }
     }
-    else{
+    else {
         eventCache.outgoingRequestUrl = outgoingRequestUrl;
     }
 
@@ -61,10 +68,10 @@ AIKIDO_HANDLER_FUNCTION(handle_post_curl_exec) {
   
         // if it's the first redirect
         if (requestCache.outgoingRequestUrl.empty()) {
-            requestCache.outgoingRequestUrl = CallPhpFunctionCurlGetInfo(curlHandle, CURLINFO_EFFECTIVE_URL);
+            requestCache.outgoingRequestUrl = eventCache.outgoingRequestEffectiveUrl;
         }
     } 
-    else{
+    else {
         requestCache.outgoingRequestUrl = "";
         requestCache.outgoingRequestRedirectUrl = "";
     }
