@@ -6,13 +6,13 @@ AIKIDO_LOG_LEVEL=DEBUG
 AIKIDO_BLOCK=1
 
 --POST--
-test=https://example.com
+test=https://ssrf-redirects.testssandbox.com/ssrf-test-4
 
 --FILE--
 <?php
 
 $host = '127.0.0.1';
-$port = 3000;
+$port = 4001;
 $pid = null;
 
 $descriptorspec = [
@@ -35,9 +35,9 @@ try {
     sleep(1);
 
     // Perform the cURL request
-    $ch1 = curl_init("https://example.com");
+    $ch1 = curl_init("https://ssrf-redirects.testssandbox.com/ssrf-test-4");
     curl_setopt($ch1, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch1, CURLOPT_FOLLOWLOCATION, true);
+    curl_setopt($ch1, CURLOPT_FOLLOWLOCATION, false);
 
     $response = curl_exec($ch1);
 
@@ -47,11 +47,10 @@ try {
         echo "Response: " . $response;
     }
 
-    $ch2 = curl_init("http://127.0.0.1:3000");
+    $ch2 = curl_init("http://127.0.0.1:4001");
     curl_setopt($ch2, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch2, CURLOPT_FOLLOWLOCATION, true);
+    curl_setopt($ch2, CURLOPT_FOLLOWLOCATION, false);
     $response2 = curl_exec($ch2);
-
 
 } catch (Throwable $e) {
     echo "Error: " . $e->getMessage() . "\n";
