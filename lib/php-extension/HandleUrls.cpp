@@ -19,14 +19,18 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_curl_exec) {
     if (!requestCache.outgoingRequestUrl.empty()) {
         json outgoingRequestUrlJson = CallPhpFunctionParseUrl(eventCache.outgoingRequestUrl);
         json outgoingRequestRedirectUrlJson = CallPhpFunctionParseUrl(requestCache.outgoingRequestRedirectUrl);
-        
+
         // if the host and port are the same, we use the initial URL, otherwise we use the effective URL
         if (!outgoingRequestUrlJson.empty() && !outgoingRequestRedirectUrlJson.empty() &&
             outgoingRequestUrlJson["host"] == outgoingRequestRedirectUrlJson["host"] && 
             outgoingRequestUrlJson["port"] == outgoingRequestRedirectUrlJson["port"]) {
 
             eventCache.outgoingRequestUrl = requestCache.outgoingRequestUrl;
-        } 
+        } else {
+            // if previous outgoingRequestRedirectUrl it's different from outgoingRequestUrl it means that it's a new request 
+            // so we reset the outgoingRequestUrl
+            requestCache.outgoingRequestUrl = "";
+        }
     }
 
     if (eventCache.outgoingRequestUrl.empty()) return;
