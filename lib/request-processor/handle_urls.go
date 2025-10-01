@@ -6,7 +6,6 @@ import (
 	"main/grpc"
 	"main/log"
 	ssrf "main/vulnerabilities/ssrf"
-	"strings"
 )
 
 /*
@@ -84,16 +83,6 @@ func OnPostOutgoingRequest() string {
 		if res == nil {
 			// We double check here for SSRF on the effective hostname because some sinks might not provide the resolved IP address
 			res = ssrf.CheckEffectiveHostnameForSSRF(effectiveHostname)
-		}
-	}
-
-	// if the response starts with 3, we need to check CURLINFO_REDIRECT_URL
-	// this is the case for redirects where the Location: header is provided
-	responseCode := context.GetOutgoingRequestResponseCode()
-	if res == nil && strings.HasPrefix(responseCode, "3") {
-		redirectUrl := context.GetOutgoingRequestRedirectUrl()
-		if redirectUrl != "" {
-			res = ssrf.CheckEffectiveHostnameForSSRF(redirectUrl)
 		}
 	}
 

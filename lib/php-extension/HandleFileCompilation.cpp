@@ -1,8 +1,6 @@
 #include "Includes.h"
 
 zend_op_array* handle_file_compilation(zend_file_handle* file_handle, int type) {
-    EventCache old_eventCache;
-    old_eventCache.Copy(eventCache);
     eventCache.Reset();
     switch (type) {
         case ZEND_INCLUDE:
@@ -42,6 +40,6 @@ zend_op_array* handle_file_compilation(zend_file_handle* file_handle, int type) 
     eventId = NO_EVENT_ID;
     helper_handle_post_file_path_access(eventId);
     aikido_process_event(eventId, eventCache.functionName);
-    eventCache = old_eventCache;
+
     return op_array;
 }

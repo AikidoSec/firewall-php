@@ -12,8 +12,22 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_curl_exec) {
     Z_PARAM_RESOURCE(curlHandle)
 #endif
     ZEND_PARSE_PARAMETERS_END();
+    
+    // if requestCache.outgoingRequestUrl is not empty, we use it, we check if it's a redirect
+    std::string outgoingRequestUrl =  CallPhpFunctionCurlGetInfo(curlHandle, CURLINFO_EFFECTIVE_URL);
+    if (!requestCache.outgoingRequestUrl.empty()) {
+        json outgoingRequestUrlJson = CallPhpFunctionParseUrl(outgoingRequestUrl);
+        json outgoingRequestRedirectUrlJson = CallPhpFunctionParseUrl(requestCache.outgoingRequestRedirectUrl);
+        if (outgoingRequestUrlJson["host"] == outgoingRequestRedirectUrlJson["host"] && outgoingRequestUrlJson["port"] == outgoingRequestRedirectUrlJson["port"]) {
+            eventCache.outgoingRequestUrl = requestCache.outgoingRequestUrl;
+        }else{
+            eventCache.outgoingRequestUrl = outgoingRequestUrl;
+        }
+    }
+    else{
+        eventCache.outgoingRequestUrl = outgoingRequestUrl;
+    }
 
-    eventCache.outgoingRequestUrl = CallPhpFunctionCurlGetInfo(curlHandle, CURLINFO_EFFECTIVE_URL);
     if (eventCache.outgoingRequestUrl.empty()) return;
 
     eventId = EVENT_PRE_OUTGOING_REQUEST;
@@ -39,6 +53,20 @@ AIKIDO_HANDLER_FUNCTION(handle_post_curl_exec) {
     eventCache.outgoingRequestEffectiveUrl = CallPhpFunctionCurlGetInfo(curlHandle, CURLINFO_EFFECTIVE_URL);
     eventCache.outgoingRequestPort = CallPhpFunctionCurlGetInfo(curlHandle, CURLINFO_PRIMARY_PORT);
     eventCache.outgoingRequestResolvedIp = CallPhpFunctionCurlGetInfo(curlHandle, CURLINFO_PRIMARY_IP);
-    eventCache.outgoingRequestResponseCode = CallPhpFunctionCurlGetInfo(curlHandle, CURLINFO_RESPONSE_CODE);
-    eventCache.outgoingRequestRedirectUrl = CallPhpFunctionCurlGetInfo(curlHandle, CURLINFO_REDIRECT_URL);  
+    std::string outgoingRequestResponseCode = CallPhpFunctionCurlGetInfo(curlHandle, CURLINFO_RESPONSE_CODE);
+    
+    // if outgoingRequestResponseCode starts with 3, it's a redirect 
+    if (outgoingRequestResponseCode.substr(0, 1) == "3") {
+        requestCache.outgoingRequestRedirectUrl = CallPhpFunctionCurlGetInfo(curlHandle, CURLINFO_REDIRECT_URL);  
+  
+        // if it's the first redirect
+        if (requestCache.outgoingRequestUrl.empty()) {
+            requestCache.outgoingRequestUrl = CallPhpFunctionCurlGetInfo(curlHandle, CURLINFO_EFFECTIVE_URL);
+        }
+    } 
+    else{
+        requestCache.outgoingRequestUrl = "";
+        requestCache.outgoingRequestRedirectUrl = "";
+    }
+    
 }
