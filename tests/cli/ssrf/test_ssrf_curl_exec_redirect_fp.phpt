@@ -1,5 +1,5 @@
 --TEST--
-Ensure cURL requests to example.com and after to a local dev server (127.0.0.1) are not incorrectly blocked as SSRF by Aikido
+Ensure cURL requests to ssrf-redirects.testssandbox.com and after to a local dev server (127.0.0.1) are not incorrectly blocked as SSRF by Aikido
 
 --ENV--
 AIKIDO_LOG_LEVEL=DEBUG

@@ -12,7 +12,7 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_curl_exec) {
     Z_PARAM_RESOURCE(curlHandle)
 #endif
     ZEND_PARSE_PARAMETERS_END();
-    
+
     eventCache.outgoingRequestUrl = CallPhpFunctionCurlGetInfo(curlHandle, CURLINFO_EFFECTIVE_URL);
   
     // if requestCache.outgoingRequestUrl is not empty, we check if it's a redirect
