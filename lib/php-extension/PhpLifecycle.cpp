@@ -24,6 +24,11 @@ void PhpLifecycle::RequestShutdown() {
 
 void PhpLifecycle::ModuleShutdown() {
     if (this->mainPID == getpid()) {
+        if (AIKIDO_GLOBAL(sapi_name) == "fpm-fcgi") {
+            AIKIDO_LOG_INFO("Module shutdown called on main PID for php-fpm. Ignoring...\n");
+            return;
+        }
+
         AIKIDO_LOG_INFO("Module shutdown called on main PID.\n");
         AIKIDO_LOG_INFO("Unhooking functions...\n");
         AIKIDO_LOG_INFO("Uninitializing Aikido Agent...\n");
