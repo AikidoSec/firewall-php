@@ -118,3 +118,40 @@ bool StartsWith(const std::string& str, const std::string& prefix, bool caseSens
     }
     return strToCompare.size() >= prefixToCompare.size() && strToCompare.compare(0, prefixToCompare.length(), prefixToCompare) == 0;
 }
+
+json CallPhpFunctionParseUrl(const std::string& url) {
+    if (url.empty()) {
+        return json();
+    }
+
+    zval retval;
+    if (CallPhpFunctionWithOneParam("parse_url", url, &retval)) {
+        if (Z_TYPE(retval) == IS_ARRAY) {
+            json result_json;
+            zval* host = zend_hash_str_find(Z_ARRVAL(retval), "host", sizeof("host") - 1);
+            if (host && Z_TYPE_P(host) == IS_STRING) {
+                result_json["host"] = Z_STRVAL_P(host);
+            }
+           
+            zval* port = zend_hash_str_find(Z_ARRVAL(retval), "port", sizeof("port") - 1);
+            if (port && Z_TYPE_P(port) == IS_LONG) {
+                result_json["port"] = Z_LVAL_P(port);
+            } else {
+                zval* scheme = zend_hash_str_find(Z_ARRVAL(retval), "scheme", sizeof("scheme") - 1);
+                if (scheme && Z_TYPE_P(scheme) == IS_STRING) {
+                    if (strcmp(Z_STRVAL_P(scheme), "https") == 0) {
+                        result_json["port"] = 443;
+                    } 
+                    else if (strcmp(Z_STRVAL_P(scheme), "http") == 0) {
+                        result_json["port"] = 80;
+                    } 
+                    else {
+                        result_json["port"] = 0;
+                    }
+                }
+            }
+            return result_json;
+        }
+    }
+    return json();
+}

@@ -20,7 +20,7 @@ $queryParams = http_build_query([
 ]);
 curl_setopt($ch2, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch2, CURLOPT_URL, "https://httpbin.org/get?" . $queryParams);
-curl_setopt($ch2, CURLOPT_TIMEOUT, 1);
+curl_setopt($ch2, CURLOPT_TIMEOUT, 10);
 curl_exec($ch2);
 curl_close($ch2);
 
