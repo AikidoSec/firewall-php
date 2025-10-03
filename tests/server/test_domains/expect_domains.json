@@ -12,7 +12,7 @@
             "hits": 10
         },
         {
-            "hostname": "httpbin.org",
+            "hostname": "ssrf-redirects.testssandbox.com",
             "port": 443,
             "hits": 1
         },

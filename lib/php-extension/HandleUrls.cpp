@@ -14,7 +14,8 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_curl_exec) {
     ZEND_PARSE_PARAMETERS_END();
 
     eventCache.outgoingRequestUrl = CallPhpFunctionCurlGetInfo(curlHandle, CURLINFO_EFFECTIVE_URL);
-  
+    eventCache.outgoingRequestPort = CallPhpFunctionCurlGetInfo(curlHandle, CURLINFO_PRIMARY_PORT);
+
     // if requestCache.outgoingRequestUrl is not empty, we check if it's a redirect
     if (!requestCache.outgoingRequestUrl.empty()) {
         json outgoingRequestUrlJson = CallPhpFunctionParseUrl(eventCache.outgoingRequestUrl);
@@ -53,12 +54,18 @@ AIKIDO_HANDLER_FUNCTION(handle_post_curl_exec) {
     ZEND_PARSE_PARAMETERS_END();
 #endif
 
+    std::string outgoingRequestResponseCode = CallPhpFunctionCurlGetInfo(curlHandle, CURLINFO_RESPONSE_CODE);
+
+    // if outgoingRequestResponseCode is 0, it means that there was an error 
+    if (outgoingRequestResponseCode == "0") {
+        return;
+    }
+
     eventId = EVENT_POST_OUTGOING_REQUEST;
     eventCache.moduleName = "curl";
     eventCache.outgoingRequestEffectiveUrl = CallPhpFunctionCurlGetInfo(curlHandle, CURLINFO_EFFECTIVE_URL);
-    eventCache.outgoingRequestPort = CallPhpFunctionCurlGetInfo(curlHandle, CURLINFO_PRIMARY_PORT);
+    eventCache.outgoingRequestEffectiveUrlPort = CallPhpFunctionCurlGetInfo(curlHandle, CURLINFO_PRIMARY_PORT);
     eventCache.outgoingRequestResolvedIp = CallPhpFunctionCurlGetInfo(curlHandle, CURLINFO_PRIMARY_IP);
-    std::string outgoingRequestResponseCode = CallPhpFunctionCurlGetInfo(curlHandle, CURLINFO_RESPONSE_CODE);
     
     // if outgoingRequestResponseCode starts with 3, it's a redirect 
     if (outgoingRequestResponseCode.substr(0, 1) == "3") {

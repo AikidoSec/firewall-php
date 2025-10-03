@@ -26,6 +26,7 @@ class EventCache {
     std::string outgoingRequestEffectiveUrl;
     std::string outgoingRequestPort;
     std::string outgoingRequestResolvedIp;
+    std::string outgoingRequestEffectiveUrlPort;
 
     std::string sqlQuery;
     std::string sqlDialect;
