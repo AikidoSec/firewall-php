@@ -1,8 +1,11 @@
 #include "Includes.h"
 
 void PhpLifecycle::ModuleInit() {
+    char* v = sapi_getenv("SERVER_SOFTWARE", sizeof("SERVER_SOFTWARE")-1);
+
     this->mainPID = getpid();
-    AIKIDO_LOG_INFO("Main PID is: %u\n", this->mainPID);
+    AIKIDO_LOG_INFO("Main PID is: %u (server software: %s)\n", this->mainPID, v);
+
     if (!AIKIDO_GLOBAL(agent).Init()) {
         AIKIDO_LOG_INFO("Aikido Agent initialization failed!\n");
     } else {
@@ -23,7 +26,7 @@ void PhpLifecycle::RequestShutdown() {
 }
 
 void PhpLifecycle::ModuleShutdown() {
-    char* v = sapi_getenv("SERVER_SOFTWARE", sizeof("SERVER_SOFTWARE")-1)
+    char* v = sapi_getenv("SERVER_SOFTWARE", sizeof("SERVER_SOFTWARE")-1);
     if (this->mainPID == getpid()) {
         if (AIKIDO_GLOBAL(sapi_name) == "fpm-fcgi") {
             AIKIDO_LOG_INFO("Module shutdown called on main PID for php-fpm (server software: %s). Ignoring...\n", v);
