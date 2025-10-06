@@ -44,7 +44,6 @@ servers = {
 used_ports = set()
 passed_tests = []
 failed_tests = []
-retry_summary = {}  # Track retry attempts per test
 
 lock = threading.Lock()
 
@@ -77,99 +76,98 @@ def print_test_results(s, tests):
     for t in tests:
         print(f"\t- {t}")
 
-def print_retry_summary():
-    if retry_summary:
-        print("\nRetry Summary:")
-        for test_name, attempts in retry_summary.items():
-            print(f"\t- {test_name}: passed after {attempts} retries")
 
-
-def handle_test_scenario(data, root_tests_dir, test_lib_dir, server, benchmark, valgrind, debug, max_retries=0, retry_delay=5):
+def handle_test_scenario(data, root_tests_dir, test_lib_dir, server, benchmark, valgrind, debug):
     test_name = data["test_name"]
     mock_port = data["mock_port"]
     server_port = data["server_port"]
-    
-    for attempt in range(max_retries + 1):
-        server_process = None
-        mock_aikido_core = None
+    try:
+        print(f"Running {test_name}...")
+        print(f"Starting mock server on port {mock_port} with start_config.json for {test_name}...")
+        mock_aikido_core = subprocess.Popen(["python3", "mock_aikido_core.py", str(mock_port), data["config_path"]])
+        time.sleep(5)
+
+        print(f"Starting {server} server on port {server_port} for {test_name}...")
         
-        try:
-            if attempt > 0:
-                print(f"Retry attempt {attempt}/{max_retries} for {test_name}...")
-                time.sleep(retry_delay)
-            else:
-                print(f"Running {test_name}...")
-                
-            print(f"Starting mock server on port {mock_port} with start_config.json for {test_name}...")
-            mock_aikido_core = subprocess.Popen(["python3", "mock_aikido_core.py", str(mock_port), data["config_path"]])
-            time.sleep(5)
+        server_start = servers[server][START_SERVER]
+        server_process = server_start(data, test_lib_dir, valgrind)
 
-            print(f"Starting {server} server on port {server_port} for {test_name}...")
-            
-            server_start = servers[server][START_SERVER]
-            server_process = server_start(data, test_lib_dir, valgrind)
-      
-            time.sleep(20) 
-            
-            test_script_name = "test.py"
-            test_script_cwd = data["test_dir"]
-            if benchmark:
-                print(f"Running benchmark for {test_name}...")
-                test_script_name = "benchmark.py"
-                test_script_cwd = root_tests_dir
-            else:
-                print(f"Running test.py for {test_name}...")
-                
-            subprocess.run(["python3", test_script_name, str(server_port), str(mock_port), test_name], 
-                           env=dict(os.environ, PYTHONPATH=f"{test_lib_dir}:$PYTHONPATH"),
-                           cwd=test_script_cwd,
-                           check=True, timeout=600, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            
-            # Test passed
-            if attempt > 0:
-                print(f"Test {test_name} passed on retry attempt {attempt}")
-                retry_summary[test_name] = attempt
-            passed_tests.append(test_name)
-            return  # Exit the retry loop on success
+        time.sleep(20)
 
-        except subprocess.CalledProcessError as e:
-            print(f"Error in testing scenario {test_name} (attempt {attempt + 1}/{max_retries + 1}):")
-            print(f"Exception output: {e.output}")
-            print(f"Test exit code: {e.returncode}")
-            print(f"Test stdout: {e.stdout.decode()}")
-            print(f"Test stderr: {e.stderr.decode()}")
+        test_script_name = "test.py"
+        test_script_cwd = data["test_dir"]
+        if benchmark:
+            print(f"Running benchmark for {test_name}...")
+            test_script_name = "benchmark.py"
+            test_script_cwd = root_tests_dir
+        else:
+            print(f"Running test.py for {test_name}...")
             
-            if attempt == max_retries:
-                print(f"Test {test_name} failed after {max_retries + 1} attempts")
-                failed_tests.append(test_name)
-            else:
-                print(f"Test {test_name} failed, will retry in {retry_delay} seconds...")
-            
-        except subprocess.TimeoutExpired:
-            print(f"Error in testing scenario {test_name} (attempt {attempt + 1}/{max_retries + 1}):")
-            print(f"Execution timed out.")
-            
-            if attempt == max_retries:
-                print(f"Test {test_name} failed after {max_retries + 1} attempts")
-                failed_tests.append(test_name)
-            else:
-                print(f"Test {test_name} timed out, will retry in {retry_delay} seconds...")
-            
-        finally:
-            if server_process:
-                server_process.terminate()
-                server_process.wait()
-                print(f"PHP server on port {server_port} stopped.")
+        subprocess.run(["python3", test_script_name, str(server_port), str(mock_port), test_name], 
+                       env=dict(os.environ, PYTHONPATH=f"{test_lib_dir}:$PYTHONPATH"),
+                       cwd=test_script_cwd,
+                       check=True, timeout=600, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        
+        passed_tests.append(test_name)
 
-            if mock_aikido_core:
-                mock_aikido_core.terminate()
-                mock_aikido_core.wait()
-                print(f"Mock server on port {mock_port} stopped.")
+    except subprocess.CalledProcessError as e:
+        print(f"Error in testing scenario {test_name}:")
+        print(f"Exception output: {e.output}")
+        print(f"Test exit code: {e.returncode}")
+        print(f"Test stdout: {e.stdout.decode()}")
+        print(f"Test stderr: {e.stderr.decode()}")
+        failed_tests.append(test_name)
+        
+    except subprocess.TimeoutExpired:
+        print(f"Error in testing scenario {test_name}:")
+        print(f"Execution timed out.")
+        failed_tests.append(test_name)
+        
+    finally:
+        if server_process:
+            server_process.terminate()
+            server_process.wait()
+            print(f"PHP server on port {server_port} stopped.")
+
+        if mock_aikido_core:
+            mock_aikido_core.terminate()
+            mock_aikido_core.wait()
+            print(f"Mock server on port {mock_port} stopped.")
 
 
-def main(root_tests_dir, test_lib_dir, specific_test=None, server="php-built-in", benchmark=False, valgrind=False, debug=False, max_retries=0, retry_delay=5):    
-    if specific_test:
-        test_dirs = [os.path.join(root_tests_dir, specific_test)]
+def prepare_test_data_for_dir(test_dir, debug, server):
+    test_name = os.path.basename(os.path.normpath(test_dir))
+    mock_port = generate_unique_port()
+    test_data = {
+        "test_name": test_name,
+        "test_dir": test_dir,
+        "mock_port": mock_port,
+        "server_port": generate_unique_port(),
+        "config_path": os.path.join(test_dir, "start_config.json"),
+        "env_path": os.path.join(test_dir, "env.json")
+    }
+
+    env = {
+        "AIKIDO_LOG_LEVEL": "DEBUG" if debug else "ERROR",
+        "AIKIDO_DISK_LOGS": "1" if debug else "0",
+        "AIKIDO_TOKEN": "AIK_RUNTIME_MOCK",
+        "AIKIDO_ENDPOINT": f"http://localhost:{mock_port}/",
+        "AIKIDO_REALTIME_ENDPOINT": f"http://localhost:{mock_port}/",
+    }
+    env.update(load_env_from_json(test_data["env_path"]))
+    env = {k: v for k, v in env.items() if v != ""}
+    test_data["env"] = env
+
+    server_process_test = servers[server][PROCESS_TEST]
+    if server_process_test is not None:
+        test_data = server_process_test(test_data)
+    return test_data
+
+
+def main(root_tests_dir, test_lib_dir, specific_tests=None, server="php-built-in", benchmark=False, valgrind=False, debug=False):    
+    if specific_tests:
+        specific_tests = specific_tests.split(",") # comma separated list of tests
+        test_dirs = [os.path.join(root_tests_dir, specific_test) for specific_test in specific_tests]
     else:
         test_dirs = [f.path for f in os.scandir(root_tests_dir) if f.is_dir()]
        
@@ -179,30 +177,7 @@ def main(root_tests_dir, test_lib_dir, specific_test=None, server="php-built-in"
         
     tests_data = []
     for test_dir in test_dirs:
-        mock_port = generate_unique_port()
-        test_data = {
-            "test_name": os.path.basename(os.path.normpath(test_dir)),
-            "test_dir": test_dir,
-            "mock_port": mock_port,
-            "server_port": generate_unique_port(),
-            "config_path": os.path.join(test_dir, "start_config.json"),
-            "env_path": os.path.join(test_dir, "env.json")
-        }
-
-        env = {
-            "AIKIDO_LOG_LEVEL": "DEBUG" if debug else "ERROR",
-            "AIKIDO_DISK_LOGS": "1" if debug else "0",
-            "AIKIDO_TOKEN": "AIK_RUNTIME_MOCK",
-            "AIKIDO_ENDPOINT": f"http://localhost:{mock_port}/",
-            "AIKIDO_REALTIME_ENDPOINT": f"http://localhost:{mock_port}/",
-        }
-        env.update(load_env_from_json(test_data["env_path"]))
-        env = {k: v for k, v in env.items() if v != ""}
-        test_data["env"] = env
-        
-        server_process_test = servers[server][PROCESS_TEST]
-        if server_process_test is not None:
-            test_data = server_process_test(test_data)
+        test_data = prepare_test_data_for_dir(test_dir, debug, server)
         tests_data.append(test_data)
             
     if servers[server][2] is not None:
@@ -210,7 +185,7 @@ def main(root_tests_dir, test_lib_dir, specific_test=None, server="php-built-in"
             
     threads = []
     for test_data in tests_data:
-        args = (test_data, root_tests_dir, test_lib_dir, server, benchmark, valgrind, debug, max_retries, retry_delay)
+        args = (test_data, root_tests_dir, test_lib_dir, server, benchmark, valgrind, debug)
         thread = threading.Thread(target=handle_test_scenario, args=args)
         threads.append(thread)
         thread.start()
@@ -218,15 +193,56 @@ def main(root_tests_dir, test_lib_dir, specific_test=None, server="php-built-in"
 
     for thread in threads:
         thread.join()
-
+        
     server_uninit = servers[server][UNINIT]
     if server_uninit is not None:
         server_uninit()
             
-    print_test_results("Passed tests:", passed_tests)
-    print_test_results("Failed tests:", failed_tests)
-    print_retry_summary()
-    assert failed_tests == [], f"Found failed tests: {failed_tests}"
+    # Retry logic for failed tests: up to 3 attempts, with debug enabled
+    name_to_dir = {os.path.basename(os.path.normpath(d)): d for d in test_dirs}
+    to_retry = list(dict.fromkeys(failed_tests))
+
+    if len(to_retry):
+        print(f"Initial failed tests: {to_retry}")
+
+    max_retries = 3
+    attempt = 1
+    while len(to_retry) and attempt <= max_retries:
+        print(f"Retry attempt {attempt}/{max_retries} for failed tests with debug enabled...")
+
+        # Clear current failure list for this attempt; keep passed_tests accumulating
+        failed_tests.clear()
+
+        retry_tests_data = []
+        for test_name in to_retry:
+            if test_name not in name_to_dir:
+                continue
+            retry_tests_data.append(prepare_test_data_for_dir(name_to_dir[test_name], True, server))
+
+        threads = []
+        for test_data in retry_tests_data:
+            args = (test_data, root_tests_dir, test_lib_dir, server, benchmark, valgrind, True)
+            thread = threading.Thread(target=handle_test_scenario, args=args)
+            threads.append(thread)
+            thread.start()
+            time.sleep(10)
+
+        for thread in threads:
+            thread.join()
+
+        # Tests that still failed after this attempt
+        to_retry = list(dict.fromkeys(failed_tests))
+        if len(to_retry):
+            print(f"Still failing after attempt {attempt}: {to_retry}")
+        
+        attempt += 1
+
+    final_passed = sorted(set(passed_tests))
+    final_failed = sorted(set(to_retry))
+
+    print_test_results("Passed tests:", final_passed)
+    print_test_results("Failed tests:", final_failed)
+    assert final_failed == [], f"Found failed tests: {final_failed}"
     print("All tests passed!")
 
 
@@ -239,8 +255,6 @@ if __name__ == "__main__":
     parser.add_argument("--valgrind", action="store_true", help="Enable valgrind.")
     parser.add_argument("--debug", action="store_true", help="Enable debugging logs.")
     parser.add_argument("--server", type=str, choices=["php-built-in", "apache-mod-php", "nginx-php-fpm"], default="php-built-in", help="Enable nginx & php-fpm testing.")
-    parser.add_argument("--max-retries", type=int, default=2, help="Maximum number of retries for failed tests (default: 2).")
-    parser.add_argument("--retry-delay", type=int, default=5, help="Delay in seconds between retry attempts (default: 5).")
 
     # Parse arguments
     args = parser.parse_args()
@@ -248,4 +262,4 @@ if __name__ == "__main__":
     # Extract values from parsed arguments
     root_folder = os.path.abspath(args.root_folder_path)
     test_lib_dir = os.path.abspath(args.test_lib_dir)
-    main(root_folder, test_lib_dir, args.test, args.server, args.benchmark, args.valgrind, args.debug, args.max_retries, args.retry_delay)
+    main(root_folder, test_lib_dir, args.test, args.server, args.benchmark, args.valgrind, args.debug)
