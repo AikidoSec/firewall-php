@@ -184,13 +184,27 @@ def nginx_php_fpm_pre_tests():
     create_folder(php_fpm_run_dir)
     create_folder(f'{log_dir}/php-fpm')
     modify_nginx_conf(nginx_global_conf)
-    try:
-        subprocess.run(['nginx'], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    except subprocess.CalledProcessError as e:
-        print("Error running nginx:")
-        print("stdout:", e.stdout)
-        print("stderr:", e.stderr)
-        raise
+    def start_nginx_with_retries(max_retries=5, delay_seconds=2):
+        for attempt in range(1, max_retries + 1):
+            try:
+                return subprocess.run(['nginx'], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            except subprocess.CalledProcessError as e:
+                stderr_text = (
+                    e.stderr.decode('utf-8', errors='ignore')
+                    if isinstance(e.stderr, (bytes, bytearray)) else str(e.stderr)
+                )
+                print(f"nginx start attempt {attempt} failed")
+                # Retry on bind/address-in-use races; nginx may still be releasing the port
+                if ('Address already in use' in stderr_text) or ('bind()' in stderr_text) or ('could not bind' in stderr_text):
+                    if attempt < max_retries:
+                        time.sleep(delay_seconds * attempt)
+                        continue
+                print("Error running nginx:")
+                print("stdout:", e.stdout)
+                print("stderr:", e.stderr)
+                raise
+
+    start_nginx_with_retries()
     print("nginx server restarted!")
     time.sleep(5)
 
