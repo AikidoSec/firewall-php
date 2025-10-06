@@ -63,7 +63,7 @@ AIKIDO_HANDLER_FUNCTION(handle_post_curl_exec) {
     std::string outgoingRequestResponseCode = CallPhpFunctionCurlGetInfo(curlHandle, CURLINFO_RESPONSE_CODE);
     
     // if outgoingRequestResponseCode starts with 3, it's a redirect 
-    if (outgoingRequestResponseCode.substr(0, 1) == "3") {
+    if (!outgoingRequestResponseCode.empty() && outgoingRequestResponseCode.substr(0, 1) == "3") {
         requestCache.outgoingRequestRedirectUrl = CallPhpFunctionCurlGetInfo(curlHandle, CURLINFO_REDIRECT_URL);  
   
         // if it's the first redirect

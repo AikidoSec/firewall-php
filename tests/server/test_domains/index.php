@@ -11,7 +11,7 @@ for ($i = 0; $i < 10; $i++) {
 $ch2 = curl_init("https://ssrf-redirects.testssandbox.com/ssrf-test-4");
 curl_setopt($ch2, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch2, CURLOPT_TIMEOUT, 5);
-curl_setopt($ch2, CURLOPT_FOLLOWLOCATION, false);
+curl_setopt($ch2, CURLOPT_FOLLOWLOCATION, true);
 curl_exec($ch2);
 curl_close($ch2);
 
