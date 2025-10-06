@@ -76,7 +76,7 @@ func CheckEffectiveHostnameForSSRF(effectiveHostname string) *utils.InterceptorR
 		}
 	}
 
-	return nil
+	return interceptorResult
 }
 
 /* This is called after the request is made to check for SSRF in the resolvedIP - IP optained from the PHP library that made the request (curl) */
