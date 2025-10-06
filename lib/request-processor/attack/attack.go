@@ -3,6 +3,7 @@ package attack
 import (
 	"encoding/json"
 	"fmt"
+	"html"
 	"main/context"
 	"main/grpc"
 	"main/ipc/protos"
@@ -62,7 +63,7 @@ func BuildAttackDetectedMessage(result utils.InterceptorResult) string {
 		utils.GetDisplayNameForAttackKind(result.Kind),
 		result.Operation,
 		result.Source,
-		utils.EscapeHTML(result.PathToPayload))
+		html.EscapeString(result.PathToPayload))
 }
 
 func GetThrowAction(message string, code int) string {
