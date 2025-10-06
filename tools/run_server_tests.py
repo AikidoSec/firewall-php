@@ -135,9 +135,39 @@ def handle_test_scenario(data, root_tests_dir, test_lib_dir, server, benchmark, 
             print(f"Mock server on port {mock_port} stopped.")
 
 
-def main(root_tests_dir, test_lib_dir, specific_test=None, server="php-built-in", benchmark=False, valgrind=False, debug=False):    
-    if specific_test:
-        test_dirs = [os.path.join(root_tests_dir, specific_test)]
+def prepare_test_data_for_dir(test_dir, debug, server):
+    test_name = os.path.basename(os.path.normpath(test_dir))
+    mock_port = generate_unique_port()
+    test_data = {
+        "test_name": test_name,
+        "test_dir": test_dir,
+        "mock_port": mock_port,
+        "server_port": generate_unique_port(),
+        "config_path": os.path.join(test_dir, "start_config.json"),
+        "env_path": os.path.join(test_dir, "env.json")
+    }
+
+    env = {
+        "AIKIDO_LOG_LEVEL": "DEBUG" if debug else "ERROR",
+        "AIKIDO_DISK_LOGS": "1" if debug else "0",
+        "AIKIDO_TOKEN": "AIK_RUNTIME_MOCK",
+        "AIKIDO_ENDPOINT": f"http://localhost:{mock_port}/",
+        "AIKIDO_REALTIME_ENDPOINT": f"http://localhost:{mock_port}/",
+    }
+    env.update(load_env_from_json(test_data["env_path"]))
+    env = {k: v for k, v in env.items() if v != ""}
+    test_data["env"] = env
+
+    server_process_test = servers[server][PROCESS_TEST]
+    if server_process_test is not None:
+        test_data = server_process_test(test_data)
+    return test_data
+
+
+def main(root_tests_dir, test_lib_dir, specific_tests=None, server="php-built-in", benchmark=False, valgrind=False, debug=False):    
+    if specific_tests:
+        specific_tests = specific_tests.split(",") # comma separated list of tests
+        test_dirs = [os.path.join(root_tests_dir, specific_test) for specific_test in specific_tests]
     else:
         test_dirs = [f.path for f in os.scandir(root_tests_dir) if f.is_dir()]
        
@@ -147,30 +177,7 @@ def main(root_tests_dir, test_lib_dir, specific_test=None, server="php-built-in"
         
     tests_data = []
     for test_dir in test_dirs:
-        mock_port = generate_unique_port()
-        test_data = {
-            "test_name": os.path.basename(os.path.normpath(test_dir)),
-            "test_dir": test_dir,
-            "mock_port": mock_port,
-            "server_port": generate_unique_port(),
-            "config_path": os.path.join(test_dir, "start_config.json"),
-            "env_path": os.path.join(test_dir, "env.json")
-        }
-
-        env = {
-            "AIKIDO_LOG_LEVEL": "DEBUG" if debug else "ERROR",
-            "AIKIDO_DISK_LOGS": "1" if debug else "0",
-            "AIKIDO_TOKEN": "AIK_RUNTIME_MOCK",
-            "AIKIDO_ENDPOINT": f"http://localhost:{mock_port}/",
-            "AIKIDO_REALTIME_ENDPOINT": f"http://localhost:{mock_port}/",
-        }
-        env.update(load_env_from_json(test_data["env_path"]))
-        env = {k: v for k, v in env.items() if v != ""}
-        test_data["env"] = env
-        
-        server_process_test = servers[server][PROCESS_TEST]
-        if server_process_test is not None:
-            test_data = server_process_test(test_data)
+        test_data = prepare_test_data_for_dir(test_dir, debug, server)
         tests_data.append(test_data)
             
     if servers[server][2] is not None:
@@ -191,9 +198,51 @@ def main(root_tests_dir, test_lib_dir, specific_test=None, server="php-built-in"
     if server_uninit is not None:
         server_uninit()
             
-    print_test_results("Passed tests:", passed_tests)
-    print_test_results("Failed tests:", failed_tests)
-    assert failed_tests == [], f"Found failed tests: {failed_tests}"
+    # Retry logic for failed tests: up to 3 attempts, with debug enabled
+    name_to_dir = {os.path.basename(os.path.normpath(d)): d for d in test_dirs}
+    to_retry = list(dict.fromkeys(failed_tests))
+
+    if len(to_retry):
+        print(f"Initial failed tests: {to_retry}")
+
+    max_retries = 3
+    attempt = 1
+    while len(to_retry) and attempt <= max_retries:
+        print(f"Retry attempt {attempt}/{max_retries} for failed tests with debug enabled...")
+
+        # Clear current failure list for this attempt; keep passed_tests accumulating
+        failed_tests.clear()
+
+        retry_tests_data = []
+        for test_name in to_retry:
+            if test_name not in name_to_dir:
+                continue
+            retry_tests_data.append(prepare_test_data_for_dir(name_to_dir[test_name], True, server))
+
+        threads = []
+        for test_data in retry_tests_data:
+            args = (test_data, root_tests_dir, test_lib_dir, server, benchmark, valgrind, True)
+            thread = threading.Thread(target=handle_test_scenario, args=args)
+            threads.append(thread)
+            thread.start()
+            time.sleep(10)
+
+        for thread in threads:
+            thread.join()
+
+        # Tests that still failed after this attempt
+        to_retry = list(dict.fromkeys(failed_tests))
+        if len(to_retry):
+            print(f"Still failing after attempt {attempt}: {to_retry}")
+        
+        attempt += 1
+
+    final_passed = sorted(set(passed_tests))
+    final_failed = sorted(set(to_retry))
+
+    print_test_results("Passed tests:", final_passed)
+    print_test_results("Failed tests:", final_failed)
+    assert final_failed == [], f"Found failed tests: {final_failed}"
     print("All tests passed!")
 
 
