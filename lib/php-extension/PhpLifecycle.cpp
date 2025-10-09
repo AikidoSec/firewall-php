@@ -39,14 +39,14 @@ void PhpLifecycle::HookAll() {
     HookFunctions();
     HookMethods();
     HookFileCompilation();
-    HookAstProcess();
+  //  HookAstProcess();
 }
 
 void PhpLifecycle::UnhookAll() {
     UnhookFunctions();
     UnhookMethods();
     UnhookFileCompilation();
-    UnhookAstProcess();
+    //UnhookAstProcess();
 }
 
 PhpLifecycle phpLifecycle;
