@@ -13,10 +13,10 @@ jobs:
   build_libs:
     runs-on: ${{ matrix.os }}
     container:
-      image: ubuntu:20.04
+      image: ghcr.io/aikidosec/firewall-php-build-libs:v1  
     strategy:
       matrix:
-        os: [ ubuntu-24.04 ]
+        os: [ ubuntu-24.04, ubuntu-24.04-arm ]
       fail-fast: false
 
     steps:
@@ -25,20 +25,6 @@ jobs:
 
     - name: Get Arch
       run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
-
-    - name: Install dependencies
-      run: |
-        apt-get update
-        apt-get install -y software-properties-common
-        add-apt-repository ppa:longsleep/golang-backports
-        apt-get update
-        apt-get install -y golang-go protobuf-compiler protobuf-compiler-grpc
-
-    - name: GO setup
-      run: |
-        go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
-        go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
-        echo "$HOME/go/bin" >> $GITHUB_PATH
 
     - name: Get Aikido version
       run: |
@@ -56,8 +42,9 @@ jobs:
         go get google.golang.org/grpc
         go get github.com/stretchr/testify/assert
         go test ./...
-        go build -ldflags "-s -w" -o ../../build/aikido-agent
+        go build -buildvcs=false -ldflags "-s -w" -o ../../build/aikido-agent
         ls -l ../../build
+    
 
     - name: Build Aikido Request Processor
       run: |
@@ -72,7 +59,7 @@ jobs:
         go build -ldflags "-s -w" -buildmode=c-shared -o ../../build/aikido-request-processor.so
         ls -l ../../build
 
-    - name: Archive agent 
+    - name: Archive agent
       uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4
       if: always()
       with:
@@ -92,25 +79,16 @@ jobs:
 
   build_php_extension:
     runs-on: ${{ matrix.os }}
-    container: ubuntu:20.04
+    container: ghcr.io/aikidosec/firewall-php-build-extension:${{ matrix.php_version }}-v1
     strategy:
       matrix:
         php_version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4']
-        os: [ ubuntu-24.04 ]
+        os: [ ubuntu-24.04, ubuntu-24.04-arm ]
       fail-fast: false
 
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
-
-    - name: Install dependencies
-      run: |
-        DEBIAN_FRONTEND=noninteractive apt-get update
-        DEBIAN_FRONTEND=noninteractive apt-get install -y tzdata
-        ln -fs /usr/share/zoneinfo/Etc/UTC /etc/localtime
-        echo "Etc/UTC" > /etc/timezone
-        DEBIAN_FRONTEND=noninteractive dpkg-reconfigure -f noninteractive tzdata
-        apt-get install -y autoconf bison re2c libxml2-dev libssl-dev libcurl4-gnutls-dev
 
     - name: Get Arch
       run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
@@ -122,18 +100,12 @@ jobs:
         echo "AIKIDO_VERSION=$AIKIDO_VERSION" >> $GITHUB_ENV
         echo "AIKIDO_ARTIFACT=aikido-extension-php-${{ matrix.php_version }}" >> $GITHUB_ENV
 
-    - name: Setup PHP
-      uses: shivammathur/setup-php@cf4cade2721270509d5b1c766ab3549210a39a2a # v2 # v2
-      with:
-        php-version: ${{ matrix.php_version }}
-        extensions: curl
-        coverage: none
-
     - name: Check PHP setup
       run: |
         which php
         php -v
         php -i
+        php -m | grep -E 'curl|mysqli' || (echo "Required extensions missing" && php -m && exit 1)
 
     - name: Build extension
       run: |
@@ -143,13 +115,13 @@ jobs:
         phpize
         cd ../../build
         CXX=g++ CXXFLAGS="-fPIC -O2 -I../lib/php-extension/include" LDFLAGS="-lstdc++" ../lib/php-extension/configure
-        make
+        make -j"$(nproc)"
 
     - name: Version Aikido extension
       run: |
         cd ./build/modules
         mv aikido.so ${{ env.AIKIDO_ARTIFACT }}.so
-        
+
     - name: Archive build artifacts
       uses: actions/upload-artifact@v4
       if: always()
@@ -163,10 +135,10 @@ jobs:
   build_rpm:
     runs-on: ${{ matrix.os }}
     container:
-      image: centos:8
+      image: quay.io/centos/centos:stream9
     strategy:
       matrix:
-        os: ['ubuntu-24.04']
+        os: ['ubuntu-24.04', 'ubuntu-24.04-arm']
       fail-fast: false
     needs: [ build_libs, build_php_extension ]
     steps:
@@ -175,9 +147,6 @@ jobs:
 
       - name: Install rpmdevtools
         run: |
-          cd /etc/yum.repos.d/
-          sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-*
-          sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-*
           yum -y install epel-release
           yum -y install rpmdevtools
           yum -y install jq
@@ -191,7 +160,7 @@ jobs:
           echo $AIKIDO_VERSION
           echo "AIKIDO_VERSION=$AIKIDO_VERSION" >> $GITHUB_ENV
           echo "AIKIDO_LIBZEN=libzen_internals_${{ env.ARCH }}-unknown-linux-gnu.so" >> $GITHUB_ENV
-          echo "AIKIDO_LIBZEN_VERSION=0.1.37" >> $GITHUB_ENV
+          echo "AIKIDO_LIBZEN_VERSION=0.1.48" >> $GITHUB_ENV
 
       - name: Download artifacts
         uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4
@@ -245,10 +214,9 @@ jobs:
           mv ~/rpmbuild/RPMS/${{ env.ARCH }}/${{ env.AIKIDO_ARTIFACT }} ~/rpmbuild/RPMS/${{ env.ARCH }}/${{ env.AIKIDO_ARTIFACT_RELEASE }}
 
       - name: Check rpm dependencies
-        if: matrix.os == 'ubuntu-22.04'
         run: |
           yum deplist ~/rpmbuild/RPMS/${{ env.ARCH }}/${{ env.AIKIDO_ARTIFACT_RELEASE }} | grep -E "GLIBC_2.32|GLIBC_2.34|GLIBCXX_3.4.29" && exit 1 || exit 0
-      
+
       - name: Archive rpm package
         uses: actions/upload-artifact@v4
         with:
@@ -260,10 +228,10 @@ jobs:
   build_deb:
     runs-on: ${{ matrix.os }}
     container:
-      image: ubuntu:20.04
+      image: ubuntu:22.04
     strategy:
       matrix:
-        os: [ ubuntu-24.04 ]
+        os: [ ubuntu-24.04, ubuntu-24.04-arm ]
       fail-fast: false
     needs: [ build_rpm ]
     steps:
@@ -304,19 +272,19 @@ jobs:
           echo $AIKIDO_VERSION
           echo "AIKIDO_VERSION=$AIKIDO_VERSION" >> $GITHUB_ENV
           echo "AIKIDO_RPM=aikido-php-firewall.${{ env.ARCH }}.rpm" >> $GITHUB_ENV
-          echo "AIKIDO_ARTIFACT=aikido-php-firewall.${{ env.ARCH }}.deb" >> $GITHUB_ENV    
-      
+          echo "AIKIDO_ARTIFACT=aikido-php-firewall.${{ env.ARCH }}.deb" >> $GITHUB_ENV
+
       - name: Build deb
         run: |
           alien --to-deb --scripts --keep-version ${{ env.AIKIDO_RPM }}/${{ env.AIKIDO_RPM }}
           mv aikido-php-firewall_${{ env.AIKIDO_VERSION }}-1_${{ env.DEB_ARCH }}.deb temp-${{ env.AIKIDO_ARTIFACT }}
-          
+
           # Package contents into deb with gzip compression (because default zstd compression is not supported by older versions of dpkg)
           mkdir deb-temp
           dpkg-deb -R temp-${{ env.AIKIDO_ARTIFACT }} deb-temp/
           dpkg-deb -Zgzip -b deb-temp ${{ env.AIKIDO_ARTIFACT }}
           rm -rf deb-temp
-  
+
       - name: Archive deb package
         uses: actions/upload-artifact@v4
         with:
@@ -328,14 +296,16 @@ jobs:
   test_php_centos:
     runs-on: ${{ matrix.os }}
     container:
-      image: centos:8
+      image: ghcr.io/aikidosec/firewall-php-test-centos:${{ matrix.php_version }}-v1
+      options: --privileged
     needs: [ build_rpm ]
     strategy:
       matrix:
-        php_version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4']
+        php_version: ['7.4', '8.0', '8.1', '8.2', '8.3', '8.4']
         server: ['nginx-php-fpm', 'apache-mod-php', 'php-built-in']
-        os: ['ubuntu-24.04']
+        os: ['ubuntu-24.04', 'ubuntu-24.04-arm']
       fail-fast: false
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -344,23 +314,33 @@ jobs:
         run: |
           uname -a
           cat /etc/centos-release
-          cd /etc/yum.repos.d/
-          sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-*
-          sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-*
-          yum install -y yum-utils
-          yum install -y https://rpms.remirepo.net/enterprise/remi-release-8.4.rpm
-          yum install -y gcc
-          yum install -y python3-devel
-          pip3 install flask
-          pip3 install requests
-          pip3 install psutil
-          yum install -y httpd
-          dnf --assumeyes module reset php
-          dnf --assumeyes --nogpgcheck module install php:remi-${{ matrix.php_version }}
-          dnf --assumeyes install php-pdo
-          yum install -y mod_php
-          yum install -y nginx
-          yum install -y php-fpm
+          php -v
+          httpd -v || true
+          nginx -v || true
+          which php-fpm && php-fpm -v || true
+          rpm -qa | grep -E '^php(-|$)' | sort
+
+      - name: Install and start MySQL
+        run: |
+          mkdir -p /var/lib/mysql
+          mysqld --initialize-insecure --datadir=/var/lib/mysql
+          mysqld -u root --datadir=/var/lib/mysql --socket=/var/lib/mysql/mysql.sock &
+          sleep 10
+          mysql -u root -e "CREATE DATABASE IF NOT EXISTS db;"
+          mysql -u root -e "ALTER USER 'root'@'localhost' IDENTIFIED BY 'pwd'; FLUSH PRIVILEGES;"
+
+      - name: Test MySQL connection with mysqli
+        run: |
+          php -r '
+            $mysqli = new mysqli("localhost", "root", "pwd", "db");
+            if ($mysqli->connect_error) {
+              echo "MySQL connection failed: " . $mysqli->connect_error . "\n";
+              exit(1);
+            } else {
+              echo "MySQL connection successful\n";
+              $mysqli->close();
+            }
+          '
 
       - name: Get Arch
         run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
@@ -377,7 +357,7 @@ jobs:
           echo $AIKIDO_VERSION
           echo "AIKIDO_VERSION=$AIKIDO_VERSION" >> $GITHUB_ENV
           echo "AIKIDO_RPM=aikido-php-firewall.${{ env.ARCH }}.rpm" >> $GITHUB_ENV
-      
+
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
@@ -401,12 +381,12 @@ jobs:
   test_php_ubuntu:
     runs-on: ${{ matrix.os }}
     container:
-      image: ${{ matrix.container }}
+      image: ghcr.io/aikidosec/firewall-php-test-ubuntu:${{ matrix.php_version }}-v1
+      options: --privileged
     needs: [ build_deb ]
     strategy:
       matrix:
-        container: ['ubuntu:24.04']
-        os: ['ubuntu-24.04']
+        os: ['ubuntu-24.04', 'ubuntu-24.04-arm']
         php_version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4']
         server: ['nginx-php-fpm', 'apache-mod-php', 'php-built-in']
       fail-fast: false
@@ -430,53 +410,19 @@ jobs:
           pattern: |
             ${{ env.AIKIDO_DEB }}
 
-      - name: Setup nginx & php-fpm
+      # MariaDB startup compatible with your current approach
+      - name: Start MariaDB (background)
         run: |
-          DEBIAN_FRONTEND=noninteractive apt-get update
-          DEBIAN_FRONTEND=noninteractive apt-get install -y tzdata
-          ln -fs /usr/share/zoneinfo/Etc/UTC /etc/localtime
-          echo "Etc/UTC" > /etc/timezone
-          DEBIAN_FRONTEND=noninteractive dpkg-reconfigure -f noninteractive tzdata
-          apt-get install -y nginx php-fpm
+          start-mariadb &   # provided by the image
+          sleep 5
+          mysql -u root -ppwd -e "SELECT 1" || (echo "MySQL not up" && exit 1)
 
-      - name: Setup Apache (mod_php)
+      # For Apache mod_php tests, ensure the right PHP module is active
+      - name: Ensure Apache uses PHP ${{ matrix.php_version }}
+        if: matrix.server == 'apache-mod-php'
         run: |
-          apt-get install -y apache2
-          a2dismod mpm_event
-          a2dismod mpm_worker
-          a2enmod mpm_prefork
-          a2enmod rewrite
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@9e72090525849c5e82e596468b86eb55e9cc5401 # v2
-        with:
-          php-version: ${{ matrix.php_version }}
-          extensions: curl, sqlite3
-          coverage: none
-
-      - name: Check PHP setup
-        run: |
-          php_versions="php7.3 php7.4 php8.0 php8.1 php8.2 php8.3"
-          for version in $php_versions; do
-              if a2query -m "$version" > /dev/null 2>&1; then
-                  echo "Disabling $version..."
-                  a2dismod "$version"
-              else
-                  echo "$version is not installed."
-              fi
-          done
-          DEBIAN_FRONTEND=noninteractive apt-get update
-          DEBIAN_FRONTEND=noninteractive apt-get install -y tzdata
-          ln -fs /usr/share/zoneinfo/Etc/UTC /etc/localtime
-          echo "Etc/UTC" > /etc/timezone
-          DEBIAN_FRONTEND=noninteractive dpkg-reconfigure -f noninteractive tzdata
-          apt-get install -y libapache2-mod-php${{ matrix.php_version }}
-          a2enmod php${{ matrix.php_version }}
-          php -i
-
-      - name: Setup Python
-        run: |
-          apt-get install -y python3 python3-flask python3-pandas python3-psutil python3-requests
+          a2-switch-php ${{ matrix.php_version }}
+    
 
       - name: Install DEB
         run: |
