@@ -134,14 +134,12 @@ void HookAstProcess() {
 }
 
 void UnhookAstProcess() {
-    if (!original_ast_process) {
-        AIKIDO_LOG_WARN("Cannot unhook \"zend_ast_process\" without an original handler (was not previously hooked)!\n");
-        return;
-    }
-
     AIKIDO_LOG_INFO("Unhooked \"zend_ast_process\" (original handler %p)!\n", original_ast_process);
 
-    zend_ast_process = original_ast_process;
+    if (zend_ast_process == aikido_ast_process){
+        zend_ast_process = original_ast_process;
+    }
+    
     original_ast_process = nullptr;
 }
 
