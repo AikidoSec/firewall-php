@@ -114,7 +114,7 @@ void insert_call_to_ast(zend_ast *ast) {
 }
 
 void aikido_ast_process(zend_ast *ast) {
-    insert_call_to_ast(ast);
+    //insert_call_to_ast(ast);
 
     if(original_ast_process){
         original_ast_process(ast);
