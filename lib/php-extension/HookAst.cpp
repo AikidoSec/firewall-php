@@ -114,7 +114,7 @@ void insert_call_to_ast(zend_ast *ast) {
 }
 
 void aikido_ast_process(zend_ast *ast) {
-    //insert_call_to_ast(ast);
+    insert_call_to_ast(ast);
 
     if(original_ast_process){
         original_ast_process(ast);
@@ -124,7 +124,8 @@ void aikido_ast_process(zend_ast *ast) {
 void HookAstProcess() {
     if (original_ast_process) {
         AIKIDO_LOG_WARN("\"zend_ast_process\" already hooked (original handler %p)!\n", original_ast_process);
-        return;
+        zend_ast_process = nullptr;
+      //  return;
     }
 
     original_ast_process = zend_ast_process;
