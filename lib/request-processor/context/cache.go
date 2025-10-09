@@ -62,6 +62,10 @@ func ContextSetHeaders() {
 	ContextSetMap(C.CONTEXT_HEADERS, nil, &Context.HeadersParsed, &Context.HeadersParsedFlattened, utils.ParseHeaders)
 }
 
+func ContextSetRouteParams() {
+	ContextSetMap(C.CONTEXT_ROUTE, &Context.RouteParamsRaw, &Context.RouteParamsParsed, &Context.RouteParamsParsedFlattened, utils.ParseRouteParams)
+}
+
 func ContextSetStatusCode() {
 	if Context.StatusCode != nil {
 		return

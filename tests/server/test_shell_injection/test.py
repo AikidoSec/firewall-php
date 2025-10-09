@@ -21,6 +21,12 @@ def check_shell_injection(response_code, response_body, event_id, expected_json)
     assert_started_event_is_valid(events[0])
     assert_event_contains_subset_file(events[event_id], expected_json)
 
+
+def check_shell_injection_route_params():
+    response = php_server_get("/api/execute/ls")
+    assert_response_code_is(response, 500)
+
+
 def run_test():
     check_shell_injection(500, "", 1, "expect_detection_blocked.json")
     
@@ -29,6 +35,8 @@ def run_test():
     
     apply_config("start_config.json")
     check_shell_injection(500, "", 3, "expect_detection_blocked.json")
+    
+    check_shell_injection_route_params()
     
 if __name__ == "__main__":
     load_test_args()
