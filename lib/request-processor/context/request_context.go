@@ -39,6 +39,9 @@ type RequestContextData struct {
 	CookiesParsedFlattened        *map[string]string
 	HeadersParsed                 *map[string]interface{}
 	HeadersParsedFlattened        *map[string]string
+	RouteParamsRaw                *string
+	RouteParamsParsed             *map[string]interface{}
+	RouteParamsParsedFlattened    *map[string]string
 }
 
 var Context RequestContextData
@@ -128,6 +131,10 @@ func GetQueryParsedFlattened() map[string]string {
 
 func GetCookiesParsedFlattened() map[string]string {
 	return GetFromCache(ContextSetCookies, &Context.CookiesParsedFlattened)
+}
+
+func GetRouteParamsParsedFlattened() map[string]string {
+	return GetFromCache(ContextSetRouteParams, &Context.RouteParamsParsedFlattened)
 }
 
 func GetHeadersParsedFlattened() map[string]string {
