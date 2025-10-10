@@ -19,7 +19,7 @@ func GetAction(actionHandling, actionType, trigger, description, data string, re
 		"trigger":       trigger,
 		"description":   html.EscapeString(description),
 		"message":       fmt.Sprintf("Your %s (%s) is blocked due to: %s!", trigger, data, description),
-		"data":          data,
+		trigger:         data,
 		"response_code": responseCode,
 	}
 	actionJson, err := json.Marshal(actionMap)

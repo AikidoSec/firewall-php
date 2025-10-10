@@ -28,10 +28,10 @@ ACTION_STATUS Action::executeStore(json &event) {
     type = event["type"];
     trigger = event["trigger"];
     description = event["description"];
-    if (event.contains("ip")) {
+    if (trigger == "ip") {
         ip = event["ip"];
     }
-    if (event.contains("user-agent")) {
+    if (trigger == "user-agent") {
         userAgent = event["user-agent"];
     }
     return CONTINUE;
