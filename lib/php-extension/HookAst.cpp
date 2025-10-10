@@ -136,10 +136,12 @@ void HookAstProcess() {
 void UnhookAstProcess() {
     AIKIDO_LOG_INFO("Unhooked \"zend_ast_process\" (original handler %p)!\n", original_ast_process);
 
+   // As it's not mandatory to have a zend_ast_process installed, we need to ensure UnhookAstProcess() restores zend_ast_process even if the original was NULL
+   // Only unhook if the current handler is still ours, avoiding clobbering others
     if (zend_ast_process == aikido_ast_process){
         zend_ast_process = original_ast_process;
     }
-    
+
     original_ast_process = nullptr;
 }
 
