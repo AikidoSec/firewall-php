@@ -6,7 +6,7 @@ import os
 import random
 import string
 import datetime
-import ipaddress
+import re
 
 test_name = ""
 php_port = 0
@@ -165,12 +165,7 @@ def assert_response_body_contains(response, text):
     assert text in response.text, f"Test '{text}' is not part of response body: {response.text}"
 
 def assert_is_valid_ip(ip_address):
-    try:
-        ipaddress.ip_address(ip_address)
-        return True
-    except ValueError:
-        pass
-    assert False, "Exception in assert_is_valid_ip for IP address: {ip_address}"
+    assert re.match(r"^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$", ip_address), f"Invalid IP address: {ip_address}"
 
 def mock_server_wait_for_new_events(max_wait_time):
     initial_number_of_events = len(mock_server_get_events())
