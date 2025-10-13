@@ -123,7 +123,8 @@ func Init() {
 	timeStr := currentTime.Format("20060102150405")
 	logFilePath := fmt.Sprintf("/var/log/aikido-%s/aikido-agent-%s-%d.log", globals.Version, timeStr, os.Getpid())
 
-	logFile, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY, 0666)
+	var err error
+	logFile, err = os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
 		log.Fatalf("Failed to open log file: %v", err)
 	}

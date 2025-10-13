@@ -120,6 +120,9 @@ echo "Installation process for Aikido v%{version} completed."
 
 echo "Starting the uninstallation process for Aikido v%{version}..."
 
+echo "Stopping aikido-agent process for Aikido v%{version} if it is running..."
+pkill -f "aikido-agent" 2>/dev/null || :
+
 # Find all PHP versions installed
 PHP_VERSIONS=()
 if command -v php -v >/dev/null 2>&1; then

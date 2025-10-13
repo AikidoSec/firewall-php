@@ -17,18 +17,29 @@ std::string Agent::GetInitData() {
     return NormalizeAndDumpJson(initData);
 }
 
-bool Agent::Init() {
-    if (this->agentPid != 0) {
-        AIKIDO_LOG_WARN("Aikido Agent already running!\n");
-        return true;
+std::string Agent::GetSocketPath() {
+    std::string aikidoRunFolder = "/var/run/aikido-" + std::string(PHP_AIKIDO_VERSION);
+    std::string socketPath = "";
+    
+    DIR* dir;
+    struct dirent* ent;
+    if ((dir = opendir(aikidoRunFolder.c_str())) != NULL) {
+        while ((ent = readdir(dir)) != NULL) {
+            std::string filename(ent->d_name);
+            if (filename.find(".sock") != std::string::npos) {
+                socketPath = aikidoRunFolder + "/" + filename;
+                break;
+            }
+        }
+        closedir(dir);
+    } else {
+        AIKIDO_LOG_WARN("Failed to open directory %s!\n", aikidoRunFolder.c_str());
     }
 
-    std::string aikidoAgentPath = "/opt/aikido-" + std::string(PHP_AIKIDO_VERSION) + "/aikido-agent";
-    std::string initData = this->GetInitData();
-    std::string token = std::string("AIKIDO_TOKEN=") + AIKIDO_GLOBAL(token);
+    return socketPath;
+}
 
-    AIKIDO_LOG_INFO("Starting Aikido Agent with init data: %s\n", initData.c_str());
-
+bool Agent::Start(std::string aikidoAgentPath, std::string initData, std::string token) {
     posix_spawnattr_t attr;
     posix_spawnattr_init(&attr);
 
@@ -43,27 +54,107 @@ bool Agent::Init() {
         nullptr
     };
 
-    int status = posix_spawn(&this->agentPid, aikidoAgentPath.c_str(), nullptr, &attr, argv, envp);
+    pid_t agentPid;
+    int status = posix_spawn(&agentPid, aikidoAgentPath.c_str(), nullptr, &attr, argv, envp);
+    posix_spawnattr_destroy(&attr);
     if (status != 0) {
-        AIKIDO_LOG_ERROR("Failed to spawn Aikido Agent process: %s\n", strerror(status));
-        posix_spawnattr_destroy(&attr);
+        AIKIDO_LOG_ERROR("Failed to start Aikido Agent process: %s\n", strerror(status));
         return false;
     }
 
-    posix_spawnattr_destroy(&attr);
+    AIKIDO_LOG_INFO("Aikido Agent started (pid: %d)!\n", agentPid);
+    return true;
+}
 
-    AIKIDO_LOG_INFO("Aikido Agent started (pid: %d)!\n", this->agentPid);
+/*
+bool Agent::SpawnDetached(std::string aikidoAgentPath, std::string initData, std::string token) {
+    pid_t pid = fork();
+    if ( pid < 0 ) {
+        AIKIDO_LOG_ERROR("Failed to fork first child: %s\n", strerror(errno));
+        return false;
+    }
+    
+    if (pid == 0) {
+        // Child process
+        pid_t pid2 = fork();
+        if (pid2 < 0) {
+            AIKIDO_LOG_ERROR("Failed to fork second child: %s\n", strerror(errno));
+            return false;
+        }
+
+        if (pid2 > 0) {
+            // First child exits here
+            _exit(0);
+        }
+
+        // Grandchild process
+        // Now re-parented to init/systemd after parent exits
+        // Create new session (detach from controlling terminal)
+        if (setsid() < 0) {
+            AIKIDO_LOG_ERROR("Failed to setsid: %s\n", strerror(errno));
+            return false;
+        }
+
+        this->Start(aikidoAgentPath, initData, token);
+
+        // We can _exit(0) here, since the spawned process is independent
+        _exit(0);
+    }
+    
+    // Parent waits for the first child to exit
+    int wstatus;
+    waitpid(pid, &wstatus, 0);
+    return true;
+}
+*/
+
+bool Agent::SpawnDetached(std::string aikidoAgentPath, std::string initData, std::string token) {
+    pid_t pid = fork();
+    if (pid < 0) {
+        AIKIDO_LOG_ERROR("Failed to fork: %s\n", strerror(errno));
+        return false;
+    }
+
+    if (pid == 0) {
+        // Child process
+        if (daemon(0, 0) != 0) {
+            AIKIDO_LOG_ERROR("Failed to daemonize: %s\n", strerror(errno));
+            _exit(1);
+        }
+        this->Start(aikidoAgentPath, initData, token);
+        _exit(0);
+    }
+
+    // Parent process
+    int wstatus;
+    waitpid(pid, &wstatus, 0);
+    return WIFEXITED(wstatus) && WEXITSTATUS(wstatus) == 0;
+    //return true;
+}
+
+bool Agent::Init() {
+    AIKIDO_GLOBAL(socket_path) = this->GetSocketPath();
+    if (!AIKIDO_GLOBAL(socket_path).empty()) {
+        AIKIDO_LOG_WARN("Aikido Agent already running on socket %s!\n", AIKIDO_GLOBAL(socket_path).c_str());
+        return true;
+    }
+    
+    AIKIDO_GLOBAL(socket_path) = GenerateSocketPath();
+    
+    std::string aikidoAgentPath = "/opt/aikido-" + std::string(PHP_AIKIDO_VERSION) + "/aikido-agent";
+    std::string initData = this->GetInitData();
+    std::string token = std::string("AIKIDO_TOKEN=") + AIKIDO_GLOBAL(token);
+
+    AIKIDO_LOG_INFO("Starting Aikido Agent (%s) with init data: %s\n", aikidoAgentPath.c_str(), initData.c_str());
+
+    if (!this->SpawnDetached(aikidoAgentPath, initData, token)) {
+        AIKIDO_LOG_ERROR("Failed to spawn Aikido Agent in detached mode!\n");
+        return false;
+    }
+
     return true;
 }
 
 void Agent::Uninit() {
-    if (this->agentPid == 0) {
-        AIKIDO_LOG_WARN("Aikido Agent not running!\n");
-        return;
-    }
-
-    AIKIDO_LOG_INFO("Stopping Aikido Agent...\n");
-    kill(this->agentPid, SIGTERM);
-    this->agentPid = 0;
-    AIKIDO_LOG_INFO("Aikido Agent stopped!\n");
+    // Nothing to do, Aikido Agent will terminate by itself
 }
