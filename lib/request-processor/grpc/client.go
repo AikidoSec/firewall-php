@@ -12,7 +12,6 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 var conn *grpc.ClientConn
@@ -73,7 +72,7 @@ func OnDomain(domain string, port uint32) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
-	_, err := client.OnDomain(ctx, &protos.Domain{Domain: domain, Port: port})
+	_, err := client.OnDomain(ctx, &protos.Domain{Token: globals.AikidoConfig.Token, Domain: domain, Port: port})
 	if err != nil {
 		log.Warnf("Could not send domain %v: %v", domain, err)
 		return
@@ -91,7 +90,7 @@ func OnPackages(packages map[string]string) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
-	_, err := client.OnPackages(ctx, &protos.Packages{Packages: packages})
+	_, err := client.OnPackages(ctx, &protos.Packages{Token: globals.AikidoConfig.Token, Packages: packages})
 	if err != nil {
 		log.Warnf("Could not send packages %v: %v", packages, err)
 		return
@@ -109,7 +108,7 @@ func GetRateLimitingStatus(method string, route string, routeParsed string, user
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	RateLimitingStatus, err := client.GetRateLimitingStatus(ctx, &protos.RateLimitingInfo{Method: method, Route: route, RouteParsed: routeParsed, User: user, Ip: ip, RateLimitGroup: rateLimitGroup})
+	RateLimitingStatus, err := client.GetRateLimitingStatus(ctx, &protos.RateLimitingInfo{Token: globals.AikidoConfig.Token, Method: method, Route: route, RouteParsed: routeParsed, User: user, Ip: ip, RateLimitGroup: rateLimitGroup})
 	if err != nil {
 		log.Warnf("Cannot get rate limiting status %v %v: %v", method, route, err)
 		return nil
@@ -128,7 +127,7 @@ func OnRequestShutdown(method string, route string, routeParsed string, statusCo
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	_, err := client.OnRequestShutdown(ctx, &protos.RequestMetadataShutdown{Method: method, Route: route, RouteParsed: routeParsed, StatusCode: int32(statusCode), User: user, Ip: ip, RateLimitGroup: rateLimitGroup, ApiSpec: apiSpec, RateLimited: rateLimited})
+	_, err := client.OnRequestShutdown(ctx, &protos.RequestMetadataShutdown{Token: globals.AikidoConfig.Token, Method: method, Route: route, RouteParsed: routeParsed, StatusCode: int32(statusCode), User: user, Ip: ip, RateLimitGroup: rateLimitGroup, ApiSpec: apiSpec, RateLimited: rateLimited})
 	if err != nil {
 		log.Warnf("Could not send request metadata %v %v %v: %v", method, route, statusCode, err)
 		return
@@ -146,7 +145,7 @@ func GetCloudConfig() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	cloudConfig, err := client.GetCloudConfig(ctx, &protos.CloudConfigUpdatedAt{ConfigUpdatedAt: utils.GetCloudConfigUpdatedAt()})
+	cloudConfig, err := client.GetCloudConfig(ctx, &protos.CloudConfigUpdatedAt{Token: globals.AikidoConfig.Token, ConfigUpdatedAt: utils.GetCloudConfigUpdatedAt()})
 	if err != nil {
 		return
 	}
@@ -163,7 +162,7 @@ func OnUserEvent(id string, username string, ip string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	_, err := client.OnUser(ctx, &protos.User{Id: id, Username: username, Ip: ip})
+	_, err := client.OnUser(ctx, &protos.User{Token: globals.AikidoConfig.Token, Id: id, Username: username, Ip: ip})
 	if err != nil {
 		log.Warnf("Could not send user event %v %v %v: %v", id, username, ip, err)
 		return
@@ -197,6 +196,7 @@ func OnMonitoredSinkStats(sink, kind string, attacksDetected, attacksBlocked, in
 	defer cancel()
 
 	_, err := client.OnMonitoredSinkStats(ctx, &protos.MonitoredSinkStats{
+		Token:                 globals.AikidoConfig.Token,
 		Sink:                  sink,
 		Kind:                  kind,
 		AttacksDetected:       attacksDetected,
@@ -221,7 +221,7 @@ func OnMiddlewareInstalled() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	_, err := client.OnMiddlewareInstalled(ctx, &emptypb.Empty{})
+	_, err := client.OnMiddlewareInstalled(ctx, &protos.MiddlewareInstalledInfo{Token: globals.AikidoConfig.Token})
 	if err != nil {
 		log.Warnf("Could not call OnMiddlewareInstalled")
 		return
@@ -242,7 +242,7 @@ func OnMonitoredIpMatch(lists []utils.IpListMatch) {
 		protosLists = append(protosLists, list.Key)
 	}
 
-	_, err := client.OnMonitoredIpMatch(ctx, &protos.MonitoredIpMatch{Lists: protosLists})
+	_, err := client.OnMonitoredIpMatch(ctx, &protos.MonitoredIpMatch{Token: globals.AikidoConfig.Token, Lists: protosLists})
 	if err != nil {
 		log.Warnf("Could not call OnMonitoredIpMatch")
 		return
@@ -258,7 +258,7 @@ func OnMonitoredUserAgentMatch(lists []string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	_, err := client.OnMonitoredUserAgentMatch(ctx, &protos.MonitoredUserAgentMatch{Lists: lists})
+	_, err := client.OnMonitoredUserAgentMatch(ctx, &protos.MonitoredUserAgentMatch{Token: globals.AikidoConfig.Token, Lists: lists})
 	if err != nil {
 		log.Warnf("Could not call OnMonitoredUserAgentMatch")
 		return

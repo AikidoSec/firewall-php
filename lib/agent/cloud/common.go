@@ -14,19 +14,19 @@ import (
 	"time"
 )
 
-func GetAgentInfo() AgentInfo {
+func GetAgentInfo(server *ServerData) AgentInfo {
 	return AgentInfo{
-		DryMode:   !utils.IsBlockingEnabled(),
-		Hostname:  Machine.HostName,
+		DryMode:   !utils.IsBlockingEnabled(server),
+		Hostname:  server.Machine.HostName,
 		Version:   Version,
-		IPAddress: Machine.IPAddress,
+		IPAddress: server.Machine.IPAddress,
 		OS: OsInfo{
-			Name:    Machine.OS,
-			Version: Machine.OSVersion,
+			Name:    server.Machine.OS,
+			Version: server.Machine.OSVersion,
 		},
 		Platform: PlatformInfo{
-			Name:    EnvironmentConfig.PlatformName,
-			Version: EnvironmentConfig.PlatformVersion,
+			Name:    server.EnvironmentConfig.PlatformName,
+			Version: server.EnvironmentConfig.PlatformVersion,
 		},
 		Packages: make(map[string]string, 0),
 		NodeEnv:  "",
@@ -34,14 +34,14 @@ func GetAgentInfo() AgentInfo {
 	}
 }
 
-func ResetHeartbeatTicker() {
-	if !globals.CloudConfig.ReceivedAnyStats {
+func ResetHeartbeatTicker(server *ServerData) {
+	if !server.CloudConfig.ReceivedAnyStats {
 		log.Info("Resetting HeartBeatTicker to 1m!")
 		HeartBeatTicker.Reset(1 * time.Minute)
 	} else {
-		if globals.CloudConfig.HeartbeatIntervalInMS >= globals.MinHeartbeatIntervalInMS {
-			log.Infof("Resetting HeartBeatTicker to %dms!", globals.CloudConfig.HeartbeatIntervalInMS)
-			HeartBeatTicker.Reset(time.Duration(globals.CloudConfig.HeartbeatIntervalInMS) * time.Millisecond)
+		if server.CloudConfig.HeartbeatIntervalInMS >= globals.MinHeartbeatIntervalInMS {
+			log.Infof("Resetting HeartBeatTicker to %dms!", server.CloudConfig.HeartbeatIntervalInMS)
+			HeartBeatTicker.Reset(time.Duration(server.CloudConfig.HeartbeatIntervalInMS) * time.Millisecond)
 		}
 	}
 }
@@ -50,17 +50,17 @@ func isWildcardEndpoint(route string) bool {
 	return strings.Contains(route, "*")
 }
 
-func UpdateRateLimitingConfig() {
-	globals.RateLimitingMutex.Lock()
-	defer globals.RateLimitingMutex.Unlock()
+func UpdateRateLimitingConfig(server *ServerData) {
+	server.RateLimitingMutex.Lock()
+	defer server.RateLimitingMutex.Unlock()
 
 	UpdatedEndpoints := map[RateLimitingKey]bool{}
 
-	for _, newEndpointConfig := range globals.CloudConfig.Endpoints {
+	for _, newEndpointConfig := range server.CloudConfig.Endpoints {
 		k := RateLimitingKey{Method: newEndpointConfig.Method, Route: newEndpointConfig.Route}
 		UpdatedEndpoints[k] = true
 
-		rateLimitingData, exists := globals.RateLimitingMap[k]
+		rateLimitingData, exists := server.RateLimitingMap[k]
 		if exists {
 			if rateLimitingData.Config.MaxRequests == newEndpointConfig.RateLimiting.MaxRequests &&
 				rateLimitingData.Config.WindowSizeInMinutes == newEndpointConfig.RateLimiting.WindowSizeInMS*MinRateLimitingIntervalInMs {
@@ -69,8 +69,8 @@ func UpdateRateLimitingConfig() {
 			}
 
 			log.Infof("Rate limiting endpoint config has changed: %v", newEndpointConfig)
-			delete(globals.RateLimitingMap, k)
-			delete(globals.RateLimitingWildcardMap, k)
+			delete(server.RateLimitingMap, k)
+			delete(server.RateLimitingWildcardMap, k)
 		}
 
 		if !newEndpointConfig.RateLimiting.Enabled {
@@ -102,27 +102,27 @@ func UpdateRateLimitingConfig() {
 				log.Warnf("Route regex is not compiling: %s", k.Route)
 			} else {
 				log.Infof("Stored wildcard rate limiting config for: %v", k)
-				globals.RateLimitingWildcardMap[k] = &RateLimitingWildcardValue{RouteRegex: routeRegex, RateLimitingValue: rateLimitingValue}
+				server.RateLimitingWildcardMap[k] = &RateLimitingWildcardValue{RouteRegex: routeRegex, RateLimitingValue: rateLimitingValue}
 			}
 		}
 		log.Infof("Stored normal rate limiting config for: %v", k)
-		globals.RateLimitingMap[k] = rateLimitingValue
+		server.RateLimitingMap[k] = rateLimitingValue
 	}
 
-	for k := range globals.RateLimitingMap {
+	for k := range server.RateLimitingMap {
 		_, exists := UpdatedEndpoints[k]
 		if !exists {
 			log.Infof("Removed rate limiting entry as it is no longer part of the config: %v", k)
-			delete(globals.RateLimitingMap, k)
-			delete(globals.RateLimitingWildcardMap, k)
+			delete(server.RateLimitingMap, k)
+			delete(server.RateLimitingWildcardMap, k)
 		}
 	}
 }
 
-func ApplyCloudConfig() {
-	log.Infof("Applying new cloud config: %v", globals.CloudConfig)
-	ResetHeartbeatTicker()
-	UpdateRateLimitingConfig()
+func ApplyCloudConfig(server *ServerData) {
+	log.Infof("Applying new cloud config: %v", server.CloudConfig)
+	ResetHeartbeatTicker(server)
+	UpdateRateLimitingConfig(server)
 }
 
 func UpdateIpsLists(ipLists []IpsData) map[string]IpBlocklist {
@@ -133,10 +133,10 @@ func UpdateIpsLists(ipLists []IpsData) map[string]IpBlocklist {
 	return m
 }
 
-func UpdateListsConfig() bool {
-	response, err := SendCloudRequest(globals.EnvironmentConfig.Endpoint, globals.ListsAPI, globals.ListsAPIMethod, nil)
+func UpdateListsConfig(server *ServerData) bool {
+	response, err := SendCloudRequest(server, server.EnvironmentConfig.Endpoint, globals.ListsAPI, globals.ListsAPIMethod, nil)
 	if err != nil {
-		LogCloudRequestError("Error in sending lists request: ", err)
+		LogCloudRequestError(server, "Error in sending lists request: ", err)
 		return false
 	}
 
@@ -147,16 +147,16 @@ func UpdateListsConfig() bool {
 		return false
 	}
 
-	CloudConfig.BlockedIpsList = UpdateIpsLists(tempListsConfig.BlockedIpAddresses)
-	CloudConfig.MonitoredIpsList = UpdateIpsLists(tempListsConfig.MonitoredIpAddresses)
-	CloudConfig.AllowedIpsList = UpdateIpsLists(tempListsConfig.AllowedIpAddresses)
+	server.CloudConfig.BlockedIpsList = UpdateIpsLists(tempListsConfig.BlockedIpAddresses)
+	server.CloudConfig.MonitoredIpsList = UpdateIpsLists(tempListsConfig.MonitoredIpAddresses)
+	server.CloudConfig.AllowedIpsList = UpdateIpsLists(tempListsConfig.AllowedIpAddresses)
 
-	CloudConfig.BlockedUserAgents = tempListsConfig.BlockedUserAgents
-	CloudConfig.MonitoredUserAgents = tempListsConfig.MonitoredUserAgents
+	server.CloudConfig.BlockedUserAgents = tempListsConfig.BlockedUserAgents
+	server.CloudConfig.MonitoredUserAgents = tempListsConfig.MonitoredUserAgents
 
-	CloudConfig.UserAgentDetails = make(map[string]string)
+	server.CloudConfig.UserAgentDetails = make(map[string]string)
 	for _, userAgentDetail := range tempListsConfig.UserAgentDetails {
-		CloudConfig.UserAgentDetails[userAgentDetail.Key] = userAgentDetail.Pattern
+		server.CloudConfig.UserAgentDetails[userAgentDetail.Key] = userAgentDetail.Pattern
 	}
 
 	/* Force garbage collection to ensure that the IP blocklists temporary memory is released ASAP */
@@ -166,9 +166,9 @@ func UpdateListsConfig() bool {
 	return true
 }
 
-func StoreCloudConfig(configReponse []byte) bool {
-	globals.CloudConfigMutex.Lock()
-	defer globals.CloudConfigMutex.Unlock()
+func StoreCloudConfig(server *ServerData, configReponse []byte) bool {
+	server.CloudConfigMutex.Lock()
+	defer server.CloudConfigMutex.Unlock()
 
 	tempCloudConfig := CloudConfigData{}
 	err := json.Unmarshal(configReponse, &tempCloudConfig)
@@ -176,28 +176,28 @@ func StoreCloudConfig(configReponse []byte) bool {
 		log.Warnf("Failed to unmarshal cloud config: %v", err)
 		return false
 	}
-	if tempCloudConfig.ConfigUpdatedAt <= globals.CloudConfig.ConfigUpdatedAt {
+	if tempCloudConfig.ConfigUpdatedAt <= server.CloudConfig.ConfigUpdatedAt {
 		log.Debugf("ConfigUpdatedAt is the same!")
 		return true
 	}
-	globals.CloudConfig = tempCloudConfig
-	UpdateListsConfig()
-	ApplyCloudConfig()
+	server.CloudConfig = tempCloudConfig
+	UpdateListsConfig(server)
+	ApplyCloudConfig(server)
 	return true
 }
 
-func LogCloudRequestError(text string, err error) {
-	if atomic.LoadUint32(&globals.GotTraffic) == 0 {
+func LogCloudRequestError(server *ServerData, text string, err error) {
+	if atomic.LoadUint32(&server.GotTraffic) == 0 {
 		// Wait for at least one request before we start logging any cloud request errors, including "no token set"
 		// We need to do that because the token can be passed later via gRPC and the first request.
 		return
 	}
 	if err.Error() == "no token set" {
-		if atomic.LoadUint32(&globals.LoggedTokenError) != 0 {
+		if atomic.LoadUint32(&server.LoggedTokenError) != 0 {
 			// Only report the "no token set" once, so we don't pollute the logs
 			return
 		}
-		atomic.StoreUint32(&globals.LoggedTokenError, 1)
+		atomic.StoreUint32(&server.LoggedTokenError, 1)
 	}
 	log.Warn(text, err)
 }

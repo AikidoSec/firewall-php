@@ -4,7 +4,6 @@ import (
 	"fmt"
 	. "main/aikido_types"
 	"main/config"
-	"main/globals"
 	"net"
 	"sort"
 	"time"
@@ -72,29 +71,29 @@ func StopPollingRoutine(stopChan chan struct{}) {
 	close(stopChan)
 }
 
-func IsBlockingEnabled() bool {
-	globals.CloudConfigMutex.Lock()
-	defer globals.CloudConfigMutex.Unlock()
+func IsBlockingEnabled(server *ServerData) bool {
+	server.CloudConfigMutex.Lock()
+	defer server.CloudConfigMutex.Unlock()
 
-	if globals.CloudConfig.Block == nil {
-		return config.GetBlocking()
+	if server.CloudConfig.Block == nil {
+		return config.GetBlocking(server)
 	}
-	return *globals.CloudConfig.Block
+	return *server.CloudConfig.Block
 }
 
 func GetTime() int64 {
 	return time.Now().UnixMilli()
 }
 
-func GetUserById(userId string) *User {
+func GetUserById(server *ServerData, userId string) *User {
 	if userId == "" {
 		return nil
 	}
 
-	globals.UsersMutex.Lock()
-	defer globals.UsersMutex.Unlock()
+	server.UsersMutex.Lock()
+	defer server.UsersMutex.Unlock()
 
-	user, exists := globals.Users[userId]
+	user, exists := server.Users[userId]
 	if !exists {
 		return nil
 	}

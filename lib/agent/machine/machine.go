@@ -2,7 +2,6 @@ package machine
 
 import (
 	"main/aikido_types"
-	"main/globals"
 	"main/log"
 	"net"
 	"os"
@@ -56,8 +55,8 @@ func getIPAddress() string {
 	return ""
 }
 
-func Init() {
-	globals.Machine = aikido_types.MachineData{
+func Init(serverObject *aikido_types.ServerData) {
+	serverObject.Machine = aikido_types.MachineData{
 		HostName:   getHostName(),
 		DomainName: getDomainName(),
 		OS:         runtime.GOOS,
@@ -65,5 +64,5 @@ func Init() {
 		IPAddress:  getIPAddress(),
 	}
 
-	log.Infof("Machine info: %+v", globals.Machine)
+	log.Infof("Machine info: %+v", serverObject.Machine)
 }

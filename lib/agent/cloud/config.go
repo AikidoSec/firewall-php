@@ -7,27 +7,29 @@ import (
 )
 
 func CheckConfigUpdatedAt() {
-	response, err := SendCloudRequest(globals.EnvironmentConfig.ConfigEndpoint, globals.ConfigUpdatedAtAPI, globals.ConfigUpdatedAtMethod, nil)
-	if err != nil {
-		LogCloudRequestError("Error in sending polling config request: ", err)
-		return
-	}
+	for _, server := range globals.Servers {
+		response, err := SendCloudRequest(server, server.EnvironmentConfig.ConfigEndpoint, globals.ConfigUpdatedAtAPI, globals.ConfigUpdatedAtMethod, nil)
+		if err != nil {
+			LogCloudRequestError(server, "Error in sending polling config request: ", err)
+			return
+		}
 
-	cloudConfigUpdatedAt := CloudConfigUpdatedAt{}
-	err = json.Unmarshal(response, &cloudConfigUpdatedAt)
-	if err != nil {
-		return
-	}
+		cloudConfigUpdatedAt := CloudConfigUpdatedAt{}
+		err = json.Unmarshal(response, &cloudConfigUpdatedAt)
+		if err != nil {
+			return
+		}
 
-	if cloudConfigUpdatedAt.ConfigUpdatedAt <= globals.CloudConfig.ConfigUpdatedAt {
-		return
-	}
+		if cloudConfigUpdatedAt.ConfigUpdatedAt <= server.CloudConfig.ConfigUpdatedAt {
+			return
+		}
 
-	configResponse, err := SendCloudRequest(globals.EnvironmentConfig.Endpoint, globals.ConfigAPI, globals.ConfigAPIMethod, nil)
-	if err != nil {
-		LogCloudRequestError("Error in sending config request: ", err)
-		return
-	}
+		configResponse, err := SendCloudRequest(server, server.EnvironmentConfig.Endpoint, globals.ConfigAPI, globals.ConfigAPIMethod, nil)
+		if err != nil {
+			LogCloudRequestError(server, "Error in sending config request: ", err)
+			return
+		}
 
-	StoreCloudConfig(configResponse)
+		StoreCloudConfig(server, configResponse)
+	}
 }

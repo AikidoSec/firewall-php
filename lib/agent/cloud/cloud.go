@@ -15,12 +15,13 @@ var (
 )
 
 func Init() {
-	SendStartEvent()
+	for _, server := range globals.Servers {
+		server.StatsData.StartedAt = utils.GetTime()
+		server.StatsData.MonitoredSinkTimings = make(map[string]MonitoredSinkTimings)
+		SendStartEvent(server)
+	}
 	utils.StartPollingRoutine(HeartbeatRoutineChannel, HeartBeatTicker, SendHeartbeatEvent)
 	utils.StartPollingRoutine(ConfigPollingRoutineChannel, ConfigPollingTicker, CheckConfigUpdatedAt)
-
-	globals.StatsData.StartedAt = utils.GetTime()
-	globals.StatsData.MonitoredSinkTimings = make(map[string]MonitoredSinkTimings)
 }
 
 func Uninit() {

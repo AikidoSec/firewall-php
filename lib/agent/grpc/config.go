@@ -1,24 +1,24 @@
 package grpc
 
 import (
-	"main/globals"
+	"main/aikido_types"
 	"main/log"
 )
 
-func storeConfig(token, logLevel string, diskLogs, blocking, localhostAllowedByDefault, collectApiSchema bool) {
-	globals.AikidoConfig.ConfigMutex.Lock()
-	defer globals.AikidoConfig.ConfigMutex.Unlock()
+func storeConfig(server *aikido_types.ServerData, token, logLevel string, diskLogs, blocking, localhostAllowedByDefault, collectApiSchema bool) {
+	server.AikidoConfig.ConfigMutex.Lock()
+	defer server.AikidoConfig.ConfigMutex.Unlock()
 
 	if token != "" {
-		globals.AikidoConfig.Token = token
+		server.AikidoConfig.Token = token
 	}
-	globals.AikidoConfig.LogLevel = logLevel
-	globals.AikidoConfig.DiskLogs = diskLogs
-	globals.AikidoConfig.Blocking = blocking
-	globals.AikidoConfig.LocalhostAllowedByDefault = localhostAllowedByDefault
-	globals.AikidoConfig.CollectApiSchema = collectApiSchema
+	server.AikidoConfig.LogLevel = logLevel
+	server.AikidoConfig.DiskLogs = diskLogs
+	server.AikidoConfig.Blocking = blocking
+	server.AikidoConfig.LocalhostAllowedByDefault = localhostAllowedByDefault
+	server.AikidoConfig.CollectApiSchema = collectApiSchema
 
-	log.SetLogLevel(globals.AikidoConfig.LogLevel)
-	log.Init()
+	log.SetLogLevel(server.AikidoConfig.LogLevel)
+	log.Init(server)
 	log.Debugf("Updated Aikido Config with the one passed via gRPC!")
 }

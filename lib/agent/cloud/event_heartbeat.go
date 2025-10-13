@@ -7,28 +7,28 @@ import (
 	"sync/atomic"
 )
 
-func GetHostnamesAndClear() []Hostname {
-	globals.HostnamesMutex.Lock()
-	defer globals.HostnamesMutex.Unlock()
+func GetHostnamesAndClear(server *ServerData) []Hostname {
+	server.HostnamesMutex.Lock()
+	defer server.HostnamesMutex.Unlock()
 
 	var hostnames []Hostname
-	for domain := range globals.Hostnames {
-		for port := range globals.Hostnames[domain] {
-			hostnames = append(hostnames, Hostname{URL: domain, Port: port, Hits: globals.Hostnames[domain][port]})
+	for domain := range server.Hostnames {
+		for port := range server.Hostnames[domain] {
+			hostnames = append(hostnames, Hostname{URL: domain, Port: port, Hits: server.Hostnames[domain][port]})
 		}
 	}
 
-	globals.Hostnames = make(map[string]map[uint32]uint64)
-	globals.HostnamesQueue.Clear()
+	server.Hostnames = make(map[string]map[uint32]uint64)
+	server.HostnamesQueue.Clear()
 	return hostnames
 }
 
-func GetRoutesAndClear() []Route {
-	globals.RoutesMutex.Lock()
-	defer globals.RoutesMutex.Unlock()
+func GetRoutesAndClear(server *ServerData) []Route {
+	server.RoutesMutex.Lock()
+	defer server.RoutesMutex.Unlock()
 
 	var routes []Route
-	for _, methodsMap := range globals.Routes {
+	for _, methodsMap := range server.Routes {
 		for _, routeData := range methodsMap {
 			if routeData.Hits == 0 {
 				continue
@@ -39,28 +39,28 @@ func GetRoutesAndClear() []Route {
 	}
 
 	// Clear routes data
-	globals.Routes = make(map[string]map[string]*Route)
-	globals.RoutesQueue.Clear()
+	server.Routes = make(map[string]map[string]*Route)
+	server.RoutesQueue.Clear()
 	return routes
 }
 
-func GetUsersAndClear() []User {
-	globals.UsersMutex.Lock()
-	defer globals.UsersMutex.Unlock()
+func GetUsersAndClear(server *ServerData) []User {
+	server.UsersMutex.Lock()
+	defer server.UsersMutex.Unlock()
 
 	var users []User
-	for _, user := range globals.Users {
+	for _, user := range server.Users {
 		users = append(users, user)
 	}
 
-	globals.Users = make(map[string]User)
-	globals.UsersQueue.Clear()
+	server.Users = make(map[string]User)
+	server.UsersQueue.Clear()
 	return users
 }
 
-func GetMonitoredSinkStatsAndClear() map[string]MonitoredSinkStats {
+func GetMonitoredSinkStatsAndClear(server *ServerData) map[string]MonitoredSinkStats {
 	monitoredSinkStats := make(map[string]MonitoredSinkStats)
-	for sink, stats := range globals.StatsData.MonitoredSinkTimings {
+	for sink, stats := range server.StatsData.MonitoredSinkTimings {
 		monitoredSinkStats[sink] = MonitoredSinkStats{
 			Kind:                  stats.Kind,
 			AttacksDetected:       stats.AttacksDetected,
@@ -70,90 +70,92 @@ func GetMonitoredSinkStatsAndClear() map[string]MonitoredSinkStats {
 			CompressedTimings:     stats.CompressedTimings,
 		}
 
-		delete(globals.StatsData.MonitoredSinkTimings, sink)
+		delete(server.StatsData.MonitoredSinkTimings, sink)
 	}
 	return monitoredSinkStats
 }
 
-func GetPackages() []Package {
-	globals.PackagesMutex.Lock()
-	defer globals.PackagesMutex.Unlock()
+func GetPackages(server *ServerData) []Package {
+	server.PackagesMutex.Lock()
+	defer server.PackagesMutex.Unlock()
 
 	packages := []Package{}
-	for _, p := range globals.Packages {
+	for _, p := range server.Packages {
 		packages = append(packages, p)
 	}
 
 	return packages
 }
 
-func GetIpsBreakdownAndClear() MonitoredListsBreakdown {
+func GetIpsBreakdownAndClear(server *ServerData) MonitoredListsBreakdown {
 	m := MonitoredListsBreakdown{
-		Breakdown: globals.StatsData.IpAddressesMatches,
+		Breakdown: server.StatsData.IpAddressesMatches,
 	}
-	globals.StatsData.IpAddressesMatches = make(map[string]int)
+	server.StatsData.IpAddressesMatches = make(map[string]int)
 	return m
 }
 
-func GetUserAgentsBreakdownAndClear() MonitoredListsBreakdown {
+func GetUserAgentsBreakdownAndClear(server *ServerData) MonitoredListsBreakdown {
 	m := MonitoredListsBreakdown{
-		Breakdown: globals.StatsData.UserAgentsMatches,
+		Breakdown: server.StatsData.UserAgentsMatches,
 	}
-	globals.StatsData.UserAgentsMatches = make(map[string]int)
+	server.StatsData.UserAgentsMatches = make(map[string]int)
 	return m
 }
 
-func GetStatsAndClear() Stats {
-	globals.StatsData.StatsMutex.Lock()
-	defer globals.StatsData.StatsMutex.Unlock()
+func GetStatsAndClear(server *ServerData) Stats {
+	server.StatsData.StatsMutex.Lock()
+	defer server.StatsData.StatsMutex.Unlock()
 
 	stats := Stats{
-		Operations: GetMonitoredSinkStatsAndClear(),
-		StartedAt:  globals.StatsData.StartedAt,
+		Operations: GetMonitoredSinkStatsAndClear(server),
+		StartedAt:  server.StatsData.StartedAt,
 		EndedAt:    utils.GetTime(),
 		Requests: Requests{
-			Total:       globals.StatsData.Requests,
-			RateLimited: globals.StatsData.RequestsRateLimited,
-			Aborted:     globals.StatsData.RequestsAborted,
+			Total:       server.StatsData.Requests,
+			RateLimited: server.StatsData.RequestsRateLimited,
+			Aborted:     server.StatsData.RequestsAborted,
 			AttacksDetected: AttacksDetected{
-				Total:   globals.StatsData.Attacks,
-				Blocked: globals.StatsData.AttacksBlocked,
+				Total:   server.StatsData.Attacks,
+				Blocked: server.StatsData.AttacksBlocked,
 			},
 		},
-		UserAgents:  GetUserAgentsBreakdownAndClear(),
-		IpAddresses: GetIpsBreakdownAndClear(),
+		UserAgents:  GetUserAgentsBreakdownAndClear(server),
+		IpAddresses: GetIpsBreakdownAndClear(server),
 	}
 
-	globals.StatsData.StartedAt = utils.GetTime()
-	globals.StatsData.Requests = 0
-	globals.StatsData.RequestsAborted = 0
-	globals.StatsData.Attacks = 0
-	globals.StatsData.AttacksBlocked = 0
+	server.StatsData.StartedAt = utils.GetTime()
+	server.StatsData.Requests = 0
+	server.StatsData.RequestsAborted = 0
+	server.StatsData.Attacks = 0
+	server.StatsData.AttacksBlocked = 0
 
 	return stats
 }
 
-func GetMiddlewareInstalled() bool {
-	return atomic.LoadUint32(&globals.MiddlewareInstalled) == 1
+func GetMiddlewareInstalled(server *ServerData) bool {
+	return atomic.LoadUint32(&server.MiddlewareInstalled) == 1
 }
 
 func SendHeartbeatEvent() {
-	heartbeatEvent := Heartbeat{
-		Type:                "heartbeat",
-		Agent:               GetAgentInfo(),
-		Time:                utils.GetTime(),
-		Stats:               GetStatsAndClear(),
-		Hostnames:           GetHostnamesAndClear(),
-		Routes:              GetRoutesAndClear(),
-		Users:               GetUsersAndClear(),
-		Packages:            GetPackages(),
-		MiddlewareInstalled: GetMiddlewareInstalled(),
-	}
+	for _, server := range globals.Servers {
+		heartbeatEvent := Heartbeat{
+			Type:                "heartbeat",
+			Agent:               GetAgentInfo(server),
+			Time:                utils.GetTime(),
+			Stats:               GetStatsAndClear(server),
+			Hostnames:           GetHostnamesAndClear(server),
+			Routes:              GetRoutesAndClear(server),
+			Users:               GetUsersAndClear(server),
+			Packages:            GetPackages(server),
+			MiddlewareInstalled: GetMiddlewareInstalled(server),
+		}
 
-	response, err := SendCloudRequest(globals.EnvironmentConfig.Endpoint, globals.EventsAPI, globals.EventsAPIMethod, heartbeatEvent)
-	if err != nil {
-		LogCloudRequestError("Error in sending heartbeat event: ", err)
-		return
+		response, err := SendCloudRequest(server, server.EnvironmentConfig.Endpoint, globals.EventsAPI, globals.EventsAPIMethod, heartbeatEvent)
+		if err != nil {
+			LogCloudRequestError(server, "Error in sending heartbeat event: ", err)
+			return
+		}
+		StoreCloudConfig(server, response)
 	}
-	StoreCloudConfig(response)
 }

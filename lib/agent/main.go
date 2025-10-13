@@ -27,29 +27,34 @@ func AgentInit(initJson string) (initOk bool) {
 	if !config.Init(initJson) {
 		return false
 	}
-	log.Init()
-	log.Infof("Loaded local config: %+v", globals.EnvironmentConfig)
 
-	machine.Init()
-	if !grpc.Init() {
+	initialServer := globals.Servers[globals.InitialToken]
+
+	log.Init(initialServer)
+	log.Infof("Loaded local config: %+v", initialServer.EnvironmentConfig)
+
+	machine.Init(initialServer)
+	if !grpc.Init(initialServer) {
 		return false
 	}
 
 	cloud.Init()
-	rate_limiting.Init()
+	rate_limiting.Init(initialServer)
 
 	log.Infof("Aikido Agent v%s started!", globals.Version)
 	return true
 }
 
 func AgentUninit() {
+	initialServer := globals.Servers[globals.InitialToken]
+
 	rate_limiting.Uninit()
 	cloud.Uninit()
-	grpc.Uninit()
+	grpc.Uninit(initialServer)
 	config.Uninit()
 
 	log.Infof("Aikido Agent v%s stopped!", globals.Version)
-	log.Uninit()
+	log.Uninit(initialServer)
 }
 
 func main() {

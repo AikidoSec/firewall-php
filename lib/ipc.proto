@@ -16,7 +16,7 @@ service Aikido {
   rpc OnUser(User) returns (google.protobuf.Empty);
   rpc OnAttackDetected(AttackDetected) returns (google.protobuf.Empty);
   rpc OnMonitoredSinkStats(MonitoredSinkStats) returns (google.protobuf.Empty);
-  rpc OnMiddlewareInstalled(google.protobuf.Empty) returns (google.protobuf.Empty);
+  rpc OnMiddlewareInstalled(MiddlewareInstalledInfo) returns (google.protobuf.Empty);
   rpc OnMonitoredIpMatch(MonitoredIpMatch) returns (google.protobuf.Empty);
   rpc OnMonitoredUserAgentMatch(MonitoredUserAgentMatch) returns (google.protobuf.Empty);
 }
@@ -31,44 +31,53 @@ message Config {
 }
 
 message Packages {
-  map<string, string> packages = 1;
+  string token = 1;
+  map<string, string> packages = 2;
 }
 
 message Domain {
-  string domain = 1;
-  uint32 port = 2;
+  string token = 1;
+  string domain = 2;
+  uint32 port = 3;
 }
 
 message RateLimitingInfo {
-  string method = 1;
-  string route = 2;
-  string routeParsed = 3;
-  string user = 4;
-  string ip = 5;
-  string rateLimitGroup = 6;
-}
-
-message RequestMetadataShutdown {
-  string method = 1;
-  string route = 2;
-  string routeParsed = 3;
-  int32 statusCode = 4;
+  string token = 1;
+  string method = 2;
+  string route = 3;
+  string routeParsed = 4;
   string user = 5;
   string ip = 6;
   string rateLimitGroup = 7;
-  APISpec apiSpec = 8;
-  bool rateLimited = 9;
+}
+
+message RequestMetadataShutdown {
+  string token = 1;
+  string method = 2;
+  string route = 3;
+  string routeParsed = 4;
+  int32 statusCode = 5;
+  string user = 6;
+  string ip = 7;
+  string rateLimitGroup = 8;
+  APISpec apiSpec = 9;
+  bool rateLimited = 10;
+}
+
+message MiddlewareInstalledInfo {
+  string token = 1;
 }
 
 message MonitoredSinkStats {
-  string sink = 1;
-  string kind = 2;
-  int32 attacksDetected = 3;
-  int32 attacksBlocked = 4;
-  int32 interceptorThrewError = 5;
-  int32 withoutContext = 6;
-  int32 total = 7;
-  repeated int64 timings = 8;
+  string token = 1;
+  string sink = 2;
+  string kind = 3;
+  int32 attacksDetected = 4;
+  int32 attacksBlocked = 5;
+  int32 interceptorThrewError = 6;
+  int32 withoutContext = 7;
+  int32 total = 8;
+  repeated int64 timings = 9;
 }
 
 message RateLimiting {
@@ -84,7 +93,8 @@ message Endpoint {
 }
 
 message CloudConfigUpdatedAt {
-  int64 configUpdatedAt = 1;
+  string token = 1;
+  int64 configUpdatedAt = 2;
 }
 
 message IpList {
@@ -113,9 +123,10 @@ message RateLimitingStatus {
 }
 
 message User {
-  string id = 1;
-  string username = 2;
-  string ip = 3;
+  string token = 1;
+  string id = 2;
+  string username = 3;
+  string ip = 4;
 }
 
 message Header {
@@ -153,8 +164,9 @@ message Attack {
 }
 
 message AttackDetected {
-  Request request = 1;
-  Attack attack = 2;
+  string token = 1;
+  Request request = 2;
+  Attack attack = 3;
 }
 
 message APIAuthType {
@@ -184,9 +196,11 @@ message APISpec {
 }
 
 message MonitoredIpMatch {
-  repeated string lists = 1;
+  string token = 1;
+  repeated string lists = 2;
 }
 
 message MonitoredUserAgentMatch {
-  repeated string lists = 1;
+  string token = 1;
+  repeated string lists = 2;
 }

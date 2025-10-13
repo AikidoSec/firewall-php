@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"main/aikido_types"
 	"main/globals"
 	"os"
 	"sync/atomic"
@@ -112,8 +113,8 @@ func SetLogLevel(level string) error {
 	return nil
 }
 
-func Init() {
-	if !globals.AikidoConfig.DiskLogs {
+func Init(serverObject *aikido_types.ServerData) {
+	if !serverObject.AikidoConfig.DiskLogs {
 		return
 	}
 	if logFile != nil {
@@ -132,8 +133,8 @@ func Init() {
 	logger.SetOutput(logFile)
 }
 
-func Uninit() {
-	if !globals.AikidoConfig.DiskLogs {
+func Uninit(serverObject *aikido_types.ServerData) {
+	if !serverObject.AikidoConfig.DiskLogs {
 		return
 	}
 	logger.SetOutput(os.Stdout)
