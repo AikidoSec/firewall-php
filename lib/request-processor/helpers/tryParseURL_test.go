@@ -14,7 +14,7 @@ func TestTryParseURL_InvalidURL(t *testing.T) {
 }
 
 func TestTryParseURL_ValidURL(t *testing.T) {
-	input := "https://example.com"
+	input := "https://example.com:443"
 	expected, _ := url.Parse(input)
 	result := TryParseURL(input)
 
