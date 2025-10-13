@@ -22,6 +22,7 @@ func setConfigFromJson(jsonString []byte) bool {
 
 	globals.Servers[globals.InitialToken] = aikido_types.NewServerData()
 	initialServer := globals.Servers[globals.InitialToken]
+	initialServer.EnvironmentConfig = tmpEnvironmentConfigData
 
 	if err := json.Unmarshal(jsonString, &initialServer.AikidoConfig); err != nil {
 		panic(fmt.Sprintf("Failed to unmarshal JSON to AikidoConfig: %v", err))
