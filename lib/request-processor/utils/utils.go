@@ -166,6 +166,11 @@ func ParseHeaders(headers string) map[string]interface{} {
 	return j
 }
 
+func ParseRouteParams(RouteParams string) map[string]interface{} {
+	parts := strings.Split(RouteParams, "/")
+	return map[string]interface{}{"parts": parts}
+}
+
 func isIP(ip string) bool {
 	return net.ParseIP(ip) != nil
 }
