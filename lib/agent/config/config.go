@@ -27,6 +27,7 @@ func setConfigFromJson(jsonString []byte) bool {
 	if err := json.Unmarshal(jsonString, &initialServer.AikidoConfig); err != nil {
 		panic(fmt.Sprintf("Failed to unmarshal JSON to AikidoConfig: %v", err))
 	}
+	initialServer.AikidoConfig.Token = globals.InitialToken
 
 	if initialServer.AikidoConfig.LogLevel != "" {
 		if err := log.SetLogLevel(initialServer.AikidoConfig.LogLevel); err != nil {
