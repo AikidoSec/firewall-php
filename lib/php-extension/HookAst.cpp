@@ -81,6 +81,89 @@ int find_insertion_point(zend_ast_list *stmt_list) {
     return insertion_point;
 }
 
+/*
+    This function creates an if statement that checks if the Aikido extension is loaded.
+    If it is, it calls the auto_block_request function.
+    If it is not, it does nothing.
+    This is used to avoid calling the auto_block_request if the extension is not loaded anymore.
+    
+    if (extension_loaded('aikido')) {
+        \aikido\auto_block_request();
+    }
+*/
+zend_ast *create_ast_if_aikido() {
+    ensure_ast_hashtable_initialized();
+    
+    // Create the function call: \aikido\auto_block_request()
+    zend_ast *call = create_ast_call("\\aikido\\auto_block_request");
+    
+    // Create the extension_loaded('aikido') call
+    zend_ast_zval *ext_name;
+    zend_ast_list *ext_arg_list;
+    zend_ast *ext_call;
+    
+    // Create 'aikido' string argument
+    ext_name = (zend_ast_zval*)emalloc(sizeof(zend_ast_zval));
+    ext_name->kind = ZEND_AST_ZVAL;
+    ZVAL_STRING(&ext_name->val, "aikido");
+    ext_name->val.u2.lineno = 0;
+    zend_hash_next_index_insert_ptr(global_ast_to_clean, ext_name);
+    
+    // Create argument list for extension_loaded
+    ext_arg_list = (zend_ast_list*)emalloc(sizeof(zend_ast_list) + sizeof(zend_ast*));
+    ext_arg_list->kind = ZEND_AST_ARG_LIST;
+    ext_arg_list->lineno = 0;
+    ext_arg_list->children = 1;
+    ext_arg_list->child[0] = (zend_ast*)ext_name;
+    zend_hash_next_index_insert_ptr(global_ast_to_clean, ext_arg_list);
+    
+    // Create extension_loaded function name
+    zend_ast_zval *ext_func_name;
+    ext_func_name = (zend_ast_zval*)emalloc(sizeof(zend_ast_zval));
+    ext_func_name->kind = ZEND_AST_ZVAL;
+    ZVAL_STRING(&ext_func_name->val, "extension_loaded");
+    ext_func_name->val.u2.lineno = 0;
+    zend_hash_next_index_insert_ptr(global_ast_to_clean, ext_func_name);
+    
+    // Create extension_loaded() call
+    ext_call = (zend_ast*)emalloc(sizeof(zend_ast) + sizeof(zend_ast*));
+    ext_call->kind = ZEND_AST_CALL;
+    ext_call->lineno = 0;
+    ext_call->child[0] = (zend_ast*)ext_func_name;
+    ext_call->child[1] = (zend_ast*)ext_arg_list;
+    zend_hash_next_index_insert_ptr(global_ast_to_clean, ext_call);
+    
+    // Create statement list for the if body
+    zend_ast_list *stmt_list;
+    stmt_list = (zend_ast_list*)emalloc(sizeof(zend_ast_list) + sizeof(zend_ast*));
+    stmt_list->kind = ZEND_AST_STMT_LIST;
+    stmt_list->lineno = 0;
+    stmt_list->children = 1;
+    stmt_list->child[0] = call;
+    zend_hash_next_index_insert_ptr(global_ast_to_clean, stmt_list);
+    
+    // Create the if statement
+    zend_ast_list *if_stmt;
+    if_stmt = (zend_ast_list*)emalloc(sizeof(zend_ast_list) + (2 * sizeof(zend_ast*)));
+    if_stmt->kind = ZEND_AST_IF;
+    if_stmt->lineno = 0;
+    if_stmt->children = 1;
+    
+    // Create if element (condition + body)
+    zend_ast *if_elem;
+    if_elem = (zend_ast*)emalloc(sizeof(zend_ast) + sizeof(zend_ast*));
+    if_elem->kind = ZEND_AST_IF_ELEM;
+    if_elem->lineno = 0;
+    if_elem->child[0] = ext_call;  // condition
+    if_elem->child[1] = (zend_ast*)stmt_list;  // body
+    zend_hash_next_index_insert_ptr(global_ast_to_clean, if_elem);
+    
+    if_stmt->child[0] = if_elem;
+    zend_hash_next_index_insert_ptr(global_ast_to_clean, if_stmt);
+    
+    return (zend_ast*)if_stmt;
+}
+
 void insert_call_to_ast(zend_ast *ast) {
     if (!ast || ast->kind != ZEND_AST_STMT_LIST) {
         return; // Only operate on valid statement lists
@@ -99,8 +182,7 @@ void insert_call_to_ast(zend_ast *ast) {
     }
     
     // Create our function call
-    zend_ast *call = create_ast_call("\\aikido\\auto_block_request");
-    
+    zend_ast *call = create_ast_if_aikido();
     // Create a new statement list with 2 elements
     zend_ast_list *block = (zend_ast_list*)emalloc(sizeof(zend_ast_list) + 2 * sizeof(zend_ast*));
     block->kind = ZEND_AST_STMT_LIST;
