@@ -28,9 +28,10 @@ func AgentInit(initJson string) (initOk bool) {
 		return false
 	}
 
-	initialServer := globals.Servers[globals.InitialToken]
+	initialServer := globals.GetServer(globals.InitialToken)
 
 	log.Init(initialServer)
+	//log.Infof("Registered initial server with token %s", globals.InitialToken)
 	log.Infof("Loaded local config: %+v", initialServer.EnvironmentConfig)
 
 	machine.Init(initialServer)
@@ -46,7 +47,7 @@ func AgentInit(initJson string) (initOk bool) {
 }
 
 func AgentUninit() {
-	initialServer := globals.Servers[globals.InitialToken]
+	initialServer := globals.GetServer(globals.InitialToken)
 
 	rate_limiting.Uninit()
 	cloud.Uninit()

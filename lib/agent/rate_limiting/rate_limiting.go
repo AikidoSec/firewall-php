@@ -39,7 +39,7 @@ func advanceRateLimitingQueuesForMap(config *RateLimitingConfig, countsMap map[s
 }
 
 func AdvanceRateLimitingQueues() {
-	for _, server := range globals.Servers {
+	for _, server := range globals.GetServers() {
 		server.RateLimitingMutex.Lock()
 		defer server.RateLimitingMutex.Unlock()
 

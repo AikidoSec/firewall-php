@@ -138,7 +138,7 @@ func GetMiddlewareInstalled(server *ServerData) bool {
 }
 
 func SendHeartbeatEvent() {
-	for _, server := range globals.Servers {
+	for _, server := range globals.GetServers() {
 		heartbeatEvent := Heartbeat{
 			Type:                "heartbeat",
 			Agent:               GetAgentInfo(server),

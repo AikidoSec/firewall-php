@@ -7,7 +7,7 @@ import (
 )
 
 func CheckConfigUpdatedAt() {
-	for _, server := range globals.Servers {
+	for _, server := range globals.GetServers() {
 		response, err := SendCloudRequest(server, server.EnvironmentConfig.ConfigEndpoint, globals.ConfigUpdatedAtAPI, globals.ConfigUpdatedAtMethod, nil)
 		if err != nil {
 			LogCloudRequestError(server, "Error in sending polling config request: ", err)

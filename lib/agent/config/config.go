@@ -20,8 +20,11 @@ func setConfigFromJson(jsonString []byte) bool {
 		log.Infof("No token set! Aikido agent will load and wait for the token to be passed via gRPC!")
 	}
 
+	globals.ServersMutex.Lock()
 	globals.Servers[globals.InitialToken] = aikido_types.NewServerData()
 	initialServer := globals.Servers[globals.InitialToken]
+	globals.ServersMutex.Unlock()
+
 	initialServer.EnvironmentConfig = tmpEnvironmentConfigData
 
 	if err := json.Unmarshal(jsonString, &initialServer.AikidoConfig); err != nil {

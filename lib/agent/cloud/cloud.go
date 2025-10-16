@@ -15,7 +15,7 @@ var (
 )
 
 func Init() {
-	for _, server := range globals.Servers {
+	for _, server := range globals.GetServers() {
 		server.StatsData.StartedAt = utils.GetTime()
 		server.StatsData.MonitoredSinkTimings = make(map[string]MonitoredSinkTimings)
 		SendStartEvent(server)
