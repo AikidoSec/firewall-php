@@ -186,7 +186,7 @@ void RequestProcessor::Uninit() {
     }
     if (!this->initFailed && this->requestProcessorUninitFn) {
         AIKIDO_LOG_INFO("Reporting final stats to Aikido Request Processor...\n");
-        this->ReportStats();
+        //this->ReportStats();
 
         AIKIDO_LOG_INFO("Calling uninit for Aikido Request Processor...\n");
         this->requestProcessorUninitFn();
