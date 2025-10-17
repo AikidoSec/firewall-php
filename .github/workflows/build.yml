@@ -472,7 +472,8 @@ jobs:
 
       - name: Overwrite aikido.sh install script
         run: |
-          echo "dpkg -i -E \"/var/www/html/aikido-php-firewall.\$(uname -i).deb\"" > ./zen-demo-php/.fly/scripts/aikido.sh
+          echo "#!/usr/bin/env bash" > ./zen-demo-php/.fly/scripts/aikido.sh
+          echo "dpkg -i -E \"/var/www/html/aikido-php-firewall.\$(uname -i).deb\"" >> ./zen-demo-php/.fly/scripts/aikido.sh
         
       - name: Run Firewall QA Tests
         uses: AikidoSec/firewall-tester-action@add-control-server-tests
