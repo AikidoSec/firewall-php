@@ -2,7 +2,6 @@ package cloud
 
 import (
 	. "main/aikido_types"
-	"main/globals"
 	"main/utils"
 	"time"
 )
@@ -15,13 +14,14 @@ var (
 )
 
 func Init() {
-	for _, server := range globals.GetServers() {
-		server.StatsData.StartedAt = utils.GetTime()
-		server.StatsData.MonitoredSinkTimings = make(map[string]MonitoredSinkTimings)
-		SendStartEvent(server)
-	}
 	utils.StartPollingRoutine(HeartbeatRoutineChannel, HeartBeatTicker, SendHeartbeatEvent)
 	utils.StartPollingRoutine(ConfigPollingRoutineChannel, ConfigPollingTicker, CheckConfigUpdatedAt)
+}
+
+func InitServer(server *ServerData) {
+	server.StatsData.StartedAt = utils.GetTime()
+	server.StatsData.MonitoredSinkTimings = make(map[string]MonitoredSinkTimings)
+	SendStartEvent(server)
 }
 
 func Uninit() {

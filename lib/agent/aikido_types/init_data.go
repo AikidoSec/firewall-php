@@ -107,9 +107,6 @@ type ServerData struct {
 	// Config mutex used to sync access to configuration data across the multiple go routines that we run in parallel
 	CloudConfigMutex sync.Mutex
 
-	// Data about the current machine, computed at init
-	Machine MachineData
-
 	// List of outgoing hostnames, their ports and number of hits, collected from the requests
 	Hostnames      map[string]map[uint32]uint64
 	HostnamesQueue Queue[string]

@@ -6,6 +6,7 @@ import (
 )
 
 var InitialToken = ""
+var Machine MachineData
 var Servers = make(map[string]*ServerData)
 var ServersMutex sync.RWMutex
 

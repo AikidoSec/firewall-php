@@ -49,7 +49,7 @@ func SendAikidoConfig() {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
 	defer cancel()
 
 	_, err := client.OnConfig(ctx, &protos.Config{Token: globals.AikidoConfig.Token, LogLevel: globals.AikidoConfig.LogLevel, DiskLogs: globals.AikidoConfig.DiskLogs,
@@ -69,7 +69,7 @@ func OnDomain(domain string, port uint32) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
 	defer cancel()
 
 	_, err := client.OnDomain(ctx, &protos.Domain{Token: globals.AikidoConfig.Token, Domain: domain, Port: port})
@@ -87,7 +87,7 @@ func OnPackages(packages map[string]string) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
 	defer cancel()
 
 	_, err := client.OnPackages(ctx, &protos.Packages{Token: globals.AikidoConfig.Token, Packages: packages})
@@ -124,7 +124,7 @@ func OnRequestShutdown(method string, route string, routeParsed string, statusCo
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	_, err := client.OnRequestShutdown(ctx, &protos.RequestMetadataShutdown{Token: globals.AikidoConfig.Token, Method: method, Route: route, RouteParsed: routeParsed, StatusCode: int32(statusCode), User: user, Ip: ip, RateLimitGroup: rateLimitGroup, ApiSpec: apiSpec, RateLimited: rateLimited})
@@ -142,7 +142,7 @@ func GetCloudConfig() {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	cloudConfig, err := client.GetCloudConfig(ctx, &protos.CloudConfigUpdatedAt{Token: globals.AikidoConfig.Token, ConfigUpdatedAt: utils.GetCloudConfigUpdatedAt()})
@@ -159,7 +159,7 @@ func OnUserEvent(id string, username string, ip string) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	_, err := client.OnUser(ctx, &protos.User{Token: globals.AikidoConfig.Token, Id: id, Username: username, Ip: ip})
@@ -176,7 +176,7 @@ func OnAttackDetected(attackDetected *protos.AttackDetected) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	_, err := client.OnAttackDetected(ctx, attackDetected)
@@ -192,7 +192,7 @@ func OnMonitoredSinkStats(sink, kind string, attacksDetected, attacksBlocked, in
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	_, err := client.OnMonitoredSinkStats(ctx, &protos.MonitoredSinkStats{
@@ -218,7 +218,7 @@ func OnMiddlewareInstalled() {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	_, err := client.OnMiddlewareInstalled(ctx, &protos.MiddlewareInstalledInfo{Token: globals.AikidoConfig.Token})
@@ -234,7 +234,7 @@ func OnMonitoredIpMatch(lists []utils.IpListMatch) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	protosLists := []string{}
@@ -255,7 +255,7 @@ func OnMonitoredUserAgentMatch(lists []string) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	_, err := client.OnMonitoredUserAgentMatch(ctx, &protos.MonitoredUserAgentMatch{Token: globals.AikidoConfig.Token, Lists: lists})

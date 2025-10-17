@@ -51,9 +51,12 @@ func AdvanceRateLimitingQueues() {
 	}
 }
 
-func Init(server *aikido_types.ServerData) {
-	AdvanceRateLimitingQueues()
+func Init() {
 	utils.StartPollingRoutine(RateLimitingChannel, RateLimitingTicker, AdvanceRateLimitingQueues)
+}
+
+func InitServer(server *aikido_types.ServerData) {
+	AdvanceRateLimitingQueues()
 }
 
 func Uninit() {

@@ -17,12 +17,12 @@ import (
 func GetAgentInfo(server *ServerData) AgentInfo {
 	return AgentInfo{
 		DryMode:   !utils.IsBlockingEnabled(server),
-		Hostname:  server.Machine.HostName,
+		Hostname:  globals.Machine.HostName,
 		Version:   Version,
-		IPAddress: server.Machine.IPAddress,
+		IPAddress: globals.Machine.IPAddress,
 		OS: OsInfo{
-			Name:    server.Machine.OS,
-			Version: server.Machine.OSVersion,
+			Name:    globals.Machine.OS,
+			Version: globals.Machine.OSVersion,
 		},
 		Platform: PlatformInfo{
 			Name:    server.EnvironmentConfig.PlatformName,
