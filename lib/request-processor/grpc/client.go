@@ -52,15 +52,23 @@ func SendAikidoConfig() {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
 	defer cancel()
 
-	_, err := client.OnConfig(ctx, &protos.Config{Token: globals.AikidoConfig.Token, LogLevel: globals.AikidoConfig.LogLevel, DiskLogs: globals.AikidoConfig.DiskLogs,
-		Blocking: globals.AikidoConfig.Blocking, LocalhostAllowedByDefault: globals.AikidoConfig.LocalhostAllowedByDefault,
-		CollectApiSchema: globals.AikidoConfig.CollectApiSchema})
+	_, err := client.OnConfig(ctx, &protos.Config{
+		PlatformName:              globals.AikidoConfig.PlatformName,
+		PlatformVersion:           globals.AikidoConfig.PlatformVersion,
+		Token:                     globals.AikidoConfig.Token,
+		Endpoint:                  globals.AikidoConfig.Endpoint,
+		ConfigEndpoint:            globals.AikidoConfig.ConfigEndpoint,
+		LogLevel:                  globals.AikidoConfig.LogLevel,
+		DiskLogs:                  globals.AikidoConfig.DiskLogs,
+		Blocking:                  globals.AikidoConfig.Blocking,
+		LocalhostAllowedByDefault: globals.AikidoConfig.LocalhostAllowedByDefault,
+		CollectApiSchema:          globals.AikidoConfig.CollectApiSchema})
 	if err != nil {
 		log.Warnf("Could not send Aikido Config: %v", err)
 		return
 	}
 
-	log.Debugf("Aikido config sent via socket!")
+	log.Debugf("Aikido config sent via socket: %+v", globals.AikidoConfig)
 }
 
 /* Send outgoing domain to Aikido Agent via gRPC */
@@ -255,7 +263,7 @@ func OnMonitoredUserAgentMatch(lists []string) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	_, err := client.OnMonitoredUserAgentMatch(ctx, &protos.MonitoredUserAgentMatch{Token: globals.AikidoConfig.Token, Lists: lists})

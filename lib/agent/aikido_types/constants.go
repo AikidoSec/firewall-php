@@ -1,4 +1,4 @@
-package globals
+package aikido_types
 
 const (
 	Version                             = "1.3.7"

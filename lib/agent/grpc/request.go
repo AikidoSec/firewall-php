@@ -4,7 +4,6 @@ import (
 	"main/aikido_types"
 	. "main/aikido_types"
 	"main/api_discovery"
-	"main/globals"
 	"main/ipc/protos"
 	"main/log"
 	"main/utils"
@@ -75,7 +74,7 @@ func storeSinkStats(server *aikido_types.ServerData, protoSinkStats *protos.Moni
 	monitoredSinkTimings.WithoutContext += int(protoSinkStats.GetWithoutContext())
 	monitoredSinkTimings.Total += int(protoSinkStats.GetTotal())
 	monitoredSinkTimings.Timings = append(monitoredSinkTimings.Timings, protoSinkStats.GetTimings()...)
-	if len(monitoredSinkTimings.Timings) >= globals.MinStatsCollectedForRelevantMetrics {
+	if len(monitoredSinkTimings.Timings) >= aikido_types.MinStatsCollectedForRelevantMetrics {
 		monitoredSinkTimings.CompressedTimings = append(monitoredSinkTimings.CompressedTimings, CompressedTiming{
 			AverageInMS:  utils.ComputeAverage(monitoredSinkTimings.Timings),
 			Percentiles:  utils.ComputePercentiles(monitoredSinkTimings.Timings),

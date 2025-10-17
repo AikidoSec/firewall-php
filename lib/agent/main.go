@@ -9,6 +9,7 @@ import (
 	"main/machine"
 )
 import (
+	"main/aikido_types"
 	"main/cloud"
 	"main/rate_limiting"
 	"os"
@@ -28,34 +29,29 @@ func AgentInit(initJson string) (initOk bool) {
 		return false
 	}
 
-	initialServer := globals.GetServer(globals.InitialToken)
+	log.Init(globals.EnvironmentConfig.DiskLogs)
+	log.Infof("Registered initial server with token %s", globals.InitialToken)
+	log.Infof("Loaded local config: %+v", globals.EnvironmentConfig)
 
-	log.Init(initialServer)
-	//log.Infof("Registered initial server with token %s", globals.InitialToken)
-	log.Infof("Loaded local config: %+v", initialServer.EnvironmentConfig)
-
-	machine.Init(initialServer)
-	if !grpc.Init(initialServer) {
+	machine.Init()
+	if !grpc.Init(globals.EnvironmentConfig.SocketPath) {
 		return false
 	}
 
-	cloud.Init()
-	rate_limiting.Init(initialServer)
-
-	log.Infof("Aikido Agent v%s started!", globals.Version)
+	log.Infof("Aikido Agent v%s started!", aikido_types.Version)
 	return true
 }
 
 func AgentUninit() {
-	initialServer := globals.GetServer(globals.InitialToken)
-
-	rate_limiting.Uninit()
-	cloud.Uninit()
-	grpc.Uninit(initialServer)
+	for _, server := range globals.GetServers() {
+		rate_limiting.UninitServer(server)
+		cloud.UninitServer(server)
+	}
+	grpc.Uninit()
 	config.Uninit()
 
-	log.Infof("Aikido Agent v%s stopped!", globals.Version)
-	log.Uninit(initialServer)
+	log.Infof("Aikido Agent v%s stopped!", aikido_types.Version)
+	log.Uninit()
 }
 
 func main() {

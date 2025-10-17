@@ -22,12 +22,16 @@ service Aikido {
 }
 
 message Config {
-	string token = 1;
-  string log_level = 2;
-  bool disk_logs = 3;
-  bool blocking = 4;
-  bool localhost_allowed_by_default = 5;
-  bool collect_api_schema = 6;
+  string platform_name = 1;
+  string platform_version = 2;
+	string token = 3;
+  string endpoint = 4;
+  string config_endpoint = 5;
+  string log_level = 6;
+  bool disk_logs = 7;
+  bool blocking = 8;
+  bool localhost_allowed_by_default = 9;
+  bool collect_api_schema = 10;
 }
 
 message Packages {

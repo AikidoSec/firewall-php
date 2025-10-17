@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"main/aikido_types"
-	"main/globals"
 	"os"
 	"sync/atomic"
 	"time"
@@ -113,8 +112,8 @@ func SetLogLevel(level string) error {
 	return nil
 }
 
-func Init(serverObject *aikido_types.ServerData) {
-	if !serverObject.AikidoConfig.DiskLogs {
+func Init(diskLogs bool) {
+	if !diskLogs {
 		return
 	}
 	if logFile != nil {
@@ -122,7 +121,7 @@ func Init(serverObject *aikido_types.ServerData) {
 	}
 	currentTime := time.Now()
 	timeStr := currentTime.Format("20060102150405")
-	logFilePath := fmt.Sprintf("/var/log/aikido-%s/aikido-agent-%s-%d.log", globals.Version, timeStr, os.Getpid())
+	logFilePath := fmt.Sprintf("/var/log/aikido-%s/aikido-agent-%s-%d.log", aikido_types.Version, timeStr, os.Getpid())
 
 	var err error
 	logFile, err = os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY, 0666)
@@ -133,10 +132,9 @@ func Init(serverObject *aikido_types.ServerData) {
 	logger.SetOutput(logFile)
 }
 
-func Uninit(serverObject *aikido_types.ServerData) {
-	if !serverObject.AikidoConfig.DiskLogs {
-		return
+func Uninit() {
+	if logFile != nil {
+		logger.SetOutput(os.Stdout)
+		logFile.Close()
 	}
-	logger.SetOutput(os.Stdout)
-	logFile.Close()
 }

@@ -1,6 +1,9 @@
 package aikido_types
 
-import "sync"
+import (
+	"sync"
+	"time"
+)
 
 type MachineData struct {
 	HostName   string `json:"hostname"`
@@ -11,16 +14,18 @@ type MachineData struct {
 }
 
 type EnvironmentConfigData struct {
-	SocketPath      string `json:"socket_path"`               // '/run/aikido-{version}/aikido-{datetime}-{randint}.sock'
-	PlatformName    string `json:"platform_name"`             // PHP platform name (fpm-fcgi, cli-server, ...)
-	PlatformVersion string `json:"platform_version"`          // PHP version
-	Endpoint        string `json:"endpoint,omitempty"`        // default: 'https://guard.aikido.dev/'
-	ConfigEndpoint  string `json:"config_endpoint,omitempty"` // default: 'https://runtime.aikido.dev/'
+	SocketPath string `json:"socket_path"` // '/run/aikido-{version}/aikido-{datetime}-{randint}.sock'
+	DiskLogs   bool   `json:"disk_logs"`   // default: false
+	LogLevel   string `json:"log_level"`   // default: 'INFO'
 }
 
 type AikidoConfigData struct {
 	ConfigMutex               sync.Mutex
+	PlatformName              string `json:"platform_name"`                          // PHP platform name (fpm-fcgi, cli-server, ...)
+	PlatformVersion           string `json:"platform_version"`                       // PHP version
 	Token                     string `json:"token,omitempty"`                        // default: ''
+	Endpoint                  string `json:"endpoint,omitempty"`                     // default: 'https://guard.aikido.dev/'
+	ConfigEndpoint            string `json:"config_endpoint,omitempty"`              // default: 'https://runtime.aikido.dev/'
 	LogLevel                  string `json:"log_level,omitempty"`                    // default: 'INFO'
 	DiskLogs                  bool   `json:"disk_logs,omitempty"`                    // default: false
 	Blocking                  bool   `json:"blocking,omitempty"`                     // default: false
@@ -94,10 +99,27 @@ type CloudConfigUpdatedAt struct {
 	ConfigUpdatedAt int64 `json:"configUpdatedAt"`
 }
 
-type ServerData struct {
-	// Local config that contains info about socket path, php platform, php version...
-	EnvironmentConfig EnvironmentConfigData
+type ServerDataPolling struct {
+	HeartbeatRoutineChannel     chan struct{}
+	HeartBeatTicker             *time.Ticker
+	ConfigPollingRoutineChannel chan struct{}
+	ConfigPollingTicker         *time.Ticker
+	RateLimitingChannel         chan struct{}
+	RateLimitingTicker          *time.Ticker
+}
 
+func NewServerDataPolling() *ServerDataPolling {
+	return &ServerDataPolling{
+		HeartbeatRoutineChannel:     make(chan struct{}),
+		HeartBeatTicker:             time.NewTicker(10 * time.Minute),
+		ConfigPollingRoutineChannel: make(chan struct{}),
+		ConfigPollingTicker:         time.NewTicker(1 * time.Minute),
+		RateLimitingChannel:         make(chan struct{}),
+		RateLimitingTicker:          time.NewTicker(MinRateLimitingIntervalInMs * time.Millisecond),
+	}
+}
+
+type ServerData struct {
 	// Aikido config that contains info about endpoint, log_level, token, ...
 	AikidoConfig AikidoConfigData
 
@@ -106,6 +128,9 @@ type ServerData struct {
 
 	// Config mutex used to sync access to configuration data across the multiple go routines that we run in parallel
 	CloudConfigMutex sync.Mutex
+
+	// Polling data for the server, including mutex used to sync access to polling data across the go routines
+	PollingData *ServerDataPolling
 
 	// List of outgoing hostnames, their ports and number of hits, collected from the requests
 	Hostnames      map[string]map[uint32]uint64
@@ -182,5 +207,6 @@ func NewServerData() *ServerData {
 		Users:                   make(map[string]User),
 		UsersQueue:              NewQueue[string](MaxNumberOfStoredUsers),
 		Packages:                make(map[string]Package),
+		PollingData:             NewServerDataPolling(),
 	}
 }

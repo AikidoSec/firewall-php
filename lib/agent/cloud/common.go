@@ -2,9 +2,9 @@ package cloud
 
 import (
 	"encoding/json"
+	"main/aikido_types"
 	. "main/aikido_types"
 	"main/globals"
-	. "main/globals"
 	"main/log"
 	"main/utils"
 	"regexp"
@@ -25,8 +25,8 @@ func GetAgentInfo(server *ServerData) AgentInfo {
 			Version: globals.Machine.OSVersion,
 		},
 		Platform: PlatformInfo{
-			Name:    server.EnvironmentConfig.PlatformName,
-			Version: server.EnvironmentConfig.PlatformVersion,
+			Name:    server.AikidoConfig.PlatformName,
+			Version: server.AikidoConfig.PlatformVersion,
 		},
 		Packages: make(map[string]string, 0),
 		NodeEnv:  "",
@@ -37,11 +37,11 @@ func GetAgentInfo(server *ServerData) AgentInfo {
 func ResetHeartbeatTicker(server *ServerData) {
 	if !server.CloudConfig.ReceivedAnyStats {
 		log.Info("Resetting HeartBeatTicker to 1m!")
-		HeartBeatTicker.Reset(1 * time.Minute)
+		server.PollingData.HeartBeatTicker.Reset(1 * time.Minute)
 	} else {
-		if server.CloudConfig.HeartbeatIntervalInMS >= globals.MinHeartbeatIntervalInMS {
+		if server.CloudConfig.HeartbeatIntervalInMS >= MinHeartbeatIntervalInMS {
 			log.Infof("Resetting HeartBeatTicker to %dms!", server.CloudConfig.HeartbeatIntervalInMS)
-			HeartBeatTicker.Reset(time.Duration(server.CloudConfig.HeartbeatIntervalInMS) * time.Millisecond)
+			server.PollingData.HeartBeatTicker.Reset(time.Duration(server.CloudConfig.HeartbeatIntervalInMS) * time.Millisecond)
 		}
 	}
 }
@@ -134,7 +134,7 @@ func UpdateIpsLists(ipLists []IpsData) map[string]IpBlocklist {
 }
 
 func UpdateListsConfig(server *ServerData) bool {
-	response, err := SendCloudRequest(server, server.EnvironmentConfig.Endpoint, globals.ListsAPI, globals.ListsAPIMethod, nil)
+	response, err := SendCloudRequest(server, server.AikidoConfig.Endpoint, aikido_types.ListsAPI, aikido_types.ListsAPIMethod, nil)
 	if err != nil {
 		LogCloudRequestError(server, "Error in sending lists request: ", err)
 		return false

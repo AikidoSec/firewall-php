@@ -2,15 +2,8 @@
 
 std::string Agent::GetInitData() {
     json initData = {{"socket_path", AIKIDO_GLOBAL(socket_path)},
-                     {"platform_name", AIKIDO_GLOBAL(sapi_name)},
-                     {"platform_version", PHP_VERSION},
-                     {"endpoint", AIKIDO_GLOBAL(endpoint)},
-                     {"config_endpoint", AIKIDO_GLOBAL(config_endpoint)},
                      {"log_level", AIKIDO_GLOBAL(log_level_str)},
-                     {"disk_logs", AIKIDO_GLOBAL(disk_logs)},
-                     {"blocking", AIKIDO_GLOBAL(blocking)},
-                     {"localhost_allowed_by_default", AIKIDO_GLOBAL(localhost_allowed_by_default)},
-                     {"collect_api_schema", AIKIDO_GLOBAL(collect_api_schema)}};
+                     {"disk_logs", AIKIDO_GLOBAL(disk_logs)}};
 
     // Remove invalid UTF8 characters (normalize)
     // https://json.nlohmann.me/api/basic_json/dump/

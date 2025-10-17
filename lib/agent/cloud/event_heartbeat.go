@@ -1,8 +1,8 @@
 package cloud
 
 import (
+	"main/aikido_types"
 	. "main/aikido_types"
-	"main/globals"
 	"main/utils"
 	"sync/atomic"
 )
@@ -137,25 +137,23 @@ func GetMiddlewareInstalled(server *ServerData) bool {
 	return atomic.LoadUint32(&server.MiddlewareInstalled) == 1
 }
 
-func SendHeartbeatEvent() {
-	for _, server := range globals.GetServers() {
-		heartbeatEvent := Heartbeat{
-			Type:                "heartbeat",
-			Agent:               GetAgentInfo(server),
-			Time:                utils.GetTime(),
-			Stats:               GetStatsAndClear(server),
-			Hostnames:           GetHostnamesAndClear(server),
-			Routes:              GetRoutesAndClear(server),
-			Users:               GetUsersAndClear(server),
-			Packages:            GetPackages(server),
-			MiddlewareInstalled: GetMiddlewareInstalled(server),
-		}
-
-		response, err := SendCloudRequest(server, server.EnvironmentConfig.Endpoint, globals.EventsAPI, globals.EventsAPIMethod, heartbeatEvent)
-		if err != nil {
-			LogCloudRequestError(server, "Error in sending heartbeat event: ", err)
-			return
-		}
-		StoreCloudConfig(server, response)
+func SendHeartbeatEvent(server *ServerData) {
+	heartbeatEvent := Heartbeat{
+		Type:                "heartbeat",
+		Agent:               GetAgentInfo(server),
+		Time:                utils.GetTime(),
+		Stats:               GetStatsAndClear(server),
+		Hostnames:           GetHostnamesAndClear(server),
+		Routes:              GetRoutesAndClear(server),
+		Users:               GetUsersAndClear(server),
+		Packages:            GetPackages(server),
+		MiddlewareInstalled: GetMiddlewareInstalled(server),
 	}
+
+	response, err := SendCloudRequest(server, server.AikidoConfig.Endpoint, aikido_types.EventsAPI, aikido_types.EventsAPIMethod, heartbeatEvent)
+	if err != nil {
+		LogCloudRequestError(server, "Error in sending heartbeat event: ", err)
+		return
+	}
+	StoreCloudConfig(server, response)
 }

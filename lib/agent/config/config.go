@@ -10,8 +10,7 @@ import (
 )
 
 func setConfigFromJson(jsonString []byte) bool {
-	tmpEnvironmentConfigData := aikido_types.EnvironmentConfigData{}
-	if err := json.Unmarshal(jsonString, &tmpEnvironmentConfigData); err != nil {
+	if err := json.Unmarshal(jsonString, &globals.EnvironmentConfig); err != nil {
 		panic(fmt.Sprintf("Failed to unmarshal JSON to EnvironmentConfig: %v", err))
 	}
 
@@ -20,25 +19,13 @@ func setConfigFromJson(jsonString []byte) bool {
 		log.Infof("No token set! Aikido agent will load and wait for the token to be passed via gRPC!")
 	}
 
-	globals.ServersMutex.Lock()
-	globals.Servers[globals.InitialToken] = aikido_types.NewServerData()
-	initialServer := globals.Servers[globals.InitialToken]
-	globals.ServersMutex.Unlock()
-
-	initialServer.EnvironmentConfig = tmpEnvironmentConfigData
-
-	if err := json.Unmarshal(jsonString, &initialServer.AikidoConfig); err != nil {
-		panic(fmt.Sprintf("Failed to unmarshal JSON to AikidoConfig: %v", err))
-	}
-	initialServer.AikidoConfig.Token = globals.InitialToken
-
-	if initialServer.AikidoConfig.LogLevel != "" {
-		if err := log.SetLogLevel(initialServer.AikidoConfig.LogLevel); err != nil {
+	if globals.EnvironmentConfig.LogLevel != "" {
+		if err := log.SetLogLevel(globals.EnvironmentConfig.LogLevel); err != nil {
 			panic(fmt.Sprintf("Error setting log level: %s", err))
 		}
 	}
 
-	if initialServer.EnvironmentConfig.SocketPath == "" {
+	if globals.EnvironmentConfig.SocketPath == "" {
 		log.Errorf("No socket path set! Aikido agent will not load!")
 		return false
 	}

@@ -96,7 +96,6 @@ func RequestProcessorContextInit(contextCallback C.ContextCallback) (initOk bool
 */
 //export RequestProcessorConfigUpdate
 func RequestProcessorConfigUpdate(configJson string) (initOk bool) {
-
 	defer func() {
 		if r := recover(); r != nil {
 			log.Warn("Recovered from panic:", r)

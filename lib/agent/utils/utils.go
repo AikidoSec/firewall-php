@@ -53,12 +53,12 @@ func isLocalhost(ip string) bool {
 	return parsedIP.IsLoopback()
 }
 
-func StartPollingRoutine(stopChan chan struct{}, ticker *time.Ticker, pollingFunction func()) {
+func StartPollingRoutine(stopChan chan struct{}, ticker *time.Ticker, pollingFunction func(*ServerData), server *ServerData) {
 	go func() {
 		for {
 			select {
 			case <-ticker.C:
-				pollingFunction()
+				pollingFunction(server)
 			case <-stopChan:
 				ticker.Stop()
 				return
