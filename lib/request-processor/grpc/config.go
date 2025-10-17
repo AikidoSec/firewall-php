@@ -15,7 +15,19 @@ import (
 var (
 	stopChan          chan struct{}
 	cloudConfigTicker = time.NewTicker(1 * time.Minute)
+	statsChan         chan MonitoredSinkStatsData
 )
+
+type MonitoredSinkStatsData struct {
+	Sink                  string
+	Kind                  string
+	AttacksDetected       int32
+	AttacksBlocked        int32
+	InterceptorThrewError int32
+	WithoutContext        int32
+	Total                 int32
+	Timings               []int64
+}
 
 func buildIpList(cloudIpList map[string]*protos.IpList) map[string]IpList {
 	ipList := map[string]IpList{}
@@ -156,5 +168,61 @@ func startCloudConfigRoutine() {
 func stopCloudConfigRoutine() {
 	if stopChan != nil {
 		close(stopChan)
+	}
+}
+
+func startStatsReportingRoutine() {
+	statsChan = make(chan MonitoredSinkStatsData, 100) // Buffered channel to prevent blocking
+
+	go func() {
+		for {
+			select {
+			case statsData := <-statsChan:
+				OnMonitoredSinkStats(
+					statsData.Sink,
+					statsData.Kind,
+					statsData.AttacksDetected,
+					statsData.AttacksBlocked,
+					statsData.InterceptorThrewError,
+					statsData.WithoutContext,
+					statsData.Total,
+					statsData.Timings,
+				)
+			case <-stopChan:
+				return
+			}
+		}
+	}()
+}
+
+func stopStatsReportingRoutine() {
+	if statsChan != nil {
+		close(statsChan)
+	}
+}
+
+func QueueMonitoredSinkStats(sink, kind string, attacksDetected, attacksBlocked, interceptorThrewError, withoutContext, total int32, timings []int64) {
+	if statsChan == nil {
+		return
+	}
+
+	// Clone the timings slice to avoid race conditions
+	clonedTimings := make([]int64, len(timings))
+	copy(clonedTimings, timings)
+
+	select {
+	case statsChan <- MonitoredSinkStatsData{
+		Sink:                  strings.Clone(sink),
+		Kind:                  strings.Clone(kind),
+		AttacksDetected:       attacksDetected,
+		AttacksBlocked:        attacksBlocked,
+		InterceptorThrewError: interceptorThrewError,
+		WithoutContext:        withoutContext,
+		Total:                 total,
+		Timings:               clonedTimings,
+	}:
+	default:
+		// Channel is full or closed, drop the stats to avoid blocking
+		log.Warnf("Stats channel full, dropping monitored sink stats for sink: %s", sink)
 	}
 }

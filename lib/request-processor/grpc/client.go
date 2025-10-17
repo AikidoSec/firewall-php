@@ -35,10 +35,12 @@ func Init() {
 	SendAikidoConfig()
 	OnPackages(globals.AikidoConfig.Packages)
 	startCloudConfigRoutine()
+	startStatsReportingRoutine()
 }
 
 func Uninit() {
 	stopCloudConfigRoutine()
+	stopStatsReportingRoutine()
 	if conn != nil {
 		conn.Close()
 	}
