@@ -103,6 +103,10 @@ func RequestProcessorConfigUpdate(configJson string) (initOk bool) {
 		}
 	}()
 
+	if globals.EnvironmentConfig.SAPI == "cli" {
+		return true
+	}
+
 	previousToken := globals.AikidoConfig.Token
 	if previousToken != "" {
 		log.Debugf("Token was previously set, not sending config to Agent!")
