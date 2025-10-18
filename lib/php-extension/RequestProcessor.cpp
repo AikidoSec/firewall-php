@@ -11,15 +11,18 @@ std::string RequestProcessor::GetInitData(std::string token) {
     }
 
     json initData = {
-        {"token", token},
-        {"log_level", AIKIDO_GLOBAL(log_level_str)},
         {"socket_path", AIKIDO_GLOBAL(socket_path)},
+        {"token", token},
+        {"platform_name", AIKIDO_GLOBAL(sapi_name)},
+        {"platform_version", PHP_VERSION},
+        {"endpoint", AIKIDO_GLOBAL(endpoint)},
+        {"config_endpoint", AIKIDO_GLOBAL(config_endpoint)},
+        {"log_level", AIKIDO_GLOBAL(log_level_str)},
         {"blocking", AIKIDO_GLOBAL(blocking)},
         {"trust_proxy", AIKIDO_GLOBAL(trust_proxy)},
         {"disk_logs", AIKIDO_GLOBAL(disk_logs)},
         {"localhost_allowed_by_default", AIKIDO_GLOBAL(localhost_allowed_by_default)},
         {"collect_api_schema", AIKIDO_GLOBAL(collect_api_schema)},
-        {"sapi", AIKIDO_GLOBAL(sapi_name)},
         {"packages", GetPackages()}};
     return NormalizeAndDumpJson(initData);
 }

@@ -9,6 +9,7 @@ import (
 	"main/machine"
 )
 import (
+	"main/aikido_types"
 	"main/cloud"
 	"main/rate_limiting"
 	"os"
@@ -27,28 +28,29 @@ func AgentInit(initJson string) (initOk bool) {
 	if !config.Init(initJson) {
 		return false
 	}
-	log.Init()
+
+	log.Init(globals.EnvironmentConfig.DiskLogs)
+	log.Infof("Registered initial server with token %s", globals.InitialToken)
 	log.Infof("Loaded local config: %+v", globals.EnvironmentConfig)
 
 	machine.Init()
-	if !grpc.Init() {
+	if !grpc.Init(globals.EnvironmentConfig.SocketPath) {
 		return false
 	}
 
-	cloud.Init()
-	rate_limiting.Init()
-
-	log.Infof("Aikido Agent v%s started!", globals.Version)
+	log.Infof("Aikido Agent v%s started!", aikido_types.Version)
 	return true
 }
 
 func AgentUninit() {
-	rate_limiting.Uninit()
-	cloud.Uninit()
+	for _, server := range globals.GetServers() {
+		rate_limiting.UninitServer(server)
+		cloud.UninitServer(server)
+	}
 	grpc.Uninit()
 	config.Uninit()
 
-	log.Infof("Aikido Agent v%s stopped!", globals.Version)
+	log.Infof("Aikido Agent v%s stopped!", aikido_types.Version)
 	log.Uninit()
 }
 

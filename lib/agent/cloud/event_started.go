@@ -1,22 +1,22 @@
 package cloud
 
 import (
+	"main/aikido_types"
 	. "main/aikido_types"
-	"main/globals"
 	"main/utils"
 )
 
-func SendStartEvent() {
+func SendStartEvent(server *ServerData) {
 	startedEvent := Started{
 		Type:  "started",
-		Agent: GetAgentInfo(),
+		Agent: GetAgentInfo(server),
 		Time:  utils.GetTime(),
 	}
 
-	response, err := SendCloudRequest(globals.EnvironmentConfig.Endpoint, globals.EventsAPI, globals.EventsAPIMethod, startedEvent)
+	response, err := SendCloudRequest(server, server.AikidoConfig.Endpoint, aikido_types.EventsAPI, aikido_types.EventsAPIMethod, startedEvent)
 	if err != nil {
-		LogCloudRequestError("Error in sending start event: ", err)
+		LogCloudRequestError(server, "Error in sending start event: ", err)
 		return
 	}
-	StoreCloudConfig(response)
+	StoreCloudConfig(server, response)
 }

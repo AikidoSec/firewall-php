@@ -1,5 +1,5 @@
 Name:           aikido-php-firewall
-Version:        1.3.6
+Version:        1.3.7
 Release:        1
 Summary:        Aikido PHP Extension
 License:        GPL
@@ -119,6 +119,11 @@ echo "Installation process for Aikido v%{version} completed."
 #!/bin/bash
 
 echo "Starting the uninstallation process for Aikido v%{version}..."
+
+PID=$(pgrep -f "aikido-agent" 2>/dev/null)
+if [ -n "$PID" ]; then
+    kill -9 "$PID" 2>/dev/null || :
+fi
 
 # Find all PHP versions installed
 PHP_VERSIONS=()

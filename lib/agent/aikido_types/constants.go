@@ -1,7 +1,7 @@
-package globals
+package aikido_types
 
 const (
-	Version                             = "1.3.6"
+	Version                             = "1.3.7"
 	ConfigUpdatedAtMethod               = "GET"
 	ConfigUpdatedAtAPI                  = "/config"
 	ConfigAPIMethod                     = "GET"
@@ -16,7 +16,4 @@ const (
 	MaxAttackDetectedEventsPerInterval  = 100
 	AttackDetectedEventsIntervalInMs    = 60 * 60 * 1000 // 1 hour
 	MinStatsCollectedForRelevantMetrics = 1000
-	MaxNumberOfStoredUsers              = 2000
-	MaxNumberOfStoredRoutes             = 5000
-	MaxNumberOfStoredHostnames          = 2000
 )

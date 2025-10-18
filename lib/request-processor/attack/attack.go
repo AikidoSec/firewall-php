@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"html"
 	"main/context"
+	"main/globals"
 	"main/grpc"
 	"main/ipc/protos"
 	"main/utils"
@@ -34,6 +35,7 @@ func GetHeadersProto() []*protos.Header {
 /* Construct the AttackDetected protobuf structure to be sent via gRPC to the Agent */
 func GetAttackDetectedProto(res utils.InterceptorResult) *protos.AttackDetected {
 	return &protos.AttackDetected{
+		Token: globals.AikidoConfig.Token,
 		Request: &protos.Request{
 			Method:    context.GetMethod(),
 			IpAddress: context.GetIp(),

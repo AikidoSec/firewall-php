@@ -199,7 +199,7 @@ func IsIpInSet(ipSet *netipx.IPSet, ip string) int {
 }
 
 func IsIpAllowedOnEndpoint(allowedIps *netipx.IPSet, ip string) int {
-	if globals.EnvironmentConfig.LocalhostAllowedByDefault && isLocalhost(ip) {
+	if globals.AikidoConfig.LocalhostAllowedByDefault && isLocalhost(ip) {
 		return Found
 	}
 
@@ -260,7 +260,7 @@ func getIpFromXForwardedFor(value string) string {
 }
 
 func GetIpFromRequest(remoteAddress string, xForwardedFor string) string {
-	if xForwardedFor != "" && globals.EnvironmentConfig.TrustProxy {
+	if xForwardedFor != "" && globals.AikidoConfig.TrustProxy {
 		ip := getIpFromXForwardedFor(xForwardedFor)
 		if isIP(ip) {
 			return ip

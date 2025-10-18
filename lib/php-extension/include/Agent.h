@@ -5,8 +5,13 @@ typedef void (*AgentUninitFn)();
 
 class Agent {
    private:
-    pid_t agentPid = 0;
+    std::string socketPath;
+
     std::string GetInitData();
+    std::string GetSocketPath();
+
+    bool Start(std::string aikidoAgentPath, std::string initData, std::string token);
+    bool SpawnDetached(std::string aikidoAgentPath, std::string initData, std::string token);
 
    public:
     Agent() = default;

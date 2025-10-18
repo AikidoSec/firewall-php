@@ -1,23 +1,23 @@
 package grpc
 
 import (
-	"main/globals"
+	"main/aikido_types"
 	"main/utils"
 )
 
-func storeDomain(domain string, port uint32) {
+func storeDomain(server *aikido_types.ServerData, domain string, port uint32) {
 	if port == 0 {
 		return
 	}
 
-	globals.HostnamesMutex.Lock()
-	defer globals.HostnamesMutex.Unlock()
+	server.HostnamesMutex.Lock()
+	defer server.HostnamesMutex.Unlock()
 
-	if _, ok := globals.Hostnames[domain]; !ok {
+	if _, ok := server.Hostnames[domain]; !ok {
 		// First time we see this domain
-		globals.Hostnames[domain] = make(map[uint32]uint64)
-		utils.RemoveOldestFromMapIfMaxExceeded(&globals.Hostnames, &globals.HostnamesQueue, domain)
+		server.Hostnames[domain] = make(map[uint32]uint64)
+		utils.RemoveOldestFromMapIfMaxExceeded(&server.Hostnames, &server.HostnamesQueue, domain)
 	}
 
-	globals.Hostnames[domain][port]++
+	server.Hostnames[domain][port]++
 }

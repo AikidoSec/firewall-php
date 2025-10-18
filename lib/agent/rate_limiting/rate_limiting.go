@@ -1,16 +1,10 @@
 package rate_limiting
 
 import (
+	"main/aikido_types"
 	. "main/aikido_types"
-	"main/globals"
 	"main/log"
 	"main/utils"
-	"time"
-)
-
-var (
-	RateLimitingChannel = make(chan struct{})
-	RateLimitingTicker  = time.NewTicker(globals.MinRateLimitingIntervalInMs * time.Millisecond)
 )
 
 func advanceRateLimitingQueuesForMap(config *RateLimitingConfig, countsMap map[string]*RateLimitingCounts) {
@@ -37,22 +31,22 @@ func advanceRateLimitingQueuesForMap(config *RateLimitingConfig, countsMap map[s
 	}
 }
 
-func AdvanceRateLimitingQueues() {
-	globals.RateLimitingMutex.Lock()
-	defer globals.RateLimitingMutex.Unlock()
+func AdvanceRateLimitingQueues(server *aikido_types.ServerData) {
+	server.RateLimitingMutex.Lock()
+	defer server.RateLimitingMutex.Unlock()
 
-	for _, endpoint := range globals.RateLimitingMap {
+	for _, endpoint := range server.RateLimitingMap {
 		advanceRateLimitingQueuesForMap(&endpoint.Config, endpoint.UserCounts)
 		advanceRateLimitingQueuesForMap(&endpoint.Config, endpoint.IpCounts)
 		advanceRateLimitingQueuesForMap(&endpoint.Config, endpoint.RateLimitGroupCounts)
 	}
 }
 
-func Init() {
-	AdvanceRateLimitingQueues()
-	utils.StartPollingRoutine(RateLimitingChannel, RateLimitingTicker, AdvanceRateLimitingQueues)
+func InitServer(server *aikido_types.ServerData) {
+	utils.StartPollingRoutine(server.PollingData.RateLimitingChannel, server.PollingData.RateLimitingTicker, AdvanceRateLimitingQueues, server)
+	AdvanceRateLimitingQueues(server)
 }
 
-func Uninit() {
-	utils.StopPollingRoutine(RateLimitingChannel)
+func UninitServer(server *aikido_types.ServerData) {
+	utils.StopPollingRoutine(server.PollingData.RateLimitingChannel)
 }

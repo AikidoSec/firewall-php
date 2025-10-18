@@ -1,24 +1,27 @@
 package grpc
 
 import (
-	"main/globals"
+	"main/aikido_types"
+	"main/ipc/protos"
 	"main/log"
 )
 
-func storeConfig(token, logLevel string, diskLogs, blocking, localhostAllowedByDefault, collectApiSchema bool) {
-	globals.AikidoConfig.ConfigMutex.Lock()
-	defer globals.AikidoConfig.ConfigMutex.Unlock()
+func storeConfig(server *aikido_types.ServerData, req *protos.Config) {
+	server.AikidoConfig.ConfigMutex.Lock()
+	defer server.AikidoConfig.ConfigMutex.Unlock()
 
-	if token != "" {
-		globals.AikidoConfig.Token = token
-	}
-	globals.AikidoConfig.LogLevel = logLevel
-	globals.AikidoConfig.DiskLogs = diskLogs
-	globals.AikidoConfig.Blocking = blocking
-	globals.AikidoConfig.LocalhostAllowedByDefault = localhostAllowedByDefault
-	globals.AikidoConfig.CollectApiSchema = collectApiSchema
+	server.AikidoConfig.PlatformName = req.GetPlatformName()
+	server.AikidoConfig.PlatformVersion = req.GetPlatformVersion()
+	server.AikidoConfig.Endpoint = req.GetEndpoint()
+	server.AikidoConfig.ConfigEndpoint = req.GetConfigEndpoint()
+	server.AikidoConfig.Token = req.GetToken()
+	server.AikidoConfig.LogLevel = req.GetLogLevel()
+	server.AikidoConfig.DiskLogs = req.GetDiskLogs()
+	server.AikidoConfig.Blocking = req.GetBlocking()
+	server.AikidoConfig.LocalhostAllowedByDefault = req.GetLocalhostAllowedByDefault()
+	server.AikidoConfig.CollectApiSchema = req.GetCollectApiSchema()
 
-	log.SetLogLevel(globals.AikidoConfig.LogLevel)
-	log.Init()
+	log.SetLogLevel(server.AikidoConfig.LogLevel)
+	log.Init(server.AikidoConfig.DiskLogs)
 	log.Debugf("Updated Aikido Config with the one passed via gRPC!")
 }

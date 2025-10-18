@@ -11,6 +11,7 @@
 #include <netinet/in.h>
 #include <sys/types.h>
 #include <sys/utsname.h>
+#include <sys/wait.h>
 
 #include <functional>
 #include <random>

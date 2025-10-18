@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"main/globals"
+	"main/aikido_types"
 	"os"
 	"sync/atomic"
 	"time"
@@ -112,8 +112,8 @@ func SetLogLevel(level string) error {
 	return nil
 }
 
-func Init() {
-	if !globals.AikidoConfig.DiskLogs {
+func Init(diskLogs bool) {
+	if !diskLogs {
 		return
 	}
 	if logFile != nil {
@@ -121,9 +121,10 @@ func Init() {
 	}
 	currentTime := time.Now()
 	timeStr := currentTime.Format("20060102150405")
-	logFilePath := fmt.Sprintf("/var/log/aikido-%s/aikido-agent-%s-%d.log", globals.Version, timeStr, os.Getpid())
+	logFilePath := fmt.Sprintf("/var/log/aikido-%s/aikido-agent-%s-%d.log", aikido_types.Version, timeStr, os.Getpid())
 
-	logFile, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY, 0666)
+	var err error
+	logFile, err = os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
 		log.Fatalf("Failed to open log file: %v", err)
 	}
@@ -132,9 +133,8 @@ func Init() {
 }
 
 func Uninit() {
-	if !globals.AikidoConfig.DiskLogs {
-		return
+	if logFile != nil {
+		logger.SetOutput(os.Stdout)
+		logFile.Close()
 	}
-	logger.SetOutput(os.Stdout)
-	logFile.Close()
 }
