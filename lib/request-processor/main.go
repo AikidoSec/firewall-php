@@ -43,7 +43,7 @@ func RequestProcessorInit(initJson string) (initOk bool) {
 	log.Debugf("Aikido Request Processor v%s started in \"%s\" mode!", globals.Version, globals.EnvironmentConfig.PlatformName)
 	log.Debugf("Init data: %s", initJson)
 
-	if !strings.Contains(globals.EnvironmentConfig.PlatformName, "cli") {
+	if globals.EnvironmentConfig.PlatformName != "cli" {
 		grpc.Init()
 	}
 	if !zen_internals.Init() {
@@ -103,16 +103,7 @@ func RequestProcessorConfigUpdate(configJson string) (initOk bool) {
 		}
 	}()
 
-	previousToken := globals.AikidoConfig.Token
-	if previousToken != "" {
-		log.Debugf("Token was previously set, not sending config to Agent!")
-		return true
-	}
-
 	config.ReloadAikidoConfig(configJson)
-	if globals.AikidoConfig.Token != "" {
-		log.Infof("Token changed: %s", globals.AikidoConfig.Token)
-	}
 	log.Debugf("Reloading Aikido config with: %v", configJson)
 	grpc.SendAikidoConfig()
 	grpc.OnPackages(globals.AikidoConfig.Packages)
@@ -147,7 +138,7 @@ func RequestProcessorGetBlockingMode() int {
 
 //export RequestProcessorReportStats
 func RequestProcessorReportStats(sink, kind string, attacksDetected, attacksBlocked, interceptorThrewError, withoutContext, total int32, timings []int64) {
-	if strings.Contains(globals.EnvironmentConfig.PlatformName, "cli") {
+	if globals.EnvironmentConfig.PlatformName == "cli" {
 		return
 	}
 	clonedTimings := make([]int64, len(timings))
@@ -160,7 +151,7 @@ func RequestProcessorUninit() {
 	log.Debug("Uninit: {}")
 	zen_internals.Uninit()
 
-	if !strings.Contains(globals.EnvironmentConfig.PlatformName, "cli") {
+	if globals.EnvironmentConfig.PlatformName != "cli" {
 		grpc.Uninit()
 	}
 

@@ -49,7 +49,7 @@ func SendAikidoConfig() {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
 	_, err := client.OnConfig(ctx, &protos.Config{
@@ -77,7 +77,7 @@ func OnDomain(domain string, port uint32) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
 	_, err := client.OnDomain(ctx, &protos.Domain{Token: globals.AikidoConfig.Token, Domain: domain, Port: port})
@@ -95,7 +95,7 @@ func OnPackages(packages map[string]string) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
 	_, err := client.OnPackages(ctx, &protos.Packages{Token: globals.AikidoConfig.Token, Packages: packages})
