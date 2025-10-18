@@ -9,7 +9,7 @@ import (
 )
 
 func GetApiInfo() *protos.APISpec {
-	if !globals.EnvironmentConfig.CollectApiSchema {
+	if !globals.AikidoConfig.CollectApiSchema {
 		log.Debug("AIKIDO_FEATURE_COLLECT_API_SCHEMA is not enabled -> no API schema!")
 		return nil
 	}

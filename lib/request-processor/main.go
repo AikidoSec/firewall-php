@@ -40,10 +40,10 @@ func RequestProcessorInit(initJson string) (initOk bool) {
 
 	config.Init(initJson)
 
-	log.Debugf("Aikido Request Processor v%s started in \"%s\" mode!", globals.Version, globals.EnvironmentConfig.SAPI)
+	log.Debugf("Aikido Request Processor v%s started in \"%s\" mode!", globals.Version, globals.EnvironmentConfig.PlatformName)
 	log.Debugf("Init data: %s", initJson)
 
-	if globals.EnvironmentConfig.SAPI != "cli" {
+	if !strings.Contains(globals.EnvironmentConfig.PlatformName, "cli") {
 		grpc.Init()
 	}
 	if !zen_internals.Init() {
@@ -103,10 +103,6 @@ func RequestProcessorConfigUpdate(configJson string) (initOk bool) {
 		}
 	}()
 
-	if globals.EnvironmentConfig.SAPI == "cli" {
-		return true
-	}
-
 	previousToken := globals.AikidoConfig.Token
 	if previousToken != "" {
 		log.Debugf("Token was previously set, not sending config to Agent!")
@@ -151,6 +147,9 @@ func RequestProcessorGetBlockingMode() int {
 
 //export RequestProcessorReportStats
 func RequestProcessorReportStats(sink, kind string, attacksDetected, attacksBlocked, interceptorThrewError, withoutContext, total int32, timings []int64) {
+	if strings.Contains(globals.EnvironmentConfig.PlatformName, "cli") {
+		return
+	}
 	clonedTimings := make([]int64, len(timings))
 	copy(clonedTimings, timings)
 	go grpc.OnMonitoredSinkStats(strings.Clone(sink), strings.Clone(kind), attacksDetected, attacksBlocked, interceptorThrewError, withoutContext, total, clonedTimings)
@@ -161,7 +160,7 @@ func RequestProcessorUninit() {
 	log.Debug("Uninit: {}")
 	zen_internals.Uninit()
 
-	if globals.EnvironmentConfig.SAPI != "cli" {
+	if !strings.Contains(globals.EnvironmentConfig.PlatformName, "cli") {
 		grpc.Uninit()
 	}
 
