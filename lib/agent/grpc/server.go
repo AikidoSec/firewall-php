@@ -3,7 +3,6 @@ package grpc
 import (
 	"context"
 	"fmt"
-	. "main/aikido_types"
 	"main/cloud"
 	"main/globals"
 	"main/ipc/protos"
@@ -24,13 +23,6 @@ type GrpcServer struct {
 	protos.AikidoServer
 }
 
-func createNewServer(token string) *ServerData {
-	globals.ServersMutex.Lock()
-	defer globals.ServersMutex.Unlock()
-	globals.Servers[token] = NewServerData()
-	return globals.Servers[token]
-}
-
 func (s *GrpcServer) OnConfig(ctx context.Context, req *protos.Config) (*emptypb.Empty, error) {
 	token := req.GetToken()
 	if token == "" {
@@ -44,7 +36,7 @@ func (s *GrpcServer) OnConfig(ctx context.Context, req *protos.Config) (*emptypb
 	}
 	log.Debugf("Storing new server %s, initializing cloud, rate limiting and storing config...", token)
 
-	server = createNewServer(token)
+	server = globals.CreateServer(token)
 	storeConfig(server, req)
 
 	cloud.InitServer(server)

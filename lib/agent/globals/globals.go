@@ -33,3 +33,17 @@ func GetServers() []*ServerData {
 	}
 	return servers
 }
+
+func CreateServer(token string) *ServerData {
+	ServersMutex.Lock()
+	defer ServersMutex.Unlock()
+	Servers[token] = NewServerData()
+	return Servers[token]
+}
+
+func DeleteServer(token string) *ServerData {
+	ServersMutex.Lock()
+	defer ServersMutex.Unlock()
+	delete(Servers, token)
+	return Servers[token]
+}
