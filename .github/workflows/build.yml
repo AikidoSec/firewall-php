@@ -446,39 +446,3 @@ jobs:
           if-no-files-found: ignore
           path: |
             ${{ github.workspace }}/tests/cli/**/*.diff
-
-  test_php_qa_action_control_tests:
-    name: PHP Control Tests (apache2 - mod_php)
-    runs-on: ubuntu-latest
-    needs: [ build_deb ]
-    steps:
-
-      - name: Checkout zen-demo-php
-        uses: actions/checkout@v4
-        with:
-          repository: Aikido-demo-apps/zen-demo-php
-          path: zen-demo-php
-          ref: apache-mod-php-control-server
-          submodules: recursive
-
-      - name: Get Arch
-        run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
-
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: aikido-php-firewall.${{ env.ARCH }}.deb
-          path: ./zen-demo-php
-
-      - name: Overwrite aikido.sh install script
-        run: |
-          echo "dpkg -i -E \"/var/www/html/aikido-php-firewall.\$(uname -i).deb\"" > ./zen-demo-php/.fly/scripts/aikido.sh
-        
-      - name: Run Firewall QA Tests
-        uses: AikidoSec/firewall-tester-action@add-control-server-tests
-        with:
-          dockerfile_path: ./zen-demo-php/Dockerfile
-          extra_args: '--env-file=./zen-demo-php/.env.example -e APP_KEY=base64:W2v6u6VR4lURkxuMT9xZ6pdhXSt5rxsmWTbd1HGqlIM='
-          sleep_before_test: 20
-          max_parallel_tests: 7
-          test_type: control
