@@ -1,7 +1,7 @@
 package aikido_types
 
 const (
-	Version                             = "2.0.1"
+	Version                             = "1.4.0"
 	ConfigUpdatedAtMethod               = "GET"
 	ConfigUpdatedAtAPI                  = "/config"
 	ConfigAPIMethod                     = "GET"
