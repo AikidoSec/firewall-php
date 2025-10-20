@@ -142,7 +142,7 @@ func RemoveOldestFromMapIfMaxExceeded[V any](m *map[string]V, queue *Queue[strin
 
 func AnonymizeToken(token string) string {
 	if len(token) <= 4 {
-		return token
+		return "***" + token
 	}
-	return token[len(token)-4:]
+	return "***" + token[len(token)-4:]
 }
