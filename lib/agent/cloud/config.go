@@ -5,6 +5,15 @@ import (
 	. "main/aikido_types"
 )
 
+func WasConfigUpdated(server *ServerData, configUpdatedAt int64) bool {
+	server.CloudConfigMutex.Lock()
+	defer server.CloudConfigMutex.Unlock()
+	if configUpdatedAt <= server.CloudConfig.ConfigUpdatedAt {
+		return false
+	}
+	return true
+}
+
 func CheckConfigUpdatedAt(server *ServerData) {
 	response, err := SendCloudRequest(server, server.AikidoConfig.ConfigEndpoint, ConfigUpdatedAtAPI, ConfigUpdatedAtMethod, nil)
 	if err != nil {
@@ -18,7 +27,7 @@ func CheckConfigUpdatedAt(server *ServerData) {
 		return
 	}
 
-	if cloudConfigUpdatedAt.ConfigUpdatedAt <= server.CloudConfig.ConfigUpdatedAt {
+	if !WasConfigUpdated(server, cloudConfigUpdatedAt.ConfigUpdatedAt) {
 		return
 	}
 
