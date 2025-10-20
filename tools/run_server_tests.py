@@ -160,7 +160,7 @@ def main(root_tests_dir, test_lib_dir, specific_test=None, server="php-built-in"
         env = {
             "AIKIDO_LOG_LEVEL": "DEBUG" if debug else "ERROR",
             "AIKIDO_DISK_LOGS": "1" if debug else "0",
-            "AIKIDO_TOKEN": str(mock_port),
+            "AIKIDO_TOKEN": "AIK_TOKEN_TEST_" + str(mock_port),
             "AIKIDO_ENDPOINT": f"http://localhost:{mock_port}/",
             "AIKIDO_REALTIME_ENDPOINT": f"http://localhost:{mock_port}/",
         }
