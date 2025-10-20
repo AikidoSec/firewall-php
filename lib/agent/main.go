@@ -22,7 +22,7 @@ import (
 var serversCleanupChannel = make(chan struct{})
 var serversCleanupTicker = time.NewTicker(10 * time.Minute)
 
-func serversCleanupRoutine(server *ServerData) {
+func serversCleanupRoutine(_ *ServerData) {
 	for _, token := range globals.GetServersTokens() {
 		server := globals.GetServer(token)
 		if server == nil {

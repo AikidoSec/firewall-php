@@ -126,7 +126,6 @@ bool Agent::SpawnDetached(std::string aikidoAgentPath, std::string initData, std
     int wstatus;
     waitpid(pid, &wstatus, 0);
     return WIFEXITED(wstatus) && WEXITSTATUS(wstatus) == 0;
-    //return true;
 }
 
 bool Agent::Init() {
