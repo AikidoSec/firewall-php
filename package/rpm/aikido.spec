@@ -23,6 +23,13 @@ cp -rf opt/aikido-%{version}/* %{buildroot}/opt/aikido-%{version}
 
 echo "Starting the installation process for Aikido PHP Firewall v%{version}..."
 
+pids=$(pgrep -f aikido-agent)
+if [ -n "$pids" ]; then
+    echo "Stopping Aikido Agent processes: $pids"
+    kill -9 $pids
+    echo "Aikido Agent(s) stopped."
+fi
+
 mkdir -p /var/log/aikido-%{version}
 chmod 777 /var/log/aikido-%{version}
 
@@ -120,9 +127,11 @@ echo "Installation process for Aikido v%{version} completed."
 
 echo "Starting the uninstallation process for Aikido v%{version}..."
 
-PID=$(pgrep -f "aikido-agent" 2>/dev/null)
-if [ -n "$PID" ]; then
-    kill -9 "$PID" 2>/dev/null || :
+pids=$(pgrep -f aikido-agent)
+if [ -n "$pids" ]; then
+    echo "Stopping Aikido Agent processes: $pids"
+    kill -9 $pids
+    echo "Aikido Agent(s) stopped."
 fi
 
 # Find all PHP versions installed
