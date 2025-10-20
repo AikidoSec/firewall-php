@@ -8,6 +8,7 @@ import (
 	"main/log"
 	"main/rate_limiting"
 	"main/utils"
+	"sync/atomic"
 )
 
 func storeConfig(server *ServerData, req *protos.Config) {
@@ -31,19 +32,21 @@ func storeConfig(server *ServerData, req *protos.Config) {
 }
 
 func Register(token string, req *protos.Config) {
-	log.Infof("Registering server %s...", utils.AnonymizeString(token))
+	log.Infof("Registering server %s...", utils.AnonymizeToken(token))
 
 	server := globals.CreateServer(token)
 	storeConfig(server, req)
 
+	atomic.StoreInt64(&server.LastConnectionTime, utils.GetTime())
+
 	cloud.Init(server)
 	rate_limiting.Init(server)
 
-	log.Infof("Server %s registered successfully!", utils.AnonymizeString(token))
+	log.Infof("Server %s registered successfully!", utils.AnonymizeToken(token))
 }
 
 func Unregister(token string) {
-	log.Infof("Unregistering server %s...", utils.AnonymizeString(token))
+	log.Infof("Unregistering server %s...", utils.AnonymizeToken(token))
 	server := globals.GetServer(token)
 	if server == nil {
 		return
@@ -52,5 +55,5 @@ func Unregister(token string) {
 	cloud.Uninit(server)
 	globals.DeleteServer(token)
 
-	log.Infof("Server %s unregistered successfully!", utils.AnonymizeString(token))
+	log.Infof("Server %s unregistered successfully!", utils.AnonymizeToken(token))
 }
