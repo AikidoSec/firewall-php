@@ -101,7 +101,7 @@ type CloudConfigUpdatedAt struct {
 
 type ServerDataPolling struct {
 	HeartbeatRoutineChannel     chan struct{}
-	HeartBeatTicker             *time.Ticker
+	HeartbeatTicker             *time.Ticker
 	ConfigPollingRoutineChannel chan struct{}
 	ConfigPollingTicker         *time.Ticker
 	RateLimitingChannel         chan struct{}
@@ -111,7 +111,7 @@ type ServerDataPolling struct {
 func NewServerDataPolling() *ServerDataPolling {
 	return &ServerDataPolling{
 		HeartbeatRoutineChannel:     make(chan struct{}),
-		HeartBeatTicker:             time.NewTicker(10 * time.Minute),
+		HeartbeatTicker:             time.NewTicker(10 * time.Minute),
 		ConfigPollingRoutineChannel: make(chan struct{}),
 		ConfigPollingTicker:         time.NewTicker(1 * time.Minute),
 		RateLimitingChannel:         make(chan struct{}),

@@ -35,12 +35,12 @@ func GetAgentInfo(server *ServerData) AgentInfo {
 
 func ResetHeartbeatTicker(server *ServerData) {
 	if !server.CloudConfig.ReceivedAnyStats {
-		log.Info("Resetting HeartBeatTicker to 1m!")
-		server.PollingData.HeartBeatTicker.Reset(1 * time.Minute)
+		log.Info("Resetting HeartbeatTicker to 1m!")
+		server.PollingData.HeartbeatTicker.Reset(1 * time.Minute)
 	} else {
 		if server.CloudConfig.HeartbeatIntervalInMS >= MinHeartbeatIntervalInMS {
-			log.Infof("Resetting HeartBeatTicker to %dms!", server.CloudConfig.HeartbeatIntervalInMS)
-			server.PollingData.HeartBeatTicker.Reset(time.Duration(server.CloudConfig.HeartbeatIntervalInMS) * time.Millisecond)
+			log.Infof("Resetting HeartbeatTicker to %dms!", server.CloudConfig.HeartbeatIntervalInMS)
+			server.PollingData.HeartbeatTicker.Reset(time.Duration(server.CloudConfig.HeartbeatIntervalInMS) * time.Millisecond)
 		}
 	}
 }
