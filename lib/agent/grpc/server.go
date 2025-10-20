@@ -3,7 +3,7 @@ package grpc
 import (
 	"context"
 	"fmt"
-	"main/aikido_types"
+	. "main/aikido_types"
 	"main/cloud"
 	"main/globals"
 	"main/ipc/protos"
@@ -24,10 +24,10 @@ type GrpcServer struct {
 	protos.AikidoServer
 }
 
-func createNewServer(token string) *aikido_types.ServerData {
+func createNewServer(token string) *ServerData {
 	globals.ServersMutex.Lock()
 	defer globals.ServersMutex.Unlock()
-	globals.Servers[token] = aikido_types.NewServerData()
+	globals.Servers[token] = NewServerData()
 	return globals.Servers[token]
 }
 

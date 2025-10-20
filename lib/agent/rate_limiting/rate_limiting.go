@@ -1,7 +1,6 @@
 package rate_limiting
 
 import (
-	"main/aikido_types"
 	. "main/aikido_types"
 	"main/log"
 	"main/utils"
@@ -31,7 +30,7 @@ func advanceRateLimitingQueuesForMap(config *RateLimitingConfig, countsMap map[s
 	}
 }
 
-func AdvanceRateLimitingQueues(server *aikido_types.ServerData) {
+func AdvanceRateLimitingQueues(server *ServerData) {
 	server.RateLimitingMutex.Lock()
 	defer server.RateLimitingMutex.Unlock()
 
@@ -42,11 +41,11 @@ func AdvanceRateLimitingQueues(server *aikido_types.ServerData) {
 	}
 }
 
-func InitServer(server *aikido_types.ServerData) {
+func InitServer(server *ServerData) {
 	utils.StartPollingRoutine(server.PollingData.RateLimitingChannel, server.PollingData.RateLimitingTicker, AdvanceRateLimitingQueues, server)
 	AdvanceRateLimitingQueues(server)
 }
 
-func UninitServer(server *aikido_types.ServerData) {
+func UninitServer(server *ServerData) {
 	utils.StopPollingRoutine(server.PollingData.RateLimitingChannel)
 }

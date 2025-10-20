@@ -2,12 +2,11 @@ package cloud
 
 import (
 	"encoding/json"
-	"main/aikido_types"
 	. "main/aikido_types"
 )
 
 func CheckConfigUpdatedAt(server *ServerData) {
-	response, err := SendCloudRequest(server, server.AikidoConfig.ConfigEndpoint, aikido_types.ConfigUpdatedAtAPI, aikido_types.ConfigUpdatedAtMethod, nil)
+	response, err := SendCloudRequest(server, server.AikidoConfig.ConfigEndpoint, ConfigUpdatedAtAPI, ConfigUpdatedAtMethod, nil)
 	if err != nil {
 		LogCloudRequestError(server, "Error in sending polling config request: ", err)
 		return

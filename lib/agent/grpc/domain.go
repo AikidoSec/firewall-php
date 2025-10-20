@@ -1,11 +1,11 @@
 package grpc
 
 import (
-	"main/aikido_types"
+	. "main/aikido_types"
 	"main/utils"
 )
 
-func storeDomain(server *aikido_types.ServerData, domain string, port uint32) {
+func storeDomain(server *ServerData, domain string, port uint32) {
 	if port == 0 {
 		return
 	}

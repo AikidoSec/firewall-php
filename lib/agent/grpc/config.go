@@ -1,12 +1,12 @@
 package grpc
 
 import (
-	"main/aikido_types"
+	. "main/aikido_types"
 	"main/ipc/protos"
 	"main/log"
 )
 
-func storeConfig(server *aikido_types.ServerData, req *protos.Config) {
+func storeConfig(server *ServerData, req *protos.Config) {
 	server.AikidoConfig.ConfigMutex.Lock()
 	defer server.AikidoConfig.ConfigMutex.Unlock()
 

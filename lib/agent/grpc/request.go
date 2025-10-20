@@ -1,7 +1,6 @@
 package grpc
 
 import (
-	"main/aikido_types"
 	. "main/aikido_types"
 	"main/api_discovery"
 	"main/ipc/protos"
@@ -11,7 +10,7 @@ import (
 	"strings"
 )
 
-func storeTotalStats(server *aikido_types.ServerData, rateLimited bool) {
+func storeTotalStats(server *ServerData, rateLimited bool) {
 	server.StatsData.StatsMutex.Lock()
 	defer server.StatsData.StatsMutex.Unlock()
 
@@ -21,7 +20,7 @@ func storeTotalStats(server *aikido_types.ServerData, rateLimited bool) {
 	}
 }
 
-func storeAttackStats(server *aikido_types.ServerData, req *protos.AttackDetected) {
+func storeAttackStats(server *ServerData, req *protos.AttackDetected) {
 	server.StatsData.StatsMutex.Lock()
 	defer server.StatsData.StatsMutex.Unlock()
 
@@ -31,7 +30,7 @@ func storeAttackStats(server *aikido_types.ServerData, req *protos.AttackDetecte
 	}
 }
 
-func storePackages(server *aikido_types.ServerData, packages map[string]string) {
+func storePackages(server *ServerData, packages map[string]string) {
 	server.PackagesMutex.Lock()
 	defer server.PackagesMutex.Unlock()
 
@@ -57,7 +56,7 @@ func storeMonitoredListsMatches(m *map[string]int, lists []string) {
 	}
 }
 
-func storeSinkStats(server *aikido_types.ServerData, protoSinkStats *protos.MonitoredSinkStats) {
+func storeSinkStats(server *ServerData, protoSinkStats *protos.MonitoredSinkStats) {
 	server.StatsData.StatsMutex.Lock()
 	defer server.StatsData.StatsMutex.Unlock()
 
@@ -74,7 +73,7 @@ func storeSinkStats(server *aikido_types.ServerData, protoSinkStats *protos.Moni
 	monitoredSinkTimings.WithoutContext += int(protoSinkStats.GetWithoutContext())
 	monitoredSinkTimings.Total += int(protoSinkStats.GetTotal())
 	monitoredSinkTimings.Timings = append(monitoredSinkTimings.Timings, protoSinkStats.GetTimings()...)
-	if len(monitoredSinkTimings.Timings) >= aikido_types.MinStatsCollectedForRelevantMetrics {
+	if len(monitoredSinkTimings.Timings) >= MinStatsCollectedForRelevantMetrics {
 		monitoredSinkTimings.CompressedTimings = append(monitoredSinkTimings.CompressedTimings, CompressedTiming{
 			AverageInMS:  utils.ComputeAverage(monitoredSinkTimings.Timings),
 			Percentiles:  utils.ComputePercentiles(monitoredSinkTimings.Timings),
@@ -134,7 +133,7 @@ func getMergedApiSpec(currentApiSpec *protos.APISpec, newApiSpec *protos.APISpec
 	}
 }
 
-func storeRoute(server *aikido_types.ServerData, method string, route string, apiSpec *protos.APISpec, rateLimited bool) {
+func storeRoute(server *ServerData, method string, route string, apiSpec *protos.APISpec, rateLimited bool) {
 	server.RoutesMutex.Lock()
 	defer server.RoutesMutex.Unlock()
 
@@ -171,7 +170,7 @@ func incrementRateLimitingCounts(m map[string]*RateLimitingCounts, key string) {
 	rateLimitingData.NumberOfRequestsPerWindow.IncrementLast()
 }
 
-func updateRateLimitingCounts(server *aikido_types.ServerData, method string, route string, routeParsed string, user string, ip string, rateLimitGroup string) {
+func updateRateLimitingCounts(server *ServerData, method string, route string, routeParsed string, user string, ip string, rateLimitGroup string) {
 	server.RateLimitingMutex.Lock()
 	defer server.RateLimitingMutex.Unlock()
 
@@ -194,7 +193,7 @@ func isRateLimitingThresholdExceeded(config *RateLimitingConfig, countsMap map[s
 	return counts.TotalNumberOfRequests >= config.MaxRequests
 }
 
-func getRateLimitingValue(server *aikido_types.ServerData, method, route string) *RateLimitingValue {
+func getRateLimitingValue(server *ServerData, method, route string) *RateLimitingValue {
 	rateLimitingDataForEndpoint, exists := server.RateLimitingMap[RateLimitingKey{Method: method, Route: route}]
 	if !exists {
 		return nil
@@ -202,7 +201,7 @@ func getRateLimitingValue(server *aikido_types.ServerData, method, route string)
 	return rateLimitingDataForEndpoint
 }
 
-func getWildcardRateLimitingValues(server *aikido_types.ServerData, method, route string) []*RateLimitingValue {
+func getWildcardRateLimitingValues(server *ServerData, method, route string) []*RateLimitingValue {
 	wildcardRatelimitingValues := []*RateLimitingValue{}
 
 	for key, r := range server.RateLimitingWildcardMap {
@@ -216,7 +215,7 @@ func getWildcardRateLimitingValues(server *aikido_types.ServerData, method, rout
 	return wildcardRatelimitingValues
 }
 
-func getWildcardMatchingRateLimitingValues(server *aikido_types.ServerData, method, route, routeParsed string) []*RateLimitingValue {
+func getWildcardMatchingRateLimitingValues(server *ServerData, method, route, routeParsed string) []*RateLimitingValue {
 	rateLimitingDataArray := []*RateLimitingValue{}
 	wildcardMethodRateLimitingData := getRateLimitingValue(server, "*", routeParsed)
 	if wildcardMethodRateLimitingData != nil {
@@ -232,7 +231,7 @@ func getWildcardMatchingRateLimitingValues(server *aikido_types.ServerData, meth
 	return rateLimitingDataArray
 }
 
-func getRateLimitingDataForEndpoint(server *aikido_types.ServerData, method, route, routeParsed string) *RateLimitingValue {
+func getRateLimitingDataForEndpoint(server *ServerData, method, route, routeParsed string) *RateLimitingValue {
 	// Check for exact match first
 	rateLimitingDataMatch := getRateLimitingValue(server, method, routeParsed)
 	if rateLimitingDataMatch != nil {
@@ -254,7 +253,7 @@ func getRateLimitingDataForEndpoint(server *aikido_types.ServerData, method, rou
 	return wildcardMatches[0]
 }
 
-func getRateLimitingStatus(server *aikido_types.ServerData, method, route, routeParsed, user, ip, rateLimitGroup string) *protos.RateLimitingStatus {
+func getRateLimitingStatus(server *ServerData, method, route, routeParsed, user, ip, rateLimitGroup string) *protos.RateLimitingStatus {
 	server.RateLimitingMutex.RLock()
 	defer server.RateLimitingMutex.RUnlock()
 
@@ -294,7 +293,7 @@ func getIpsList(ipsList map[string]IpBlocklist) map[string]*protos.IpList {
 	return m
 }
 
-func getCloudConfig(server *aikido_types.ServerData, configUpdatedAt int64) *protos.CloudConfig {
+func getCloudConfig(server *ServerData, configUpdatedAt int64) *protos.CloudConfig {
 	isBlockingEnabled := utils.IsBlockingEnabled(server)
 
 	server.CloudConfigMutex.Lock()
@@ -332,7 +331,7 @@ func getCloudConfig(server *aikido_types.ServerData, configUpdatedAt int64) *pro
 	return cloudConfig
 }
 
-func onUserEvent(server *aikido_types.ServerData, id string, username string, ip string) {
+func onUserEvent(server *ServerData, id string, username string, ip string) {
 	server.UsersMutex.Lock()
 	defer server.UsersMutex.Unlock()
 

@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"main/aikido_types"
+	. "main/aikido_types"
 	"os"
 	"sync/atomic"
 	"time"
@@ -121,7 +121,7 @@ func Init(diskLogs bool) {
 	}
 	currentTime := time.Now()
 	timeStr := currentTime.Format("20060102150405")
-	logFilePath := fmt.Sprintf("/var/log/aikido-%s/aikido-agent-%s-%d.log", aikido_types.Version, timeStr, os.Getpid())
+	logFilePath := fmt.Sprintf("/var/log/aikido-%s/aikido-agent-%s-%d.log", Version, timeStr, os.Getpid())
 
 	var err error
 	logFile, err = os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY, 0666)

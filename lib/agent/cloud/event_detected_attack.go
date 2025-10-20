@@ -1,7 +1,6 @@
 package cloud
 
 import (
-	"main/aikido_types"
 	. "main/aikido_types"
 	"main/ipc/protos"
 	"main/log"
@@ -91,7 +90,7 @@ func SendAttackDetectedEvent(server *ServerData, req *protos.AttackDetected) {
 		Time:    utils.GetTime(),
 	}
 
-	response, err := SendCloudRequest(server, server.AikidoConfig.Endpoint, aikido_types.EventsAPI, aikido_types.EventsAPIMethod, detectedAttackEvent)
+	response, err := SendCloudRequest(server, server.AikidoConfig.Endpoint, EventsAPI, EventsAPIMethod, detectedAttackEvent)
 	if err != nil {
 		LogCloudRequestError(server, "Error in sending detected attack event: ", err)
 		return

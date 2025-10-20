@@ -2,7 +2,6 @@ package cloud
 
 import (
 	"encoding/json"
-	"main/aikido_types"
 	. "main/aikido_types"
 	"main/globals"
 	"main/log"
@@ -134,7 +133,7 @@ func UpdateIpsLists(ipLists []IpsData) map[string]IpBlocklist {
 }
 
 func UpdateListsConfig(server *ServerData) bool {
-	response, err := SendCloudRequest(server, server.AikidoConfig.Endpoint, aikido_types.ListsAPI, aikido_types.ListsAPIMethod, nil)
+	response, err := SendCloudRequest(server, server.AikidoConfig.Endpoint, ListsAPI, ListsAPIMethod, nil)
 	if err != nil {
 		LogCloudRequestError(server, "Error in sending lists request: ", err)
 		return false

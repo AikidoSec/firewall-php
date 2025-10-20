@@ -6,14 +6,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"main/aikido_types"
+	. "main/aikido_types"
 	"main/config"
 	"main/log"
 	"net/http"
 	"net/url"
 )
 
-func SendCloudRequest(server *aikido_types.ServerData, endpoint string, route string, method string, payload interface{}) ([]byte, error) {
+func SendCloudRequest(server *ServerData, endpoint string, route string, method string, payload interface{}) ([]byte, error) {
 	token := config.GetToken(server)
 	if token == "" {
 		return nil, fmt.Errorf("no token set")

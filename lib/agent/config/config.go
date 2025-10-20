@@ -3,7 +3,7 @@ package config
 import (
 	"encoding/json"
 	"fmt"
-	"main/aikido_types"
+	. "main/aikido_types"
 	"main/globals"
 	"main/log"
 	"os"
@@ -41,14 +41,14 @@ func Uninit() {
 
 }
 
-func GetToken(server *aikido_types.ServerData) string {
+func GetToken(server *ServerData) string {
 	server.AikidoConfig.ConfigMutex.Lock()
 	defer server.AikidoConfig.ConfigMutex.Unlock()
 
 	return server.AikidoConfig.Token
 }
 
-func GetBlocking(server *aikido_types.ServerData) bool {
+func GetBlocking(server *ServerData) bool {
 	server.AikidoConfig.ConfigMutex.Lock()
 	defer server.AikidoConfig.ConfigMutex.Unlock()
 

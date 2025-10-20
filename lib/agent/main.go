@@ -9,7 +9,7 @@ import (
 	"main/machine"
 )
 import (
-	"main/aikido_types"
+	. "main/aikido_types"
 	"main/cloud"
 	"main/rate_limiting"
 	"os"
@@ -37,7 +37,7 @@ func AgentInit(initJson string) (initOk bool) {
 		return false
 	}
 
-	log.Infof("Aikido Agent v%s started!", aikido_types.Version)
+	log.Infof("Aikido Agent v%s started!", Version)
 	return true
 }
 
@@ -49,7 +49,7 @@ func AgentUninit() {
 	grpc.Uninit()
 	config.Uninit()
 
-	log.Infof("Aikido Agent v%s stopped!", aikido_types.Version)
+	log.Infof("Aikido Agent v%s stopped!", Version)
 	log.Uninit()
 }
 
