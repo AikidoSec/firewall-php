@@ -105,8 +105,11 @@ func RequestProcessorConfigUpdate(configJson string) (initOk bool) {
 
 	config.ReloadAikidoConfig(configJson)
 	log.Debugf("Reloading Aikido config with: %v", configJson)
-	grpc.SendAikidoConfig()
-	grpc.OnPackages(globals.AikidoConfig.Packages)
+
+	if globals.EnvironmentConfig.PlatformName != "cli" {
+		grpc.SendAikidoConfig()
+		grpc.OnPackages(globals.AikidoConfig.Packages)
+	}
 	return true
 }
 

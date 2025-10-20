@@ -55,14 +55,23 @@ func (s *GrpcServer) OnConfig(ctx context.Context, req *protos.Config) (*emptypb
 
 func (s *GrpcServer) OnPackages(ctx context.Context, req *protos.Packages) (*emptypb.Empty, error) {
 	log.Infof("OnPackages called with token: %s", req.GetToken())
-	storePackages(globals.GetServer(req.GetToken()), req.GetPackages())
+	server := globals.GetServer(req.GetToken())
+	if server == nil {
+		return &emptypb.Empty{}, nil
+	}
+	storePackages(server, req.GetPackages())
 	return &emptypb.Empty{}, nil
 }
 
 func (s *GrpcServer) OnDomain(ctx context.Context, req *protos.Domain) (*emptypb.Empty, error) {
 	log.Infof("OnDomain called with token: %s", req.GetToken())
 	log.Debugf("Received domain: %s:%d", req.GetDomain(), req.GetPort())
-	storeDomain(globals.GetServer(req.GetToken()), req.GetDomain(), req.GetPort())
+
+	server := globals.GetServer(req.GetToken())
+	if server == nil {
+		return &emptypb.Empty{}, nil
+	}
+	storeDomain(server, req.GetDomain(), req.GetPort())
 	return &emptypb.Empty{}, nil
 }
 
@@ -70,24 +79,37 @@ func (s *GrpcServer) GetRateLimitingStatus(ctx context.Context, req *protos.Rate
 	log.Infof("GetRateLimitingStatus called with token: %s", req.GetToken())
 	log.Debugf("Received rate limiting info: %s %s %s %s %s %s", req.GetMethod(), req.GetRoute(), req.GetRouteParsed(), req.GetUser(), req.GetIp(), req.GetRateLimitGroup())
 
-	return getRateLimitingStatus(globals.GetServer(req.GetToken()), req.GetMethod(), req.GetRoute(), req.GetRouteParsed(), req.GetUser(), req.GetIp(), req.GetRateLimitGroup()), nil
+	server := globals.GetServer(req.GetToken())
+	if server == nil {
+		return &protos.RateLimitingStatus{Block: false}, nil
+	}
+	return getRateLimitingStatus(server, req.GetMethod(), req.GetRoute(), req.GetRouteParsed(), req.GetUser(), req.GetIp(), req.GetRateLimitGroup()), nil
 }
 
 func (s *GrpcServer) OnRequestShutdown(ctx context.Context, req *protos.RequestMetadataShutdown) (*emptypb.Empty, error) {
 	log.Infof("OnRequestShutdown called with token: %s", req.GetToken())
 	log.Debugf("Received request metadata: %s %s %d %s %s %v", req.GetMethod(), req.GetRouteParsed(), req.GetStatusCode(), req.GetUser(), req.GetIp(), req.GetApiSpec())
 
-	go storeTotalStats(globals.GetServer(req.GetToken()), req.GetRateLimited())
-	go storeRoute(globals.GetServer(req.GetToken()), req.GetMethod(), req.GetRouteParsed(), req.GetApiSpec(), req.GetRateLimited())
-	go updateRateLimitingCounts(globals.GetServer(req.GetToken()), req.GetMethod(), req.GetRoute(), req.GetRouteParsed(), req.GetUser(), req.GetIp(), req.GetRateLimitGroup())
+	server := globals.GetServer(req.GetToken())
+	if server == nil {
+		return &emptypb.Empty{}, nil
+	}
 
-	atomic.StoreUint32(&globals.GetServer(req.GetToken()).GotTraffic, 1)
+	go storeTotalStats(server, req.GetRateLimited())
+	go storeRoute(server, req.GetMethod(), req.GetRouteParsed(), req.GetApiSpec(), req.GetRateLimited())
+	go updateRateLimitingCounts(server, req.GetMethod(), req.GetRoute(), req.GetRouteParsed(), req.GetUser(), req.GetIp(), req.GetRateLimitGroup())
+
+	atomic.StoreUint32(&server.GotTraffic, 1)
 	return &emptypb.Empty{}, nil
 }
 
 func (s *GrpcServer) GetCloudConfig(ctx context.Context, req *protos.CloudConfigUpdatedAt) (*protos.CloudConfig, error) {
 	log.Infof("GetCloudConfig called with token: %s", req.GetToken())
-	cloudConfig := getCloudConfig(globals.GetServer(req.GetToken()), req.GetConfigUpdatedAt())
+	server := globals.GetServer(req.GetToken())
+	if server == nil {
+		return nil, status.Errorf(codes.Canceled, "CloudConfig was not updated")
+	}
+	cloudConfig := getCloudConfig(server, req.GetConfigUpdatedAt())
 	if cloudConfig == nil {
 		return nil, status.Errorf(codes.Canceled, "CloudConfig was not updated")
 	}
@@ -97,27 +119,43 @@ func (s *GrpcServer) GetCloudConfig(ctx context.Context, req *protos.CloudConfig
 func (s *GrpcServer) OnUser(ctx context.Context, req *protos.User) (*emptypb.Empty, error) {
 	log.Infof("OnUser called with token: %s", req.GetToken())
 	log.Debugf("Received user event: %s", req.GetId())
-	go onUserEvent(globals.GetServer(req.GetToken()), req.GetId(), req.GetUsername(), req.GetIp())
+	server := globals.GetServer(req.GetToken())
+	if server == nil {
+		return &emptypb.Empty{}, nil
+	}
+	go onUserEvent(server, req.GetId(), req.GetUsername(), req.GetIp())
 	return &emptypb.Empty{}, nil
 }
 
 func (s *GrpcServer) OnAttackDetected(ctx context.Context, req *protos.AttackDetected) (*emptypb.Empty, error) {
 	log.Infof("OnAttackDetected called with token: %s", req.GetToken())
-	cloud.SendAttackDetectedEvent(globals.GetServer(req.GetToken()), req)
-	storeAttackStats(globals.GetServer(req.GetToken()), req)
+	server := globals.GetServer(req.GetToken())
+	if server == nil {
+		return &emptypb.Empty{}, nil
+	}
+	cloud.SendAttackDetectedEvent(server, req)
+	storeAttackStats(server, req)
 	return &emptypb.Empty{}, nil
 }
 
 func (s *GrpcServer) OnMonitoredSinkStats(ctx context.Context, req *protos.MonitoredSinkStats) (*emptypb.Empty, error) {
 	log.Infof("OnMonitoredSinkStats called with token: %s", req.GetToken())
-	storeSinkStats(globals.GetServer(req.GetToken()), req)
+	server := globals.GetServer(req.GetToken())
+	if server == nil {
+		return &emptypb.Empty{}, nil
+	}
+	storeSinkStats(server, req)
 	return &emptypb.Empty{}, nil
 }
 
 func (s *GrpcServer) OnMiddlewareInstalled(ctx context.Context, req *protos.MiddlewareInstalledInfo) (*emptypb.Empty, error) {
 	log.Infof("OnMiddlewareInstalled called with token: %s", req.GetToken())
 	log.Debugf("Received MiddlewareInstalled")
-	atomic.StoreUint32(&globals.GetServer(req.GetToken()).MiddlewareInstalled, 1)
+	server := globals.GetServer(req.GetToken())
+	if server == nil {
+		return &emptypb.Empty{}, nil
+	}
+	atomic.StoreUint32(&server.MiddlewareInstalled, 1)
 	return &emptypb.Empty{}, nil
 }
 
@@ -126,6 +164,9 @@ func (s *GrpcServer) OnMonitoredIpMatch(ctx context.Context, req *protos.Monitor
 	log.Debugf("Received MonitoredIpMatch: %v", req.GetLists())
 
 	server := globals.GetServer(req.GetToken())
+	if server == nil {
+		return &emptypb.Empty{}, nil
+	}
 	server.StatsData.StatsMutex.Lock()
 	defer server.StatsData.StatsMutex.Unlock()
 
@@ -137,6 +178,9 @@ func (s *GrpcServer) OnMonitoredUserAgentMatch(ctx context.Context, req *protos.
 	log.Infof("OnMonitoredUserAgentMatch called with token: %s", req.GetToken())
 	log.Debugf("Received MonitoredUserAgentMatch: %v", req.GetLists())
 	server := globals.GetServer(req.GetToken())
+	if server == nil {
+		return &emptypb.Empty{}, nil
+	}
 	server.StatsData.StatsMutex.Lock()
 	defer server.StatsData.StatsMutex.Unlock()
 

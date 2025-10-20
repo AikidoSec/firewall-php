@@ -104,7 +104,7 @@ func OnPackages(packages map[string]string) {
 		return
 	}
 
-	log.Debugf("Packages sent via socket: %v", packages)
+	log.Debugf("Packages sent via socket!")
 }
 
 /* Send request metadata (route & method) to Aikido Agent via gRPC */

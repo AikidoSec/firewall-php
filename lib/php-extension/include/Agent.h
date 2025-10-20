@@ -9,6 +9,8 @@ class Agent {
 
     std::string GetInitData();
     std::string GetSocketPath();
+    pid_t GetPID(const std::string& aikidoAgentPath);
+    bool RemoveSocketFiles();
 
     bool Start(std::string aikidoAgentPath, std::string initData, std::string token);
     bool SpawnDetached(std::string aikidoAgentPath, std::string initData, std::string token);

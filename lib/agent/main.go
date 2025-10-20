@@ -30,7 +30,6 @@ func AgentInit(initJson string) (initOk bool) {
 	}
 
 	log.Init(globals.EnvironmentConfig.DiskLogs)
-	log.Infof("Registered initial server with token %s", globals.InitialToken)
 	log.Infof("Loaded local config: %+v", globals.EnvironmentConfig)
 
 	machine.Init()
