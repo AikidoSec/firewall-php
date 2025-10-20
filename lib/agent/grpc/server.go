@@ -32,7 +32,6 @@ func createNewServer(token string) *aikido_types.ServerData {
 }
 
 func (s *GrpcServer) OnConfig(ctx context.Context, req *protos.Config) (*emptypb.Empty, error) {
-	log.Infof("OnConfig called with token: %s", req.GetToken())
 	token := req.GetToken()
 	if token == "" {
 		return &emptypb.Empty{}, nil
@@ -54,7 +53,6 @@ func (s *GrpcServer) OnConfig(ctx context.Context, req *protos.Config) (*emptypb
 }
 
 func (s *GrpcServer) OnPackages(ctx context.Context, req *protos.Packages) (*emptypb.Empty, error) {
-	log.Infof("OnPackages called with token: %s", req.GetToken())
 	server := globals.GetServer(req.GetToken())
 	if server == nil {
 		return &emptypb.Empty{}, nil
@@ -64,7 +62,6 @@ func (s *GrpcServer) OnPackages(ctx context.Context, req *protos.Packages) (*emp
 }
 
 func (s *GrpcServer) OnDomain(ctx context.Context, req *protos.Domain) (*emptypb.Empty, error) {
-	log.Infof("OnDomain called with token: %s", req.GetToken())
 	log.Debugf("Received domain: %s:%d", req.GetDomain(), req.GetPort())
 
 	server := globals.GetServer(req.GetToken())
@@ -76,7 +73,6 @@ func (s *GrpcServer) OnDomain(ctx context.Context, req *protos.Domain) (*emptypb
 }
 
 func (s *GrpcServer) GetRateLimitingStatus(ctx context.Context, req *protos.RateLimitingInfo) (*protos.RateLimitingStatus, error) {
-	log.Infof("GetRateLimitingStatus called with token: %s", req.GetToken())
 	log.Debugf("Received rate limiting info: %s %s %s %s %s %s", req.GetMethod(), req.GetRoute(), req.GetRouteParsed(), req.GetUser(), req.GetIp(), req.GetRateLimitGroup())
 
 	server := globals.GetServer(req.GetToken())
@@ -87,7 +83,6 @@ func (s *GrpcServer) GetRateLimitingStatus(ctx context.Context, req *protos.Rate
 }
 
 func (s *GrpcServer) OnRequestShutdown(ctx context.Context, req *protos.RequestMetadataShutdown) (*emptypb.Empty, error) {
-	log.Infof("OnRequestShutdown called with token: %s", req.GetToken())
 	log.Debugf("Received request metadata: %s %s %d %s %s %v", req.GetMethod(), req.GetRouteParsed(), req.GetStatusCode(), req.GetUser(), req.GetIp(), req.GetApiSpec())
 
 	server := globals.GetServer(req.GetToken())
@@ -104,7 +99,6 @@ func (s *GrpcServer) OnRequestShutdown(ctx context.Context, req *protos.RequestM
 }
 
 func (s *GrpcServer) GetCloudConfig(ctx context.Context, req *protos.CloudConfigUpdatedAt) (*protos.CloudConfig, error) {
-	log.Infof("GetCloudConfig called with token: %s", req.GetToken())
 	server := globals.GetServer(req.GetToken())
 	if server == nil {
 		return nil, status.Errorf(codes.Canceled, "CloudConfig was not updated")
@@ -117,7 +111,6 @@ func (s *GrpcServer) GetCloudConfig(ctx context.Context, req *protos.CloudConfig
 }
 
 func (s *GrpcServer) OnUser(ctx context.Context, req *protos.User) (*emptypb.Empty, error) {
-	log.Infof("OnUser called with token: %s", req.GetToken())
 	log.Debugf("Received user event: %s", req.GetId())
 	server := globals.GetServer(req.GetToken())
 	if server == nil {
@@ -128,7 +121,6 @@ func (s *GrpcServer) OnUser(ctx context.Context, req *protos.User) (*emptypb.Emp
 }
 
 func (s *GrpcServer) OnAttackDetected(ctx context.Context, req *protos.AttackDetected) (*emptypb.Empty, error) {
-	log.Infof("OnAttackDetected called with token: %s", req.GetToken())
 	server := globals.GetServer(req.GetToken())
 	if server == nil {
 		return &emptypb.Empty{}, nil
@@ -139,7 +131,6 @@ func (s *GrpcServer) OnAttackDetected(ctx context.Context, req *protos.AttackDet
 }
 
 func (s *GrpcServer) OnMonitoredSinkStats(ctx context.Context, req *protos.MonitoredSinkStats) (*emptypb.Empty, error) {
-	log.Infof("OnMonitoredSinkStats called with token: %s", req.GetToken())
 	server := globals.GetServer(req.GetToken())
 	if server == nil {
 		return &emptypb.Empty{}, nil
@@ -149,7 +140,6 @@ func (s *GrpcServer) OnMonitoredSinkStats(ctx context.Context, req *protos.Monit
 }
 
 func (s *GrpcServer) OnMiddlewareInstalled(ctx context.Context, req *protos.MiddlewareInstalledInfo) (*emptypb.Empty, error) {
-	log.Infof("OnMiddlewareInstalled called with token: %s", req.GetToken())
 	log.Debugf("Received MiddlewareInstalled")
 	server := globals.GetServer(req.GetToken())
 	if server == nil {
@@ -160,7 +150,6 @@ func (s *GrpcServer) OnMiddlewareInstalled(ctx context.Context, req *protos.Midd
 }
 
 func (s *GrpcServer) OnMonitoredIpMatch(ctx context.Context, req *protos.MonitoredIpMatch) (*emptypb.Empty, error) {
-	log.Infof("OnMonitoredIpMatch called with token: %s", req.GetToken())
 	log.Debugf("Received MonitoredIpMatch: %v", req.GetLists())
 
 	server := globals.GetServer(req.GetToken())
@@ -175,7 +164,6 @@ func (s *GrpcServer) OnMonitoredIpMatch(ctx context.Context, req *protos.Monitor
 }
 
 func (s *GrpcServer) OnMonitoredUserAgentMatch(ctx context.Context, req *protos.MonitoredUserAgentMatch) (*emptypb.Empty, error) {
-	log.Infof("OnMonitoredUserAgentMatch called with token: %s", req.GetToken())
 	log.Debugf("Received MonitoredUserAgentMatch: %v", req.GetLists())
 	server := globals.GetServer(req.GetToken())
 	if server == nil {
