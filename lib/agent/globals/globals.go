@@ -5,8 +5,6 @@ import (
 	"sync"
 )
 
-var InitialToken = ""
-
 var Machine MachineData
 
 var EnvironmentConfig EnvironmentConfigData
