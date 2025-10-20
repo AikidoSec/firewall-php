@@ -7,7 +7,8 @@ import (
 	"main/globals"
 	"main/ipc/protos"
 	"main/log"
-	"main/rate_limiting"
+	"main/server_utils"
+	"main/utils"
 	"net"
 	"os"
 	"path/filepath"
@@ -34,13 +35,8 @@ func (s *GrpcServer) OnConfig(ctx context.Context, req *protos.Config) (*emptypb
 		log.Debugf("Server %s already exists, skipping config update...", token)
 		return &emptypb.Empty{}, nil
 	}
-	log.Debugf("Storing new server %s, initializing cloud, rate limiting and storing config...", token)
 
-	server = globals.CreateServer(token)
-	storeConfig(server, req)
-
-	cloud.InitServer(server)
-	rate_limiting.InitServer(server)
+	server_utils.Register(token, req)
 	return &emptypb.Empty{}, nil
 }
 
@@ -95,6 +91,8 @@ func (s *GrpcServer) GetCloudConfig(ctx context.Context, req *protos.CloudConfig
 	if server == nil {
 		return nil, status.Errorf(codes.Canceled, "CloudConfig was not updated")
 	}
+
+	atomic.StoreInt64(&server.LastConnectionTime, utils.GetTime())
 	cloudConfig := getCloudConfig(server, req.GetConfigUpdatedAt())
 	if cloudConfig == nil {
 		return nil, status.Errorf(codes.Canceled, "CloudConfig was not updated")

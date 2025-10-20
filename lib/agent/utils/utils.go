@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"hash/crc32"
 	. "main/aikido_types"
 	"main/config"
 	"net"
@@ -138,4 +139,13 @@ func RemoveOldestFromMapIfMaxExceeded[V any](m *map[string]V, queue *Queue[strin
 	if removedItem != nil {
 		delete(*m, *removedItem)
 	}
+}
+
+func GetCRC32(str string) string {
+	hash := crc32.ChecksumIEEE([]byte(str))
+	return fmt.Sprintf("%d", hash)
+}
+
+func AnonymizeString(str string) string {
+	return GetCRC32(str)
 }

@@ -34,6 +34,17 @@ func GetServers() []*ServerData {
 	return servers
 }
 
+func GetServersTokens() []string {
+	ServersMutex.RLock()
+	defer ServersMutex.RUnlock()
+
+	tokens := []string{}
+	for token := range Servers {
+		tokens = append(tokens, token)
+	}
+	return tokens
+}
+
 func CreateServer(token string) *ServerData {
 	ServersMutex.Lock()
 	defer ServersMutex.Unlock()

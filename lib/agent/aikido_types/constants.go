@@ -16,4 +16,5 @@ const (
 	MaxAttackDetectedEventsPerInterval  = 100
 	AttackDetectedEventsIntervalInMs    = 60 * 60 * 1000 // 1 hour
 	MinStatsCollectedForRelevantMetrics = 1000
+	MinServerInactivityForCleanup       = 10 * 60 * 1000 // 10 minutes
 )

@@ -10,12 +10,33 @@ import (
 )
 import (
 	. "main/aikido_types"
-	"main/cloud"
-	"main/rate_limiting"
+	"main/server_utils"
+	"main/utils"
 	"os"
 	"os/signal"
+	"sync/atomic"
 	"syscall"
+	"time"
 )
+
+var serversCleanupChannel = make(chan struct{})
+var serversCleanupTicker = time.NewTicker(10 * time.Minute)
+
+func serversCleanupRoutine(server *ServerData) {
+	for _, token := range globals.GetServersTokens() {
+		server := globals.GetServer(token)
+		if server == nil {
+			continue
+		}
+		now := utils.GetTime()
+		lastConnectionTime := atomic.LoadInt64(&server.LastConnectionTime)
+		if now-lastConnectionTime > MinServerInactivityForCleanup {
+			// Server has been inactive for more than 10 minutes
+			log.Infof("Server has been inactive for more than 10 minutes, unregistering...")
+			server_utils.Unregister(token)
+		}
+	}
+}
 
 func AgentInit(initJson string) (initOk bool) {
 	defer func() {
@@ -37,14 +58,17 @@ func AgentInit(initJson string) (initOk bool) {
 		return false
 	}
 
+	utils.StartPollingRoutine(serversCleanupChannel, serversCleanupTicker, serversCleanupRoutine, nil)
+
 	log.Infof("Aikido Agent v%s started!", Version)
 	return true
 }
 
 func AgentUninit() {
-	for _, server := range globals.GetServers() {
-		rate_limiting.UninitServer(server)
-		cloud.UninitServer(server)
+	utils.StopPollingRoutine(serversCleanupChannel)
+
+	for _, token := range globals.GetServersTokens() {
+		server_utils.Unregister(token)
 	}
 	grpc.Uninit()
 	config.Uninit()

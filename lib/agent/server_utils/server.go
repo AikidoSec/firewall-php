@@ -1,9 +1,13 @@
-package grpc
+package server_utils
 
 import (
 	. "main/aikido_types"
+	"main/cloud"
+	"main/globals"
 	"main/ipc/protos"
 	"main/log"
+	"main/rate_limiting"
+	"main/utils"
 )
 
 func storeConfig(server *ServerData, req *protos.Config) {
@@ -24,4 +28,29 @@ func storeConfig(server *ServerData, req *protos.Config) {
 	log.SetLogLevel(server.AikidoConfig.LogLevel)
 	log.Init(server.AikidoConfig.DiskLogs)
 	log.Debugf("Updated Aikido Config with the one passed via gRPC!")
+}
+
+func Register(token string, req *protos.Config) {
+	log.Infof("Registering server %s...", utils.AnonymizeString(token))
+
+	server := globals.CreateServer(token)
+	storeConfig(server, req)
+
+	cloud.Init(server)
+	rate_limiting.Init(server)
+
+	log.Infof("Server %s registered successfully!", utils.AnonymizeString(token))
+}
+
+func Unregister(token string) {
+	log.Infof("Unregistering server %s...", utils.AnonymizeString(token))
+	server := globals.GetServer(token)
+	if server == nil {
+		return
+	}
+	rate_limiting.Uninit(server)
+	cloud.Uninit(server)
+	globals.DeleteServer(token)
+
+	log.Infof("Server %s unregistered successfully!", utils.AnonymizeString(token))
 }

@@ -5,7 +5,7 @@ import (
 	"main/utils"
 )
 
-func InitServer(server *ServerData) {
+func Init(server *ServerData) {
 	server.StatsData.StartedAt = utils.GetTime()
 	server.StatsData.MonitoredSinkTimings = make(map[string]MonitoredSinkTimings)
 	SendStartEvent(server)
@@ -14,7 +14,7 @@ func InitServer(server *ServerData) {
 	utils.StartPollingRoutine(server.PollingData.ConfigPollingRoutineChannel, server.PollingData.ConfigPollingTicker, CheckConfigUpdatedAt, server)
 }
 
-func UninitServer(server *ServerData) {
+func Uninit(server *ServerData) {
 	utils.StopPollingRoutine(server.PollingData.HeartbeatRoutineChannel)
 	utils.StopPollingRoutine(server.PollingData.ConfigPollingRoutineChannel)
 }

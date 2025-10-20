@@ -182,6 +182,9 @@ type ServerData struct {
 	// Got some request info passed via gRPC to the Agent
 	GotTraffic uint32
 
+	// Last time this server established a gRPC connection
+	LastConnectionTime int64
+
 	// Did we log a token error?
 	LoggedTokenError uint32
 
