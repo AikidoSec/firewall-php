@@ -20,7 +20,7 @@ else:
     # Get the first PHP version from /etc/php
     php_versions = sorted([d for d in os.listdir('/etc/php') if os.path.isdir(os.path.join('/etc/php', d))])
     php_version = php_versions[0] if php_versions else "8.2"
-    php_fpm_config_dir = "/etc/php/{php_version}/fpm/pool.d"
+    php_fpm_config_dir = f"/etc/php/{php_version}/fpm/pool.d"
 
 
 def get_user_of_process(process_name):
