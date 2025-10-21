@@ -44,7 +44,7 @@ func RequestProcessorInit(initJson string) (initOk bool) {
 	log.Debugf("Init data: %s", initJson)
 
 	if globals.EnvironmentConfig.PlatformName != "cli" {
-		grpc.Init()
+		grpc.Init(globals.GetCurrentServer())
 	}
 	if !zen_internals.Init() {
 		log.Error("Error initializing zen-internals library!")
@@ -103,13 +103,19 @@ func RequestProcessorConfigUpdate(configJson string) (initOk bool) {
 		}
 	}()
 
-	config.ReloadAikidoConfig(configJson)
 	log.Debugf("Reloading Aikido config with: %v", configJson)
+	conf := AikidoConfigData{}
+	config.ReloadAikidoConfig(&conf, configJson)
 
-	if globals.EnvironmentConfig.PlatformName != "cli" {
-		grpc.SendAikidoConfig()
-		grpc.OnPackages(globals.AikidoConfig.Packages)
+	if conf.Token != "" {
+		server := globals.GetCurrentServer()
+		if server == nil {
+			return false
+		}
+		grpc.SendAikidoConfig(server)
+		grpc.OnPackages(server, server.AikidoConfig.Packages)
 	}
+
 	return true
 }
 
@@ -136,7 +142,7 @@ func RequestProcessorOnEvent(eventId int) (outputJson *C.char) {
 */
 //export RequestProcessorGetBlockingMode
 func RequestProcessorGetBlockingMode() int {
-	return utils.GetBlockingMode()
+	return utils.GetBlockingMode(globals.GetCurrentServer())
 }
 
 //export RequestProcessorReportStats
@@ -146,7 +152,7 @@ func RequestProcessorReportStats(sink, kind string, attacksDetected, attacksBloc
 	}
 	clonedTimings := make([]int64, len(timings))
 	copy(clonedTimings, timings)
-	go grpc.OnMonitoredSinkStats(strings.Clone(sink), strings.Clone(kind), attacksDetected, attacksBlocked, interceptorThrewError, withoutContext, total, clonedTimings)
+	go grpc.OnMonitoredSinkStats(globals.GetCurrentServer(), strings.Clone(sink), strings.Clone(kind), attacksDetected, attacksBlocked, interceptorThrewError, withoutContext, total, clonedTimings)
 }
 
 //export RequestProcessorUninit

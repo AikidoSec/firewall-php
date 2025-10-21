@@ -386,7 +386,9 @@ func TestDecodeURIComponent(t *testing.T) {
 
 func TestIsUserAgentBlocked(t *testing.T) {
 	pattern := "Applebot-Extended|archive.org_bot|Arquivo-web-crawler|heritrix|ia_archiver|NiceCrawler|AhrefsBot|AhrefsSiteAudit|Barkrowler|BLEXBot|BrightEdge Crawler|Cocolyzebot|DataForSeoBot|DomainStatsBot|dotbot|hypestat|linkdexbot|MJ12bot|online-webceo-bot|Screaming Frog SEO Spider|SemrushBot|SenutoBot|SeobilityBot|SEOkicks|SEOlizer|serpstatbot|SiteCheckerBotCrawler|SenutoBot|ZoomBot|Seodiver|SEOlyzer|Backlinkcrawler|rogerbot|Siteimprove\\.com|360Spider|AlexandriaOrgBot|Baiduspider|bingbot|coccocbot-web|Daum|DuckDuckBot|DuckDuckGo-Favicons-Bot|Feedfetcher-Google|Google Favicon|Googlebot|GoogleOther|HaoSouSpider|MojeekBot|msnbot|PetalBot|Qwantbot|Qwantify|SemanticScholarBot|SeznamBot|Sogou web spider|teoma|TinEye|yacybot|Yahoo! Slurp|Yandex|Yeti|YisouSpider|ZumBot|AntBot|Amazonbot|Applebot|OAI-SearchBot|PerplexityBot|YouBot|sqlmap|WPScan|feroxbuster|masscan|Fuzz Faster U Fool|gobuster|\\(hydra\\)|absinthe|arachni|bsqlbf|cisco-torch|crimscanner|DirBuster|Grendel-Scan|Mysqloit|Nmap NSE|Nmap Scripting Engine|Nessus|Netsparker|Nikto|Paros|uil2pn|SQL Power Injector|webshag|Teh Forest Lobster|DotDotPwn|Havij|OpenVAS|ZmEu|DominoHunter|domino hunter|FHScan Core|w3af\\.(sf\\.net|sourceforge\\.net|org)|cgichk|webvulnscan|sqlninja|Argus(-Scanner|Crawler|DataLeakChecker|Bot)|ShadowSpray\\.Kerb|OWASP Amass|Argus(-Scanner|Crawler|DataLeakChecker|Bot)|Nuclei|BackDoorBot|HeadlessChrome|HeadlessEdg|facebookexternalhit|facebookcatalog|meta-externalagent|meta-externalfetcher|Twitterbot|Pinterestbot|pinterest\\.com.bot|LinkedInBot|XING-contenttabreceiver|redditbot|Mastodon|Bluesky Cardyb|vkShare|EmailCollector|EmailSiphon|EmailWolf|ExtractorPro|MailSweeper|Email Extractor|WebDataExtractor|MailBait"
-	globals.CloudConfig.BlockedUserAgents = regexp.MustCompile(pattern)
+
+	server := globals.NewServerData()
+	server.CloudConfig.BlockedUserAgents = regexp.MustCompile(pattern)
 
 	tests := []struct {
 		ua       string
@@ -412,7 +414,7 @@ func TestIsUserAgentBlocked(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.ua, func(t *testing.T) {
-			result, _ := IsUserAgentBlocked(test.ua)
+			result, _ := IsUserAgentBlocked(server, test.ua)
 			if result != test.expected {
 				t.Errorf("expected %v, got %v", test.expected, result)
 			}
@@ -421,87 +423,95 @@ func TestIsUserAgentBlocked(t *testing.T) {
 }
 
 func TestIsIpBlockedByPrefix(t *testing.T) {
-	globals.CloudConfig.BlockedIps = map[string]IpList{}
+	server := globals.NewServerData()
+	server.CloudConfig.BlockedIps = map[string]IpList{}
 	IpList, _ := BuildIpList("test", []string{"1.2.0.0/16"})
-	globals.CloudConfig.BlockedIps["test"] = *IpList
+	server.CloudConfig.BlockedIps["test"] = *IpList
 	ip := "1.2.3.4"
-	result, _ := IsIpBlocked(ip)
+	result, _ := IsIpBlocked(server, ip)
 	if result != true {
 		t.Errorf("expected true, got %v", result)
 	}
 }
 
 func TestIsIpBlockedByIp(t *testing.T) {
-	globals.CloudConfig.BlockedIps = map[string]IpList{}
+	server := globals.NewServerData()
+	server.CloudConfig.BlockedIps = map[string]IpList{}
 	IpList, _ := BuildIpList("test", []string{"1.2.3.4"})
-	globals.CloudConfig.BlockedIps["test"] = *IpList
+	server.CloudConfig.BlockedIps["test"] = *IpList
 	ip := "1.2.3.4"
-	result, _ := IsIpBlocked(ip)
+	result, _ := IsIpBlocked(server, ip)
 	if result != true {
 		t.Errorf("expected true, got %v", result)
 	}
 }
 
 func TestIsIpNotBlockedByPrefix(t *testing.T) {
-	globals.CloudConfig.BlockedIps = map[string]IpList{}
+	server := globals.NewServerData()
+	server.CloudConfig.BlockedIps = map[string]IpList{}
 	IpList, _ := BuildIpList("test", []string{"1.2.0.0/16"})
-	globals.CloudConfig.BlockedIps["test"] = *IpList
+	server.CloudConfig.BlockedIps["test"] = *IpList
 	ip := "2.3.4.5"
-	result, _ := IsIpBlocked(ip)
+	result, _ := IsIpBlocked(server, ip)
 	if result != false {
 		t.Errorf("expected false, got %v", result)
 	}
 }
 
 func TestIsIpNotBlockedByIp(t *testing.T) {
-	globals.CloudConfig.BlockedIps = map[string]IpList{}
+	server := globals.NewServerData()
+	server.CloudConfig.BlockedIps = map[string]IpList{}
 	IpList, _ := BuildIpList("test", []string{"1.2.3.4"})
-	globals.CloudConfig.BlockedIps["test"] = *IpList
+	server.CloudConfig.BlockedIps["test"] = *IpList
 	ip := "2.3.4.5"
-	result, _ := IsIpBlocked(ip)
+	result, _ := IsIpBlocked(server, ip)
 	if result != false {
 		t.Errorf("expected false, got %v", result)
 	}
 }
 func TestIsIpv6BlockedByPrefix(t *testing.T) {
-	globals.CloudConfig.BlockedIps = map[string]IpList{}
+	server := globals.NewServerData()
+	server.CloudConfig.BlockedIps = map[string]IpList{}
 	IpList, _ := BuildIpList("test", []string{"2001:db8::/32"})
-	globals.CloudConfig.BlockedIps["test"] = *IpList
+	server.CloudConfig.BlockedIps["test"] = *IpList
 	ip := "2001:db8:1234:5678:90ab:cdef:1234:5678"
-	result, _ := IsIpBlocked(ip)
+	result, _ := IsIpBlocked(server, ip)
 	if result != true {
 		t.Errorf("expected true, got %v", result)
 	}
 }
 
 func TestIsIpv6BlockedByIp(t *testing.T) {
-	globals.CloudConfig.BlockedIps = map[string]IpList{}
+	server := globals.NewServerData()
+	server.CloudConfig.BlockedIps = map[string]IpList{}
 	IpList, _ := BuildIpList("test", []string{"2001:db8::1"})
-	globals.CloudConfig.BlockedIps["test"] = *IpList
+	server.CloudConfig.BlockedIps["test"] = *IpList
 	ip := "2001:db8::1"
-	result, _ := IsIpBlocked(ip)
+	result, _ := IsIpBlocked(server, ip)
 	if result != true {
 		t.Errorf("expected true, got %v", result)
 	}
 }
 
 func TestIsIpv6NotBlockedByPrefix(t *testing.T) {
-	globals.CloudConfig.BlockedIps = map[string]IpList{}
+	server := globals.NewServerData()
+	server.CloudConfig.BlockedIps = map[string]IpList{}
 	IpList, _ := BuildIpList("test", []string{"2001:db8::/32"})
-	globals.CloudConfig.BlockedIps["test"] = *IpList
+	server.CloudConfig.BlockedIps["test"] = *IpList
 	ip := "2001:db9::1"
-	result, _ := IsIpBlocked(ip)
+	result, _ := IsIpBlocked(server, ip)
 	if result != false {
 		t.Errorf("expected false, got %v", result)
 	}
 }
 
 func TestIsIpv6NotBlockedByIp(t *testing.T) {
-	globals.CloudConfig.BlockedIps = map[string]IpList{}
+	server := globals.NewServerData()
+	server.CloudConfig.BlockedIps = map[string]IpList{}
 	IpList, _ := BuildIpList("test", []string{"2001:db8::1"})
-	globals.CloudConfig.BlockedIps["test"] = *IpList
+	server.CloudConfig.BlockedIps["test"] = *IpList
 	ip := "2001:db8::2"
-	result, _ := IsIpBlocked(ip)
+	result, _ := IsIpBlocked(server, ip)
 	if result != false {
 		t.Errorf("expected false, got %v", result)
 	}
@@ -509,125 +519,126 @@ func TestIsIpv6NotBlockedByIp(t *testing.T) {
 
 func TestGetIpFromRequest(t *testing.T) {
 	//no headers and no remote address
-	globals.AikidoConfig.TrustProxy = false
-	if got := GetIpFromRequest("", ""); got != "" {
+	server := globals.NewServerData()
+	server.AikidoConfig.TrustProxy = false
+	if got := GetIpFromRequest(server, "", ""); got != "" {
 		t.Errorf("expected empty, got %q", got)
 	}
 
-	globals.AikidoConfig.TrustProxy = true
-	if got := GetIpFromRequest("", ""); got != "" {
+	server.AikidoConfig.TrustProxy = true
+	if got := GetIpFromRequest(server, "", ""); got != "" {
 		t.Errorf("expected empty, got %q", got)
 	}
 
 	//no headers and remote address
-	globals.AikidoConfig.TrustProxy = false
-	if got := GetIpFromRequest("1.2.3.4", ""); got != "1.2.3.4" {
+	server.AikidoConfig.TrustProxy = false
+	if got := GetIpFromRequest(server, "1.2.3.4", ""); got != "1.2.3.4" {
 		t.Errorf("expected 1.2.3.4, got %q", got)
 	}
 
-	globals.AikidoConfig.TrustProxy = true
-	if got := GetIpFromRequest("1.2.3.4", ""); got != "1.2.3.4" {
+	server.AikidoConfig.TrustProxy = true
+	if got := GetIpFromRequest(server, "1.2.3.4", ""); got != "1.2.3.4" {
 		t.Errorf("expected 1.2.3.4, got %q", got)
 	}
 
 	// x-forwarded-for without trust proxy
-	globals.AikidoConfig.TrustProxy = false
-	if got := GetIpFromRequest("1.2.3.4", "9.9.9.9"); got != "1.2.3.4" {
+	server.AikidoConfig.TrustProxy = false
+	if got := GetIpFromRequest(server, "1.2.3.4", "9.9.9.9"); got != "1.2.3.4" {
 		t.Errorf("expected 1.2.3.4, got %q", got)
 	}
 
-	if got := GetIpFromRequest("df89:84af:85e0:c55f:960c:341a:2cc6:734d", "a3ad:8f95:d2a8:454b:cf19:be6e:73c6:f880"); got != "df89:84af:85e0:c55f:960c:341a:2cc6:734d" {
+	if got := GetIpFromRequest(server, "df89:84af:85e0:c55f:960c:341a:2cc6:734d", "a3ad:8f95:d2a8:454b:cf19:be6e:73c6:f880"); got != "df89:84af:85e0:c55f:960c:341a:2cc6:734d" {
 		t.Errorf("expected df89:84af:85e0:c55f:960c:341a:2cc6:734d, got %q", got)
 	}
 
 	// x-forwarded-for with trust proxy and "x-forwarded-for" is not an IP
-	globals.AikidoConfig.TrustProxy = true
-	if got := GetIpFromRequest("1.2.3.4", "invalid"); got != "1.2.3.4" {
+	server.AikidoConfig.TrustProxy = true
+	if got := GetIpFromRequest(server, "1.2.3.4", "invalid"); got != "1.2.3.4" {
 		t.Errorf("expected 1.2.3.4, got %q", got)
 	}
 
 	// x-forwarded-for with trust proxy and IP contains port
-	globals.AikidoConfig.TrustProxy = true
-	if got := GetIpFromRequest("1.2.3.4", "9.9.9.9:8080"); got != "9.9.9.9" {
+	server.AikidoConfig.TrustProxy = true
+	if got := GetIpFromRequest(server, "1.2.3.4", "9.9.9.9:8080"); got != "9.9.9.9" {
 		t.Errorf("expected 9.9.9.9, got %q", got)
 	}
-	if got := GetIpFromRequest("1.2.3.4", "[a3ad:8f95:d2a8:454b:cf19:be6e:73c6:f880]:8080"); got != "a3ad:8f95:d2a8:454b:cf19:be6e:73c6:f880" {
+	if got := GetIpFromRequest(server, "1.2.3.4", "[a3ad:8f95:d2a8:454b:cf19:be6e:73c6:f880]:8080"); got != "a3ad:8f95:d2a8:454b:cf19:be6e:73c6:f880" {
 		t.Errorf("expected a3ad:8f95:d2a8:454b:cf19:be6e:73c6:f880, got %q", got)
 	}
-	if got := GetIpFromRequest("1.2.3.4", "[a3ad:8f95:d2a8:454b:cf19:be6e:73c6:f880]"); got != "a3ad:8f95:d2a8:454b:cf19:be6e:73c6:f880" {
+	if got := GetIpFromRequest(server, "1.2.3.4", "[a3ad:8f95:d2a8:454b:cf19:be6e:73c6:f880]"); got != "a3ad:8f95:d2a8:454b:cf19:be6e:73c6:f880" {
 		t.Errorf("expected a3ad:8f95:d2a8:454b:cf19:be6e:73c6:f880, got %q", got)
 	}
 	// Invalid format
-	if got := GetIpFromRequest("df89:84af:85e0:c55f:960c:341a:2cc6:734d", "a3ad:8f95:d2a8:454b:cf19:be6e:73c6:f880:8080"); got != "df89:84af:85e0:c55f:960c:341a:2cc6:734d" {
+	if got := GetIpFromRequest(server, "df89:84af:85e0:c55f:960c:341a:2cc6:734d", "a3ad:8f95:d2a8:454b:cf19:be6e:73c6:f880:8080"); got != "df89:84af:85e0:c55f:960c:341a:2cc6:734d" {
 		t.Errorf("expected df89:84af:85e0:c55f:960c:341a:2cc6:734d, got %q", got)
 	}
 
 	// with trailing comma
-	globals.AikidoConfig.TrustProxy = true
-	if got := GetIpFromRequest("1.2.3.4", "9.9.9.9,"); got != "9.9.9.9" {
+	server.AikidoConfig.TrustProxy = true
+	if got := GetIpFromRequest(server, "1.2.3.4", "9.9.9.9,"); got != "9.9.9.9" {
 		t.Errorf("expected 9.9.9.9, got %q", got)
 	}
-	if got := GetIpFromRequest("1.2.3.4", ",9.9.9.9"); got != "9.9.9.9" {
+	if got := GetIpFromRequest(server, "1.2.3.4", ",9.9.9.9"); got != "9.9.9.9" {
 		t.Errorf("expected 9.9.9.9, got %q", got)
 	}
-	if got := GetIpFromRequest("1.2.3.4", ",9.9.9.9,"); got != "9.9.9.9" {
+	if got := GetIpFromRequest(server, "1.2.3.4", ",9.9.9.9,"); got != "9.9.9.9" {
 		t.Errorf("expected 9.9.9.9, got %q", got)
 	}
-	if got := GetIpFromRequest("1.2.3.4", ",9.9.9.9,,"); got != "9.9.9.9" {
+	if got := GetIpFromRequest(server, "1.2.3.4", ",9.9.9.9,,"); got != "9.9.9.9" {
 		t.Errorf("expected 9.9.9.9, got %q", got)
 	}
 
 	// x-forwarded-for with trust proxy and "x-forwarded-for" is a private IP
-	globals.AikidoConfig.TrustProxy = true
-	if got := GetIpFromRequest("1.2.3.4", "127.0.0.1"); got != "1.2.3.4" {
+	server.AikidoConfig.TrustProxy = true
+	if got := GetIpFromRequest(server, "1.2.3.4", "127.0.0.1"); got != "1.2.3.4" {
 		t.Errorf("expected 1.2.3.4, got %q", got)
 	}
-	if got := GetIpFromRequest("df89:84af:85e0:c55f:960c:341a:2cc6:734d", "::1"); got != "df89:84af:85e0:c55f:960c:341a:2cc6:734d" {
+	if got := GetIpFromRequest(server, "df89:84af:85e0:c55f:960c:341a:2cc6:734d", "::1"); got != "df89:84af:85e0:c55f:960c:341a:2cc6:734d" {
 		t.Errorf("expected df89:84af:85e0:c55f:960c:341a:2cc6:734d, got %q", got)
 	}
 
 	// x-forwarded-for with trust proxy and "x-forwarded-for" contains private IP
-	globals.AikidoConfig.TrustProxy = true
-	if got := GetIpFromRequest("1.2.3.4", "127.0.0.1, 9.9.9.9"); got != "9.9.9.9" {
+	server.AikidoConfig.TrustProxy = true
+	if got := GetIpFromRequest(server, "1.2.3.4", "127.0.0.1, 9.9.9.9"); got != "9.9.9.9" {
 		t.Errorf("expected 9.9.9.9, got %q", got)
 	}
-	if got := GetIpFromRequest("df89:84af:85e0:c55f:960c:341a:2cc6:734d", "::1, a3ad:8f95:d2a8:454b:cf19:be6e:73c6:f880"); got != "a3ad:8f95:d2a8:454b:cf19:be6e:73c6:f880" {
+	if got := GetIpFromRequest(server, "df89:84af:85e0:c55f:960c:341a:2cc6:734d", "::1, a3ad:8f95:d2a8:454b:cf19:be6e:73c6:f880"); got != "a3ad:8f95:d2a8:454b:cf19:be6e:73c6:f880" {
 		t.Errorf("expected a3ad:8f95:d2a8:454b:cf19:be6e:73c6:f880, got %q", got)
 	}
 
 	// x-forwarded-for with trust proxy and "x-forwarded-for" is public IP
-	globals.AikidoConfig.TrustProxy = true
-	if got := GetIpFromRequest("1.2.3.4", "9.9.9.9"); got != "9.9.9.9" {
+	server.AikidoConfig.TrustProxy = true
+	if got := GetIpFromRequest(server, "1.2.3.4", "9.9.9.9"); got != "9.9.9.9" {
 		t.Errorf("expected 9.9.9.9, got %q", got)
 	}
-	if got := GetIpFromRequest("df89:84af:85e0:c55f:960c:341a:2cc6:734d", "a3ad:8f95:d2a8:454b:cf19:be6e:73c6:f880"); got != "a3ad:8f95:d2a8:454b:cf19:be6e:73c6:f880" {
+	if got := GetIpFromRequest(server, "df89:84af:85e0:c55f:960c:341a:2cc6:734d", "a3ad:8f95:d2a8:454b:cf19:be6e:73c6:f880"); got != "a3ad:8f95:d2a8:454b:cf19:be6e:73c6:f880" {
 		t.Errorf("expected a3ad:8f95:d2a8:454b:cf19:be6e:73c6:f880, got %q", got)
 	}
 
 	// x-forwarded-for with trust proxy and "x-forwarded-for" contains private IP at the end
-	globals.AikidoConfig.TrustProxy = true
-	if got := GetIpFromRequest("1.2.3.4", "9.9.9.9, 127.0.0.1"); got != "9.9.9.9" {
+	server.AikidoConfig.TrustProxy = true
+	if got := GetIpFromRequest(server, "1.2.3.4", "9.9.9.9, 127.0.0.1"); got != "9.9.9.9" {
 		t.Errorf("expected 9.9.9.9, got %q", got)
 	}
-	if got := GetIpFromRequest("df89:84af:85e0:c55f:960c:341a:2cc6:734d", "a3ad:8f95:d2a8:454b:cf19:be6e:73c6:f880, ::1"); got != "a3ad:8f95:d2a8:454b:cf19:be6e:73c6:f880" {
+	if got := GetIpFromRequest(server, "df89:84af:85e0:c55f:960c:341a:2cc6:734d", "a3ad:8f95:d2a8:454b:cf19:be6e:73c6:f880, ::1"); got != "a3ad:8f95:d2a8:454b:cf19:be6e:73c6:f880" {
 		t.Errorf("expected a3ad:8f95:d2a8:454b:cf19:be6e:73c6:f880, got %q", got)
 	}
 
 	// x-forwarded-for with trust proxy and multiple IPs
-	globals.AikidoConfig.TrustProxy = true
-	if got := GetIpFromRequest("1.2.3.4", "9.9.9.9, 8.8.8.8, 7.7.7.7"); got != "9.9.9.9" {
+	server.AikidoConfig.TrustProxy = true
+	if got := GetIpFromRequest(server, "1.2.3.4", "9.9.9.9, 8.8.8.8, 7.7.7.7"); got != "9.9.9.9" {
 		t.Errorf("expected 9.9.9.9, got %q", got)
 	}
-	if got := GetIpFromRequest("df89:84af:85e0:c55f:960c:341a:2cc6:734d", "a3ad:8f95:d2a8:454b:cf19:be6e:73c6:f880, 3b07:2fba:0270:2149:5fc1:2049:5f04:2131, 791d:967e:428a:90b9:8f6f:4fcc:5d88:015d"); got != "a3ad:8f95:d2a8:454b:cf19:be6e:73c6:f880" {
+	if got := GetIpFromRequest(server, "df89:84af:85e0:c55f:960c:341a:2cc6:734d", "a3ad:8f95:d2a8:454b:cf19:be6e:73c6:f880, 3b07:2fba:0270:2149:5fc1:2049:5f04:2131, 791d:967e:428a:90b9:8f6f:4fcc:5d88:015d"); got != "a3ad:8f95:d2a8:454b:cf19:be6e:73c6:f880" {
 		t.Errorf("expected a3ad:8f95:d2a8:454b:cf19:be6e:73c6:f880, got %q", got)
 	}
 
 	// x-forwarded-for with trust proxy and many IPs
-	globals.AikidoConfig.TrustProxy = true
-	if got := GetIpFromRequest("1.2.3.4", "127.0.0.1, 192.168.0.1, 192.168.0.2, 9.9.9.9"); got != "9.9.9.9" {
+	server.AikidoConfig.TrustProxy = true
+	if got := GetIpFromRequest(server, "1.2.3.4", "127.0.0.1, 192.168.0.1, 192.168.0.2, 9.9.9.9"); got != "9.9.9.9" {
 		t.Errorf("expected 9.9.9.9, got %q", got)
 	}
-	if got := GetIpFromRequest("1.2.3.4", "9.9.9.9, 127.0.0.1, 192.168.0.1, 192.168.0.2"); got != "9.9.9.9" {
+	if got := GetIpFromRequest(server, "1.2.3.4", "9.9.9.9, 127.0.0.1, 192.168.0.1, 192.168.0.2"); got != "9.9.9.9" {
 		t.Errorf("expected 9.9.9.9, got %q", got)
 	}
 

@@ -133,8 +133,8 @@ func SetLogLevel(level string) error {
 	return nil
 }
 
-func Init() {
-	if !globals.AikidoConfig.DiskLogs {
+func Init(diskLogs bool) {
+	if !diskLogs {
 		return
 	}
 	cliLogging = false

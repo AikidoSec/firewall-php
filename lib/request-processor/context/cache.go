@@ -3,6 +3,7 @@ package context
 // #include "../../API.h"
 import "C"
 import (
+	"main/globals"
 	"main/helpers"
 	"main/log"
 	"main/utils"
@@ -102,7 +103,7 @@ func ContextSetIp() {
 	}
 	remoteAddress := Context.Callback(C.CONTEXT_REMOTE_ADDRESS)
 	xForwardedFor := Context.Callback(C.CONTEXT_HEADER_X_FORWARDED_FOR)
-	ip := utils.GetIpFromRequest(remoteAddress, xForwardedFor)
+	ip := utils.GetIpFromRequest(globals.GetCurrentServer(), remoteAddress, xForwardedFor)
 	Context.IP = &ip
 }
 
@@ -111,7 +112,7 @@ func ContextSetIsIpBypassed() {
 		return
 	}
 
-	isIpBypassed := utils.IsIpBypassed(GetIp())
+	isIpBypassed := utils.IsIpBypassed(globals.GetCurrentServer(), GetIp())
 	Context.IsIpBypassed = &isIpBypassed
 }
 
@@ -136,7 +137,7 @@ func ContextSetEndpointConfig() {
 		return
 	}
 
-	endpointConfig := utils.GetEndpointConfig(GetMethod(), GetParsedRoute())
+	endpointConfig := utils.GetEndpointConfig(globals.GetCurrentServer(), GetMethod(), GetParsedRoute())
 	Context.EndpointConfig = &endpointConfig
 }
 
@@ -145,7 +146,7 @@ func ContextSetWildcardEndpointsConfigs() {
 		return
 	}
 
-	wildcardEndpointsConfigs := utils.GetWildcardEndpointsConfigs(GetMethod(), GetParsedRoute())
+	wildcardEndpointsConfigs := utils.GetWildcardEndpointsConfigs(globals.GetCurrentServer(), GetMethod(), GetParsedRoute())
 	Context.WildcardEndpointsConfigs = &wildcardEndpointsConfigs
 }
 
@@ -223,12 +224,12 @@ func ContextSetIsEndpointIpAllowed() {
 
 	endpointConfig := GetEndpointConfig()
 	if endpointConfig != nil {
-		isEndpointIpAllowed = utils.IsIpAllowedOnEndpoint(endpointConfig.AllowedIPAddresses, ip)
+		isEndpointIpAllowed = utils.IsIpAllowedOnEndpoint(globals.GetCurrentServer(), endpointConfig.AllowedIPAddresses, ip)
 	}
 
 	if isEndpointIpAllowed == utils.NoConfig {
 		for _, wildcardEndpointConfig := range GetWildcardEndpointsConfig() {
-			isEndpointIpAllowed = utils.IsIpAllowedOnEndpoint(wildcardEndpointConfig.AllowedIPAddresses, ip)
+			isEndpointIpAllowed = utils.IsIpAllowedOnEndpoint(globals.GetCurrentServer(), wildcardEndpointConfig.AllowedIPAddresses, ip)
 			if isEndpointIpAllowed != utils.NoConfig {
 				break
 			}
