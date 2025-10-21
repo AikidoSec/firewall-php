@@ -436,6 +436,7 @@ jobs:
       - name: Run ${{ matrix.server }} server tests
         run: |
           cd tools
+          ls -l /etc | grep php
           python3 run_server_tests.py ../tests/server ../tests/testlib --server=${{ matrix.server }}
 
       - name: Archive test artifacts
