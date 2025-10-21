@@ -16,5 +16,5 @@ const (
 	MaxAttackDetectedEventsPerInterval  = 100
 	AttackDetectedEventsIntervalInMs    = 60 * 60 * 1000 // 1 hour
 	MinStatsCollectedForRelevantMetrics = 1000
-	MinServerInactivityForCleanup       = 2 * 60 * 1000 // 10 minutes - time interval for checking if registered servers are inactive (they are not running anymore), so the Agent can cleanup their memory
+	MinServerInactivityForCleanup       = 2 * 60 * 1000 // 2 minutes - time interval for checking if registered servers are inactive (they are not running anymore), so the Agent can cleanup their memory
 )
