@@ -52,9 +52,8 @@ func CreateServer(token string) *ServerData {
 	return Servers[token]
 }
 
-func DeleteServer(token string) *ServerData {
+func DeleteServer(token string) {
 	ServersMutex.Lock()
 	defer ServersMutex.Unlock()
 	delete(Servers, token)
-	return Servers[token]
 }

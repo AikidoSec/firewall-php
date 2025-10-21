@@ -130,7 +130,7 @@ echo "Starting the uninstallation process for Aikido v%{version}..."
 pids=$(pgrep -f aikido-agent)
 if [ -n "$pids" ]; then
     echo "Stopping Aikido Agent processes: $pids"
-    kill -9 $pids
+    kill -15 $pids
     echo "Aikido Agent(s) stopped."
 fi
 

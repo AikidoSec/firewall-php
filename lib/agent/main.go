@@ -20,9 +20,9 @@ import (
 )
 
 var serversCleanupChannel = make(chan struct{})
-var serversCleanupTicker = time.NewTicker(10 * time.Minute)
+var serversCleanupTicker = time.NewTicker(2 * time.Minute)
 
-func serversCleanupRoutine(server *ServerData) {
+func serversCleanupRoutine(_ *ServerData) {
 	for _, token := range globals.GetServersTokens() {
 		server := globals.GetServer(token)
 		if server == nil {
@@ -31,8 +31,8 @@ func serversCleanupRoutine(server *ServerData) {
 		now := utils.GetTime()
 		lastConnectionTime := atomic.LoadInt64(&server.LastConnectionTime)
 		if now-lastConnectionTime > MinServerInactivityForCleanup {
-			// Server has been inactive for more than 10 minutes
-			log.Infof("Server has been inactive for more than 10 minutes, unregistering...")
+			// Server has been inactive
+			log.Infof("Server has been inactive for more than %d minutes, unregistering...", MinServerInactivityForCleanup)
 			server_utils.Unregister(token)
 		}
 	}

@@ -57,7 +57,7 @@ pid_t Agent::GetPID(const std::string& aikidoAgentPath) {
 }
 
 bool Agent::RemoveSocketFiles() {
-    bool failed = false;
+    bool ok = true;
     std::string aikidoRunFolder = "/var/run/aikido-" + std::string(PHP_AIKIDO_VERSION);
     DIR* dirTree;
     struct dirent* dirEntry;
@@ -68,14 +68,14 @@ bool Agent::RemoveSocketFiles() {
                 std::string socketPath = aikidoRunFolder + "/" + filename;
                 if (unlink(socketPath.c_str()) != 0) {
                     AIKIDO_LOG_ERROR("Failed to remove socket file %s: %s\n", socketPath.c_str(), strerror(errno));
-                    failed = true;
+                    ok = false;
                 }
             }
         }
         closedir(dirTree);
     }
 
-    return failed;
+    return ok;
 }
 
 bool Agent::Start(std::string aikidoAgentPath, std::string initData, std::string token) {
@@ -126,7 +126,6 @@ bool Agent::SpawnDetached(std::string aikidoAgentPath, std::string initData, std
     int wstatus;
     waitpid(pid, &wstatus, 0);
     return WIFEXITED(wstatus) && WEXITSTATUS(wstatus) == 0;
-    //return true;
 }
 
 bool Agent::Init() {
@@ -141,6 +140,7 @@ bool Agent::Init() {
             return true;    
         } else {
             AIKIDO_LOG_WARN("Aikido Agent is not running, but socket files exist! Recovering by removing old socket files...\n");
+            
             if (!this->RemoveSocketFiles()) {
                 AIKIDO_LOG_WARN("Failed to remove some socket files, will try to re-spawn Aikido Agent...\n");
             } else {
