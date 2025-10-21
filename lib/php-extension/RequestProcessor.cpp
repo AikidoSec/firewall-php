@@ -106,7 +106,6 @@ bool RequestProcessor::Init() {
         return true;
     }
 
-    LoadEnvironment();
     if (AIKIDO_GLOBAL(disable) == true) {
         AIKIDO_LOG_INFO("Request Processor initialization skipped because AIKIDO_DISABLE is set to 1!\n");
         return false;
