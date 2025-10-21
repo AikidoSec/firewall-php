@@ -438,6 +438,7 @@ jobs:
           cd tools
           ls -l /etc | grep php
           ls -lR /etc/php
+          cat /etc/php/8.0/fpm/pool.d/www.conf
           python3 run_server_tests.py ../tests/server ../tests/testlib --server=${{ matrix.server }}
 
       - name: Archive test artifacts
