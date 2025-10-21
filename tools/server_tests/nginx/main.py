@@ -195,7 +195,7 @@ def nginx_php_fpm_pre_tests():
     create_folder(f'{log_dir}/php-fpm')
     modify_nginx_conf(nginx_global_conf)
     subprocess.run(['nginx'], check=True)
-    subprocess.run(['php-fpm', '--allow-to-run-as-root'], check=True)
+    subprocess.run([php_fpm_bin, '--allow-to-run-as-root'], check=True)
     print("nginx and php-fpm servers restarted!")
     time.sleep(5)
 
