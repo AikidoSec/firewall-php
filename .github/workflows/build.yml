@@ -376,8 +376,6 @@ jobs:
       - name: Run ${{ matrix.server }} server tests
         run: |
           cd tools
-          ls -l /etc | grep php
-          ls -lR /etc/php
           python3 run_server_tests.py ../tests/server ../tests/testlib --server=${{ matrix.server }}
 
   test_php_ubuntu:
@@ -439,6 +437,7 @@ jobs:
         run: |
           cd tools
           ls -l /etc | grep php
+          ls -lR /etc/php
           python3 run_server_tests.py ../tests/server ../tests/testlib --server=${{ matrix.server }}
 
       - name: Archive test artifacts
