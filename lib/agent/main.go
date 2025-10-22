@@ -46,6 +46,12 @@ func writePidFile() {
 	pidFile.WriteString(fmt.Sprintf("%d", os.Getpid()))
 }
 
+func removePidFile() {
+	if _, err := os.Stat(PidPath); err == nil {
+		os.Remove(PidPath)
+	}
+}
+
 func AgentInit(initJson string) (initOk bool) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -76,7 +82,7 @@ func AgentUninit() {
 		server_utils.Unregister(token)
 	}
 	grpc.Uninit()
-
+	removePidFile()
 	log.Infof("Aikido Agent v%s stopped!", Version)
 	log.Uninit()
 }
