@@ -134,7 +134,7 @@ func setCloudConfig(server *ServerData, cloudConfigFromAgent *protos.CloudConfig
 	runtime.GC()
 }
 
-func startCloudConfigRoutine() {
+func StartCloudConfigRoutine() {
 	GetCloudConfigForAllServers()
 
 	stopChan = make(chan struct{})

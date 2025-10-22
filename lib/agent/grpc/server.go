@@ -89,6 +89,7 @@ func (s *GrpcServer) OnRequestShutdown(ctx context.Context, req *protos.RequestM
 func (s *GrpcServer) GetCloudConfig(ctx context.Context, req *protos.CloudConfigUpdatedAt) (*protos.CloudConfig, error) {
 	server := globals.GetServer(req.GetToken())
 	if server == nil {
+		log.Warnf("Server %s not found, returning nil", req.GetToken())
 		return nil, status.Errorf(codes.Canceled, "CloudConfig was not updated")
 	}
 

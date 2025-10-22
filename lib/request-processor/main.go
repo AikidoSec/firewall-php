@@ -44,7 +44,14 @@ func RequestProcessorInit(initJson string) (initOk bool) {
 	log.Debugf("Init data: %s", initJson)
 
 	if globals.EnvironmentConfig.PlatformName != "cli" {
-		grpc.Init(globals.GetCurrentServer())
+		grpc.Init()
+		server := globals.GetCurrentServer()
+		if server != nil {
+			grpc.SendAikidoConfig(server)
+			grpc.OnPackages(server, server.AikidoConfig.Packages)
+		}
+
+		grpc.StartCloudConfigRoutine()
 	}
 	if !zen_internals.Init() {
 		log.Error("Error initializing zen-internals library!")
@@ -107,14 +114,17 @@ func RequestProcessorConfigUpdate(configJson string) (initOk bool) {
 	conf := AikidoConfigData{}
 	config.ReloadAikidoConfig(&conf, configJson)
 
-	if conf.Token != "" {
-		server := globals.GetCurrentServer()
-		if server == nil {
-			return false
-		}
-		grpc.SendAikidoConfig(server)
-		grpc.OnPackages(server, server.AikidoConfig.Packages)
+	if conf.Token == "" {
+		return false
 	}
+
+	server := globals.GetCurrentServer()
+	if server == nil {
+		return false
+	}
+	grpc.SendAikidoConfig(server)
+	grpc.OnPackages(server, server.AikidoConfig.Packages)
+	grpc.GetCloudConfig(server)
 
 	return true
 }

@@ -19,11 +19,7 @@ import (
 var conn *grpc.ClientConn
 var client protos.AikidoClient
 
-func Init(server *ServerData) {
-	if server == nil {
-		return
-	}
-
+func Init() {
 	conn, err := grpc.Dial(
 		"unix://"+globals.EnvironmentConfig.SocketPath,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
@@ -36,10 +32,6 @@ func Init(server *ServerData) {
 	client = protos.NewAikidoClient(conn)
 
 	log.Debugf("Current connection state: %s\n", conn.GetState().String())
-
-	SendAikidoConfig(server)
-	OnPackages(server, server.AikidoConfig.Packages)
-	startCloudConfigRoutine()
 }
 
 func Uninit() {
