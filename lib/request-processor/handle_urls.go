@@ -67,12 +67,11 @@ func OnPostOutgoingRequest() string {
 	log.Info("[AFTER] Got domain: ", hostname, " port: ", port)
 
 	server := globals.GetCurrentServer()
-	if server == nil {
-		return ""
-	}
-	go grpc.OnDomain(server, hostname, port)
-	if effectiveHostname != hostname {
-		go grpc.OnDomain(server, effectiveHostname, effectivePort)
+	if server != nil {
+		go grpc.OnDomain(server, hostname, port)
+		if effectiveHostname != hostname {
+			go grpc.OnDomain(server, effectiveHostname, effectivePort)
+		}
 	}
 
 	if context.IsEndpointProtectionTurnedOff() {
