@@ -15,6 +15,7 @@ func UpdateToken(token string) {
 		return
 	}
 	globals.CurrentToken = token
+	globals.CurrentServer = globals.GetServer(token)
 	log.Infof("Token changed to %s", utils.AnonymizeToken(token))
 }
 

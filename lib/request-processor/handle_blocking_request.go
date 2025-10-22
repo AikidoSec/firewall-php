@@ -33,6 +33,9 @@ func OnGetBlockingStatus() string {
 	log.Debugf("OnGetBlockingStatus called!")
 
 	server := globals.GetCurrentServer()
+	if server == nil {
+		return ""
+	}
 	if !server.MiddlewareInstalled {
 		go grpc.OnMiddlewareInstalled(server)
 		server.MiddlewareInstalled = true
