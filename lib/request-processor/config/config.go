@@ -6,7 +6,17 @@ import (
 	. "main/aikido_types"
 	"main/globals"
 	"main/log"
+	"main/utils"
 )
+
+func UpdateToken(token string) {
+	if token == globals.CurrentToken {
+		log.Debugf("Token is the same as previous one, skipping config reload...")
+		return
+	}
+	globals.CurrentToken = token
+	log.Infof("Token changed to %s", utils.AnonymizeToken(token))
+}
 
 func ReloadAikidoConfig(conf *AikidoConfigData, initJson string) {
 	err := json.Unmarshal([]byte(initJson), conf)
@@ -21,7 +31,7 @@ func ReloadAikidoConfig(conf *AikidoConfigData, initJson string) {
 	if conf.Token != "" {
 		server := globals.CreateServer(conf.Token)
 		server.AikidoConfig = *conf
-		globals.CurrentToken = conf.Token
+		UpdateToken(conf.Token)
 	}
 }
 

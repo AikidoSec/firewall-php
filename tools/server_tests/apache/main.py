@@ -86,7 +86,7 @@ LogFormat "%h %l %u %t %r %>s %b" combined
 
         SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1
 
-        {env_conf}
+{env_conf}
     </Directory>
 
     ErrorLog {log_dir}/error_{name}.log
@@ -213,7 +213,7 @@ def get_user_and_group(folder_path):
 def apache_create_config_file(test_name, test_dir, server_port, env):
     env_conf = ""
     for e in env:
-        env_conf += f"SetEnv {e} {env[e]}\n"
+        env_conf += f"\t\tSetEnv {e} {env[e]}\n"
 
     apache_config = apache_conf_template.format(
         server_root = apache_server_root,
@@ -294,7 +294,7 @@ def apache_mod_php_process_test(test_data):
 
 
 def apache_mod_php_pre_tests():
-    subprocess.Popen([f'/usr/sbin/{apache_binary}'])
+    subprocess.Popen([f'/usr/sbin/{apache_binary}'], env=dict(os.environ, AIKIDO_DEBUG="1", AIKIDO_DISK_LOGS="1"))
     print("Apache server started!")
 
 

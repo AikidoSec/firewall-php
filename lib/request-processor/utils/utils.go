@@ -454,3 +454,10 @@ func GetArch() string {
 func IsWildcardEndpoint(method, route string) bool {
 	return method == "*" || strings.Contains(route, "*")
 }
+
+func AnonymizeToken(token string) string {
+	if len(token) <= 4 {
+		return "***" + token
+	}
+	return "***" + token[len(token)-4:]
+}

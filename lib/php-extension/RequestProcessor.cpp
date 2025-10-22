@@ -6,13 +6,13 @@ std::string RequestProcessor::GetInitData(std::string token) {
     LoadLaravelEnvFile();
     LoadEnvironment();
 
-    if (token.empty()) {
-        token = AIKIDO_GLOBAL(token);
+    if (!token.empty()) {
+        AIKIDO_GLOBAL(token) = token;
     }
 
     json initData = {
         {"socket_path", AIKIDO_GLOBAL(socket_path)},
-        {"token", token},
+        {"token", AIKIDO_GLOBAL(token)},
         {"platform_name", AIKIDO_GLOBAL(sapi_name)},
         {"platform_version", PHP_VERSION},
         {"endpoint", AIKIDO_GLOBAL(endpoint)},
