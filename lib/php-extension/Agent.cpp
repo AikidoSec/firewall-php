@@ -1,27 +1,37 @@
 #include "Includes.h"
 
-pid_t Agent::GetPID(const std::string& aikidoAgentPath) {
-    int agentPID = -1;
+vector<pid_t> Agent::GetPIDsFromRunningProcesses(const std::string& aikidoAgentPath) {
+    vector<pid_t> agentPIDs;
 
     DIR *dirTree = opendir("/proc");
     if (dirTree) {
         struct dirent *dirTreeEntry;
-        while (agentPID < 0 && (dirTreeEntry = readdir(dirTree))) {
-            int currentPid = atoi(dirTreeEntry->d_name);
-            if (currentPid > 0) {
+        while (dirTreeEntry = readdir(dirTree)) {
+            int pid = atoi(dirTreeEntry->d_name);
+            if (pid > 0) {
                 string cmdPath = string("/proc/") + dirTreeEntry->d_name + "/cmdline";
                 ifstream cmdFile(cmdPath.c_str());
                 string cmdLine;
                 getline(cmdFile, cmdLine);
                 if (!cmdLine.empty() && cmdLine.find(aikidoAgentPath) != string::npos) {
-                    agentPID = currentPid;
+                    agentPIDs.push_back(pid);
                 }
             }
         }
         closedir(dirTree);
     }
 
-    return agentPID;
+    return agentPIDs;
+}
+
+pid_t Agent::GetPIDFromFile(const std::string& aikidoAgentPidPath) {
+    std::ifstream pidFile(aikidoAgentPidPath);
+    if (pidFile.is_open()) {
+        int pid;
+        pidFile >> pid;
+        return pid;
+    }
+    return -1;
 }
 
 bool Agent::Start(std::string aikidoAgentPath, std::string token) {
@@ -73,25 +83,55 @@ bool Agent::SpawnDetached(std::string aikidoAgentPath, std::string token) {
     return WIFEXITED(wstatus) && WEXITSTATUS(wstatus) == 0;
 }
 
+bool Agent::RemoveSocketFile(const std::string& aikidoAgentSocketPath) {
+    if (!std::filesystem::remove(aikidoAgentSocketPath)) {
+        AIKIDO_LOG_WARN("Failed to remove socket file \"%s\"!\n", aikidoAgentSocketPath.c_str());
+        return false;
+    }
+    AIKIDO_LOG_INFO("Successfully removed socket file \"%s\"!\n", aikidoAgentSocketPath.c_str());
+    return true;
+}
+
+void Agent::KillProcesses(std::vector<pid_t>& pids) {
+    for (pid_t pid : pids) {
+        if (kill(pid, SIGTERM) != 0) {
+            AIKIDO_LOG_WARN("Failed to terminate Aikido Agent process %d!\n", pid);
+        } else {
+            AIKIDO_LOG_INFO("Successfully terminated Aikido Agent process %d!\n", pid);
+        }
+    }
+}
+
+bool Agent::IsRunning(const std::string& aikidoAgentPath, const std::string& aikidoAgentSocketPath) {
+    if (!std::filesystem::exists(aikidoAgentSocketPath)) {
+        AIKIDO_LOG_INFO("No socket file found!\n");
+        return false;
+    } 
+    
+    AIKIDO_LOG_INFO("Found socket file \"%s\" on disk! Checking if Aikido Agent process is running...\n", aikidoAgentSocketPath.c_str());
+
+    std::string aikidoAgentPidPath = "/run/aikido-" + std::string(PHP_AIKIDO_VERSION) + "/aikido-agent.pid";
+    pid_t agentPIDFromFile = this->GetPIDFromFile(aikidoAgentPidPath);
+    vector<pid_t> agentPIDsFromRunningProcesses = this->GetPIDsFromRunningProcesses(aikidoAgentPath);
+    if (agentPIDFromFile == -1 || 
+        agentPIDsFromRunningProcesses.size() != 1 || 
+        agentPIDFromFile != agentPIDsFromRunningProcesses[0]) {
+        AIKIDO_LOG_INFO("Aikido Agent not running: PID file %d, running process PIDs %s!\n", agentPIDFromFile, agentPIDsFromRunningProcesses.size() > 0 ? to_string(agentPIDsFromRunningProcesses[0]).c_str() : "-1");
+        this->KillProcesses(agentPIDsFromRunningProcesses);
+        this->RemoveSocketFile(aikidoAgentSocketPath);
+        return false;
+    }
+
+    return true;
+}
+
 bool Agent::Init() {
     std::string aikidoAgentPath = "/opt/aikido-" + std::string(PHP_AIKIDO_VERSION) + "/aikido-agent";
     std::string aikidoAgentSocketPath = "/run/aikido-" + std::string(PHP_AIKIDO_VERSION) + "/aikido-agent.sock";
 
-    if (!std::filesystem::exists(aikidoAgentSocketPath)) {
-        AIKIDO_LOG_INFO("Found socket file \"%s\" on disk! Checking if Aikido Agent is already running...\n", aikidoAgentSocketPath.c_str());
-        pid_t agentPID = this->GetPID(aikidoAgentPath);
-        if (agentPID != -1) {
-            AIKIDO_LOG_INFO("Aikido Agent (PID: %d) already running on socket %s!\n", agentPID, aikidoAgentSocketPath.c_str());
-            return true;
-        } else {
-            AIKIDO_LOG_WARN("Aikido Agent is not running, but socket files exist! Recovering by removing old socket files...\n");
-
-            if (!std::filesystem::remove(aikidoAgentSocketPath)) {
-                AIKIDO_LOG_WARN("Failed to remove some socket files, will try to re-spawn Aikido Agent...\n");
-            } else {
-                AIKIDO_LOG_INFO("Successfully removed old socket files!\n");
-            }
-        }
+    if (this->IsRunning(aikidoAgentPath, aikidoAgentSocketPath)) {
+        AIKIDO_LOG_INFO("Aikido Agent is already running! Skipping init...\n");
+        return true;
     }
 
     std::string token = std::string("AIKIDO_TOKEN=") + AIKIDO_GLOBAL(token);

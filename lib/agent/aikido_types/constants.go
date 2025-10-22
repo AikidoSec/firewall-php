@@ -3,6 +3,7 @@ package aikido_types
 const (
 	Version                             = "1.4.0"
 	SocketPath                          = "/run/aikido-" + Version + "/aikido-agent.sock"
+	PidPath                             = "/run/aikido-" + Version + "/aikido-agent.pid"
 	ConfigUpdatedAtMethod               = "GET"
 	ConfigUpdatedAtAPI                  = "/config"
 	ConfigAPIMethod                     = "GET"

@@ -15,6 +15,7 @@ import (
 	"syscall"
 	"time"
 )
+import "fmt"
 
 var serversCleanupChannel = make(chan struct{})
 var serversCleanupTicker = time.NewTicker(2 * time.Minute)
@@ -35,6 +36,16 @@ func serversCleanupRoutine(_ *ServerData) {
 	}
 }
 
+func writePidFile() {
+	pidFile, err := os.Create(PidPath)
+	if err != nil {
+		log.Errorf("Failed to create pid file: %v", err)
+		return
+	}
+	defer pidFile.Close()
+	pidFile.WriteString(fmt.Sprintf("%d", os.Getpid()))
+}
+
 func AgentInit(initJson string) (initOk bool) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -51,6 +62,7 @@ func AgentInit(initJson string) (initOk bool) {
 		return false
 	}
 
+	writePidFile()
 	utils.StartPollingRoutine(serversCleanupChannel, serversCleanupTicker, serversCleanupRoutine, nil)
 
 	log.Infof("Aikido Agent v%s started!", Version)

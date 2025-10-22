@@ -413,7 +413,7 @@ jobs:
       - name: Prepare php-fpm
         run: |
           ls -l /usr/sbin | grep php
-          ln -s /usr/sbin/php${{ matrix.php_version }}-fpm /usr/sbin/php-fpm
+          ln -s /usr/sbin/php-fpm${{ matrix.php_version }} /usr/sbin/php-fpm
 
       # MariaDB startup compatible with your current approach
       - name: Start MariaDB (background)

@@ -5,11 +5,13 @@ typedef void (*AgentUninitFn)();
 
 class Agent {
    private:
-    std::string socketPath;
-
-    bool SocketFileExists();
-    pid_t GetPID(const std::string& aikidoAgentPath);
-    bool RemoveSocketFiles();
+    pid_t GetPIDFromFile(const std::string& aikidoAgentPidPath);
+    vector<pid_t> GetPIDsFromRunningProcesses(const std::string& aikidoAgentPath);
+    
+    bool RemoveSocketFile(const std::string& aikidoAgentSocketPath);
+    void KillProcesses(std::vector<pid_t>& pids);
+    
+    bool IsRunning(const std::string& aikidoAgentPath, const std::string& aikidoAgentSocketPath);
 
     bool Start(std::string aikidoAgentPath, std::string token);
     bool SpawnDetached(std::string aikidoAgentPath, std::string token);
