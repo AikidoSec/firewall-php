@@ -13,8 +13,8 @@ class Agent {
     
     bool IsRunning(const std::string& aikidoAgentPath, const std::string& aikidoAgentSocketPath);
 
-    bool Start(std::string aikidoAgentPath, std::string token);
-    bool SpawnDetached(std::string aikidoAgentPath, std::string token);
+    bool Start(std::string aikidoAgentPath);
+    bool SpawnDetached(std::string aikidoAgentPath);
 
    public:
     Agent() = default;
