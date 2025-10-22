@@ -120,6 +120,7 @@ bool StartsWith(const std::string& str, const std::string& prefix, bool caseSens
 }
 
 std::string GetStackTrace() {
+#if PHP_VERSION_ID >= 80100
     if (!EG(current_execute_data)) {
         return "";
     }
@@ -147,4 +148,7 @@ std::string GetStackTrace() {
     } catch (...) {
         return "";
     }
+#else
+    return "";
+#endif
 }
