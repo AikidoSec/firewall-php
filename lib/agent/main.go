@@ -52,7 +52,7 @@ func removePidFile() {
 	}
 }
 
-func AgentInit(initJson string) (initOk bool) {
+func AgentInit() (initOk bool) {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Warn("Recovered from panic:", r)
@@ -88,11 +88,7 @@ func AgentUninit() {
 }
 
 func main() {
-	if len(os.Args) != 2 {
-		log.Errorf("Usage: %s <init_json>", os.Args[0])
-		os.Exit(-1)
-	}
-	if !AgentInit(os.Args[1]) {
+	if !AgentInit() {
 		log.Errorf("Agent initialization failed!")
 		os.Exit(-2)
 	}

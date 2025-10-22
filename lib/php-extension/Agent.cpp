@@ -34,7 +34,7 @@ pid_t Agent::GetPIDFromFile(const std::string& aikidoAgentPidPath) {
     return -1;
 }
 
-bool Agent::Start(std::string aikidoAgentPath, std::string token) {
+bool Agent::Start(std::string aikidoAgentPath) {
     posix_spawnattr_t attr;
     posix_spawnattr_init(&attr);
 
@@ -43,13 +43,8 @@ bool Agent::Start(std::string aikidoAgentPath, std::string token) {
         nullptr
     };
 
-    char* envp[] = {
-        const_cast<char*>(token.c_str()),
-        nullptr
-    };
-
     pid_t agentPid;
-    int status = posix_spawn(&agentPid, aikidoAgentPath.c_str(), nullptr, &attr, argv, envp);
+    int status = posix_spawn(&agentPid, aikidoAgentPath.c_str(), nullptr, &attr, argv, nullptr);
     posix_spawnattr_destroy(&attr);
     if (status != 0) {
         AIKIDO_LOG_ERROR("Failed to start Aikido Agent process: %s\n", strerror(status));
@@ -60,7 +55,7 @@ bool Agent::Start(std::string aikidoAgentPath, std::string token) {
     return true;
 }
 
-bool Agent::SpawnDetached(std::string aikidoAgentPath, std::string token) {
+bool Agent::SpawnDetached(std::string aikidoAgentPath) {
     pid_t pid = fork();
     if (pid < 0) {
         AIKIDO_LOG_ERROR("Failed to fork: %s\n", strerror(errno));
@@ -73,7 +68,7 @@ bool Agent::SpawnDetached(std::string aikidoAgentPath, std::string token) {
             AIKIDO_LOG_ERROR("Failed to daemonize: %s\n", strerror(errno));
             _exit(1);
         }
-        this->Start(aikidoAgentPath, token);
+        this->Start(aikidoAgentPath);
         _exit(0);
     }
 
@@ -134,11 +129,9 @@ bool Agent::Init() {
         return true;
     }
 
-    std::string token = std::string("AIKIDO_TOKEN=") + AIKIDO_GLOBAL(token);
-
     AIKIDO_LOG_INFO("Starting Aikido Agent...\n");
 
-    if (!this->SpawnDetached(aikidoAgentPath, token)) {
+    if (!this->SpawnDetached(aikidoAgentPath)) {
         AIKIDO_LOG_ERROR("Failed to spawn Aikido Agent in detached mode!\n");
         return false;
     }
