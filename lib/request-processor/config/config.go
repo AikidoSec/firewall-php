@@ -42,10 +42,6 @@ func Init(initJson string) {
 		panic(fmt.Sprintf("Error parsing JSON to EnvironmentConfig: %s", err))
 	}
 
-	if globals.EnvironmentConfig.SocketPath == "" {
-		panic("Socket path not set!")
-	}
-
 	conf := AikidoConfigData{}
 	ReloadAikidoConfig(&conf, initJson)
 	log.Init(conf.DiskLogs)

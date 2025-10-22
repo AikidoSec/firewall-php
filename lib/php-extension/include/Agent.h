@@ -8,7 +8,7 @@ class Agent {
     std::string socketPath;
 
     std::string GetInitData();
-    std::string GetSocketPath();
+    bool SocketFileExists();
     pid_t GetPID(const std::string& aikidoAgentPath);
     bool RemoveSocketFiles();
 

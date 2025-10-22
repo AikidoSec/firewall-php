@@ -5,7 +5,6 @@ ZEND_DECLARE_MODULE_GLOBALS(aikido)
 
 PHP_MINIT_FUNCTION(aikido) {
     LoadEnvironment();
-    AIKIDO_GLOBAL(socket_path) = GenerateSocketPath();
     AIKIDO_GLOBAL(logger).Init();
 
     AIKIDO_LOG_INFO("MINIT started!\n");

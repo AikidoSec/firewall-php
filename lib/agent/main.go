@@ -2,14 +2,11 @@ package main
 
 import (
 	"C"
-	"main/config"
+	. "main/aikido_types"
 	"main/globals"
 	"main/grpc"
 	"main/log"
 	"main/machine"
-)
-import (
-	. "main/aikido_types"
 	"main/server_utils"
 	"main/utils"
 	"os"
@@ -46,15 +43,11 @@ func AgentInit(initJson string) (initOk bool) {
 		}
 	}()
 
-	if !config.Init(initJson) {
-		return false
-	}
-
-	log.Init(globals.EnvironmentConfig.DiskLogs)
-	log.Infof("Loaded local config: %+v", globals.EnvironmentConfig)
+	log.SetLogLevel("DEBUG")
+	log.Init(true)
 
 	machine.Init()
-	if !grpc.Init(globals.EnvironmentConfig.SocketPath) {
+	if !grpc.Init() {
 		return false
 	}
 
@@ -71,7 +64,6 @@ func AgentUninit() {
 		server_utils.Unregister(token)
 	}
 	grpc.Uninit()
-	config.Uninit()
 
 	log.Infof("Aikido Agent v%s stopped!", Version)
 	log.Uninit()

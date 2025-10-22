@@ -7,8 +7,6 @@ import (
 
 var Machine MachineData
 
-var EnvironmentConfig EnvironmentConfigData
-
 var Servers = make(map[string]*ServerData)
 var ServersMutex sync.RWMutex
 

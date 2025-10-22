@@ -11,7 +11,6 @@ std::string RequestProcessor::GetInitData(std::string token) {
     }
 
     json initData = {
-        {"socket_path", AIKIDO_GLOBAL(socket_path)},
         {"token", AIKIDO_GLOBAL(token)},
         {"platform_name", AIKIDO_GLOBAL(sapi_name)},
         {"platform_version", PHP_VERSION},

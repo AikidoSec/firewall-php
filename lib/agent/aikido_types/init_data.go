@@ -13,12 +13,6 @@ type MachineData struct {
 	IPAddress  string `json:"ip_address"`
 }
 
-type EnvironmentConfigData struct {
-	SocketPath string `json:"socket_path"` // '/run/aikido-{version}/aikido-{datetime}-{randint}.sock'
-	DiskLogs   bool   `json:"disk_logs"`   // default: false
-	LogLevel   string `json:"log_level"`   // default: 'INFO'
-}
-
 type AikidoConfigData struct {
 	ConfigMutex               sync.Mutex
 	PlatformName              string `json:"platform_name"`                          // PHP platform name (fpm-fcgi, cli-server, ...)

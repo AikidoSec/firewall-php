@@ -7,7 +7,6 @@ import (
 )
 
 type EnvironmentConfigData struct {
-	SocketPath   string `json:"socket_path"`   // '/run/aikido-{version}/aikido-{datetime}-{randint}.sock'
 	PlatformName string `json:"platform_name"` // PHP platform name (fpm-fcgi, cli-server, ...)
 }
 

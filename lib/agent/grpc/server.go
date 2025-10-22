@@ -14,6 +14,8 @@ import (
 	"path/filepath"
 	"sync/atomic"
 
+	. "main/aikido_types"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -169,11 +171,11 @@ func (s *GrpcServer) OnMonitoredUserAgentMatch(ctx context.Context, req *protos.
 
 var grpcServer *grpc.Server
 
-func StartServer(socketPath string, lis net.Listener) {
+func StartServer(lis net.Listener) {
 	grpcServer = grpc.NewServer() //grpc.MaxConcurrentStreams(100)
 	protos.RegisterAikidoServer(grpcServer, &GrpcServer{})
 
-	log.Infof("gRPC server is running on Unix socket %s", socketPath)
+	log.Infof("gRPC server is running on Unix socket %s", SocketPath)
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Warnf("gRPC server failed to serve: %v", err)
 	}
@@ -183,8 +185,8 @@ func StartServer(socketPath string, lis net.Listener) {
 
 // Creates the /run/aikido-* folder if it does not exist, in order for the socket creation to succeed
 // For now, this folder has 777 permissions as we don't know under which user the php requests will run under (apache, nginx, www-data, forge, ...)
-func createRunDirFolderIfNotExists(socketPath string) {
-	runDirectory := filepath.Dir(socketPath)
+func createRunDirFolderIfNotExists() {
+	runDirectory := filepath.Dir(SocketPath)
 	if _, err := os.Stat(runDirectory); os.IsNotExist(err) {
 		err := os.MkdirAll(runDirectory, 0777)
 		if err != nil {
@@ -197,26 +199,26 @@ func createRunDirFolderIfNotExists(socketPath string) {
 	}
 }
 
-func Init(socketPath string) bool {
+func Init() bool {
 	// Remove the socket file if it already exists
-	if _, err := os.Stat(socketPath); err == nil {
-		os.RemoveAll(socketPath)
+	if _, err := os.Stat(SocketPath); err == nil {
+		os.RemoveAll(SocketPath)
 	}
 
-	createRunDirFolderIfNotExists(socketPath)
+	createRunDirFolderIfNotExists()
 
-	lis, err := net.Listen("unix", socketPath)
+	lis, err := net.Listen("unix", SocketPath)
 	if err != nil {
 		panic(fmt.Sprintf("failed to listen: %v", err))
 	}
 
 	// Change the permissions of the socket to make it accessible by non-root users
 	// For now, this socket has 777 permissions as we don't know under which user the php requests will run under (apache, nginx, www-data, forge, ...)
-	if err := os.Chmod(socketPath, 0777); err != nil {
+	if err := os.Chmod(SocketPath, 0777); err != nil {
 		panic(fmt.Sprintf("failed to change permissions of Unix socket: %v", err))
 	}
 
-	go StartServer(socketPath, lis)
+	go StartServer(lis)
 	return true
 }
 
@@ -227,8 +229,8 @@ func Uninit() {
 	}
 
 	// Remove the socket file if it exists
-	if _, err := os.Stat(globals.EnvironmentConfig.SocketPath); err == nil {
-		if err := os.RemoveAll(globals.EnvironmentConfig.SocketPath); err != nil {
+	if _, err := os.Stat(SocketPath); err == nil {
+		if err := os.RemoveAll(SocketPath); err != nil {
 			panic(fmt.Sprintf("failed to remove existing socket: %v", err))
 		}
 	}
