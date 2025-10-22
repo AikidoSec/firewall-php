@@ -422,7 +422,8 @@ jobs:
         if: matrix.server == 'apache-mod-php'
         run: |
           a2-switch-php ${{ matrix.php_version }}
-          ln -s /usr/sbin/php-fpm${{ matrix.php_version }} /usr/sbin/php-fpm
+          ls -l /usr/sbin | grep php
+          ln -s /usr/sbin/php${{ matrix.php_version }}-fpm /usr/sbin/php-fpm
     
 
       - name: Install DEB
