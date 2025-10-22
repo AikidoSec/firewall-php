@@ -36,10 +36,11 @@ enum CALLBACK_ID {
 
     CONTEXT_USER_ID,
     CONTEXT_USER_NAME,
-    
+
     CONTEXT_RATE_LIMIT_GROUP,
 
     FUNCTION_NAME,
+    STACK_TRACE,
 
     OUTGOING_REQUEST_URL,
     OUTGOING_REQUEST_EFFECTIVE_URL,  // Effective URL after redirects (the final
