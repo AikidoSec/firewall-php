@@ -1,14 +1,5 @@
 #include "Includes.h"
 
-std::string Agent::GetInitData() {
-    json initData = {{"log_level", AIKIDO_GLOBAL(log_level_str)},
-                     {"disk_logs", AIKIDO_GLOBAL(disk_logs)}};
-
-    // Remove invalid UTF8 characters (normalize)
-    // https://json.nlohmann.me/api/basic_json/dump/
-    return NormalizeAndDumpJson(initData);
-}
-
 pid_t Agent::GetPID(const std::string& aikidoAgentPath) {
     int agentPID = -1;
 
@@ -91,10 +82,10 @@ bool Agent::Init() {
         pid_t agentPID = this->GetPID(aikidoAgentPath);
         if (agentPID != -1) {
             AIKIDO_LOG_INFO("Aikido Agent (PID: %d) already running on socket %s!\n", agentPID, aikidoAgentSocketPath.c_str());
-            return true;    
+            return true;
         } else {
             AIKIDO_LOG_WARN("Aikido Agent is not running, but socket files exist! Recovering by removing old socket files...\n");
-            
+
             if (!std::filesystem::remove(aikidoAgentSocketPath)) {
                 AIKIDO_LOG_WARN("Failed to remove some socket files, will try to re-spawn Aikido Agent...\n");
             } else {
@@ -102,12 +93,12 @@ bool Agent::Init() {
             }
         }
     }
-    
+
     std::string token = std::string("AIKIDO_TOKEN=") + AIKIDO_GLOBAL(token);
 
-    AIKIDO_LOG_INFO("Starting Aikido Agent (%s) with init data: %s\n", aikidoAgentPath.c_str(), initData.c_str());
+    AIKIDO_LOG_INFO("Starting Aikido Agent...\n");
 
-    if (!this->SpawnDetached(aikidoAgentPath, initData, token)) {
+    if (!this->SpawnDetached(aikidoAgentPath, token)) {
         AIKIDO_LOG_ERROR("Failed to spawn Aikido Agent in detached mode!\n");
         return false;
     }
