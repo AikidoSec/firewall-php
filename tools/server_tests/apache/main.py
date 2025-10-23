@@ -294,6 +294,27 @@ def apache_mod_php_process_test(test_data):
 
 
 def apache_mod_php_pre_tests():
+    # Source Apache environment variables if the file exists (Debian/Ubuntu)
+    envvars_path = '/etc/apache2/envvars'
+    if os.path.exists(envvars_path):
+        print(f"Sourcing Apache environment variables from {envvars_path}")
+        # Read and parse the envvars file to set environment variables
+        with open(envvars_path, 'r') as f:
+            for line in f:
+                line = line.strip()
+                # Skip comments and empty lines
+                if not line or line.startswith('#'):
+                    continue
+                # Look for export statements
+                if line.startswith('export '):
+                    line = line[7:]  # Remove 'export '
+                # Parse variable assignments
+                if '=' in line:
+                    key, value = line.split('=', 1)
+                    # Remove quotes if present
+                    value = value.strip().strip('"').strip("'")
+                    os.environ[key.strip()] = value
+
     subprocess.Popen([f'/usr/sbin/{apache_binary}'], env=dict(os.environ, AIKIDO_DEBUG="1", AIKIDO_DISK_LOGS="1"))
     print("Apache server started!")
 
