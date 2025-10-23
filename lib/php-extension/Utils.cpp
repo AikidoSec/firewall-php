@@ -84,7 +84,7 @@ std::string ArrayToJson(zval* array) {
                     if (Z_TYPE_P(v) == IS_STRING) {
                         val_array.push_back(Z_STRVAL_P(v));
                     }
-                } 
+                }
                 ZEND_HASH_FOREACH_END();
                 query_json[key_str] = val_array;
             }
@@ -121,6 +121,7 @@ bool StartsWith(const std::string& str, const std::string& prefix, bool caseSens
 
 std::string GetStackTrace() {
 #if PHP_VERSION_ID >= 80100
+    // Check if there's an active execution context
     if (!EG(current_execute_data)) {
         return "";
     }
