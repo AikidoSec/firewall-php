@@ -2,6 +2,7 @@ package main
 
 import (
 	"main/context"
+	"main/globals"
 	"main/grpc"
 	"main/log"
 )
@@ -17,6 +18,10 @@ func OnUserEvent() string {
 		return ""
 	}
 
-	go grpc.OnUserEvent(id, username, ip)
+	server := globals.GetCurrentServer()
+	if server == nil {
+		return ""
+	}
+	go grpc.OnUserEvent(server, id, username, ip)
 	return ""
 }

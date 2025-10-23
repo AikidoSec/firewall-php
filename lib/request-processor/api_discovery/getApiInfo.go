@@ -3,13 +3,12 @@ package api_discovery
 import (
 	. "main/aikido_types"
 	"main/context"
-	"main/globals"
 	"main/ipc/protos"
 	"main/log"
 )
 
-func GetApiInfo() *protos.APISpec {
-	if !globals.EnvironmentConfig.CollectApiSchema {
+func GetApiInfo(server *ServerData) *protos.APISpec {
+	if !server.AikidoConfig.CollectApiSchema {
 		log.Debug("AIKIDO_FEATURE_COLLECT_API_SCHEMA is not enabled -> no API schema!")
 		return nil
 	}
