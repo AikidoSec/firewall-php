@@ -457,7 +457,7 @@ func IsWildcardEndpoint(method, route string) bool {
 
 func AnonymizeToken(token string) string {
 	if len(token) <= 4 {
-		return "***" + token
+		return token
 	}
-	return "***" + token[len(token)-4:]
+	return token[len(token)-4:]
 }

@@ -16,7 +16,7 @@ func UpdateToken(token string) {
 	}
 	globals.CurrentToken = token
 	globals.CurrentServer = globals.GetServer(token)
-	log.Infof("Token changed to %s", utils.AnonymizeToken(token))
+	log.Infof("Token changed to \"AIK_RUNTIME_***%s\"", utils.AnonymizeToken(token))
 }
 
 func ReloadAikidoConfig(conf *AikidoConfigData, initJson string) {
