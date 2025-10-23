@@ -6,7 +6,7 @@ import (
 	"main/utils"
 )
 
-func advanceRateLimitingQueuesForMap(config *RateLimitingConfig, countsMap map[string]*RateLimitingCounts) {
+func advanceRateLimitingQueuesForMap(server *ServerData, config *RateLimitingConfig, countsMap map[string]*RateLimitingCounts) {
 	for _, counts := range countsMap {
 		if config.WindowSizeInMinutes <= counts.NumberOfRequestsPerWindow.Length() {
 			// Sliding window is moving, need to substract the entry that goes out of the window
@@ -17,7 +17,7 @@ func advanceRateLimitingQueuesForMap(config *RateLimitingConfig, countsMap map[s
 			numberOfRequestToSubstract := counts.NumberOfRequestsPerWindow.Pop()
 			if counts.TotalNumberOfRequests < numberOfRequestToSubstract {
 				// This should never happen, but better to have a check in place
-				log.Warnf("More requests to substract (%d) than total number of requests (%d)!",
+				log.Warnf(server.Logger, "More requests to substract (%d) than total number of requests (%d)!",
 					numberOfRequestToSubstract, counts.TotalNumberOfRequests)
 			} else {
 				// Remove the number of requests for the entry that just dropped out of the sliding window from total
@@ -35,9 +35,9 @@ func AdvanceRateLimitingQueues(server *ServerData) {
 	defer server.RateLimitingMutex.Unlock()
 
 	for _, endpoint := range server.RateLimitingMap {
-		advanceRateLimitingQueuesForMap(&endpoint.Config, endpoint.UserCounts)
-		advanceRateLimitingQueuesForMap(&endpoint.Config, endpoint.IpCounts)
-		advanceRateLimitingQueuesForMap(&endpoint.Config, endpoint.RateLimitGroupCounts)
+		advanceRateLimitingQueuesForMap(server, &endpoint.Config, endpoint.UserCounts)
+		advanceRateLimitingQueuesForMap(server, &endpoint.Config, endpoint.IpCounts)
+		advanceRateLimitingQueuesForMap(server, &endpoint.Config, endpoint.RateLimitGroupCounts)
 	}
 }
 

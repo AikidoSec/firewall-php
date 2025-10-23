@@ -1,10 +1,9 @@
 package log
 
 import (
-	"errors"
 	"fmt"
 	"log"
-	. "main/aikido_types"
+	"main/constants"
 	"os"
 	"sync/atomic"
 	"time"
@@ -17,11 +16,13 @@ const (
 	ErrorLevel int32 = 3
 )
 
-var (
-	currentLogLevel int32 = ErrorLevel
-	logger                = log.New(os.Stdout, "", 0)
-	logFile         *os.File
-)
+type AikidoLogger struct {
+	level   int32
+	logger  *log.Logger
+	logFile *os.File
+}
+
+var MainLogger *AikidoLogger = nil
 
 type AikidoFormatter struct{}
 
@@ -44,57 +45,68 @@ func (f *AikidoFormatter) Format(level int32, message string) string {
 	return logMessage
 }
 
-func logMessage(level int32, args ...interface{}) {
-	if level >= atomic.LoadInt32(&currentLogLevel) {
+func getCurrentLogger(serverLogger *AikidoLogger) *AikidoLogger {
+	if serverLogger != nil {
+		return serverLogger
+	}
+	return MainLogger
+}
+
+func logMessage(serverLogger *AikidoLogger, level int32, args ...interface{}) {
+	currentLogger := getCurrentLogger(serverLogger)
+
+	if level >= atomic.LoadInt32(&currentLogger.level) {
 		formatter := &AikidoFormatter{}
 		message := fmt.Sprint(args...)
 		formattedMessage := formatter.Format(level, message)
-		logger.Print(formattedMessage)
+		currentLogger.logger.Print(formattedMessage)
 	}
 }
 
-func logMessagef(level int32, format string, args ...interface{}) {
-	if level >= atomic.LoadInt32(&currentLogLevel) {
+func logMessagef(serverLogger *AikidoLogger, level int32, format string, args ...interface{}) {
+	currentLogger := getCurrentLogger(serverLogger)
+
+	if level >= atomic.LoadInt32(&currentLogger.level) {
 		formatter := &AikidoFormatter{}
 		message := fmt.Sprintf(format, args...)
 		formattedMessage := formatter.Format(level, message)
-		logger.Print(formattedMessage)
+		currentLogger.logger.Print(formattedMessage)
 	}
 }
 
-func Debug(args ...interface{}) {
-	logMessage(DebugLevel, args...)
+func Debug(serverLogger *AikidoLogger, args ...interface{}) {
+	logMessage(serverLogger, DebugLevel, args...)
 }
 
-func Info(args ...interface{}) {
-	logMessage(InfoLevel, args...)
+func Info(serverLogger *AikidoLogger, args ...interface{}) {
+	logMessage(serverLogger, InfoLevel, args...)
 }
 
-func Warn(args ...interface{}) {
-	logMessage(WarnLevel, args...)
+func Warn(serverLogger *AikidoLogger, args ...interface{}) {
+	logMessage(serverLogger, WarnLevel, args...)
 }
 
-func Error(args ...interface{}) {
-	logMessage(ErrorLevel, args...)
+func Error(serverLogger *AikidoLogger, args ...interface{}) {
+	logMessage(serverLogger, ErrorLevel, args...)
 }
 
-func Debugf(format string, args ...interface{}) {
-	logMessagef(DebugLevel, format, args...)
+func Debugf(serverLogger *AikidoLogger, format string, args ...interface{}) {
+	logMessagef(serverLogger, DebugLevel, format, args...)
 }
 
-func Infof(format string, args ...interface{}) {
-	logMessagef(InfoLevel, format, args...)
+func Infof(serverLogger *AikidoLogger, format string, args ...interface{}) {
+	logMessagef(serverLogger, InfoLevel, format, args...)
 }
 
-func Warnf(format string, args ...interface{}) {
-	logMessagef(WarnLevel, format, args...)
+func Warnf(serverLogger *AikidoLogger, format string, args ...interface{}) {
+	logMessagef(serverLogger, WarnLevel, format, args...)
 }
 
-func Errorf(format string, args ...interface{}) {
-	logMessagef(ErrorLevel, format, args...)
+func Errorf(serverLogger *AikidoLogger, format string, args ...interface{}) {
+	logMessagef(serverLogger, ErrorLevel, format, args...)
 }
 
-func SetLogLevel(level string) error {
+func GetIntLogLevel(level string) int32 {
 	levelInt := ErrorLevel
 	switch level {
 	case "DEBUG":
@@ -105,36 +117,49 @@ func SetLogLevel(level string) error {
 		levelInt = WarnLevel
 	case "ERROR":
 		levelInt = ErrorLevel
-	default:
-		return errors.New("invalid log level")
 	}
-	atomic.StoreInt32(&currentLogLevel, levelInt)
-	return nil
+	return levelInt
 }
 
-func Init(diskLogs bool) {
+func CreateLogger(tag string, logLevel string, diskLogs bool) *AikidoLogger {
+	currentLogger := &AikidoLogger{
+		level:   GetIntLogLevel(logLevel),
+		logger:  log.New(os.Stdout, "", 0),
+		logFile: nil,
+	}
+
 	if !diskLogs {
-		return
+		return currentLogger
 	}
-	if logFile != nil {
-		return
-	}
+
 	currentTime := time.Now()
 	timeStr := currentTime.Format("20060102150405")
-	logFilePath := fmt.Sprintf("/var/log/aikido-%s/aikido-agent-%s-%d.log", Version, timeStr, os.Getpid())
+	logFilePath := fmt.Sprintf("/var/log/aikido-%s/aikido-agent-%s-%d-%s.log", constants.Version, timeStr, os.Getpid(), tag)
 
 	var err error
-	logFile, err = os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY, 0666)
+	currentLogger.logFile, err = os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
-		log.Fatalf("Failed to open log file: %v", err)
+		currentLogger.logFile = nil
+		return currentLogger
 	}
 
-	logger.SetOutput(logFile)
+	currentLogger.logger.SetOutput(currentLogger.logFile)
+	return currentLogger
+}
+
+func DestroyLogger(currentLogger *AikidoLogger) {
+	if currentLogger.logFile == nil {
+		return
+	}
+	currentLogger.logger.SetOutput(os.Stdout)
+	currentLogger.logFile.Close()
+	currentLogger.logFile = nil
+}
+
+func Init() {
+	MainLogger = CreateLogger("main", "INFO", true)
 }
 
 func Uninit() {
-	if logFile != nil {
-		logger.SetOutput(os.Stdout)
-		logFile.Close()
-	}
+	DestroyLogger(MainLogger)
 }

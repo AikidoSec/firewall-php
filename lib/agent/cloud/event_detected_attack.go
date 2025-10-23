@@ -2,6 +2,7 @@ package cloud
 
 import (
 	. "main/aikido_types"
+	"main/constants"
 	"main/ipc/protos"
 	"main/log"
 	"main/utils"
@@ -62,15 +63,15 @@ func ShouldSendAttackDetectedEvent(server *ServerData) bool {
 	// Filter out events that are outside the current interval
 	var filteredEvents []int64
 	for _, eventTime := range server.AttackDetectedEventsSentAt {
-		if eventTime > currentTime-AttackDetectedEventsIntervalInMs {
+		if eventTime > currentTime-constants.AttackDetectedEventsIntervalInMs {
 			filteredEvents = append(filteredEvents, eventTime)
 		}
 	}
 	server.AttackDetectedEventsSentAt = filteredEvents
 
-	if len(server.AttackDetectedEventsSentAt) >= MaxAttackDetectedEventsPerInterval {
-		log.Warnf("Maximum (%d) number of \"detected_attack\" events exceeded for timeframe: %d / %d ms",
-			MaxAttackDetectedEventsPerInterval, len(server.AttackDetectedEventsSentAt), AttackDetectedEventsIntervalInMs)
+	if len(server.AttackDetectedEventsSentAt) >= constants.MaxAttackDetectedEventsPerInterval {
+		log.Warnf(server.Logger, "Maximum (server, %d) number of \"detected_attack\" events exceeded for timeframe: %d / %d ms",
+			constants.MaxAttackDetectedEventsPerInterval, len(server.AttackDetectedEventsSentAt), constants.AttackDetectedEventsIntervalInMs)
 		return false
 	}
 
@@ -90,7 +91,7 @@ func SendAttackDetectedEvent(server *ServerData, req *protos.AttackDetected) {
 		Time:    utils.GetTime(),
 	}
 
-	response, err := SendCloudRequest(server, server.AikidoConfig.Endpoint, EventsAPI, EventsAPIMethod, detectedAttackEvent)
+	response, err := SendCloudRequest(server, server.AikidoConfig.Endpoint, constants.EventsAPI, constants.EventsAPIMethod, detectedAttackEvent)
 	if err != nil {
 		LogCloudRequestError(server, "Error in sending detected attack event: ", err)
 		return

@@ -3,6 +3,7 @@ package cloud
 import (
 	"encoding/json"
 	. "main/aikido_types"
+	"main/constants"
 	"main/globals"
 	"main/log"
 	"main/utils"
@@ -17,7 +18,7 @@ func GetAgentInfo(server *ServerData) AgentInfo {
 	return AgentInfo{
 		DryMode:   !utils.IsBlockingEnabled(server),
 		Hostname:  globals.Machine.HostName,
-		Version:   Version,
+		Version:   constants.Version,
 		IPAddress: globals.Machine.IPAddress,
 		OS: OsInfo{
 			Name:    globals.Machine.OS,
@@ -35,11 +36,11 @@ func GetAgentInfo(server *ServerData) AgentInfo {
 
 func ResetHeartbeatTicker(server *ServerData) {
 	if !server.CloudConfig.ReceivedAnyStats {
-		log.Info("Resetting HeartbeatTicker to 1m!")
+		log.Info(server.Logger, "Resetting HeartbeatTicker to 1m!")
 		server.PollingData.HeartbeatTicker.Reset(1 * time.Minute)
 	} else {
-		if server.CloudConfig.HeartbeatIntervalInMS >= MinHeartbeatIntervalInMS {
-			log.Infof("Resetting HeartbeatTicker to %dms!", server.CloudConfig.HeartbeatIntervalInMS)
+		if server.CloudConfig.HeartbeatIntervalInMS >= constants.MinHeartbeatIntervalInMS {
+			log.Infof(server.Logger, "Resetting HeartbeatTicker to %dms!", server.CloudConfig.HeartbeatIntervalInMS)
 			server.PollingData.HeartbeatTicker.Reset(time.Duration(server.CloudConfig.HeartbeatIntervalInMS) * time.Millisecond)
 		}
 	}
@@ -62,34 +63,34 @@ func UpdateRateLimitingConfig(server *ServerData) {
 		rateLimitingData, exists := server.RateLimitingMap[k]
 		if exists {
 			if rateLimitingData.Config.MaxRequests == newEndpointConfig.RateLimiting.MaxRequests &&
-				rateLimitingData.Config.WindowSizeInMinutes == newEndpointConfig.RateLimiting.WindowSizeInMS*MinRateLimitingIntervalInMs {
-				log.Debugf("New rate limiting endpoint config is the same: %v", newEndpointConfig)
+				rateLimitingData.Config.WindowSizeInMinutes == newEndpointConfig.RateLimiting.WindowSizeInMS*constants.MinRateLimitingIntervalInMs {
+				log.Debugf(server.Logger, "New rate limiting endpoint config is the same: %v", newEndpointConfig)
 				continue
 			}
 
-			log.Infof("Rate limiting endpoint config has changed: %v", newEndpointConfig)
+			log.Infof(server.Logger, "Rate limiting endpoint config has changed: %v", newEndpointConfig)
 			delete(server.RateLimitingMap, k)
 			delete(server.RateLimitingWildcardMap, k)
 		}
 
 		if !newEndpointConfig.RateLimiting.Enabled {
-			log.Infof("Got new rate limiting endpoint config, but is disabled: %v", newEndpointConfig)
+			log.Infof(server.Logger, "Got new rate limiting endpoint config, but is disabled: %v", newEndpointConfig)
 			continue
 		}
 
-		if newEndpointConfig.RateLimiting.WindowSizeInMS < MinRateLimitingIntervalInMs ||
-			newEndpointConfig.RateLimiting.WindowSizeInMS > MaxRateLimitingIntervalInMs {
-			log.Warnf("Got new rate limiting endpoint config, but WindowSizeInMS is invalid: %v", newEndpointConfig)
+		if newEndpointConfig.RateLimiting.WindowSizeInMS < constants.MinRateLimitingIntervalInMs ||
+			newEndpointConfig.RateLimiting.WindowSizeInMS > constants.MaxRateLimitingIntervalInMs {
+			log.Warnf(server.Logger, "Got new rate limiting endpoint config, but WindowSizeInMS is invalid: %v", newEndpointConfig)
 			continue
 		}
 
-		log.Infof("Got new rate limiting endpoint config and storing to map: %v", newEndpointConfig)
+		log.Infof(server.Logger, "Got new rate limiting endpoint config and storing to map: %v", newEndpointConfig)
 		rateLimitingValue := &RateLimitingValue{
 			Method: k.Method,
 			Route:  k.Route,
 			Config: RateLimitingConfig{
 				MaxRequests:         newEndpointConfig.RateLimiting.MaxRequests,
-				WindowSizeInMinutes: newEndpointConfig.RateLimiting.WindowSizeInMS / MinRateLimitingIntervalInMs},
+				WindowSizeInMinutes: newEndpointConfig.RateLimiting.WindowSizeInMS / constants.MinRateLimitingIntervalInMs},
 			UserCounts:           make(map[string]*RateLimitingCounts),
 			IpCounts:             make(map[string]*RateLimitingCounts),
 			RateLimitGroupCounts: make(map[string]*RateLimitingCounts),
@@ -98,20 +99,20 @@ func UpdateRateLimitingConfig(server *ServerData) {
 		if isWildcardEndpoint(k.Route) {
 			routeRegex, err := regexp.Compile(strings.ReplaceAll(k.Route, "*", "(.*)") + "/?")
 			if err != nil {
-				log.Warnf("Route regex is not compiling: %s", k.Route)
+				log.Warnf(server.Logger, "Route regex is not compiling: %s", k.Route)
 			} else {
-				log.Infof("Stored wildcard rate limiting config for: %v", k)
+				log.Infof(server.Logger, "Stored wildcard rate limiting config for: %v", k)
 				server.RateLimitingWildcardMap[k] = &RateLimitingWildcardValue{RouteRegex: routeRegex, RateLimitingValue: rateLimitingValue}
 			}
 		}
-		log.Infof("Stored normal rate limiting config for: %v", k)
+		log.Infof(server.Logger, "Stored normal rate limiting config for: %v", k)
 		server.RateLimitingMap[k] = rateLimitingValue
 	}
 
 	for k := range server.RateLimitingMap {
 		_, exists := UpdatedEndpoints[k]
 		if !exists {
-			log.Infof("Removed rate limiting entry as it is no longer part of the config: %v", k)
+			log.Infof(server.Logger, "Removed rate limiting entry as it is no longer part of the config: %v", k)
 			delete(server.RateLimitingMap, k)
 			delete(server.RateLimitingWildcardMap, k)
 		}
@@ -119,7 +120,7 @@ func UpdateRateLimitingConfig(server *ServerData) {
 }
 
 func ApplyCloudConfig(server *ServerData) {
-	log.Infof("Applying new cloud config: %v", server.CloudConfig)
+	log.Infof(server.Logger, "Applying new cloud config: %v", server.CloudConfig)
 	ResetHeartbeatTicker(server)
 	UpdateRateLimitingConfig(server)
 }
@@ -133,7 +134,7 @@ func UpdateIpsLists(ipLists []IpsData) map[string]IpBlocklist {
 }
 
 func UpdateListsConfig(server *ServerData) bool {
-	response, err := SendCloudRequest(server, server.AikidoConfig.Endpoint, ListsAPI, ListsAPIMethod, nil)
+	response, err := SendCloudRequest(server, server.AikidoConfig.Endpoint, constants.ListsAPI, constants.ListsAPIMethod, nil)
 	if err != nil {
 		LogCloudRequestError(server, "Error in sending lists request: ", err)
 		return false
@@ -142,7 +143,7 @@ func UpdateListsConfig(server *ServerData) bool {
 	tempListsConfig := ListsConfigData{}
 	err = json.Unmarshal(response, &tempListsConfig)
 	if err != nil {
-		log.Warnf("Failed to unmarshal lists config: %v", err)
+		log.Warnf(server.Logger, "Failed to unmarshal lists config: %v", err)
 		return false
 	}
 
@@ -172,11 +173,11 @@ func StoreCloudConfig(server *ServerData, configReponse []byte) bool {
 	tempCloudConfig := CloudConfigData{}
 	err := json.Unmarshal(configReponse, &tempCloudConfig)
 	if err != nil {
-		log.Warnf("Failed to unmarshal cloud config: %v", err)
+		log.Warnf(server.Logger, "Failed to unmarshal cloud config: %v", err)
 		return false
 	}
 	if tempCloudConfig.ConfigUpdatedAt <= server.CloudConfig.ConfigUpdatedAt {
-		log.Debugf("ConfigUpdatedAt is the same!")
+		log.Debugf(server.Logger, "ConfigUpdatedAt is the same!")
 		return true
 	}
 	server.CloudConfig = tempCloudConfig
@@ -198,5 +199,5 @@ func LogCloudRequestError(server *ServerData, text string, err error) {
 		}
 		atomic.StoreUint32(&server.LoggedTokenError, 1)
 	}
-	log.Warn(text, err)
+	log.Warn(server.Logger, text, err)
 }

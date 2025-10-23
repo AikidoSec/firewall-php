@@ -1,6 +1,8 @@
 package aikido_types
 
 import (
+	"main/constants"
+	"main/log"
 	"sync"
 	"time"
 )
@@ -109,11 +111,14 @@ func NewServerDataPolling() *ServerDataPolling {
 		ConfigPollingRoutineChannel: make(chan struct{}),
 		ConfigPollingTicker:         time.NewTicker(1 * time.Minute),
 		RateLimitingChannel:         make(chan struct{}),
-		RateLimitingTicker:          time.NewTicker(MinRateLimitingIntervalInMs * time.Millisecond),
+		RateLimitingTicker:          time.NewTicker(constants.MinRateLimitingIntervalInMs * time.Millisecond),
 	}
 }
 
 type ServerData struct {
+	// Logger for the server
+	Logger *log.AikidoLogger
+
 	// Aikido config that contains info about endpoint, log_level, token, ...
 	AikidoConfig AikidoConfigData
 

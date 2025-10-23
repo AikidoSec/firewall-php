@@ -32,11 +32,11 @@ func SendCloudRequest(server *ServerData, endpoint string, route string, method 
 			return nil, fmt.Errorf("failed to marshal payload: %v", err)
 		}
 
-		log.Infof("Sending %s request to %s with size %d and content: %s", method, apiEndpoint, len(jsonData), jsonData)
+		log.Infof(server.Logger, "Sending %s request to %s with size %d and content: %s", method, apiEndpoint, len(jsonData), jsonData)
 
 		req, err = http.NewRequest(method, apiEndpoint, bytes.NewBuffer(jsonData))
 	} else {
-		log.Infof("Sending %s request to %s", method, apiEndpoint)
+		log.Infof(server.Logger, "Sending %s request to %s", method, apiEndpoint)
 		req, err = http.NewRequest(method, apiEndpoint, nil)
 	}
 
@@ -73,6 +73,6 @@ func SendCloudRequest(server *ServerData, endpoint string, route string, method 
 		return nil, fmt.Errorf("failed to read response body: %v", err)
 	}
 
-	log.Debugf("Got response: %s", body)
+	log.Debugf(server.Logger, "Got response: %s", body)
 	return body, nil
 }

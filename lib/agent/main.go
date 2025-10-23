@@ -15,7 +15,10 @@ import (
 	"syscall"
 	"time"
 )
-import "fmt"
+import (
+	"fmt"
+	"main/constants"
+)
 
 var serversCleanupChannel = make(chan struct{})
 var serversCleanupTicker = time.NewTicker(2 * time.Minute)
@@ -28,18 +31,18 @@ func serversCleanupRoutine(_ *ServerData) {
 		}
 		now := utils.GetTime()
 		lastConnectionTime := atomic.LoadInt64(&server.LastConnectionTime)
-		if now-lastConnectionTime > MinServerInactivityForCleanup {
+		if now-lastConnectionTime > constants.MinServerInactivityForCleanup {
 			// Server has been inactive
-			log.Infof("Server has been inactive for more than 2 minutes, unregistering...")
+			log.Infof(log.MainLogger, "Server has been inactive for more than 2 minutes, unregistering...")
 			server_utils.Unregister(token)
 		}
 	}
 }
 
 func writePidFile() {
-	pidFile, err := os.Create(PidPath)
+	pidFile, err := os.Create(constants.PidPath)
 	if err != nil {
-		log.Errorf("Failed to create pid file: %v", err)
+		log.Errorf(log.MainLogger, "Failed to create pid file: %v", err)
 		return
 	}
 	defer pidFile.Close()
@@ -47,22 +50,20 @@ func writePidFile() {
 }
 
 func removePidFile() {
-	if _, err := os.Stat(PidPath); err == nil {
-		os.Remove(PidPath)
+	if _, err := os.Stat(constants.PidPath); err == nil {
+		os.Remove(constants.PidPath)
 	}
 }
 
 func AgentInit() (initOk bool) {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Warn("Recovered from panic:", r)
+			log.Warn(log.MainLogger, "Recovered from panic:", r)
 			initOk = false
 		}
 	}()
 
-	log.SetLogLevel("DEBUG")
-	log.Init(true)
-
+	log.Init()
 	machine.Init()
 	if !grpc.Init() {
 		return false
@@ -71,7 +72,7 @@ func AgentInit() (initOk bool) {
 	writePidFile()
 	utils.StartPollingRoutine(serversCleanupChannel, serversCleanupTicker, serversCleanupRoutine, nil)
 
-	log.Infof("Aikido Agent v%s started!", Version)
+	log.Infof(log.MainLogger, "Aikido Agent v%s started!", constants.Version)
 	return true
 }
 
@@ -83,20 +84,20 @@ func AgentUninit() {
 	}
 	grpc.Uninit()
 	removePidFile()
-	log.Infof("Aikido Agent v%s stopped!", Version)
+	log.Infof(log.MainLogger, "Aikido Agent v%s stopped!", constants.Version)
 	log.Uninit()
 }
 
 func main() {
 	if !AgentInit() {
-		log.Errorf("Agent initialization failed!")
+		log.Errorf(log.MainLogger, "Agent initialization failed!")
 		os.Exit(-2)
 	}
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT)
 
 	signal := <-sigChan
-	log.Infof("Received signal: %s", signal)
+	log.Infof(log.MainLogger, "Received signal: %s", signal)
 	AgentUninit()
 	os.Exit(0)
 }

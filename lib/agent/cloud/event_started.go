@@ -2,6 +2,7 @@ package cloud
 
 import (
 	. "main/aikido_types"
+	"main/constants"
 	"main/utils"
 )
 
@@ -12,7 +13,7 @@ func SendStartEvent(server *ServerData) {
 		Time:  utils.GetTime(),
 	}
 
-	response, err := SendCloudRequest(server, server.AikidoConfig.Endpoint, EventsAPI, EventsAPIMethod, startedEvent)
+	response, err := SendCloudRequest(server, server.AikidoConfig.Endpoint, constants.EventsAPI, constants.EventsAPIMethod, startedEvent)
 	if err != nil {
 		LogCloudRequestError(server, "Error in sending start event: ", err)
 		return

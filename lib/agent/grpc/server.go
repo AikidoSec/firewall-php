@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"main/cloud"
+	"main/constants"
 	"main/globals"
 	"main/ipc/protos"
 	"main/log"
@@ -13,8 +14,6 @@ import (
 	"os"
 	"path/filepath"
 	"sync/atomic"
-
-	. "main/aikido_types"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -34,7 +33,7 @@ func (s *GrpcServer) OnConfig(ctx context.Context, req *protos.Config) (*emptypb
 
 	server := globals.GetServer(token)
 	if server != nil {
-		log.Debugf("Server %s already exists, skipping config update...", token)
+		log.Debugf(server.Logger, "Server %s already exists, skipping config update...", token)
 		return &emptypb.Empty{}, nil
 	}
 
@@ -52,33 +51,30 @@ func (s *GrpcServer) OnPackages(ctx context.Context, req *protos.Packages) (*emp
 }
 
 func (s *GrpcServer) OnDomain(ctx context.Context, req *protos.Domain) (*emptypb.Empty, error) {
-	log.Debugf("Received domain: %s:%d", req.GetDomain(), req.GetPort())
-
 	server := globals.GetServer(req.GetToken())
 	if server == nil {
 		return &emptypb.Empty{}, nil
 	}
+	log.Debugf(server.Logger, "Received domain: %s:%d", req.GetDomain(), req.GetPort())
 	storeDomain(server, req.GetDomain(), req.GetPort())
 	return &emptypb.Empty{}, nil
 }
 
 func (s *GrpcServer) GetRateLimitingStatus(ctx context.Context, req *protos.RateLimitingInfo) (*protos.RateLimitingStatus, error) {
-	log.Debugf("Received rate limiting info: %s %s %s %s %s %s", req.GetMethod(), req.GetRoute(), req.GetRouteParsed(), req.GetUser(), req.GetIp(), req.GetRateLimitGroup())
-
 	server := globals.GetServer(req.GetToken())
 	if server == nil {
 		return &protos.RateLimitingStatus{Block: false}, nil
 	}
+	log.Debugf(server.Logger, "Received rate limiting info: %s %s %s %s %s %s", req.GetMethod(), req.GetRoute(), req.GetRouteParsed(), req.GetUser(), req.GetIp(), req.GetRateLimitGroup())
 	return getRateLimitingStatus(server, req.GetMethod(), req.GetRoute(), req.GetRouteParsed(), req.GetUser(), req.GetIp(), req.GetRateLimitGroup()), nil
 }
 
 func (s *GrpcServer) OnRequestShutdown(ctx context.Context, req *protos.RequestMetadataShutdown) (*emptypb.Empty, error) {
-	log.Debugf("Received request metadata: %s %s %d %s %s %v", req.GetMethod(), req.GetRouteParsed(), req.GetStatusCode(), req.GetUser(), req.GetIp(), req.GetApiSpec())
-
 	server := globals.GetServer(req.GetToken())
 	if server == nil {
 		return &emptypb.Empty{}, nil
 	}
+	log.Debugf(server.Logger, "Received request metadata: %s %s %d %s %s %v", req.GetMethod(), req.GetRouteParsed(), req.GetStatusCode(), req.GetUser(), req.GetIp(), req.GetApiSpec())
 
 	go storeTotalStats(server, req.GetRateLimited())
 	go storeRoute(server, req.GetMethod(), req.GetRouteParsed(), req.GetApiSpec(), req.GetRateLimited())
@@ -91,7 +87,7 @@ func (s *GrpcServer) OnRequestShutdown(ctx context.Context, req *protos.RequestM
 func (s *GrpcServer) GetCloudConfig(ctx context.Context, req *protos.CloudConfigUpdatedAt) (*protos.CloudConfig, error) {
 	server := globals.GetServer(req.GetToken())
 	if server == nil {
-		log.Warnf("Server %s not found, returning nil", req.GetToken())
+		log.Warnf(server.Logger, "Server %s not found, returning nil", utils.AnonymizeToken(req.GetToken()))
 		return nil, status.Errorf(codes.Canceled, "CloudConfig was not updated")
 	}
 
@@ -104,11 +100,11 @@ func (s *GrpcServer) GetCloudConfig(ctx context.Context, req *protos.CloudConfig
 }
 
 func (s *GrpcServer) OnUser(ctx context.Context, req *protos.User) (*emptypb.Empty, error) {
-	log.Debugf("Received user event: %s", req.GetId())
 	server := globals.GetServer(req.GetToken())
 	if server == nil {
 		return &emptypb.Empty{}, nil
 	}
+	log.Debugf(server.Logger, "Received user event: %s", req.GetId())
 	go onUserEvent(server, req.GetId(), req.GetUsername(), req.GetIp())
 	return &emptypb.Empty{}, nil
 }
@@ -133,22 +129,22 @@ func (s *GrpcServer) OnMonitoredSinkStats(ctx context.Context, req *protos.Monit
 }
 
 func (s *GrpcServer) OnMiddlewareInstalled(ctx context.Context, req *protos.MiddlewareInstalledInfo) (*emptypb.Empty, error) {
-	log.Debugf("Received MiddlewareInstalled")
 	server := globals.GetServer(req.GetToken())
 	if server == nil {
 		return &emptypb.Empty{}, nil
 	}
+	log.Debugf(server.Logger, "Received MiddlewareInstalled")
 	atomic.StoreUint32(&server.MiddlewareInstalled, 1)
 	return &emptypb.Empty{}, nil
 }
 
 func (s *GrpcServer) OnMonitoredIpMatch(ctx context.Context, req *protos.MonitoredIpMatch) (*emptypb.Empty, error) {
-	log.Debugf("Received MonitoredIpMatch: %v", req.GetLists())
-
 	server := globals.GetServer(req.GetToken())
 	if server == nil {
 		return &emptypb.Empty{}, nil
 	}
+	log.Debugf(server.Logger, "Received MonitoredIpMatch: %v", req.GetLists())
+
 	server.StatsData.StatsMutex.Lock()
 	defer server.StatsData.StatsMutex.Unlock()
 
@@ -157,11 +153,12 @@ func (s *GrpcServer) OnMonitoredIpMatch(ctx context.Context, req *protos.Monitor
 }
 
 func (s *GrpcServer) OnMonitoredUserAgentMatch(ctx context.Context, req *protos.MonitoredUserAgentMatch) (*emptypb.Empty, error) {
-	log.Debugf("Received MonitoredUserAgentMatch: %v", req.GetLists())
 	server := globals.GetServer(req.GetToken())
 	if server == nil {
 		return &emptypb.Empty{}, nil
 	}
+	log.Debugf(server.Logger, "Received MonitoredUserAgentMatch: %v", req.GetLists())
+
 	server.StatsData.StatsMutex.Lock()
 	defer server.StatsData.StatsMutex.Unlock()
 
@@ -175,46 +172,46 @@ func StartServer(lis net.Listener) {
 	grpcServer = grpc.NewServer() //grpc.MaxConcurrentStreams(100)
 	protos.RegisterAikidoServer(grpcServer, &GrpcServer{})
 
-	log.Infof("gRPC server is running on Unix socket %s", SocketPath)
+	log.Infof(nil, "gRPC server is running on Unix socket %s", constants.SocketPath)
 	if err := grpcServer.Serve(lis); err != nil {
-		log.Warnf("gRPC server failed to serve: %v", err)
+		log.Warnf(nil, "gRPC server failed to serve: %v", err)
 	}
-	log.Info("gRPC server went down!")
+	log.Info(nil, "gRPC server went down!")
 	lis.Close()
 }
 
 // Creates the /run/aikido-* folder if it does not exist, in order for the socket creation to succeed
 // For now, this folder has 777 permissions as we don't know under which user the php requests will run under (apache, nginx, www-data, forge, ...)
 func createRunDirFolderIfNotExists() {
-	runDirectory := filepath.Dir(SocketPath)
+	runDirectory := filepath.Dir(constants.SocketPath)
 	if _, err := os.Stat(runDirectory); os.IsNotExist(err) {
 		err := os.MkdirAll(runDirectory, 0777)
 		if err != nil {
-			log.Errorf("Error in creating run directory: %v\n", err)
+			log.Errorf(nil, "Error in creating run directory: %v\n", err)
 		} else {
-			log.Infof("Run directory %s created successfully.\n", runDirectory)
+			log.Infof(nil, "Run directory %s created successfully.\n", runDirectory)
 		}
 	} else {
-		log.Infof("Run directory %s already exists.\n", runDirectory)
+		log.Infof(nil, "Run directory %s already exists.\n", runDirectory)
 	}
 }
 
 func Init() bool {
 	// Remove the socket file if it already exists
-	if _, err := os.Stat(SocketPath); err == nil {
-		os.RemoveAll(SocketPath)
+	if _, err := os.Stat(constants.SocketPath); err == nil {
+		os.RemoveAll(constants.SocketPath)
 	}
 
 	createRunDirFolderIfNotExists()
 
-	lis, err := net.Listen("unix", SocketPath)
+	lis, err := net.Listen("unix", constants.SocketPath)
 	if err != nil {
 		panic(fmt.Sprintf("failed to listen: %v", err))
 	}
 
 	// Change the permissions of the socket to make it accessible by non-root users
 	// For now, this socket has 777 permissions as we don't know under which user the php requests will run under (apache, nginx, www-data, forge, ...)
-	if err := os.Chmod(SocketPath, 0777); err != nil {
+	if err := os.Chmod(constants.SocketPath, 0777); err != nil {
 		panic(fmt.Sprintf("failed to change permissions of Unix socket: %v", err))
 	}
 
@@ -225,12 +222,12 @@ func Init() bool {
 func Uninit() {
 	if grpcServer != nil {
 		grpcServer.Stop()
-		log.Infof("gRPC server has been stopped!")
+		log.Infof(nil, "gRPC server has been stopped!")
 	}
 
 	// Remove the socket file if it exists
-	if _, err := os.Stat(SocketPath); err == nil {
-		if err := os.RemoveAll(SocketPath); err != nil {
+	if _, err := os.Stat(constants.SocketPath); err == nil {
+		if err := os.RemoveAll(constants.SocketPath); err != nil {
 			panic(fmt.Sprintf("failed to remove existing socket: %v", err))
 		}
 	}

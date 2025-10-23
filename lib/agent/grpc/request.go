@@ -3,6 +3,7 @@ package grpc
 import (
 	. "main/aikido_types"
 	"main/api_discovery"
+	"main/constants"
 	"main/ipc/protos"
 	"main/log"
 	"main/utils"
@@ -73,7 +74,7 @@ func storeSinkStats(server *ServerData, protoSinkStats *protos.MonitoredSinkStat
 	monitoredSinkTimings.WithoutContext += int(protoSinkStats.GetWithoutContext())
 	monitoredSinkTimings.Total += int(protoSinkStats.GetTotal())
 	monitoredSinkTimings.Timings = append(monitoredSinkTimings.Timings, protoSinkStats.GetTimings()...)
-	if len(monitoredSinkTimings.Timings) >= MinStatsCollectedForRelevantMetrics {
+	if len(monitoredSinkTimings.Timings) >= constants.MinStatsCollectedForRelevantMetrics {
 		monitoredSinkTimings.CompressedTimings = append(monitoredSinkTimings.CompressedTimings, CompressedTiming{
 			AverageInMS:  utils.ComputeAverage(monitoredSinkTimings.Timings),
 			Percentiles:  utils.ComputePercentiles(monitoredSinkTimings.Timings),
@@ -265,19 +266,19 @@ func getRateLimitingStatus(server *ServerData, method, route, routeParsed, user,
 	if rateLimitGroup != "" {
 		// If the rate limit group exists, we only try to rate limit by rate limit group
 		if isRateLimitingThresholdExceeded(&rateLimitingDataMatch.Config, rateLimitingDataMatch.RateLimitGroupCounts, rateLimitGroup) {
-			log.Infof("Rate limited request for group %s - %s %s - %v", rateLimitGroup, method, routeParsed, rateLimitingDataMatch.RateLimitGroupCounts[rateLimitGroup])
+			log.Infof(server.Logger, "Rate limited request for group %s - %s %s - %v", rateLimitGroup, method, routeParsed, rateLimitingDataMatch.RateLimitGroupCounts[rateLimitGroup])
 			return &protos.RateLimitingStatus{Block: true, Trigger: "group"}
 		}
 	} else if user != "" {
 		// Otherwise, if the user exists, we try to rate limit by user
 		if isRateLimitingThresholdExceeded(&rateLimitingDataMatch.Config, rateLimitingDataMatch.UserCounts, user) {
-			log.Infof("Rate limited request for user %s - %s %s - %v", user, method, routeParsed, rateLimitingDataMatch.UserCounts[user])
+			log.Infof(server.Logger, "Rate limited request for user %s - %s %s - %v", user, method, routeParsed, rateLimitingDataMatch.UserCounts[user])
 			return &protos.RateLimitingStatus{Block: true, Trigger: "user"}
 		}
 	} else {
 		// Otherwise, we try to rate limit by ip
 		if isRateLimitingThresholdExceeded(&rateLimitingDataMatch.Config, rateLimitingDataMatch.IpCounts, ip) {
-			log.Infof("Rate limited request for ip %s - %s %s - %v", ip, method, routeParsed, rateLimitingDataMatch.IpCounts[ip])
+			log.Infof(server.Logger, "Rate limited request for ip %s - %s %s - %v", ip, method, routeParsed, rateLimitingDataMatch.IpCounts[ip])
 			return &protos.RateLimitingStatus{Block: true, Trigger: "ip"}
 		}
 	}

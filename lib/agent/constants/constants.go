@@ -1,4 +1,4 @@
-package aikido_types
+package constants
 
 const (
 	Version                             = "1.4.0"

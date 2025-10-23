@@ -2,6 +2,7 @@ package cloud
 
 import (
 	. "main/aikido_types"
+	"main/constants"
 	"main/utils"
 	"sync/atomic"
 )
@@ -149,7 +150,7 @@ func SendHeartbeatEvent(server *ServerData) {
 		MiddlewareInstalled: GetMiddlewareInstalled(server),
 	}
 
-	response, err := SendCloudRequest(server, server.AikidoConfig.Endpoint, EventsAPI, EventsAPIMethod, heartbeatEvent)
+	response, err := SendCloudRequest(server, server.AikidoConfig.Endpoint, constants.EventsAPI, constants.EventsAPIMethod, heartbeatEvent)
 	if err != nil {
 		LogCloudRequestError(server, "Error in sending heartbeat event: ", err)
 		return
