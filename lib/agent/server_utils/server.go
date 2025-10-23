@@ -28,7 +28,7 @@ func storeConfig(server *ServerData, req *protos.Config) {
 }
 
 func Register(token string, req *protos.Config) {
-	log.Infof(nil, "Registering server %s...", utils.AnonymizeToken(token))
+	log.Infof(log.MainLogger, "Registering server %s...", utils.AnonymizeToken(token))
 
 	server := globals.CreateServer(token)
 	storeConfig(server, req)
@@ -39,11 +39,11 @@ func Register(token string, req *protos.Config) {
 	cloud.Init(server)
 	rate_limiting.Init(server)
 
-	log.Infof(nil, "Server %s registered successfully!", utils.AnonymizeToken(token))
+	log.Infof(log.MainLogger, "Server %s registered successfully!", utils.AnonymizeToken(token))
 }
 
 func Unregister(token string) {
-	log.Infof(nil, "Unregistering server %s...", utils.AnonymizeToken(token))
+	log.Infof(log.MainLogger, "Unregistering server %s...", utils.AnonymizeToken(token))
 	server := globals.GetServer(token)
 	if server == nil {
 		return
@@ -52,5 +52,5 @@ func Unregister(token string) {
 	cloud.Uninit(server)
 	globals.DeleteServer(token)
 
-	log.Infof(nil, "Server %s unregistered successfully!", utils.AnonymizeToken(token))
+	log.Infof(log.MainLogger, "Server %s unregistered successfully!", utils.AnonymizeToken(token))
 }

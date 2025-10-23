@@ -172,11 +172,11 @@ func StartServer(lis net.Listener) {
 	grpcServer = grpc.NewServer() //grpc.MaxConcurrentStreams(100)
 	protos.RegisterAikidoServer(grpcServer, &GrpcServer{})
 
-	log.Infof(nil, "gRPC server is running on Unix socket %s", constants.SocketPath)
+	log.Infof(log.MainLogger, "gRPC server is running on Unix socket %s", constants.SocketPath)
 	if err := grpcServer.Serve(lis); err != nil {
-		log.Warnf(nil, "gRPC server failed to serve: %v", err)
+		log.Warnf(log.MainLogger, "gRPC server failed to serve: %v", err)
 	}
-	log.Info(nil, "gRPC server went down!")
+	log.Info(log.MainLogger, "gRPC server went down!")
 	lis.Close()
 }
 
@@ -187,12 +187,12 @@ func createRunDirFolderIfNotExists() {
 	if _, err := os.Stat(runDirectory); os.IsNotExist(err) {
 		err := os.MkdirAll(runDirectory, 0777)
 		if err != nil {
-			log.Errorf(nil, "Error in creating run directory: %v\n", err)
+			log.Errorf(log.MainLogger, "Error in creating run directory: %v\n", err)
 		} else {
-			log.Infof(nil, "Run directory %s created successfully.\n", runDirectory)
+			log.Infof(log.MainLogger, "Run directory %s created successfully.\n", runDirectory)
 		}
 	} else {
-		log.Infof(nil, "Run directory %s already exists.\n", runDirectory)
+		log.Infof(log.MainLogger, "Run directory %s already exists.\n", runDirectory)
 	}
 }
 
@@ -222,7 +222,7 @@ func Init() bool {
 func Uninit() {
 	if grpcServer != nil {
 		grpcServer.Stop()
-		log.Infof(nil, "gRPC server has been stopped!")
+		log.Infof(log.MainLogger, "gRPC server has been stopped!")
 	}
 
 	// Remove the socket file if it exists

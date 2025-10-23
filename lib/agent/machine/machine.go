@@ -65,5 +65,5 @@ func Init() {
 		IPAddress:  getIPAddress(),
 	}
 
-	log.Infof(nil, "Machine info: %+v", globals.Machine)
+	log.Infof(log.MainLogger, "Machine info: %+v", globals.Machine)
 }

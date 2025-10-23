@@ -25,6 +25,10 @@ func ReloadAikidoConfig(conf *AikidoConfigData, initJson string) {
 		panic(fmt.Sprintf("Error parsing JSON to AikidoConfig: %s", err))
 	}
 
+	if err := log.SetLogLevel(conf.LogLevel); err != nil {
+		panic(fmt.Sprintf("Error setting log level: %s", err))
+	}
+
 	if conf.Token != "" {
 		server := globals.CreateServer(conf.Token)
 		server.AikidoConfig = *conf
