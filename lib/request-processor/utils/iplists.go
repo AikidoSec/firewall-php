@@ -1,19 +1,19 @@
 package utils
 
 import (
-	"main/aikido_types"
+	. "main/aikido_types"
 	"net/netip"
 
 	"go4.org/netipx"
 )
 
-func BuildIpList(description string, ipsList []string) (*aikido_types.IpList, error) {
+func BuildIpList(description string, ipsList []string) (*IpList, error) {
 	ipSet, err := BuildIpSet(ipsList)
 	if err != nil {
 		return nil, err
 	}
 
-	return &aikido_types.IpList{
+	return &IpList{
 		Description: description,
 		IpSet:       *ipSet,
 	}, nil

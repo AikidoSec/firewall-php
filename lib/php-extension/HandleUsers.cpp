@@ -29,7 +29,6 @@ ZEND_FUNCTION(set_user) {
     }
 
     ScopedTimer scopedTimer("set_user", "aikido_op");
-    requestProcessor.LoadConfig();
 
     char* id = nullptr;
     size_t idLength = 0;
