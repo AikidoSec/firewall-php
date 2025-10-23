@@ -225,7 +225,7 @@ def apache_create_config_file(test_name, test_dir, server_port, env):
         test_dir = test_dir,
         log_dir = apache_log_folder,
         user = apache_user,
-        optional_conf = apache_include_conf,
+        optional_conf = "", # apache_include_conf,
         error_log = apache_error_log,
         env_conf = env_conf
     )
