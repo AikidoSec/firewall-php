@@ -32,8 +32,7 @@ func serversCleanupRoutine(_ *ServerData) {
 		now := utils.GetTime()
 		lastConnectionTime := atomic.LoadInt64(&server.LastConnectionTime)
 		if now-lastConnectionTime > constants.MinServerInactivityForCleanup {
-			// Server has been inactive
-			log.Infof(log.MainLogger, "Server has been inactive for more than 2 minutes, unregistering...")
+			log.Infof(log.MainLogger, "Server \"AIK_RUNTIME_***%s\" has been inactive for more than 2 minutes, unregistering...", utils.AnonymizeToken(token))
 			server_utils.Unregister(token)
 		}
 	}

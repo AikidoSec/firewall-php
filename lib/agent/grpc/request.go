@@ -256,7 +256,7 @@ func getRateLimitingDataForEndpoint(server *ServerData, method, route, routePars
 
 func getRateLimitingStatus(server *ServerData, method, route, routeParsed, user, ip, rateLimitGroup string) *protos.RateLimitingStatus {
 	if server == nil {
-		return &protos.RateLimitingStatus{Block: false}
+		return nil
 	}
 
 	server.RateLimitingMutex.RLock()

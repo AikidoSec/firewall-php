@@ -12,4 +12,4 @@ AIKIDO_LOG_LEVEL=INFO
 ?>	
 
 --EXPECT--	
-[AIKIDO][INFO] Token changed to AIK_RUNTIME_***here
+[AIKIDO][INFO] Token changed to "AIK_RUNTIME_***here"
