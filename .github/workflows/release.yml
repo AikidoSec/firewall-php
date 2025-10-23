@@ -37,3 +37,12 @@ jobs:
       with:
         files: |
           ./**/aikido-php-firewall*
+    
+    - name: Deploy to GitHub Release Latest
+      uses: softprops/action-gh-release@72f2c25fcb47643c292f7107632f7a47c1df5cd8 # v2
+      with:
+        name: latest
+        make_latest: true
+        overwrite_files: true
+        files: |
+          ./**/aikido-php-firewall*
