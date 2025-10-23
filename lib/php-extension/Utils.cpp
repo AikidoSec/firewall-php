@@ -126,28 +126,23 @@ std::string GetStackTrace() {
     }
 
     zval trace;
+    zend_fetch_debug_backtrace(&trace, 0, DEBUG_BACKTRACE_IGNORE_ARGS, 0);
 
-    try {
-        zend_fetch_debug_backtrace(&trace, 0, DEBUG_BACKTRACE_IGNORE_ARGS, 0);
-
-        if (Z_TYPE(trace) != IS_ARRAY) {
-            zval_ptr_dtor(&trace);
-            return "";
-        }
-
-        zend_string *trace_string = zend_trace_to_string(Z_ARRVAL(trace), true);
-
-        std::string result;
-        if (trace_string) {
-            result = std::string(ZSTR_VAL(trace_string), ZSTR_LEN(trace_string));
-            zend_string_release(trace_string);
-        }
-
+    if (Z_TYPE(trace) != IS_ARRAY) {
         zval_ptr_dtor(&trace);
-        return result;
-    } catch (...) {
         return "";
     }
+
+    zend_string *trace_string = zend_trace_to_string(Z_ARRVAL(trace), true);
+
+    std::string result;
+    if (trace_string) {
+        result = std::string(ZSTR_VAL(trace_string), ZSTR_LEN(trace_string));
+        zend_string_release(trace_string);
+    }
+
+    zval_ptr_dtor(&trace);
+    return result;
 #else
     return "";
 #endif
