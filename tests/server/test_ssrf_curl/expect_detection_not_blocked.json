@@ -18,7 +18,6 @@
         "blocked": false,
         "source": "body",
         "path": ".url",
-        "stack": "",
         "payload": "http://127.0.0.1:8081",
         "metadata": {
             "hostname": "127.0.0.1",

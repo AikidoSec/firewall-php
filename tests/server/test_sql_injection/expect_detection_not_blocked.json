@@ -18,7 +18,6 @@
         "blocked": false,
         "source": "body",
         "path": ".userId",
-        "stack": "",
         "payload": "1 OR 1=1",
         "metadata": {
             "dialect": "sqlite",
