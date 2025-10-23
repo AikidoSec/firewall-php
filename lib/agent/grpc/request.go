@@ -299,6 +299,10 @@ func getIpsList(ipsList map[string]IpBlocklist) map[string]*protos.IpList {
 }
 
 func getCloudConfig(server *ServerData, configUpdatedAt int64) *protos.CloudConfig {
+	if server == nil {
+		return nil
+	}
+
 	isBlockingEnabled := utils.IsBlockingEnabled(server)
 
 	server.CloudConfigMutex.Lock()
