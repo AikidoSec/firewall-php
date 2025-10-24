@@ -12,6 +12,16 @@ php_fpm_bin = "/usr/sbin/php-fpm"
 php_fpm_run_dir = "/run/php-fpm"
 log_dir = "/var/log"
 
+if os.path.exists('/etc/httpd'):
+    # Centos
+    php_fpm_config_dir = "/etc/php-fpm.d"
+else:
+    # Debian
+    # Get the first PHP version from /etc/php
+    php_versions = sorted([d for d in os.listdir('/etc/php') if os.path.isdir(os.path.join('/etc/php', d))])
+    php_version = php_versions[0] if php_versions else "8.2"
+    php_fpm_config_dir = f"/etc/php/{php_version}/fpm/pool.d"
+
 
 def get_user_of_process(process_name):
     # Iterate over all running processes
@@ -154,7 +164,7 @@ def php_fpm_create_conf_file(test_dir, test_name, user, env):
     for e in env:
         php_fpm_config += f"env[%s] = %s\n" % (e, env[e])
         
-    php_fpm_config_file_path = os.path.join(test_dir, f"{test_name}.conf")
+    php_fpm_config_file_path = os.path.join(php_fpm_config_dir, f"{test_name}.conf")
     with open(php_fpm_config_file_path, "w") as fpm_file:
         fpm_file.write(php_fpm_config)
 
@@ -164,7 +174,7 @@ def php_fpm_create_conf_file(test_dir, test_name, user, env):
 
 
 def nginx_php_fpm_init(tests_dir):
-    pass
+    subprocess.run(['rm', '-rf', f'{php_fpm_config_dir}/*'])
 
 
 def nginx_php_fpm_process_test(test_data):
@@ -185,19 +195,13 @@ def nginx_php_fpm_pre_tests():
     create_folder(f'{log_dir}/php-fpm')
     modify_nginx_conf(nginx_global_conf)
     subprocess.run(['nginx'], check=True)
-    print("nginx server restarted!")
+    subprocess.run([php_fpm_bin, '--allow-to-run-as-root'], check=True)
+    print("nginx and php-fpm servers restarted!")
     time.sleep(5)
 
 
 def nginx_php_fpm_start_server(test_data, test_lib_dir, valgrind):
-    php_fpm_command = [php_fpm_bin, "--force-stderr", "--nodaemonize", "--allow-to-run-as-root", "--fpm-config", test_data["fpm_config"]]
-    print("PHP-FPM command: ", php_fpm_command)
-
-    env_tmp = {}
-    for e in test_data["env"]:
-        if e in [ "AIKIDO_ENDPOINT", "AIKIDO_REALTIME_ENDPOINT", "AIKIDO_DISABLE", "AIKIDO_DISK_LOGS" ]:
-            env_tmp[e] = test_data["env"][e]
-    return subprocess.Popen(php_fpm_command, env=env_tmp)
+    return None
 
 
 def nginx_php_fpm_uninit():

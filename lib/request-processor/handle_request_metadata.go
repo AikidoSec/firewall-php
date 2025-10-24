@@ -1,12 +1,15 @@
 package main
 
 import (
+	. "main/aikido_types"
 	"main/api_discovery"
 	"main/context"
+	"main/globals"
 	"main/grpc"
 	"main/ipc/protos"
 	"main/log"
 	"main/utils"
+	webscanner "main/vulnerabilities/web-scanner"
 )
 
 func OnPreRequest() string {
@@ -14,23 +17,28 @@ func OnPreRequest() string {
 	return ""
 }
 
-func OnRequestShutdownReporting(method, route, routeParsed string, statusCode int, user, ip, rateLimitGroup string, apiSpec *protos.APISpec, rateLimited bool) {
+func OnRequestShutdownReporting(server *ServerData, method, route, routeParsed string, statusCode int, user, ip, rateLimitGroup string, apiSpec *protos.APISpec, rateLimited bool, queryParsed map[string]interface{}) {
 	if method == "" || route == "" || statusCode == 0 {
 		return
 	}
 
 	log.Info("[RSHUTDOWN] Got request metadata: ", method, " ", route, " ", statusCode)
-
-	if !rateLimited && !utils.ShouldDiscoverRoute(statusCode, route, method) {
+	isWebScanner := webscanner.IsWebScanner(method, route, queryParsed)
+	shouldDiscoverRoute := utils.ShouldDiscoverRoute(statusCode, route, method)
+	if !rateLimited && !shouldDiscoverRoute && !isWebScanner {
 		return
 	}
 
 	log.Info("[RSHUTDOWN] Got API spec: ", apiSpec)
-	grpc.OnRequestShutdown(method, route, routeParsed, statusCode, user, ip, rateLimitGroup, apiSpec, rateLimited)
+	grpc.OnRequestShutdown(server, method, route, routeParsed, statusCode, user, ip, rateLimitGroup, apiSpec, rateLimited, isWebScanner, shouldDiscoverRoute)
 }
 
 func OnPostRequest() string {
-	go OnRequestShutdownReporting(context.GetMethod(), context.GetRoute(), context.GetParsedRoute(), context.GetStatusCode(), context.GetUserId(), context.GetIp(), context.GetRateLimitGroup(), api_discovery.GetApiInfo(), context.IsEndpointRateLimited())
+	server := globals.GetCurrentServer()
+	if server == nil {
+		return ""
+	}
+	go OnRequestShutdownReporting(server, context.GetMethod(), context.GetRoute(), context.GetParsedRoute(), context.GetStatusCode(), context.GetUserId(), context.GetIp(), context.GetRateLimitGroup(), api_discovery.GetApiInfo(server), context.IsEndpointRateLimited(), context.GetQueryParsed())
 	context.Clear()
 	return ""
 }

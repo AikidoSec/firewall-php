@@ -27,10 +27,6 @@ std::string GetDateTime() {
     return time_str;
 }
 
-std::string GenerateSocketPath() {
-    return "/run/aikido-" + std::string(PHP_AIKIDO_VERSION) + "/aikido-" + GetDateTime() + "-" + GetRandomNumber() + ".sock";
-}
-
 const char* GetEventName(EVENT_ID event) {
     switch (event) {
         case EVENT_PRE_REQUEST:

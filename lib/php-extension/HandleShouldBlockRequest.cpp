@@ -43,8 +43,6 @@ ZEND_FUNCTION(should_block_request) {
         return;
     }
 
-    requestProcessor.LoadConfig();
-
     if (!CheckBlocking(EVENT_GET_BLOCKING_STATUS, checkedShouldBlockRequest)) {
         return;
     }
@@ -75,8 +73,6 @@ ZEND_FUNCTION(auto_block_request) {
     if (AIKIDO_GLOBAL(disable) == true) {
         return;
     }
-
-    requestProcessor.LoadConfig();
 
     CheckBlocking(EVENT_GET_AUTO_BLOCKING_STATUS, checkedAutoBlock);
 }

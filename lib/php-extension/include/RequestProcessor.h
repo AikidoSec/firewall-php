@@ -12,7 +12,6 @@ class RequestProcessor {
    private:
     bool initFailed = false;
     bool requestInitialized = false;
-    bool configReloaded = false;
     void* libHandle = nullptr;
     uint64_t numberOfRequests = 0;
     RequestProcessorContextInitFn requestProcessorContextInitFn = nullptr;
