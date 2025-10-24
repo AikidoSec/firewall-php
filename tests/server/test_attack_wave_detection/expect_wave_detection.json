@@ -1,0 +1,14 @@
+
+{
+    "type": "detected_attack_wave",
+    "request": {
+        "ipAddress": "5.8.19.22"
+    },
+    "attack": {
+        "metadata": {}
+    },
+    "agent": {
+        "dryMode": false,
+        "library": "firewall-php"
+    }
+}
