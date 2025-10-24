@@ -8,7 +8,6 @@ import (
 	"main/grpc"
 	"main/ipc/protos"
 	"main/log"
-	"main/utils"
 )
 
 func OnPreRequest() string {
@@ -22,10 +21,10 @@ func OnRequestShutdownReporting(server *ServerData, method, route, routeParsed s
 	}
 
 	log.Info("[RSHUTDOWN] Got request metadata: ", method, " ", route, " ", statusCode)
-
-	if !rateLimited && !utils.ShouldDiscoverRoute(statusCode, route, method) {
-		return
-	}
+	//if !rateLimited {
+	//if !rateLimited && !utils.ShouldDiscoverRoute(statusCode, route, method) {
+	//	return
+	//}
 
 	log.Info("[RSHUTDOWN] Got API spec: ", apiSpec)
 	grpc.OnRequestShutdown(server, method, route, routeParsed, statusCode, user, ip, rateLimitGroup, apiSpec, rateLimited)
