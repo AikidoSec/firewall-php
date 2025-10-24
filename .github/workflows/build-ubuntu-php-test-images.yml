@@ -7,6 +7,9 @@ on:
       - .github/workflows/Dockerfile.ubuntu-php-test
       - .github/workflows/build-ubuntu-php-test-images.yml
 
+permissions:
+  contents: read
+
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: aikidosec/firewall-php-test-ubuntu

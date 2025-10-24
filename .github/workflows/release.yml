@@ -5,6 +5,9 @@ on:
     tags:
       - "v*.*.*"
 
+permissions:
+  contents: write
+
 jobs:
   build:
     uses: ./.github/workflows/build.yml
@@ -17,27 +20,27 @@ jobs:
     - name: Set Aikido version
       run: |
         echo "AIKIDO_VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
-   
+
     - name: Checkout repository
       uses: actions/checkout@v4
-    
+
     - name: Download artifacts
       uses: actions/download-artifact@v4
       with:
         pattern: |
           aikido-php-firewall*
-    
+
     - name: List Artifacts
       run: |
         ls -l
         pwd
-        
+
     - name: Deploy to GitHub Release
       uses: softprops/action-gh-release@72f2c25fcb47643c292f7107632f7a47c1df5cd8 # v2
       with:
         files: |
           ./**/aikido-php-firewall*
-    
+
     - name: Deploy to GitHub Release Latest
       uses: softprops/action-gh-release@72f2c25fcb47643c292f7107632f7a47c1df5cd8 # v2
       with:

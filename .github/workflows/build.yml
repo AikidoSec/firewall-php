@@ -9,11 +9,14 @@ on:
       - main
   workflow_call:
 
+permissions:
+  contents: read
+
 jobs:
   build_libs:
     runs-on: ${{ matrix.os }}
     container:
-      image: ghcr.io/aikidosec/firewall-php-build-libs:v1  
+      image: ghcr.io/aikidosec/firewall-php-build-libs:v1
     strategy:
       matrix:
         os: [ ubuntu-24.04, ubuntu-24.04-arm ]
@@ -44,7 +47,7 @@ jobs:
         go test ./...
         go build -buildvcs=false -ldflags "-s -w" -o ../../build/aikido-agent
         ls -l ../../build
-    
+
 
     - name: Build Aikido Request Processor
       run: |
@@ -422,7 +425,7 @@ jobs:
         if: matrix.server == 'apache-mod-php'
         run: |
           a2-switch-php ${{ matrix.php_version }}
-    
+
 
       - name: Install DEB
         run: |
@@ -473,7 +476,7 @@ jobs:
       - name: Overwrite aikido.sh install script
         run: |
           echo "#!/usr/bin/env bash" > ./zen-demo-php/.fly/scripts/aikido.sh
-          echo "dpkg -i -E \"/var/www/html/aikido-php-firewall.\$(uname -i).deb\"" >> ./zen-demo-php/.fly/scripts/aikido.sh 
+          echo "dpkg -i -E \"/var/www/html/aikido-php-firewall.\$(uname -i).deb\"" >> ./zen-demo-php/.fly/scripts/aikido.sh
 
       - name: Run Firewall QA Tests
         uses: AikidoSec/firewall-tester-action@add-control-server-tests
@@ -511,7 +514,7 @@ jobs:
       - name: Overwrite aikido.sh install script
         run: |
           echo "#!/usr/bin/env bash" > ./zen-demo-php/.fly/scripts/aikido.sh
-          echo "dpkg -i -E \"/var/www/html/aikido-php-firewall.\$(uname -i).deb\"" >> ./zen-demo-php/.fly/scripts/aikido.sh 
+          echo "dpkg -i -E \"/var/www/html/aikido-php-firewall.\$(uname -i).deb\"" >> ./zen-demo-php/.fly/scripts/aikido.sh
 
       - name: Run Firewall QA Tests
         uses: AikidoSec/firewall-tester-action@add-control-server-tests
@@ -549,7 +552,7 @@ jobs:
       - name: Overwrite aikido.sh install script
         run: |
           echo "#!/usr/bin/env bash" > ./zen-demo-php/.fly/scripts/aikido.sh
-          echo "dpkg -i -E \"/var/www/html/aikido-php-firewall.\$(uname -i).deb\"" >> ./zen-demo-php/.fly/scripts/aikido.sh 
+          echo "dpkg -i -E \"/var/www/html/aikido-php-firewall.\$(uname -i).deb\"" >> ./zen-demo-php/.fly/scripts/aikido.sh
 
       - name: Run Firewall QA Tests
         uses: AikidoSec/firewall-tester-action@add-control-server-tests
