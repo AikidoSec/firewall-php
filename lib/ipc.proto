@@ -66,6 +66,8 @@ message RequestMetadataShutdown {
   string rateLimitGroup = 8;
   APISpec apiSpec = 9;
   bool rateLimited = 10;
+  bool isWebScanner = 11;
+  bool shouldDiscoverRoute =12;
 }
 
 message MiddlewareInstalledInfo {
