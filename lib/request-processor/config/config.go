@@ -7,6 +7,7 @@ import (
 	"main/globals"
 	"main/log"
 	"main/utils"
+	"os"
 )
 
 func UpdateToken(token string) {
@@ -41,6 +42,9 @@ func Init(initJson string) {
 	if err != nil {
 		panic(fmt.Sprintf("Error parsing JSON to EnvironmentConfig: %s", err))
 	}
+
+	globals.EnvironmentConfig.RequestProcessorPID = int32(os.Getpid())
+	globals.EnvironmentConfig.ServerPID = int32(os.Getppid())
 
 	conf := AikidoConfigData{}
 	ReloadAikidoConfig(&conf, initJson)

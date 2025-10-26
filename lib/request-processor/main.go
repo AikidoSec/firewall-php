@@ -93,6 +93,8 @@ func RequestProcessorContextInit(contextCallback C.ContextCallback) (initOk bool
 		}
 	}()
 
+	log.Infof("RequestProcessorContextInit (token: %s) called!", utils.AnonymizeToken(globals.CurrentToken))
+
 	log.Debug("Initializing context...")
 	CContextCallback = contextCallback
 	return context.Init(GoContextCallback)
@@ -109,6 +111,8 @@ func RequestProcessorConfigUpdate(configJson string) (initOk bool) {
 			initOk = false
 		}
 	}()
+
+	log.Infof("RequestProcessorConfigUpdate (previous token: %s) called!", utils.AnonymizeToken(globals.CurrentToken))
 
 	log.Debugf("Reloading Aikido config with: %v", configJson)
 	conf := AikidoConfigData{}
@@ -138,6 +142,8 @@ func RequestProcessorOnEvent(eventId int) (outputJson *C.char) {
 		}
 	}()
 
+	log.Infof("RequestProcessorOnEvent (token: %s) called!", utils.AnonymizeToken(globals.CurrentToken))
+
 	goString := eventHandlers[eventId]()
 	if goString == "" {
 		return nil
@@ -152,11 +158,13 @@ func RequestProcessorOnEvent(eventId int) (outputJson *C.char) {
 */
 //export RequestProcessorGetBlockingMode
 func RequestProcessorGetBlockingMode() int {
+	log.Infof("RequestProcessorGetBlockingMode (token: %s) called!", utils.AnonymizeToken(globals.CurrentToken))
 	return utils.GetBlockingMode(globals.GetCurrentServer())
 }
 
 //export RequestProcessorReportStats
 func RequestProcessorReportStats(sink, kind string, attacksDetected, attacksBlocked, interceptorThrewError, withoutContext, total int32, timings []int64) {
+	log.Infof("RequestProcessorReportStats (token: %s) called!", utils.AnonymizeToken(globals.CurrentToken))
 	if globals.EnvironmentConfig.PlatformName == "cli" {
 		return
 	}

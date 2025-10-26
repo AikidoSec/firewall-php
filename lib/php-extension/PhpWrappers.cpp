@@ -11,7 +11,7 @@ void CallPhpExit() {
 
 bool CallPhpEcho(std::string message) {
     unsigned int wrote = zend_write(message.c_str(), message.length());  // echo '<message>'
-    AIKIDO_LOG_INFO("Called 'echo' -> result %d\n", wrote == message.length());
+    //AIKIDO_LOG_INFO("Called 'echo' -> result %d\n", wrote == message.length());
     return wrote == message.length();
 }
 
@@ -41,7 +41,7 @@ bool CallPhpFunction(std::string function_name, unsigned int params_number, zval
     if (!return_value) {
         zval_ptr_dtor(&_temp_return_value);
     }
-    AIKIDO_LOG_INFO("Called user function '%s' -> result %d\n", function_name.c_str(), _result == SUCCESS);
+    //AIKIDO_LOG_INFO("Called user function '%s' -> result %d\n", function_name.c_str(), _result == SUCCESS);
     return _result == SUCCESS;
 }
 

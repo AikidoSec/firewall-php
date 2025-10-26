@@ -105,7 +105,7 @@ bool RequestProcessor::Init() {
         return true;
     }
 
-    this->GetInitData();
+    std::string initDataString = this->GetInitData();
 
     if (AIKIDO_GLOBAL(disable) == true) {
         AIKIDO_LOG_INFO("Request Processor initialization skipped because AIKIDO_DISABLE is set to 1!\n");
@@ -141,7 +141,6 @@ bool RequestProcessor::Init() {
         return false;
     }
 
-    std::string initDataString = this->GetInitData();
     if (!requestProcessorInitFn(GoCreateString(initDataString))) {
         AIKIDO_LOG_ERROR("Failed to initialize Aikido Request Processor library: %s!\n", dlerror());
         this->initFailed = true;

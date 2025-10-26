@@ -7,14 +7,15 @@ import (
 
 var Machine MachineData
 
-var Servers = make(map[string]*ServerData)
+var Servers = make(map[ServerKey]*ServerData)
+var PastDeletedServers = make(map[ServerKey]bool)
 var ServersMutex sync.RWMutex
 
-func GetServer(token string) *ServerData {
+func GetServer(ServerKey ServerKey) *ServerData {
 	ServersMutex.RLock()
 	defer ServersMutex.RUnlock()
 
-	server, exists := Servers[token]
+	server, exists := Servers[ServerKey]
 	if !exists {
 		return nil
 	}
@@ -32,26 +33,34 @@ func GetServers() []*ServerData {
 	return servers
 }
 
-func GetServersTokens() []string {
+func GetServersKeys() []ServerKey {
 	ServersMutex.RLock()
 	defer ServersMutex.RUnlock()
 
-	tokens := []string{}
-	for token := range Servers {
-		tokens = append(tokens, token)
+	serverKeys := []ServerKey{}
+	for serverKey := range Servers {
+		serverKeys = append(serverKeys, serverKey)
 	}
-	return tokens
+	return serverKeys
 }
 
-func CreateServer(token string) *ServerData {
+func CreateServer(ServerKey ServerKey) *ServerData {
 	ServersMutex.Lock()
 	defer ServersMutex.Unlock()
-	Servers[token] = NewServerData()
-	return Servers[token]
+	Servers[ServerKey] = NewServerData()
+	return Servers[ServerKey]
 }
 
-func DeleteServer(token string) {
+func DeleteServer(ServerKey ServerKey) {
 	ServersMutex.Lock()
 	defer ServersMutex.Unlock()
-	delete(Servers, token)
+	delete(Servers, ServerKey)
+	PastDeletedServers[ServerKey] = true
+}
+
+func IsPastDeletedServer(ServerKey ServerKey) bool {
+	ServersMutex.RLock()
+	defer ServersMutex.RUnlock()
+	_, exists := PastDeletedServers[ServerKey]
+	return exists
 }
