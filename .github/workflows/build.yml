@@ -114,7 +114,7 @@ jobs:
         cd lib/php-extension
         phpize
         cd ../../build
-        CXX=g++ CXXFLAGS="-fPIC -O2 -I../lib/php-extension/include" LDFLAGS="-lstdc++" ../lib/php-extension/configure
+        CXX=g++ CXXFLAGS="-fPIC -std=c++17 -O2 -I../lib/php-extension/include" LDFLAGS="-lstdc++ -lstdc++fs" ../lib/php-extension/configure
         make -j"$(nproc)"
 
     - name: Version Aikido extension
@@ -410,6 +410,11 @@ jobs:
           pattern: |
             ${{ env.AIKIDO_DEB }}
 
+      - name: Prepare php-fpm
+        run: |
+          ls -l /usr/sbin | grep php
+          ln -s /usr/sbin/php-fpm${{ matrix.php_version }} /usr/sbin/php-fpm
+
       # MariaDB startup compatible with your current approach
       - name: Start MariaDB (background)
         run: |
@@ -421,8 +426,7 @@ jobs:
       - name: Ensure Apache uses PHP ${{ matrix.php_version }}
         if: matrix.server == 'apache-mod-php'
         run: |
-          a2-switch-php ${{ matrix.php_version }}
-    
+          a2-switch-php ${{ matrix.php_version }}    
 
       - name: Install DEB
         run: |
@@ -474,7 +478,6 @@ jobs:
         run: |
           echo "#!/usr/bin/env bash" > ./zen-demo-php/.fly/scripts/aikido.sh
           echo "dpkg -i -E \"/var/www/html/aikido-php-firewall.\$(uname -i).deb\"" >> ./zen-demo-php/.fly/scripts/aikido.sh 
-
       - name: Run Firewall QA Tests
         uses: AikidoSec/firewall-tester-action@add-control-server-tests
         with:
@@ -512,7 +515,6 @@ jobs:
         run: |
           echo "#!/usr/bin/env bash" > ./zen-demo-php/.fly/scripts/aikido.sh
           echo "dpkg -i -E \"/var/www/html/aikido-php-firewall.\$(uname -i).deb\"" >> ./zen-demo-php/.fly/scripts/aikido.sh 
-
       - name: Run Firewall QA Tests
         uses: AikidoSec/firewall-tester-action@add-control-server-tests
         with:
@@ -550,7 +552,6 @@ jobs:
         run: |
           echo "#!/usr/bin/env bash" > ./zen-demo-php/.fly/scripts/aikido.sh
           echo "dpkg -i -E \"/var/www/html/aikido-php-firewall.\$(uname -i).deb\"" >> ./zen-demo-php/.fly/scripts/aikido.sh 
-
       - name: Run Firewall QA Tests
         uses: AikidoSec/firewall-tester-action@add-control-server-tests
         with:

@@ -11,6 +11,7 @@
 #include <netinet/in.h>
 #include <sys/types.h>
 #include <sys/utsname.h>
+#include <sys/wait.h>
 
 #include <functional>
 #include <random>
@@ -21,6 +22,7 @@
 #include <spawn.h>
 #include <fstream>
 #include <iostream>
+#include <filesystem>
 
 #include "3rdparty/json.hpp"
 using namespace std;

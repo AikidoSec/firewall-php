@@ -40,11 +40,18 @@ func RequestProcessorInit(initJson string) (initOk bool) {
 
 	config.Init(initJson)
 
-	log.Debugf("Aikido Request Processor v%s started in \"%s\" mode!", globals.Version, globals.EnvironmentConfig.SAPI)
+	log.Debugf("Aikido Request Processor v%s started in \"%s\" mode!", globals.Version, globals.EnvironmentConfig.PlatformName)
 	log.Debugf("Init data: %s", initJson)
 
-	if globals.EnvironmentConfig.SAPI != "cli" {
+	if globals.EnvironmentConfig.PlatformName != "cli" {
 		grpc.Init()
+		server := globals.GetCurrentServer()
+		if server != nil {
+			grpc.SendAikidoConfig(server)
+			grpc.OnPackages(server, server.AikidoConfig.Packages)
+		}
+
+		grpc.StartCloudConfigRoutine()
 	}
 	if !zen_internals.Init() {
 		log.Error("Error initializing zen-internals library!")
@@ -96,7 +103,6 @@ func RequestProcessorContextInit(contextCallback C.ContextCallback) (initOk bool
 */
 //export RequestProcessorConfigUpdate
 func RequestProcessorConfigUpdate(configJson string) (initOk bool) {
-
 	defer func() {
 		if r := recover(); r != nil {
 			log.Warn("Recovered from panic:", r)
@@ -104,19 +110,22 @@ func RequestProcessorConfigUpdate(configJson string) (initOk bool) {
 		}
 	}()
 
-	previousToken := globals.AikidoConfig.Token
-	if previousToken != "" {
-		log.Debugf("Token was previously set, not sending config to Agent!")
-		return true
+	log.Debugf("Reloading Aikido config with: %v", configJson)
+	conf := AikidoConfigData{}
+	config.ReloadAikidoConfig(&conf, configJson)
+
+	if conf.Token == "" {
+		return false
 	}
 
-	config.ReloadAikidoConfig(configJson)
-	if globals.AikidoConfig.Token != "" {
-		log.Infof("Token changed: %s", globals.AikidoConfig.Token)
+	server := globals.GetCurrentServer()
+	if server == nil {
+		return false
 	}
-	log.Debugf("Reloading Aikido config with: %v", configJson)
-	grpc.SendAikidoConfig()
-	grpc.OnPackages(globals.AikidoConfig.Packages)
+	grpc.SendAikidoConfig(server)
+	grpc.OnPackages(server, server.AikidoConfig.Packages)
+	grpc.GetCloudConfig(server)
+
 	return true
 }
 
@@ -143,14 +152,17 @@ func RequestProcessorOnEvent(eventId int) (outputJson *C.char) {
 */
 //export RequestProcessorGetBlockingMode
 func RequestProcessorGetBlockingMode() int {
-	return utils.GetBlockingMode()
+	return utils.GetBlockingMode(globals.GetCurrentServer())
 }
 
 //export RequestProcessorReportStats
 func RequestProcessorReportStats(sink, kind string, attacksDetected, attacksBlocked, interceptorThrewError, withoutContext, total int32, timings []int64) {
+	if globals.EnvironmentConfig.PlatformName == "cli" {
+		return
+	}
 	clonedTimings := make([]int64, len(timings))
 	copy(clonedTimings, timings)
-	go grpc.OnMonitoredSinkStats(strings.Clone(sink), strings.Clone(kind), attacksDetected, attacksBlocked, interceptorThrewError, withoutContext, total, clonedTimings)
+	go grpc.OnMonitoredSinkStats(globals.GetCurrentServer(), strings.Clone(sink), strings.Clone(kind), attacksDetected, attacksBlocked, interceptorThrewError, withoutContext, total, clonedTimings)
 }
 
 //export RequestProcessorUninit
@@ -158,7 +170,7 @@ func RequestProcessorUninit() {
 	log.Debug("Uninit: {}")
 	zen_internals.Uninit()
 
-	if globals.EnvironmentConfig.SAPI != "cli" {
+	if globals.EnvironmentConfig.PlatformName != "cli" {
 		grpc.Uninit()
 	}
 
