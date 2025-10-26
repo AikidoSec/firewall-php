@@ -55,19 +55,8 @@ func advanceN(server *ServerData, n int) {
 
 func Test_NoIPAddress(t *testing.T) {
 	server := newDetectorForTSDefaults()
-	if Increment(server, "") {
+	if IncrementAndDetect(server, "") {
 		t.Fatalf("expected no detection when IP is empty")
-	}
-}
-
-func Test_NotAWebScanner(t *testing.T) {
-	server := newDetectorForTSDefaults()
-	ip := "::1"
-
-	for i := range 5 {
-		if Increment(server, ip) {
-			t.Fatalf("unexpected detection for non-scanner input at index %d", i)
-		}
 	}
 }
 
@@ -76,18 +65,18 @@ func Test_AWebScanner_ThresholdAndThrottle(t *testing.T) {
 	ip := "::1"
 
 	for i := range 5 {
-		if Increment(server, ip) {
+		if IncrementAndDetect(server, ip) {
 			t.Fatalf("unexpected detection before threshold at step %d", i)
 		}
 	}
 
 	// 6th hit -> reaches threshold
-	if !Increment(server, ip) {
+	if !IncrementAndDetect(server, ip) {
 		t.Fatalf("expected detection at 6th suspicious request")
 	}
 
 	// Immediately again -> throttled by minTimeBetweenEvents
-	if Increment(server, ip) {
+	if IncrementAndDetect(server, ip) {
 		t.Fatalf("unexpected detection due to throttle")
 	}
 }
@@ -98,7 +87,7 @@ func Test_AWebScanner_WithDelays(t *testing.T) {
 
 	// 4 suspicious within the first minute
 	for i := range 4 {
-		if Increment(server, ip) {
+		if IncrementAndDetect(server, ip) {
 			t.Fatalf("unexpected detection at step1[%d]", i)
 		}
 	}
@@ -107,15 +96,15 @@ func Test_AWebScanner_WithDelays(t *testing.T) {
 	// so we do not advance the minute here.
 
 	// 5th (still below threshold)
-	if Increment(server, ip) {
+	if IncrementAndDetect(server, ip) {
 		t.Fatalf("unexpected detection at 5th request")
 	}
 	// 6th -> triggers
-	if !Increment(server, ip) {
+	if !IncrementAndDetect(server, ip) {
 		t.Fatalf("expected detection at 6th request")
 	}
 	// throttled
-	if Increment(server, ip) {
+	if IncrementAndDetect(server, ip) {
 		t.Fatalf("unexpected detection due to throttle")
 	}
 
@@ -127,7 +116,7 @@ func Test_AWebScanner_WithDelays(t *testing.T) {
 
 	// Still throttled (should short-circuit before counting)
 	for i := 0; i < 3; i++ {
-		if Increment(server, ip) {
+		if IncrementAndDetect(server, ip) {
 			t.Fatalf("unexpected detection while still within 1h throttle (iteration %d)", i)
 		}
 	}
@@ -140,11 +129,11 @@ func Test_AWebScanner_WithDelays(t *testing.T) {
 
 	// Now rebuild to threshold again
 	for i := range 5 {
-		if Increment(server, ip) {
+		if IncrementAndDetect(server, ip) {
 			t.Fatalf("unexpected detection before hitting 6 in new window at i=%d", i)
 		}
 	}
-	if !Increment(server, ip) {
+	if !IncrementAndDetect(server, ip) {
 		t.Fatalf("expected detection after throttle elapsed and window re-accumulated")
 	}
 }
@@ -155,7 +144,7 @@ func Test_SlowScanner_TriggersInSecondInterval(t *testing.T) {
 
 	// 4 suspicious in first minute
 	for i := range 4 {
-		if Increment(server, ip) {
+		if IncrementAndDetect(server, ip) {
 			t.Fatalf("unexpected detection at step1[%d]", i)
 		}
 	}
@@ -165,11 +154,11 @@ func Test_SlowScanner_TriggersInSecondInterval(t *testing.T) {
 
 	// Now build to threshold entirely within the second minute
 	for i := range 5 {
-		if Increment(server, ip) {
+		if IncrementAndDetect(server, ip) {
 			t.Fatalf("unexpected detection before threshold in second interval at i=%d", i)
 		}
 	}
-	if !Increment(server, ip) {
+	if !IncrementAndDetect(server, ip) {
 		t.Fatalf("expected detection at 6th request in second interval")
 	}
 }
@@ -180,7 +169,7 @@ func Test_SlowScanner_TriggersInThirdInterval(t *testing.T) {
 
 	// 4 suspicious in first minute
 	for i := range 4 {
-		if Increment(server, ip) {
+		if IncrementAndDetect(server, ip) {
 			t.Fatalf("unexpected detection at step1[%d]", i)
 		}
 	}
@@ -190,7 +179,7 @@ func Test_SlowScanner_TriggersInThirdInterval(t *testing.T) {
 
 	// 4 more in second minute — still below threshold
 	for i := range 4 {
-		if Increment(server, ip) {
+		if IncrementAndDetect(server, ip) {
 			t.Fatalf("unexpected detection at step2[%d]", i)
 		}
 	}
@@ -200,11 +189,11 @@ func Test_SlowScanner_TriggersInThirdInterval(t *testing.T) {
 
 	// Build to threshold in third interval
 	for i := range 5 {
-		if Increment(server, ip) {
+		if IncrementAndDetect(server, ip) {
 			t.Fatalf("unexpected detection before threshold in third interval at i=%d", i)
 		}
 	}
-	if !Increment(server, ip) {
+	if !IncrementAndDetect(server, ip) {
 		t.Fatalf("expected detection at 6th request in third interval")
 	}
 }

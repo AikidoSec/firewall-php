@@ -17,9 +17,6 @@ func pushNewMinute(q *AttackWaveQueue) {
 		dropped := q.Queue[0]
 		q.Queue = q.Queue[1:]
 		q.Total -= dropped
-		if q.Total < 0 {
-			q.Total = 0 // defensive; shouldn't happen
-		}
 	}
 }
 
@@ -36,6 +33,13 @@ func sum(q *AttackWaveQueue) int { return q.Total }
 
 func isEmpty(q *AttackWaveQueue) bool { return q.Total == 0 }
 
+// deleteIpFromTracking removes an IP from all attack wave tracking structures.
+func deleteIpFromTracking(server *ServerData, ip string) {
+	delete(server.AttackWaveIpQueues, ip)
+	delete(server.AttackWaveLastSeen, ip)
+	delete(server.AttackWaveLastSent, ip)
+}
+
 func newAttackWaveQueue(windowSize int) *AttackWaveQueue {
 	q := &AttackWaveQueue{
 		WindowSize: windowSize,
@@ -46,7 +50,6 @@ func newAttackWaveQueue(windowSize int) *AttackWaveQueue {
 }
 
 func AdvanceAttackWaveQueues(server *ServerData) {
-	log.Debugf(server.Logger, "Advancing attack wave queues")
 	server.AttackWaveMutex.Lock()
 	defer server.AttackWaveMutex.Unlock()
 
@@ -80,9 +83,7 @@ func AdvanceAttackWaveQueues(server *ServerData) {
 	for ip, q := range server.AttackWaveIpQueues {
 		ls, ok := server.AttackWaveLastSeen[ip]
 		if isEmpty(q) && (!ok || ls.Before(cutoff)) {
-			delete(server.AttackWaveIpQueues, ip)
-			delete(server.AttackWaveLastSeen, ip)
-			delete(server.AttackWaveLastSent, ip)
+			deleteIpFromTracking(server, ip)
 		}
 	}
 }
@@ -100,11 +101,11 @@ func Uninit(server *ServerData) {
 	utils.StopPollingRoutine(server.PollingData.AttackWaveChannel)
 }
 
-// Check implements the detection logic using the sliding window:
+// IncrementAndDetect implements the detection logic using the sliding window:
 // - skips if an event was recently sent for IP (minBetween)
 // - increments current minute bucket for IP
-// - if sum(window) >= threshold => mark event time and return true
-func Increment(server *ServerData, ip string) bool {
+// - if sum(window) >= threshold => mark event time and send event to cloud
+func IncrementAndDetect(server *ServerData, ip string) bool {
 	if ip == "" {
 		return false
 	}
@@ -176,8 +177,6 @@ func evictLRU(server *ServerData) {
 		}
 	}
 	if victim != "" {
-		delete(server.AttackWaveIpQueues, victim)
-		delete(server.AttackWaveLastSeen, victim)
-		delete(server.AttackWaveLastSent, victim)
+		deleteIpFromTracking(server, victim)
 	}
 }
