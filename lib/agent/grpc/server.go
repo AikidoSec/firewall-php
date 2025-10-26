@@ -3,6 +3,7 @@ package grpc
 import (
 	"context"
 	"fmt"
+	attackwavedetection "main/attack-wave-detection"
 	"main/cloud"
 	"main/constants"
 	"main/globals"
@@ -75,10 +76,14 @@ func (s *GrpcServer) OnRequestShutdown(ctx context.Context, req *protos.RequestM
 		return &emptypb.Empty{}, nil
 	}
 	log.Debugf(server.Logger, "Received request metadata: %s %s %d %s %s %v", req.GetMethod(), req.GetRouteParsed(), req.GetStatusCode(), req.GetUser(), req.GetIp(), req.GetApiSpec())
-
-	go storeTotalStats(server, req.GetRateLimited())
-	go storeRoute(server, req.GetMethod(), req.GetRouteParsed(), req.GetApiSpec(), req.GetRateLimited())
-	go updateRateLimitingCounts(server, req.GetMethod(), req.GetRoute(), req.GetRouteParsed(), req.GetUser(), req.GetIp(), req.GetRateLimitGroup())
+	if req.GetShouldDiscoverRoute() || req.GetRateLimited() {
+		go storeTotalStats(server, req.GetRateLimited())
+		go storeRoute(server, req.GetMethod(), req.GetRouteParsed(), req.GetApiSpec(), req.GetRateLimited())
+		go updateRateLimitingCounts(server, req.GetMethod(), req.GetRoute(), req.GetRouteParsed(), req.GetUser(), req.GetIp(), req.GetRateLimitGroup())
+	}
+	if req.GetIsWebScanner() {
+		go attackwavedetection.IncrementAndDetect(server, req.GetIp())
+	}
 
 	atomic.StoreUint32(&server.GotTraffic, 1)
 	return &emptypb.Empty{}, nil
@@ -114,7 +119,7 @@ func (s *GrpcServer) OnAttackDetected(ctx context.Context, req *protos.AttackDet
 	if server == nil {
 		return &emptypb.Empty{}, nil
 	}
-	cloud.SendAttackDetectedEvent(server, req)
+	cloud.SendAttackDetectedEvent(server, req, "detected_attack")
 	storeAttackStats(server, req)
 	return &emptypb.Empty{}, nil
 }

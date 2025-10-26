@@ -79,6 +79,12 @@ type UserAgentDetails struct {
 	Pattern string `json:"pattern"`
 }
 
+type AttackWaveQueue struct {
+	WindowSize int
+	Total      int
+	Queue      []int
+}
+
 type ListsConfigData struct {
 	Success              bool               `json:"success"`
 	ServiceId            int                `json:"serviceId"`
@@ -102,6 +108,8 @@ type ServerDataPolling struct {
 	ConfigPollingTicker         *time.Ticker
 	RateLimitingChannel         chan struct{}
 	RateLimitingTicker          *time.Ticker
+	AttackWaveChannel           chan struct{}
+	AttackWaveTicker            *time.Ticker
 }
 
 func NewServerDataPolling() *ServerDataPolling {
@@ -112,6 +120,8 @@ func NewServerDataPolling() *ServerDataPolling {
 		ConfigPollingTicker:         time.NewTicker(1 * time.Minute),
 		RateLimitingChannel:         make(chan struct{}),
 		RateLimitingTicker:          time.NewTicker(constants.MinRateLimitingIntervalInMs * time.Millisecond),
+		AttackWaveChannel:           make(chan struct{}),
+		AttackWaveTicker:            time.NewTicker(1 * time.Minute),
 	}
 }
 
@@ -162,6 +172,17 @@ type ServerData struct {
 	// Rate limiting mutex used to sync access across the go routines
 	RateLimitingMutex sync.RWMutex
 
+	// Attack wave detection state
+	AttackWaveThreshold  int
+	AttackWaveWindowSize int
+	AttackWaveMinBetween time.Duration
+	AttackWaveMaxEntries int
+	AttackWaveIpQueues   map[string]*AttackWaveQueue
+	AttackWaveLastSent   map[string]time.Time
+	AttackWaveLastSeen   map[string]time.Time
+	AttackWaveLastTick   time.Time
+	AttackWaveMutex      sync.Mutex
+
 	// Users map, which holds the current users and their data
 	Users      map[string]User
 	UsersQueue Queue[string]
@@ -210,5 +231,12 @@ func NewServerData() *ServerData {
 		UsersQueue:              NewQueue[string](MaxNumberOfStoredUsers),
 		Packages:                make(map[string]Package),
 		PollingData:             NewServerDataPolling(),
+		AttackWaveThreshold:     15,
+		AttackWaveWindowSize:    1,
+		AttackWaveMinBetween:    20 * time.Minute,
+		AttackWaveMaxEntries:    10000,
+		AttackWaveIpQueues:      make(map[string]*AttackWaveQueue),
+		AttackWaveLastSent:      make(map[string]time.Time),
+		AttackWaveLastSeen:      make(map[string]time.Time),
 	}
 }
