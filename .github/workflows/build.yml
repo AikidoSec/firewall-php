@@ -114,7 +114,7 @@ jobs:
         cd lib/php-extension
         phpize
         cd ../../build
-        CXX=g++ CXXFLAGS="-fPIC -std=c++17 -O2 -I../lib/php-extension/include" LDFLAGS="-lstdc++ -lstdc++fs" ../lib/php-extension/configure
+        CXX=g++ CXXFLAGS="-fPIC -g -O2 -I../lib/php-extension/include" LDFLAGS="-lstdc++" ../lib/php-extension/configure
         make -j"$(nproc)"
 
     - name: Version Aikido extension
@@ -215,7 +215,7 @@ jobs:
 
       - name: Check rpm dependencies
         run: |
-          yum deplist ~/rpmbuild/RPMS/${{ env.ARCH }}/${{ env.AIKIDO_ARTIFACT_RELEASE }} | grep -E "GLIBC_2.32|GLIBC_2.34|GLIBCXX_3.4.29" && exit 1 || exit 0
+          yum deplist ~/rpmbuild/RPMS/${{ env.ARCH }}/${{ env.AIKIDO_ARTIFACT_RELEASE }} | grep -E "GLIBC_2.32|GLIBC_2.34|GLIBCXX_3.4.26|GLIBCXX_3.4.29" && exit 1 || exit 0
 
       - name: Archive rpm package
         uses: actions/upload-artifact@v4

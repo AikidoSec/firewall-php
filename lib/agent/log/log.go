@@ -41,6 +41,9 @@ func (f *AikidoFormatter) Format(level int32, message string) string {
 		return "invalid log level"
 	}
 
+	if len(message) > 1024 {
+		message = message[:1024] + "... [truncated]"
+	}
 	logMessage := fmt.Sprintf("[AIKIDO][%s][%s] %s\n", levelStr, time.Now().Format("15:04:05"), message)
 	return logMessage
 }

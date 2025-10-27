@@ -79,7 +79,7 @@ bool Agent::SpawnDetached(std::string aikidoAgentPath) {
 }
 
 bool Agent::RemoveSocketFile(const std::string& aikidoAgentSocketPath) {
-    if (!std::filesystem::remove(aikidoAgentSocketPath)) {
+    if (!RemoveFile(aikidoAgentSocketPath)) {
         AIKIDO_LOG_WARN("Failed to remove socket file \"%s\"!\n", aikidoAgentSocketPath.c_str());
         return false;
     }
@@ -98,7 +98,7 @@ void Agent::KillProcesses(std::vector<pid_t>& pids) {
 }
 
 bool Agent::IsRunning(const std::string& aikidoAgentPath, const std::string& aikidoAgentSocketPath) {
-    if (!std::filesystem::exists(aikidoAgentSocketPath)) {
+    if (!FileExists(aikidoAgentSocketPath)) {
         AIKIDO_LOG_INFO("No socket file found!\n");
         return false;
     } 

@@ -13,14 +13,23 @@ std::string GetPhpEnvVariable(const std::string& env_key) {
     std::string env_value_str = Z_STRVAL_P(&env_value);
     zval_ptr_dtor(&env_value);
 
-    AIKIDO_LOG_DEBUG("php_env[%s] = %s\n", env_key.c_str(), env_value_str.c_str());
+    if (env_key == "AIKIDO_TOKEN") {
+        AIKIDO_LOG_DEBUG("php_env[%s] = %s\n", env_key.c_str(), AnonymizeToken(env_value_str).c_str());
+    } else {
+        AIKIDO_LOG_DEBUG("php_env[%s] = %s\n", env_key.c_str(), env_value_str.c_str());
+    }
     return env_value_str;
 }
 
 std::string GetSystemEnvVariable(const std::string& env_key) {
     const char* env_value = getenv(env_key.c_str());
     if (!env_value) return "";
-    AIKIDO_LOG_DEBUG("sys_env[%s] = %s\n", env_key.c_str(), env_value);
+    
+    if (env_key == "AIKIDO_TOKEN") {
+        AIKIDO_LOG_DEBUG("sys_env[%s] = %s\n", env_key.c_str(), AnonymizeToken(env_value).c_str());
+    } else {
+        AIKIDO_LOG_DEBUG("sys_env[%s] = %s\n", env_key.c_str(), env_value);
+    }
     return env_value;
 }
 
@@ -91,7 +100,11 @@ bool LoadLaravelEnvFile() {
 
 std::string GetLaravelEnvVariable(const std::string& env_key) {
     if (laravelEnv.find(env_key) != laravelEnv.end()) {
-        AIKIDO_LOG_DEBUG("laravel_env[%s] = %s\n", env_key.c_str(), laravelEnv[env_key].c_str());
+        if (env_key == "AIKIDO_TOKEN") {
+            AIKIDO_LOG_DEBUG("laravel_env[%s] = %s\n", env_key.c_str(), AnonymizeToken(laravelEnv[env_key]).c_str());
+        } else {
+            AIKIDO_LOG_DEBUG("laravel_env[%s] = %s\n", env_key.c_str(), laravelEnv[env_key].c_str());
+        }
         return laravelEnv[env_key];
     }
     return "";
