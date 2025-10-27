@@ -21,3 +21,7 @@ std::string GetSqlDialectFromPdo(zval *pdo_object);
 bool StartsWith(const std::string& str, const std::string& prefix, bool caseSensitive = true);
 
 std::string AnonymizeToken(const std::string& str);
+
+bool FileExists(const std::string& filePath);
+
+bool RemoveFile(const std::string& filePath);

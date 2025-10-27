@@ -118,3 +118,18 @@ bool StartsWith(const std::string& str, const std::string& prefix, bool caseSens
 std::string AnonymizeToken(const std::string& str) {
     return str.length() > 4 ? "AIK_RUNTIME_***" + str.substr(str.length() - 4) : "AIK_RUNTIME_***";
 }
+
+bool FileExists(const std::string& filePath) {
+    struct stat buffer;
+    if (stat(filePath.c_str(), &buffer) == 0) {
+        return true;
+    }
+    return false;
+}
+
+bool RemoveFile(const std::string& filePath) {
+    if (unlink(filePath.c_str()) == 0) {
+        return true;
+    }
+    return false;
+}
