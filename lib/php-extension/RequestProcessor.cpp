@@ -174,6 +174,10 @@ bool RequestProcessor::RequestInit() {
 }
 
 void RequestProcessor::LoadConfig(std::string userProvidedToken) {
+    if (AIKIDO_GLOBAL(sapi_name) == "fpm-fcgi" && this->configReloaded) {
+        AIKIDO_LOG_INFO("Config already reloaded for fpm-fcgi, skipping config reload...\n");
+        return;
+    }
     std::string previousToken = AIKIDO_GLOBAL(token);
     std::string initJson = this->GetInitData(userProvidedToken);
     std::string currentToken = AIKIDO_GLOBAL(token);
@@ -188,6 +192,7 @@ void RequestProcessor::LoadConfig(std::string userProvidedToken) {
 
     AIKIDO_LOG_INFO("Reloading Aikido config...\n");
     this->requestProcessorConfigUpdateFn(GoCreateString(initJson));
+    this->configReloaded = true;
 }
 
 void RequestProcessor::RequestShutdown() {
