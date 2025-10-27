@@ -110,7 +110,7 @@ func RequestProcessorConfigUpdate(configJson string) (initOk bool) {
 		}
 	}()
 
-	log.Debugf("Reloading Aikido config with: %v", configJson)
+	log.Debugf("Reloading Aikido config...")
 	conf := AikidoConfigData{}
 	config.ReloadAikidoConfig(&conf, configJson)
 
