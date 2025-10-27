@@ -12,9 +12,7 @@ Expected output: `aikido support => enabled`
 
 ## Switching PHP versions
 
-Switching PHP versions after installing Zen is not currently supported. If you need to change your PHP version, you must uninstall and reinstall the firewall.
-
-### Reinstall steps
+Switching PHP versions after installing Zen is not currently supported. If you need to change your PHP version, you must uninstall and reinstall the firewall:
 
 1. **Uninstall the current package**
 
