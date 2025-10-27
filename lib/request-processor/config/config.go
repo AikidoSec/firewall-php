@@ -25,16 +25,16 @@ func ReloadAikidoConfig(conf *AikidoConfigData, initJson string) bool {
 		return false
 	}
 
+	if err := log.SetLogLevel(conf.LogLevel); err != nil {
+		return false
+	}
+
 	if conf.Token == "" {
 		return false
 	}
 
 	if globals.ServerExists(conf.Token) {
 		UpdateToken(conf.Token)
-		return false
-	}
-
-	if err := log.SetLogLevel(conf.LogLevel); err != nil {
 		return false
 	}
 	server := globals.CreateServer(conf.Token)
