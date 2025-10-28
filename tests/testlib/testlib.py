@@ -95,7 +95,9 @@ def assert_events_length_is(events, length):
     assert isinstance(events, list), "Error: Events is not a list."
     assert len(events) == length, f"Error: Events list contains {len(events)} elements and not {length} elements."
 
-def assert_event_contains_subset(event, event_subset, dry_mode=False):
+subset_keys_contains_check = ["stack"]
+
+def assert_event_contains_subset(event_subset_key, event, event_subset, dry_mode=False):
     """
     Recursively checks that all keys and values in the subset JSON exist in the event JSON
     and have the same values. If a key in the subset is a list, all its elements must exist in the
@@ -121,23 +123,29 @@ def assert_event_contains_subset(event, event_subset, dry_mode=False):
         for key, value in event_subset.items():
             if key not in event:
                 return result(AssertionError(f"Key '{key}' not found in '{event}'."))
-            if not assert_event_contains_subset(event[key], value, dry_mode):
+            if not assert_event_contains_subset(key, event[key], value, dry_mode):
                 found_all_keys = False
         return found_all_keys
     elif isinstance(event_subset, list):
         if not isinstance(event, list):
             return result(AssertionError(f"Expected a list in event but found '{event}'."))
-        for event_subset_item in event_subset:
+        for index, event_subset_item in enumerate(event_subset):
             found_item = False
             for event_item in event:
-                if assert_event_contains_subset(event_item, event_subset_item, dry_mode=True):
+                if assert_event_contains_subset("__index" + str(index), event_item, event_subset_item, dry_mode=True):
                     found_item = True
                     break
             if not found_item:
                 return result(AssertionError(f"Item '{event_subset_item}' not found in {event}."))
     else:
-        if event_subset != event:
-            return result(AssertionError(f"Value mismatch: {event_subset} != {event}"))
+        if event_subset_key in subset_keys_contains_check:
+            # Checking if subset field is contained in event field
+            if event_subset not in event:
+                return result(AssertionError(f"Value mismatch: {event_subset} not in {event}"))
+        else:
+            # Checking if subset field is equal to event field
+            if event_subset != event:
+                return result(AssertionError(f"Value mismatch: {event_subset} != {event}"))
 
     return True
 
@@ -146,13 +154,13 @@ def assert_event_contains_subset_file(event, event_subset_file):
     with open(event_subset_file, 'r') as file:
         event_subset = json.load(file)
     assert event_subset
-    assert_event_contains_subset(event, event_subset)
+    assert_event_contains_subset("__root",event, event_subset)
 
 def assert_started_event_is_valid(event):
-    assert_event_contains_subset(event, {"type": "started", "agent": { "library": "firewall-php" } })
+    assert_event_contains_subset("__root", event, {"type": "started", "agent": { "library": "firewall-php" } })
 
 def assert_detection_event_is_valid(event):
-    assert_event_contains_subset(event, {"type": "detected_attack", "agent": { "library": "firewall-php" } })
+    assert_event_contains_subset("__root", event, {"type": "detected_attack", "agent": { "library": "firewall-php" } })
 
 def assert_response_code_is(response, status_code):
     assert response.status_code == status_code, f"Status codes are not the same: {response.status_code} vs {status_code}"

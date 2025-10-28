@@ -18,6 +18,7 @@
         "blocked": true,
         "source": "body",
         "path": ".userId",
+        "stack": "tests/server/test_sql_injection/index.php(22): PDO->query()",
         "payload": "1 OR 1=1",
         "metadata": {
             "dialect": "sqlite",

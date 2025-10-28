@@ -16,6 +16,7 @@
         "blocked": true,
         "source": "body",
         "path": ".file",
+        "stack": "#0 {main}",
         "payload": "../test_include.php",
         "metadata": {
             "filename": "../test_include.php"

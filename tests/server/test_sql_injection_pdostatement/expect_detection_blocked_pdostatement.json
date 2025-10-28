@@ -12,6 +12,7 @@
         "blocked": true,
         "source": "query",
         "path": ".age",
+        "stack": "tests/server/test_sql_injection_pdostatement/index.php(17): PDOStatement->execute()",
         "payload": "3'); DROP TABLE cats; --",
         "metadata": {
             "dialect": "sqlite",
