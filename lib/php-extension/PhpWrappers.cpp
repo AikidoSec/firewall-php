@@ -41,7 +41,6 @@ bool CallPhpFunction(std::string function_name, unsigned int params_number, zval
     if (!return_value) {
         zval_ptr_dtor(&_temp_return_value);
     }
-    AIKIDO_LOG_INFO("Called user function '%s' -> result %d\n", function_name.c_str(), _result == SUCCESS);
     return _result == SUCCESS;
 }
 

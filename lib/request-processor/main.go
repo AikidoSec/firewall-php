@@ -112,9 +112,7 @@ func RequestProcessorConfigUpdate(configJson string) (initOk bool) {
 
 	log.Debugf("Reloading Aikido config...")
 	conf := AikidoConfigData{}
-	config.ReloadAikidoConfig(&conf, configJson)
-
-	if conf.Token == "" {
+	if !config.ReloadAikidoConfig(&conf, configJson) {
 		return false
 	}
 
