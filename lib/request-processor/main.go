@@ -52,9 +52,8 @@ func RequestProcessorInit(initJson string) (initOk bool) {
 		grpc.Init()
 		server := globals.GetCurrentServer()
 		if server != nil {
-			go initializeServer(server)
+			initializeServer(server)
 		}
-		go grpc.StartCloudConfigRoutine()
 	}
 	if !zen_internals.Init() {
 		log.Error("Error initializing zen-internals library!")
@@ -123,7 +122,7 @@ func RequestProcessorConfigUpdate(configJson string) (initOk bool) {
 	if server == nil {
 		return false
 	}
-	go initializeServer(server)
+	initializeServer(server)
 	return true
 }
 

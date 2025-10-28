@@ -32,6 +32,8 @@ func Init() {
 	client = protos.NewAikidoClient(conn)
 
 	log.Debugf("Current connection state: %s\n", conn.GetState().String())
+
+	StartCloudConfigRoutine()
 }
 
 func Uninit() {
