@@ -112,7 +112,11 @@ bool Agent::IsRunning(const std::string& aikidoAgentPath, const std::string& aik
         agentPIDsFromRunningProcesses.size() != 1 || 
         agentPIDFromFile != agentPIDsFromRunningProcesses[0]) {
         AIKIDO_LOG_INFO("Aikido Agent not running: PID file %d, running process PIDs %s!\n", agentPIDFromFile, agentPIDsFromRunningProcesses.size() > 0 ? to_string(agentPIDsFromRunningProcesses[0]).c_str() : "-1");
-        this->KillProcesses(agentPIDsFromRunningProcesses);
+        std::vector<pid_t> agentPIDsToKill = agentPIDsFromRunningProcesses;
+        if (agentPIDFromFile != -1) {
+            agentPIDsToKill.push_back(agentPIDFromFile);
+        }
+        this->KillProcesses(agentPIDsToKill);
         this->RemoveSocketFile(aikidoAgentSocketPath);
         return false;
     }
