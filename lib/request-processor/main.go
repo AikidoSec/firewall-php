@@ -12,6 +12,7 @@ import (
 	"main/utils"
 	zen_internals "main/vulnerabilities/zen-internals"
 	"strings"
+	"time"
 	"unsafe"
 )
 
@@ -122,7 +123,7 @@ func RequestProcessorConfigUpdate(configJson string) (initOk bool) {
 	}
 	go grpc.SendAikidoConfig(server)
 	go grpc.OnPackages(server, server.AikidoConfig.Packages)
-	go grpc.GetCloudConfig(server)
+	go grpc.GetCloudConfig(server, 5*time.Second)
 
 	return true
 }
