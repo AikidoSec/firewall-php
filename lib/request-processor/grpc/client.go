@@ -47,7 +47,7 @@ func SendAikidoConfig(server *ServerData) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
 	_, err := client.OnConfig(ctx, &protos.Config{
