@@ -27,10 +27,6 @@ std::string GetDateTime() {
     return time_str;
 }
 
-std::string GenerateSocketPath() {
-    return "/run/aikido-" + std::string(PHP_AIKIDO_VERSION) + "/aikido-" + GetDateTime() + "-" + GetRandomNumber() + ".sock";
-}
-
 const char* GetEventName(EVENT_ID event) {
     switch (event) {
         case EVENT_PRE_REQUEST:
@@ -118,6 +114,26 @@ bool StartsWith(const std::string& str, const std::string& prefix, bool caseSens
     }
     return strToCompare.size() >= prefixToCompare.size() && strToCompare.compare(0, prefixToCompare.length(), prefixToCompare) == 0;
 }
+
+std::string AnonymizeToken(const std::string& str) {
+    return str.length() > 4 ? "AIK_RUNTIME_***" + str.substr(str.length() - 4) : "AIK_RUNTIME_***";
+}
+
+bool FileExists(const std::string& filePath) {
+    struct stat buffer;
+    if (stat(filePath.c_str(), &buffer) == 0) {
+        return true;
+    }
+    return false;
+}
+
+bool RemoveFile(const std::string& filePath) {
+    if (unlink(filePath.c_str()) == 0) {
+        return true;
+    }
+    return false;
+}
+
 
 std::string GetStackTrace() {
 #if PHP_VERSION_ID >= 80100

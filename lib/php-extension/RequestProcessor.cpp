@@ -6,20 +6,22 @@ std::string RequestProcessor::GetInitData(std::string token) {
     LoadLaravelEnvFile();
     LoadEnvironment();
 
-    if (token.empty()) {
-        token = AIKIDO_GLOBAL(token);
+    if (!token.empty()) {
+        AIKIDO_GLOBAL(token) = token;
     }
 
     json initData = {
-        {"token", token},
+        {"token", AIKIDO_GLOBAL(token)},
+        {"platform_name", AIKIDO_GLOBAL(sapi_name)},
+        {"platform_version", PHP_VERSION},
+        {"endpoint", AIKIDO_GLOBAL(endpoint)},
+        {"config_endpoint", AIKIDO_GLOBAL(config_endpoint)},
         {"log_level", AIKIDO_GLOBAL(log_level_str)},
-        {"socket_path", AIKIDO_GLOBAL(socket_path)},
         {"blocking", AIKIDO_GLOBAL(blocking)},
         {"trust_proxy", AIKIDO_GLOBAL(trust_proxy)},
         {"disk_logs", AIKIDO_GLOBAL(disk_logs)},
         {"localhost_allowed_by_default", AIKIDO_GLOBAL(localhost_allowed_by_default)},
         {"collect_api_schema", AIKIDO_GLOBAL(collect_api_schema)},
-        {"sapi", AIKIDO_GLOBAL(sapi_name)},
         {"packages", GetPackages()}};
     return NormalizeAndDumpJson(initData);
 }
@@ -103,6 +105,13 @@ bool RequestProcessor::Init() {
         return true;
     }
 
+    this->GetInitData();
+
+    if (AIKIDO_GLOBAL(disable) == true) {
+        AIKIDO_LOG_INFO("Request Processor initialization skipped because AIKIDO_DISABLE is set to 1!\n");
+        return false;
+    }
+
     std::string requestProcessorLibPath = "/opt/aikido-" + std::string(PHP_AIKIDO_VERSION) + "/aikido-request-processor.so";
     this->libHandle = dlopen(requestProcessorLibPath.c_str(), RTLD_LAZY);
     if (!this->libHandle) {
@@ -150,7 +159,8 @@ bool RequestProcessor::RequestInit() {
         AIKIDO_LOG_ERROR("Failed to initialize the request processor: %s!\n", dlerror());
         return false;
     }
-
+    
+    this->LoadConfig();
     this->requestInitialized = true;
     this->numberOfRequests++;
 
@@ -163,15 +173,21 @@ bool RequestProcessor::RequestInit() {
     return true;
 }
 
-void RequestProcessor::LoadConfig(std::string token) {
-    if (token.empty() && this->configReloaded) {
+void RequestProcessor::LoadConfig(std::string userProvidedToken) {
+    std::string previousToken = AIKIDO_GLOBAL(token);
+    std::string initJson = this->GetInitData(userProvidedToken);
+    std::string currentToken = AIKIDO_GLOBAL(token);
+    if (currentToken.empty()) {
+        AIKIDO_LOG_INFO("Current token is empty, skipping config reload...!\n");
         return;
     }
-    
+    if (previousToken == currentToken) {
+        AIKIDO_LOG_INFO("Token is the same as previous one, skipping config reload...\n");
+        return;
+    }
+
     AIKIDO_LOG_INFO("Reloading Aikido config...\n");
-    std::string initJson = this->GetInitData(token);
     this->requestProcessorConfigUpdateFn(GoCreateString(initJson));
-    this->configReloaded = true;
 }
 
 void RequestProcessor::RequestShutdown() {

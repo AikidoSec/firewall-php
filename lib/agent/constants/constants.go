@@ -1,7 +1,9 @@
-package globals
+package constants
 
 const (
-	Version                             = "1.3.6"
+	Version                             = "1.4.0"
+	SocketPath                          = "/run/aikido-" + Version + "/aikido-agent.sock"
+	PidPath                             = "/run/aikido-" + Version + "/aikido-agent.pid"
 	ConfigUpdatedAtMethod               = "GET"
 	ConfigUpdatedAtAPI                  = "/config"
 	ConfigAPIMethod                     = "GET"
@@ -16,7 +18,5 @@ const (
 	MaxAttackDetectedEventsPerInterval  = 100
 	AttackDetectedEventsIntervalInMs    = 60 * 60 * 1000 // 1 hour
 	MinStatsCollectedForRelevantMetrics = 1000
-	MaxNumberOfStoredUsers              = 2000
-	MaxNumberOfStoredRoutes             = 5000
-	MaxNumberOfStoredHostnames          = 2000
+	MinServerInactivityForCleanup       = 2 * 60 * 1000 // 2 minutes - time interval for checking if registered servers are inactive (they are not running anymore), so the Agent can cleanup their memory
 )

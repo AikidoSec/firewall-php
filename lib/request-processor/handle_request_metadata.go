@@ -1,8 +1,10 @@
 package main
 
 import (
+	. "main/aikido_types"
 	"main/api_discovery"
 	"main/context"
+	"main/globals"
 	"main/grpc"
 	"main/ipc/protos"
 	"main/log"
@@ -14,7 +16,7 @@ func OnPreRequest() string {
 	return ""
 }
 
-func OnRequestShutdownReporting(method, route, routeParsed string, statusCode int, user, ip, rateLimitGroup string, apiSpec *protos.APISpec, rateLimited bool) {
+func OnRequestShutdownReporting(server *ServerData, method, route, routeParsed string, statusCode int, user, ip, rateLimitGroup string, apiSpec *protos.APISpec, rateLimited bool) {
 	if method == "" || route == "" || statusCode == 0 {
 		return
 	}
@@ -26,11 +28,15 @@ func OnRequestShutdownReporting(method, route, routeParsed string, statusCode in
 	}
 
 	log.Info("[RSHUTDOWN] Got API spec: ", apiSpec)
-	grpc.OnRequestShutdown(method, route, routeParsed, statusCode, user, ip, rateLimitGroup, apiSpec, rateLimited)
+	grpc.OnRequestShutdown(server, method, route, routeParsed, statusCode, user, ip, rateLimitGroup, apiSpec, rateLimited)
 }
 
 func OnPostRequest() string {
-	go OnRequestShutdownReporting(context.GetMethod(), context.GetRoute(), context.GetParsedRoute(), context.GetStatusCode(), context.GetUserId(), context.GetIp(), context.GetRateLimitGroup(), api_discovery.GetApiInfo(), context.IsEndpointRateLimited())
+	server := globals.GetCurrentServer()
+	if server == nil {
+		return ""
+	}
+	go OnRequestShutdownReporting(server, context.GetMethod(), context.GetRoute(), context.GetParsedRoute(), context.GetStatusCode(), context.GetUserId(), context.GetIp(), context.GetRateLimitGroup(), api_discovery.GetApiInfo(server), context.IsEndpointRateLimited())
 	context.Clear()
 	return ""
 }

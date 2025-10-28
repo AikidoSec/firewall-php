@@ -3,6 +3,7 @@ package main
 import (
 	"main/attack"
 	"main/context"
+	"main/globals"
 	"main/grpc"
 	"main/log"
 	ssrf "main/vulnerabilities/ssrf"
@@ -65,9 +66,12 @@ func OnPostOutgoingRequest() string {
 
 	log.Info("[AFTER] Got domain: ", hostname, " port: ", port)
 
-	go grpc.OnDomain(hostname, port)
-	if effectiveHostname != hostname {
-		go grpc.OnDomain(effectiveHostname, effectivePort)
+	server := globals.GetCurrentServer()
+	if server != nil {
+		go grpc.OnDomain(server, hostname, port)
+		if effectiveHostname != hostname {
+			go grpc.OnDomain(server, effectiveHostname, effectivePort)
+		}
 	}
 
 	if context.IsEndpointProtectionTurnedOff() {
