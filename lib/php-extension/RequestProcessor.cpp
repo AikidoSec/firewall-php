@@ -188,7 +188,6 @@ void RequestProcessor::LoadConfig(std::string userProvidedToken) {
 
     AIKIDO_LOG_INFO("Reloading Aikido config...\n");
     this->requestProcessorConfigUpdateFn(GoCreateString(initJson));
-    this->configReloaded = true;
 }
 
 void RequestProcessor::RequestShutdown() {
