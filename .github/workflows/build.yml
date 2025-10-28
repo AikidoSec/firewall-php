@@ -486,7 +486,6 @@ jobs:
           sleep_before_test: 20
           max_parallel_tests: 7
           test_type: control
-          skip_tests: control_test_update_aikido
 
   test_php_qa_action_controlling_tests_apache_php_fpm:
     name: Tests (apache2 - php-fpm)
@@ -523,7 +522,6 @@ jobs:
           sleep_before_test: 20
           max_parallel_tests: 7
           test_type: control
-          skip_tests: control_test_update_aikido
 
   test_php_qa_action_controlling_tests_nginx_php_fpm:
     name: Tests (nginx - php-fpm)
@@ -560,4 +558,3 @@ jobs:
           sleep_before_test: 20
           max_parallel_tests: 7
           test_type: control
-          skip_tests: control_test_update_aikido
