@@ -135,7 +135,7 @@ func setCloudConfig(server *ServerData, cloudConfigFromAgent *protos.CloudConfig
 }
 
 func StartCloudConfigRoutine() {
-	GetCloudConfigForAllServers()
+	GetCloudConfigForAllServers(5 * time.Second)
 
 	stopChan = make(chan struct{})
 
@@ -143,7 +143,7 @@ func StartCloudConfigRoutine() {
 		for {
 			select {
 			case <-cloudConfigTicker.C:
-				GetCloudConfigForAllServers()
+				GetCloudConfigForAllServers(5 * time.Second)
 			case <-stopChan:
 				cloudConfigTicker.Stop()
 				return

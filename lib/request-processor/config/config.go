@@ -19,21 +19,28 @@ func UpdateToken(token string) {
 	log.Infof("Token changed to \"AIK_RUNTIME_***%s\"", utils.AnonymizeToken(token))
 }
 
-func ReloadAikidoConfig(conf *AikidoConfigData, initJson string) {
+func ReloadAikidoConfig(conf *AikidoConfigData, initJson string) bool {
 	err := json.Unmarshal([]byte(initJson), conf)
 	if err != nil {
-		panic(fmt.Sprintf("Error parsing JSON to AikidoConfig: %s", err))
+		return false
 	}
 
 	if err := log.SetLogLevel(conf.LogLevel); err != nil {
-		panic(fmt.Sprintf("Error setting log level: %s", err))
+		return false
 	}
 
-	if conf.Token != "" {
-		server := globals.CreateServer(conf.Token)
-		server.AikidoConfig = *conf
-		UpdateToken(conf.Token)
+	if conf.Token == "" {
+		return false
 	}
+
+	if globals.ServerExists(conf.Token) {
+		UpdateToken(conf.Token)
+		return false
+	}
+	server := globals.CreateServer(conf.Token)
+	server.AikidoConfig = *conf
+	UpdateToken(conf.Token)
+	return true
 }
 
 func Init(initJson string) {
