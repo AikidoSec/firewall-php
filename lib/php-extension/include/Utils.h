@@ -25,3 +25,5 @@ std::string AnonymizeToken(const std::string& str);
 bool FileExists(const std::string& filePath);
 
 bool RemoveFile(const std::string& filePath);
+
+std::string GetStackTrace();
