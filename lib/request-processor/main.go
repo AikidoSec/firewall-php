@@ -12,7 +12,6 @@ import (
 	"main/utils"
 	zen_internals "main/vulnerabilities/zen-internals"
 	"strings"
-	"time"
 	"unsafe"
 )
 
@@ -28,6 +27,11 @@ var eventHandlers = map[int]HandlerFunction{
 	C.EVENT_PRE_SHELL_EXECUTED:       OnPreShellExecuted,
 	C.EVENT_PRE_PATH_ACCESSED:        OnPrePathAccessed,
 	C.EVENT_PRE_SQL_QUERY_EXECUTED:   OnPreSqlQueryExecuted,
+}
+
+func initializeServer(server *ServerData) {
+	grpc.SendAikidoConfig(server)
+	grpc.OnPackages(server, server.AikidoConfig.Packages)
 }
 
 //export RequestProcessorInit
@@ -48,10 +52,8 @@ func RequestProcessorInit(initJson string) (initOk bool) {
 		grpc.Init()
 		server := globals.GetCurrentServer()
 		if server != nil {
-			go grpc.SendAikidoConfig(server)
-			go grpc.OnPackages(server, server.AikidoConfig.Packages)
+			go initializeServer(server)
 		}
-
 		go grpc.StartCloudConfigRoutine()
 	}
 	if !zen_internals.Init() {
@@ -121,10 +123,7 @@ func RequestProcessorConfigUpdate(configJson string) (initOk bool) {
 	if server == nil {
 		return false
 	}
-	go grpc.SendAikidoConfig(server)
-	go grpc.OnPackages(server, server.AikidoConfig.Packages)
-	go grpc.GetCloudConfig(server, 5*time.Second)
-
+	go initializeServer(server)
 	return true
 }
 
