@@ -15,6 +15,7 @@ responses = {
 
 events = []
 server_down = False
+php_version = ""
 
 excluded_routes = ['mock_get_events', 'mock_tests_simple', 'mock_down', 'mock_up']
 
