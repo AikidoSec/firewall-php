@@ -66,7 +66,7 @@ func SendAikidoConfig(server *ServerData) {
 		return
 	}
 
-	log.Debugf("Aikido config sent via socket: %+v", server.AikidoConfig)
+	log.Debugf("Aikido config sent via socket!")
 }
 
 /* Send outgoing domain to Aikido Agent via gRPC */
