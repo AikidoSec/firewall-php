@@ -96,6 +96,9 @@ def assert_events_length_is(events, length):
     assert len(events) == length, f"Error: Events list contains {len(events)} elements and not {length} elements."
 
 subset_keys_contains_check = ["stack"]
+subset_keys_version_check = {
+    "stack": "8.1.0",
+}
 
 def assert_event_contains_subset(event_subset_key, event, event_subset, dry_mode=False):
     """
@@ -138,6 +141,12 @@ def assert_event_contains_subset(event_subset_key, event, event_subset, dry_mode
             if not found_item:
                 return result(AssertionError(f"Item '{event_subset_item}' not found in {event}."))
     else:
+        if event_subset_key in subset_keys_version_check:
+            php_version = mock_server_get_php_version()
+            if mock_server_get_php_version() < subset_keys_version_check[event_subset_key]:
+                print(f"PHP version {php_version} is too old for checking key {event_subset_key}. Skipping check...")
+                return True
+                
         if event_subset_key in subset_keys_contains_check:
             # Checking if subset field is contained in event field
             if event_subset not in event:
@@ -250,3 +259,6 @@ def mock_server_up():
 
 def mock_server_get_token():
     return mock_server_get("/mock/token").json().get("token")
+
+def mock_server_get_php_version():
+    return mock_server_get("/mock/php_version").json().get("php_version")
