@@ -140,8 +140,8 @@ func StartCloudConfigRoutine() {
 	go func() {
 		for {
 			select {
-            case <-cloudConfigTicker.C:
-                GetCloudConfigForAllServers(10 * time.Second)
+			case <-cloudConfigTicker.C:
+				GetCloudConfigForAllServers(10 * time.Second)
 			case <-stopChan:
 				cloudConfigTicker.Stop()
 				return
