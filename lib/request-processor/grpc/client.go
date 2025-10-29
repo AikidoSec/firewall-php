@@ -32,8 +32,6 @@ func Init() {
 	client = protos.NewAikidoClient(conn)
 
 	log.Debugf("Current connection state: %s\n", conn.GetState().String())
-
-	StartCloudConfigRoutine()
 }
 
 func Uninit() {
@@ -158,7 +156,7 @@ func GetCloudConfig(server *ServerData, timeout time.Duration) {
 		return
 	}
 
-	log.Debugf("Got cloud config: %v", cloudConfig)
+	log.Debugf("Got cloud config!")
 	setCloudConfig(server, cloudConfig)
 }
 

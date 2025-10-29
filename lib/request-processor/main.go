@@ -12,6 +12,7 @@ import (
 	"main/utils"
 	zen_internals "main/vulnerabilities/zen-internals"
 	"strings"
+	"time"
 	"unsafe"
 )
 
@@ -32,6 +33,7 @@ var eventHandlers = map[int]HandlerFunction{
 func initializeServer(server *ServerData) {
 	grpc.SendAikidoConfig(server)
 	grpc.OnPackages(server, server.AikidoConfig.Packages)
+	grpc.GetCloudConfig(server, 5*time.Second)
 }
 
 //export RequestProcessorInit
@@ -54,6 +56,7 @@ func RequestProcessorInit(initJson string) (initOk bool) {
 		if server != nil {
 			initializeServer(server)
 		}
+		grpc.StartCloudConfigRoutine()
 	}
 	if !zen_internals.Init() {
 		log.Error("Error initializing zen-internals library!")

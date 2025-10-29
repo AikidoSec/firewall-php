@@ -26,6 +26,13 @@ std::string RequestProcessor::GetInitData(std::string token) {
     return NormalizeAndDumpJson(initData);
 }
 
+void RequestProcessor::RefreshToken(const std::string& userProvidedToken) {
+    LoadEnvironment();
+    if (!userProvidedToken.empty()) {
+        AIKIDO_GLOBAL(token) = userProvidedToken;
+    }
+}
+
 bool RequestProcessor::ContextInit() {
     return this->requestProcessorContextInitFn(GoContextCallback);
 }
@@ -105,7 +112,7 @@ bool RequestProcessor::Init() {
         return true;
     }
 
-    this->GetInitData();
+    std::string initDataString = this->GetInitData();
 
     if (AIKIDO_GLOBAL(disable) == true) {
         AIKIDO_LOG_INFO("Request Processor initialization skipped because AIKIDO_DISABLE is set to 1!\n");
@@ -141,7 +148,6 @@ bool RequestProcessor::Init() {
         return false;
     }
 
-    std::string initDataString = this->GetInitData();
     if (!requestProcessorInitFn(GoCreateString(initDataString))) {
         AIKIDO_LOG_ERROR("Failed to initialize Aikido Request Processor library: %s!\n", dlerror());
         this->initFailed = true;
@@ -175,20 +181,20 @@ bool RequestProcessor::RequestInit() {
     return true;
 }
 
-void RequestProcessor::LoadConfig(std::string userProvidedToken) {
+void RequestProcessor::LoadConfig(const std::string& userProvidedToken) {
     std::string previousToken = AIKIDO_GLOBAL(token);
-    std::string initJson = this->GetInitData(userProvidedToken);
-    std::string currentToken = AIKIDO_GLOBAL(token);
-    if (currentToken.empty()) {
+    RefreshToken(userProvidedToken);
+    if (AIKIDO_GLOBAL(token).empty()) {
         AIKIDO_LOG_INFO("Current token is empty, skipping config reload...!\n");
         return;
     }
-    if (previousToken == currentToken) {
+    if (AIKIDO_GLOBAL(token) == previousToken) {
         AIKIDO_LOG_INFO("Token is the same as previous one, skipping config reload...\n");
         return;
     }
 
     AIKIDO_LOG_INFO("Reloading Aikido config...\n");
+    std::string initJson = this->GetInitData(userProvidedToken);
     this->requestProcessorConfigUpdateFn(GoCreateString(initJson));
 }
 
