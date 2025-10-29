@@ -127,7 +127,7 @@ bool RequestProcessor::Init() {
         return false;
     }
 
-    AIKIDO_LOG_INFO("Initializing Aikido Request Processor (SAPI: %s)...\n", AIKIDO_GLOBAL(sapi_name).c_str());
+    AIKIDO_LOG_INFO("Initializing Aikido Request Processor...\n");
 
     RequestProcessorInitFn requestProcessorInitFn = (RequestProcessorInitFn)dlsym(libHandle, "RequestProcessorInit");
     this->requestProcessorContextInitFn = (RequestProcessorContextInitFn)dlsym(libHandle, "RequestProcessorContextInit");
@@ -156,7 +156,7 @@ bool RequestProcessor::Init() {
 
     AIKIDO_GLOBAL(logger).Init();
 
-    AIKIDO_LOG_INFO("Aikido Request Processor initialized successfully!\n");
+    AIKIDO_LOG_INFO("Aikido Request Processor initialized successfully (SAPI: %s)!\n", AIKIDO_GLOBAL(sapi_name).c_str());
     return true;
 }
 
@@ -175,6 +175,7 @@ bool RequestProcessor::RequestInit() {
         //  can only serve one site per process, so the config should be loaded only once.
         // After that, subsequent requests cannot change the config so we do not need to reload it.
         if (this->numberOfRequests == 0) {
+            AIKIDO_LOG_INFO("Loading Aikido config one time for non-apache-mod-php SAPI: %s...\n", AIKIDO_GLOBAL(sapi_name).c_str());
             this->LoadConfig();
         }
     }
