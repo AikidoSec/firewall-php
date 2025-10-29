@@ -91,6 +91,6 @@ func ReportAttackDetected(res *utils.InterceptorResult) string {
 		return ""
 	}
 
-	go grpc.OnAttackDetected(GetAttackDetectedProto(*res))
+	grpc.OnAttackDetected(GetAttackDetectedProto(*res))
 	return GetAttackDetectedAction(*res)
 }
