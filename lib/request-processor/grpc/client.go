@@ -146,12 +146,12 @@ func OnRequestShutdown(server *ServerData, method string, route string, routePar
 }
 
 /* Get latest cloud config from Aikido Agent via gRPC */
-func GetCloudConfig(server *ServerData) {
+func GetCloudConfig(server *ServerData, timeout time.Duration) {
 	if client == nil {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
 	cloudConfig, err := client.GetCloudConfig(ctx, &protos.CloudConfigUpdatedAt{Token: server.AikidoConfig.Token, ServerPid: globals.EnvironmentConfig.ServerPID, ConfigUpdatedAt: utils.GetCloudConfigUpdatedAt(server)})
@@ -159,13 +159,13 @@ func GetCloudConfig(server *ServerData) {
 		return
 	}
 
-	log.Debugf("Got cloud config: %v", cloudConfig)
+	log.Debugf("Got cloud config!")
 	setCloudConfig(server, cloudConfig)
 }
 
-func GetCloudConfigForAllServers() {
+func GetCloudConfigForAllServers(timeout time.Duration) {
 	for _, server := range globals.GetServers() {
-		GetCloudConfig(server)
+		GetCloudConfig(server, timeout)
 	}
 }
 

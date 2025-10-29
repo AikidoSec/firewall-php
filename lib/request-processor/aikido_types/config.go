@@ -17,6 +17,10 @@ type AikidoConfigData struct {
 	PlatformVersion           string            `json:"platform_version"`             // PHP version
 	Endpoint                  string            `json:"endpoint"`                     // default: 'https://guard.aikido.dev/'
 	ConfigEndpoint            string            `json:"config_endpoint"`              // default: 'https://runtime.aikido.dev/'
+	PlatformName              string            `json:"platform_name"`                // PHP platform name (fpm-fcgi, cli-server, ...)
+	PlatformVersion           string            `json:"platform_version"`             // PHP version
+	Endpoint                  string            `json:"endpoint"`                     // default: 'https://guard.aikido.dev/'
+	ConfigEndpoint            string            `json:"config_endpoint"`              // default: 'https://runtime.aikido.dev/'
 	Token                     string            `json:"token"`                        // default: ''
 	LogLevel                  string            `json:"log_level"`                    // default: 'WARN'
 	Blocking                  bool              `json:"blocking"`                     // default: false

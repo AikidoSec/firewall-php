@@ -3,14 +3,18 @@ package main
 import (
 	"C"
 	. "main/aikido_types"
+	. "main/aikido_types"
 	"main/globals"
 	"main/grpc"
 	"main/log"
 	"main/machine"
 	"main/server_utils"
 	"main/utils"
+	"main/server_utils"
+	"main/utils"
 	"os"
 	"os/signal"
+	"sync/atomic"
 	"sync/atomic"
 	"syscall"
 	"time"
@@ -58,6 +62,7 @@ func AgentInit() (initOk bool) {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Warn(log.MainLogger, "Recovered from panic:", r)
+			log.Warn(log.MainLogger, "Recovered from panic:", r)
 			initOk = false
 		}
 	}()
@@ -70,7 +75,10 @@ func AgentInit() (initOk bool) {
 
 	writePidFile()
 	utils.StartPollingRoutine(serversCleanupChannel, serversCleanupTicker, serversCleanupRoutine, nil)
+	writePidFile()
+	utils.StartPollingRoutine(serversCleanupChannel, serversCleanupTicker, serversCleanupRoutine, nil)
 
+	log.Infof(log.MainLogger, "Aikido Agent v%s started!", constants.Version)
 	log.Infof(log.MainLogger, "Aikido Agent v%s started!", constants.Version)
 	return true
 }
@@ -84,10 +92,14 @@ func AgentUninit() {
 	grpc.Uninit()
 	removePidFile()
 	log.Infof(log.MainLogger, "Aikido Agent v%s stopped!", constants.Version)
+	removePidFile()
+	log.Infof(log.MainLogger, "Aikido Agent v%s stopped!", constants.Version)
 	log.Uninit()
 }
 
 func main() {
+	if !AgentInit() {
+		log.Errorf(log.MainLogger, "Agent initialization failed!")
 	if !AgentInit() {
 		log.Errorf(log.MainLogger, "Agent initialization failed!")
 		os.Exit(-2)
@@ -96,6 +108,7 @@ func main() {
 	signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT)
 
 	signal := <-sigChan
+	log.Infof(log.MainLogger, "Received signal: %s", signal)
 	log.Infof(log.MainLogger, "Received signal: %s", signal)
 	AgentUninit()
 	os.Exit(0)

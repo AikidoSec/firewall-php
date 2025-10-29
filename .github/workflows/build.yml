@@ -114,7 +114,7 @@ jobs:
         cd lib/php-extension
         phpize
         cd ../../build
-        CXX=g++ CXXFLAGS="-fPIC -std=c++17 -O2 -I../lib/php-extension/include" LDFLAGS="-lstdc++ -lstdc++fs" ../lib/php-extension/configure
+        CXX=g++ CXXFLAGS="-fPIC -g -O2 -I../lib/php-extension/include" LDFLAGS="-lstdc++" ../lib/php-extension/configure
         make -j"$(nproc)"
 
     - name: Version Aikido extension
@@ -215,7 +215,7 @@ jobs:
 
       - name: Check rpm dependencies
         run: |
-          yum deplist ~/rpmbuild/RPMS/${{ env.ARCH }}/${{ env.AIKIDO_ARTIFACT_RELEASE }} | grep -E "GLIBC_2.32|GLIBC_2.34|GLIBCXX_3.4.29" && exit 1 || exit 0
+          yum deplist ~/rpmbuild/RPMS/${{ env.ARCH }}/${{ env.AIKIDO_ARTIFACT_RELEASE }} | grep -E "GLIBC_2.32|GLIBC_2.34|GLIBCXX_3.4.26|GLIBCXX_3.4.29" && exit 1 || exit 0
 
       - name: Archive rpm package
         uses: actions/upload-artifact@v4
@@ -486,7 +486,6 @@ jobs:
           sleep_before_test: 20
           max_parallel_tests: 7
           test_type: control
-          skip_tests: control_test_update_aikido
 
   test_php_qa_action_controlling_tests_apache_php_fpm:
     name: Tests (apache2 - php-fpm)
@@ -523,7 +522,6 @@ jobs:
           sleep_before_test: 20
           max_parallel_tests: 7
           test_type: control
-          skip_tests: control_test_update_aikido
 
   test_php_qa_action_controlling_tests_nginx_php_fpm:
     name: Tests (nginx - php-fpm)
@@ -560,4 +558,3 @@ jobs:
           sleep_before_test: 20
           max_parallel_tests: 7
           test_type: control
-          skip_tests: control_test_update_aikido

@@ -79,7 +79,7 @@ bool Agent::SpawnDetached(std::string aikidoAgentPath) {
 }
 
 bool Agent::RemoveSocketFile(const std::string& aikidoAgentSocketPath) {
-    if (!std::filesystem::remove(aikidoAgentSocketPath)) {
+    if (!RemoveFile(aikidoAgentSocketPath)) {
         AIKIDO_LOG_WARN("Failed to remove socket file \"%s\"!\n", aikidoAgentSocketPath.c_str());
         return false;
     }
@@ -87,7 +87,7 @@ bool Agent::RemoveSocketFile(const std::string& aikidoAgentSocketPath) {
     return true;
 }
 
-void Agent::KillProcesses(std::vector<pid_t>& pids) {
+void Agent::KillProcesses(std::set<pid_t>& pids) {
     for (pid_t pid : pids) {
         if (kill(pid, SIGTERM) != 0) {
             AIKIDO_LOG_WARN("Failed to terminate Aikido Agent process %d!\n", pid);
@@ -98,21 +98,25 @@ void Agent::KillProcesses(std::vector<pid_t>& pids) {
 }
 
 bool Agent::IsRunning(const std::string& aikidoAgentPath, const std::string& aikidoAgentSocketPath) {
-    if (!std::filesystem::exists(aikidoAgentSocketPath)) {
+    if (!FileExists(aikidoAgentSocketPath)) {
         AIKIDO_LOG_INFO("No socket file found!\n");
         return false;
-    } 
-    
+    }
+
     AIKIDO_LOG_INFO("Found socket file \"%s\" on disk! Checking if Aikido Agent process is running...\n", aikidoAgentSocketPath.c_str());
 
     std::string aikidoAgentPidPath = "/run/aikido-" + std::string(PHP_AIKIDO_VERSION) + "/aikido-agent.pid";
     pid_t agentPIDFromFile = this->GetPIDFromFile(aikidoAgentPidPath);
     vector<pid_t> agentPIDsFromRunningProcesses = this->GetPIDsFromRunningProcesses(aikidoAgentPath);
-    if (agentPIDFromFile == -1 || 
-        agentPIDsFromRunningProcesses.size() != 1 || 
+    if (agentPIDFromFile == -1 ||
+        agentPIDsFromRunningProcesses.size() != 1 ||
         agentPIDFromFile != agentPIDsFromRunningProcesses[0]) {
         AIKIDO_LOG_INFO("Aikido Agent not running: PID file %d, running process PIDs %s!\n", agentPIDFromFile, agentPIDsFromRunningProcesses.size() > 0 ? to_string(agentPIDsFromRunningProcesses[0]).c_str() : "-1");
-        this->KillProcesses(agentPIDsFromRunningProcesses);
+        std::set<pid_t> agentPIDsToKill(agentPIDsFromRunningProcesses.begin(), agentPIDsFromRunningProcesses.end());
+        if (agentPIDFromFile != -1) {
+            agentPIDsToKill.insert(agentPIDFromFile);
+        }
+        this->KillProcesses(agentPIDsToKill);
         this->RemoveSocketFile(aikidoAgentSocketPath);
         return false;
     }

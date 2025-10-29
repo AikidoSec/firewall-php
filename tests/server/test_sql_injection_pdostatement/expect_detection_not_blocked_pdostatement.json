@@ -12,7 +12,6 @@
         "blocked": false,
         "source": "query",
         "path": ".age",
-        "stack": "",
         "payload": "3'); DROP TABLE cats; --",
         "metadata": {
             "dialect": "sqlite",

@@ -17,7 +17,6 @@
         "blocked": true,
         "source": "body",
         "path": ".url",
-        "stack": "",
         "metadata": {
             "hostname": "app.example.local",
             "resolvedIp": "127.0.0.1"

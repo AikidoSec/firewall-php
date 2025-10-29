@@ -19,7 +19,7 @@ def run_test():
     
     events = mock_server_get_events()
     assert_events_length_is(events, 2)
-    assert_event_contains_subset(events[1], {"type": "heartbeat" })
+    assert_event_contains_subset("__root", events[1], {"type": "heartbeat" })
     
 if __name__ == "__main__":
     load_test_args()

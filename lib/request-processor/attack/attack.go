@@ -53,6 +53,7 @@ func GetAttackDetectedProto(res utils.InterceptorResult) *protos.AttackDetected 
 			Blocked:   utils.IsBlockingEnabled(globals.GetCurrentServer()),
 			Source:    res.Source,
 			Path:      res.PathToPayload,
+			Stack:     context.GetStackTrace(),
 			Payload:   res.Payload,
 			Metadata:  GetMetadataProto(res.Metadata),
 			UserId:    context.GetUserId(),

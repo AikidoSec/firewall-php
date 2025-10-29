@@ -16,4 +16,7 @@ func Init(server *ServerData) {
 func Uninit(server *ServerData) {
 	utils.StopPollingRoutine(server.PollingData.HeartbeatRoutineChannel)
 	utils.StopPollingRoutine(server.PollingData.ConfigPollingRoutineChannel)
+func Uninit(server *ServerData) {
+	utils.StopPollingRoutine(server.PollingData.HeartbeatRoutineChannel)
+	utils.StopPollingRoutine(server.PollingData.ConfigPollingRoutineChannel)
 }

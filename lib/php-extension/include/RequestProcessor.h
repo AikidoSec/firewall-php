@@ -22,7 +22,8 @@ class RequestProcessor {
     RequestProcessorUninitFn requestProcessorUninitFn = nullptr;
 
    private:
-    std::string GetInitData(std::string token = "");
+    std::string GetInitData(const std::string& token = "");
+    void RefreshToken(const std::string& userProvidedToken = "");
     bool ContextInit();
     void SendPreRequestEvent();
     void SendPostRequestEvent();
@@ -35,7 +36,7 @@ class RequestProcessor {
     bool SendEvent(EVENT_ID eventId, std::string& output);
     bool IsBlockingEnabled();
     bool ReportStats();
-    void LoadConfig(std::string token = "");
+    void LoadConfig(const std::string& userProvidedToken = "");
     void RequestShutdown();
     void Uninit();
 

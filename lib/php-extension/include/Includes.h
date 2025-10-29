@@ -22,7 +22,7 @@
 #include <spawn.h>
 #include <fstream>
 #include <iostream>
-#include <filesystem>
+#include <set>
 
 #include "3rdparty/json.hpp"
 using namespace std;
@@ -33,6 +33,7 @@ using json = nlohmann::json;
 #include "ext/standard/info.h"
 #include "php.h"
 #include "zend_exceptions.h"
+#include "zend_builtin_functions.h"
 
 #include "GoCGO.h"
 #include "GoWrappers.h"

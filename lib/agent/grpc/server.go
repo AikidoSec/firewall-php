@@ -5,9 +5,12 @@ import (
 	"fmt"
 	"main/cloud"
 	"main/constants"
+	"main/constants"
 	"main/globals"
 	"main/ipc/protos"
 	"main/log"
+	"main/server_utils"
+	"main/utils"
 	"main/server_utils"
 	"main/utils"
 	"net"
@@ -23,6 +26,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
+type GrpcServer struct {
 type GrpcServer struct {
 	protos.AikidoServer
 }
@@ -81,7 +85,11 @@ func (s *GrpcServer) OnRequestShutdown(ctx context.Context, req *protos.RequestM
 	go storeTotalStats(server, req.GetRateLimited())
 	go storeRoute(server, req.GetMethod(), req.GetRouteParsed(), req.GetApiSpec(), req.GetRateLimited())
 	go updateRateLimitingCounts(server, req.GetMethod(), req.GetRoute(), req.GetRouteParsed(), req.GetUser(), req.GetIp(), req.GetRateLimitGroup())
+	go storeTotalStats(server, req.GetRateLimited())
+	go storeRoute(server, req.GetMethod(), req.GetRouteParsed(), req.GetApiSpec(), req.GetRateLimited())
+	go updateRateLimitingCounts(server, req.GetMethod(), req.GetRoute(), req.GetRouteParsed(), req.GetUser(), req.GetIp(), req.GetRateLimitGroup())
 
+	atomic.StoreUint32(&server.GotTraffic, 1)
 	atomic.StoreUint32(&server.GotTraffic, 1)
 	return &emptypb.Empty{}, nil
 }
@@ -98,6 +106,7 @@ func (s *GrpcServer) GetCloudConfig(ctx context.Context, req *protos.CloudConfig
 	if cloudConfig == nil {
 		return nil, status.Errorf(codes.Canceled, "CloudConfig was not updated")
 	}
+	log.Debugf(server.Logger, "Returning cloud config update to request processor!")
 	return cloudConfig, nil
 }
 
@@ -151,6 +160,7 @@ func (s *GrpcServer) OnMonitoredIpMatch(ctx context.Context, req *protos.Monitor
 	defer server.StatsData.StatsMutex.Unlock()
 
 	storeMonitoredListsMatches(&server.StatsData.IpAddressesMatches, req.GetLists())
+	storeMonitoredListsMatches(&server.StatsData.IpAddressesMatches, req.GetLists())
 	return &emptypb.Empty{}, nil
 }
 
@@ -165,6 +175,7 @@ func (s *GrpcServer) OnMonitoredUserAgentMatch(ctx context.Context, req *protos.
 	defer server.StatsData.StatsMutex.Unlock()
 
 	storeMonitoredListsMatches(&server.StatsData.UserAgentsMatches, req.GetLists())
+	storeMonitoredListsMatches(&server.StatsData.UserAgentsMatches, req.GetLists())
 	return &emptypb.Empty{}, nil
 }
 
@@ -173,11 +184,16 @@ var grpcServer *grpc.Server
 func StartServer(lis net.Listener) {
 	grpcServer = grpc.NewServer() //grpc.MaxConcurrentStreams(100)
 	protos.RegisterAikidoServer(grpcServer, &GrpcServer{})
+	grpcServer = grpc.NewServer() //grpc.MaxConcurrentStreams(100)
+	protos.RegisterAikidoServer(grpcServer, &GrpcServer{})
 
+	log.Infof(log.MainLogger, "gRPC server is running on Unix socket %s", constants.SocketPath)
 	log.Infof(log.MainLogger, "gRPC server is running on Unix socket %s", constants.SocketPath)
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Warnf(log.MainLogger, "gRPC server failed to serve: %v", err)
+		log.Warnf(log.MainLogger, "gRPC server failed to serve: %v", err)
 	}
+	log.Info(log.MainLogger, "gRPC server went down!")
 	log.Info(log.MainLogger, "gRPC server went down!")
 	lis.Close()
 }
@@ -186,14 +202,18 @@ func StartServer(lis net.Listener) {
 // For now, this folder has 777 permissions as we don't know under which user the php requests will run under (apache, nginx, www-data, forge, ...)
 func createRunDirFolderIfNotExists() {
 	runDirectory := filepath.Dir(constants.SocketPath)
+	runDirectory := filepath.Dir(constants.SocketPath)
 	if _, err := os.Stat(runDirectory); os.IsNotExist(err) {
 		err := os.MkdirAll(runDirectory, 0777)
 		if err != nil {
 			log.Errorf(log.MainLogger, "Error in creating run directory: %v\n", err)
+			log.Errorf(log.MainLogger, "Error in creating run directory: %v\n", err)
 		} else {
+			log.Infof(log.MainLogger, "Run directory %s created successfully.\n", runDirectory)
 			log.Infof(log.MainLogger, "Run directory %s created successfully.\n", runDirectory)
 		}
 	} else {
+		log.Infof(log.MainLogger, "Run directory %s already exists.\n", runDirectory)
 		log.Infof(log.MainLogger, "Run directory %s already exists.\n", runDirectory)
 	}
 }
@@ -202,10 +222,13 @@ func Init() bool {
 	// Remove the socket file if it already exists
 	if _, err := os.Stat(constants.SocketPath); err == nil {
 		os.RemoveAll(constants.SocketPath)
+	if _, err := os.Stat(constants.SocketPath); err == nil {
+		os.RemoveAll(constants.SocketPath)
 	}
 
 	createRunDirFolderIfNotExists()
 
+	lis, err := net.Listen("unix", constants.SocketPath)
 	lis, err := net.Listen("unix", constants.SocketPath)
 	if err != nil {
 		panic(fmt.Sprintf("failed to listen: %v", err))
@@ -213,6 +236,7 @@ func Init() bool {
 
 	// Change the permissions of the socket to make it accessible by non-root users
 	// For now, this socket has 777 permissions as we don't know under which user the php requests will run under (apache, nginx, www-data, forge, ...)
+	if err := os.Chmod(constants.SocketPath, 0777); err != nil {
 	if err := os.Chmod(constants.SocketPath, 0777); err != nil {
 		panic(fmt.Sprintf("failed to change permissions of Unix socket: %v", err))
 	}
@@ -225,9 +249,12 @@ func Uninit() {
 	if grpcServer != nil {
 		grpcServer.Stop()
 		log.Infof(log.MainLogger, "gRPC server has been stopped!")
+		log.Infof(log.MainLogger, "gRPC server has been stopped!")
 	}
 
 	// Remove the socket file if it exists
+	if _, err := os.Stat(constants.SocketPath); err == nil {
+		if err := os.RemoveAll(constants.SocketPath); err != nil {
 	if _, err := os.Stat(constants.SocketPath); err == nil {
 		if err := os.RemoveAll(constants.SocketPath); err != nil {
 			panic(fmt.Sprintf("failed to remove existing socket: %v", err))
