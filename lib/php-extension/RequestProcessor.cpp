@@ -194,11 +194,12 @@ bool RequestProcessor::RequestInit() {
 void RequestProcessor::LoadConfig(const std::string& userProvidedToken) {
     std::string previousToken = AIKIDO_GLOBAL(token);
     RefreshToken(userProvidedToken);
-    if (AIKIDO_GLOBAL(token).empty()) {
+    std::string currentToken = AIKIDO_GLOBAL(token);
+    if (currentToken.empty()) {
         AIKIDO_LOG_INFO("Current token is empty, skipping config reload...!\n");
         return;
     }
-    if (AIKIDO_GLOBAL(token) == previousToken) {
+    if (previousToken == currentToken) {
         AIKIDO_LOG_INFO("Token is the same as previous one, skipping config reload...\n");
         return;
     }
