@@ -23,7 +23,7 @@ class RequestProcessor {
 
    private:
     std::string GetInitData(std::string token = "");
-    void RefreshToken(std::string& userProvidedToken = "");
+    void RefreshToken(std::string userProvidedToken = "");
     bool ContextInit();
     void SendPreRequestEvent();
     void SendPostRequestEvent();
