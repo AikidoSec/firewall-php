@@ -127,7 +127,7 @@ bool RequestProcessor::Init() {
         return false;
     }
 
-    AIKIDO_LOG_INFO("Initializing Aikido Request Processor...\n");
+    AIKIDO_LOG_INFO("Initializing Aikido Request Processor (SAPI: %s)...\n", AIKIDO_GLOBAL(sapi_name).c_str());
 
     RequestProcessorInitFn requestProcessorInitFn = (RequestProcessorInitFn)dlsym(libHandle, "RequestProcessorInit");
     this->requestProcessorContextInitFn = (RequestProcessorContextInitFn)dlsym(libHandle, "RequestProcessorContextInit");
@@ -166,9 +166,19 @@ bool RequestProcessor::RequestInit() {
         return false;
     }
     
-    if (this->numberOfRequests == 0) {
+    if (AIKIDO_GLOBAL(sapi_name) == "apache2handler") {
+        // Apache-mod-php can serve multiple sites per process, so the config should be loaded for each request,
+        // as the token can be different for each request.
         this->LoadConfig();
+    } else {
+        // Server APIs that are not apache-mod-php (like php-fpm, cli-server, ...) 
+        //  can only serve one site per process, so the config should be loaded only once.
+        // After that, subsequent requests cannot change the config so we do not need to reload it.
+        if (this->numberOfRequests == 0) {
+            this->LoadConfig();
+        }
     }
+
     this->requestInitialized = true;
     this->numberOfRequests++;
 
