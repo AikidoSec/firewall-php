@@ -13,7 +13,7 @@ import (
 
 var (
 	stopChan          chan struct{}
-	cloudConfigTicker = time.NewTicker(10 * time.Minute)
+	cloudConfigTicker = time.NewTicker(1 * time.Minute)
 )
 
 func buildIpList(cloudIpList map[string]*protos.IpList) map[string]IpList {
