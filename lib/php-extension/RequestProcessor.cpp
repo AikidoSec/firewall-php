@@ -160,7 +160,9 @@ bool RequestProcessor::RequestInit() {
         return false;
     }
     
-    this->LoadConfig();
+    if (this->numberOfRequests == 0) {
+        this->LoadConfig();
+    }
     this->requestInitialized = true;
     this->numberOfRequests++;
 
@@ -173,7 +175,7 @@ bool RequestProcessor::RequestInit() {
     return true;
 }
 
-void RequestProcessor::LoadConfig(std::string userProvidedToken) {
+void RequestProcessor::LoadConfig(std::string userProvidedToken) {)
     std::string previousToken = AIKIDO_GLOBAL(token);
     std::string initJson = this->GetInitData(userProvidedToken);
     std::string currentToken = AIKIDO_GLOBAL(token);
@@ -191,7 +193,6 @@ void RequestProcessor::LoadConfig(std::string userProvidedToken) {
 }
 
 void RequestProcessor::RequestShutdown() {
-    LoadConfig();
     SendPostRequestEvent();
     this->requestInitialized = false;
 }
