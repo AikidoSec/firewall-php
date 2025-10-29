@@ -2,7 +2,7 @@
 
 RequestProcessor requestProcessor;
 
-std::string RequestProcessor::GetInitData(std::string token) {
+std::string RequestProcessor::GetInitData(const std::string& token) {
     LoadLaravelEnvFile();
     LoadEnvironment();
 
@@ -26,7 +26,7 @@ std::string RequestProcessor::GetInitData(std::string token) {
     return NormalizeAndDumpJson(initData);
 }
 
-void RequestProcessor::RefreshToken(std::string userProvidedToken) {
+void RequestProcessor::RefreshToken(const std::string& userProvidedToken) {
     LoadEnvironment();
     if (!userProvidedToken.empty()) {
         AIKIDO_GLOBAL(token) = userProvidedToken;

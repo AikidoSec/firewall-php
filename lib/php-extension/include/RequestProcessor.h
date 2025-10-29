@@ -22,8 +22,8 @@ class RequestProcessor {
     RequestProcessorUninitFn requestProcessorUninitFn = nullptr;
 
    private:
-    std::string GetInitData(std::string token = "");
-    void RefreshToken(std::string userProvidedToken = "");
+    std::string GetInitData(const std::string& token = "");
+    void RefreshToken(const std::string& userProvidedToken = "");
     bool ContextInit();
     void SendPreRequestEvent();
     void SendPostRequestEvent();
