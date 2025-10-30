@@ -7,7 +7,6 @@ import (
 
 var EnvironmentConfig EnvironmentConfigData
 var Servers = make(map[string]*ServerData)
-var ServersMutex sync.RWMutex
 var CurrentToken string = ""
 var CurrentServer *ServerData = nil
 
@@ -30,14 +29,10 @@ func GetServer(token string) *ServerData {
 	if token == "" {
 		return nil
 	}
-	ServersMutex.RLock()
-	defer ServersMutex.RUnlock()
 	return Servers[token]
 }
 
 func GetServers() []*ServerData {
-	ServersMutex.RLock()
-	defer ServersMutex.RUnlock()
 	servers := []*ServerData{}
 	for _, server := range Servers {
 		servers = append(servers, server)
@@ -46,15 +41,11 @@ func GetServers() []*ServerData {
 }
 
 func ServerExists(token string) bool {
-	ServersMutex.RLock()
-	defer ServersMutex.RUnlock()
 	_, exists := Servers[token]
 	return exists
 }
 
 func CreateServer(token string) *ServerData {
-	ServersMutex.Lock()
-	defer ServersMutex.Unlock()
 	Servers[token] = NewServerData()
 	return Servers[token]
 }
