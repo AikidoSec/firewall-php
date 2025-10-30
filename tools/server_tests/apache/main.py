@@ -85,6 +85,9 @@ LogFormat "%h %l %u %t %r %>s %b" combined
         RewriteRule ^(.*)$ index.php [L]
 
         SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1
+
+{env_conf}
+
     </Directory>
 
     ErrorLog {log_dir}/error_{name}.log
@@ -209,6 +212,10 @@ def get_user_and_group(folder_path):
 
 
 def apache_create_config_file(test_name, test_dir, server_port, env):
+    env_conf = ""
+    for e in env:
+        env_conf += f"\t\tSetEnv {e} {env[e]}\n"
+
     apache_config = apache_conf_template.format(
         server_root = apache_server_root,
         server_binary = apache_binary,
@@ -218,11 +225,12 @@ def apache_create_config_file(test_name, test_dir, server_port, env):
         test_dir = test_dir,
         log_dir = apache_log_folder,
         user = apache_user,
-        optional_conf = apache_include_conf,
-        error_log = apache_error_log
+        optional_conf = "", # apache_include_conf,
+        error_log = apache_error_log,
+        env_conf = env_conf
     )
 
-    apache_config_file = os.path.join(test_dir, f"{test_name}.conf")
+    apache_config_file = os.path.join(apache_conf_folder, f"{test_name}.conf")
     with open(apache_config_file, "w") as f:
         f.write(apache_config)
 
