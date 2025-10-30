@@ -27,18 +27,17 @@ func GetCurrentServer() *ServerData {
 }
 
 func GetServer(token string) *ServerData {
-	ServersMutex.RLock()
-	defer ServersMutex.RUnlock()
 	if token == "" {
 		return nil
 	}
+	ServersMutex.RLock()
+	defer ServersMutex.RUnlock()
 	return Servers[token]
 }
 
 func GetServers() []*ServerData {
 	ServersMutex.RLock()
 	defer ServersMutex.RUnlock()
-
 	servers := []*ServerData{}
 	for _, server := range Servers {
 		servers = append(servers, server)
@@ -56,12 +55,11 @@ func ServerExists(token string) bool {
 func CreateServer(token string) *ServerData {
 	ServersMutex.Lock()
 	defer ServersMutex.Unlock()
-
 	Servers[token] = NewServerData()
 	return Servers[token]
 }
 
 const (
-	Version    = "1.4.1"
+	Version    = "1.4.3"
 	SocketPath = "/run/aikido-" + Version + "/aikido-agent.sock"
 )

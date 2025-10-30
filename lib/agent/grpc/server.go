@@ -96,6 +96,7 @@ func (s *GrpcServer) GetCloudConfig(ctx context.Context, req *protos.CloudConfig
 	if cloudConfig == nil {
 		return nil, status.Errorf(codes.Canceled, "CloudConfig was not updated")
 	}
+	log.Debugf(server.Logger, "Returning cloud config update to request processor!")
 	return cloudConfig, nil
 }
 
