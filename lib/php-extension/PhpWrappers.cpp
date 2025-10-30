@@ -11,7 +11,7 @@ void CallPhpExit() {
 
 bool CallPhpEcho(std::string message) {
     unsigned int wrote = zend_write(message.c_str(), message.length());  // echo '<message>'
-    //AIKIDO_LOG_INFO("Called 'echo' -> result %d\n", wrote == message.length());
+    AIKIDO_LOG_INFO("Called 'echo' -> result %d\n", wrote == message.length());
     return wrote == message.length();
 }
 

@@ -22,7 +22,7 @@ go get github.com/stretchr/testify/assert
 go test ./...
 go build -ldflags "-s -w" -buildmode=c-shared  -o ../../build/aikido-request-processor.so
 cd ../../build
-CXX=g++ CXXFLAGS="-fPIC -g -std=c++17 -O2 -I../lib/php-extension/include" LDFLAGS="-lstdc++ -lstdc++fs" ../lib/php-extension/configure
+CXX=g++ CXXFLAGS="-fPIC -g -O2 -I../lib/php-extension/include" LDFLAGS="-lstdc++" ../lib/php-extension/configure
 make
 cd ./modules/
 mv aikido.so $AIKIDO_EXTENSION

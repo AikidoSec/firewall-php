@@ -98,8 +98,6 @@ func RequestProcessorContextInit(contextCallback C.ContextCallback) (initOk bool
 		}
 	}()
 
-	log.Infof("RequestProcessorContextInit (token: %s) called!", utils.AnonymizeToken(globals.CurrentToken))
-
 	log.Debug("Initializing context...")
 	CContextCallback = contextCallback
 	return context.Init(GoContextCallback)
@@ -139,8 +137,6 @@ func RequestProcessorOnEvent(eventId int) (outputJson *C.char) {
 			outputJson = nil
 		}
 	}()
-
-	log.Infof("RequestProcessorOnEvent (token: %s) called!", utils.AnonymizeToken(globals.CurrentToken))
 
 	goString := eventHandlers[eventId]()
 	if goString == "" {
