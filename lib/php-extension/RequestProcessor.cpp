@@ -26,13 +26,6 @@ std::string RequestProcessor::GetInitData(const std::string& token) {
     return NormalizeAndDumpJson(initData);
 }
 
-void RequestProcessor::RefreshToken(const std::string& userProvidedToken) {
-    LoadEnvironment();
-    if (!userProvidedToken.empty()) {
-        AIKIDO_GLOBAL(token) = userProvidedToken;
-    }
-}
-
 bool RequestProcessor::ContextInit() {
     return this->requestProcessorContextInitFn(GoContextCallback);
 }
@@ -169,14 +162,14 @@ bool RequestProcessor::RequestInit() {
     if (AIKIDO_GLOBAL(sapi_name) == "apache2handler") {
         // Apache-mod-php can serve multiple sites per process, so the config should be loaded for each request,
         // as the token can be different for each request.
-        this->LoadConfig();
+        this->LoadConfigFromEnvironment();
     } else {
         // Server APIs that are not apache-mod-php (like php-fpm, cli-server, ...) 
         //  can only serve one site per process, so the config should be loaded only once.
         // After that, subsequent requests cannot change the config so we do not need to reload it.
         if (this->numberOfRequests == 0) {
             AIKIDO_LOG_INFO("Loading Aikido config one time for non-apache-mod-php SAPI: %s...\n", AIKIDO_GLOBAL(sapi_name).c_str());
-            this->LoadConfig();
+            this->LoadConfigFromEnvironment();
         }
     }
 
@@ -192,10 +185,7 @@ bool RequestProcessor::RequestInit() {
     return true;
 }
 
-void RequestProcessor::LoadConfig(const std::string& userProvidedToken) {
-    std::string previousToken = AIKIDO_GLOBAL(token);
-    RefreshToken(userProvidedToken);
-    std::string currentToken = AIKIDO_GLOBAL(token);
+void RequestProcessor::LoadConfig(const std::string& previousToken, const std::string& currentToken) {
     if (currentToken.empty()) {
         AIKIDO_LOG_INFO("Current token is empty, skipping config reload...!\n");
         return;
@@ -206,8 +196,19 @@ void RequestProcessor::LoadConfig(const std::string& userProvidedToken) {
     }
 
     AIKIDO_LOG_INFO("Reloading Aikido config...\n");
-    std::string initJson = this->GetInitData(userProvidedToken);
+    std::string initJson = this->GetInitData(currentToken);
     this->requestProcessorConfigUpdateFn(GoCreateString(initJson));
+}
+
+void RequestProcessor::LoadConfigFromEnvironment() {
+    std::string previousToken = AIKIDO_GLOBAL(token);
+    LoadEnvironment();
+    std::string currentToken = AIKIDO_GLOBAL(token);
+    LoadConfig(previousToken, currentToken);
+}
+
+void RequestProcessor::LoadConfigWithTokenFromMiddleware(const std::string& tokenFromMiddleware) {
+    LoadConfig(AIKIDO_GLOBAL(token), tokenFromMiddleware);
 }
 
 void RequestProcessor::RequestShutdown() {
