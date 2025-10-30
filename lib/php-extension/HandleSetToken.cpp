@@ -19,6 +19,6 @@ ZEND_FUNCTION(set_token) {
         RETURN_BOOL(false);
     }
 
-    requestProcessor.LoadConfigWithTokenFromMiddleware(std::string(token, tokenLength));
+    requestProcessor.LoadConfigWithTokenFromPHPSetToken(std::string(token, tokenLength));
     RETURN_BOOL(true);
 }

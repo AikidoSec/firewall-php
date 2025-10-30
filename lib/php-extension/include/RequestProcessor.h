@@ -37,7 +37,7 @@ class RequestProcessor {
     bool ReportStats();
     void LoadConfig(const std::string& previousToken, const std::string& currentToken);
     void LoadConfigFromEnvironment();
-    void LoadConfigWithTokenFromMiddleware(const std::string& tokenFromMiddleware);
+    void LoadConfigWithTokenFromPHPSetToken(const std::string& tokenFromMiddleware);
     void RequestShutdown();
     void Uninit();
 

@@ -207,7 +207,7 @@ void RequestProcessor::LoadConfigFromEnvironment() {
     LoadConfig(previousToken, currentToken);
 }
 
-void RequestProcessor::LoadConfigWithTokenFromMiddleware(const std::string& tokenFromMiddleware) {
+void RequestProcessor::LoadConfigWithTokenFromPHPSetToken(const std::string& tokenFromMiddleware) {
     LoadConfig(AIKIDO_GLOBAL(token), tokenFromMiddleware);
 }
 
