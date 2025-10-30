@@ -11,11 +11,11 @@ var Servers = make(map[ServerKey]*ServerData)
 var PastDeletedServers = make(map[ServerKey]bool)
 var ServersMutex sync.RWMutex
 
-func GetServer(ServerKey ServerKey) *ServerData {
+func GetServer(serverKey ServerKey) *ServerData {
 	ServersMutex.RLock()
 	defer ServersMutex.RUnlock()
 
-	server, exists := Servers[ServerKey]
+	server, exists := Servers[serverKey]
 	if !exists {
 		return nil
 	}
