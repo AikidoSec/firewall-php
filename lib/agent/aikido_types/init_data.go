@@ -19,11 +19,7 @@ type AikidoConfigData struct {
 	ConfigMutex               sync.Mutex
 	PlatformName              string `json:"platform_name"`                          // PHP platform name (fpm-fcgi, cli-server, ...)
 	PlatformVersion           string `json:"platform_version"`                       // PHP version
-	PlatformName              string `json:"platform_name"`                          // PHP platform name (fpm-fcgi, cli-server, ...)
-	PlatformVersion           string `json:"platform_version"`                       // PHP version
 	Token                     string `json:"token,omitempty"`                        // default: ''
-	Endpoint                  string `json:"endpoint,omitempty"`                     // default: 'https://guard.aikido.dev/'
-	ConfigEndpoint            string `json:"config_endpoint,omitempty"`              // default: 'https://runtime.aikido.dev/'
 	Endpoint                  string `json:"endpoint,omitempty"`                     // default: 'https://guard.aikido.dev/'
 	ConfigEndpoint            string `json:"config_endpoint,omitempty"`              // default: 'https://runtime.aikido.dev/'
 	LogLevel                  string `json:"log_level,omitempty"`                    // default: 'INFO'

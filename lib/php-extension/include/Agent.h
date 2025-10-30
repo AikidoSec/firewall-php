@@ -7,17 +7,10 @@ class Agent {
    private:
     pid_t GetPIDFromFile(const std::string& aikidoAgentPidPath);
     vector<pid_t> GetPIDsFromRunningProcesses(const std::string& aikidoAgentPath);
-<<<<<<< HEAD
-    
-    bool RemoveSocketFile(const std::string& aikidoAgentSocketPath);
-    void KillProcesses(std::vector<pid_t>& pids);
-    
-=======
 
     bool RemoveSocketFile(const std::string& aikidoAgentSocketPath);
     void KillProcesses(std::set<pid_t>& pids);
 
->>>>>>> one-agent-fixes-2
     bool IsRunning(const std::string& aikidoAgentPath, const std::string& aikidoAgentSocketPath);
 
     bool Start(std::string aikidoAgentPath);

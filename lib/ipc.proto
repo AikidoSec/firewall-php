@@ -17,7 +17,6 @@ service Aikido {
   rpc OnAttackDetected(AttackDetected) returns (google.protobuf.Empty);
   rpc OnMonitoredSinkStats(MonitoredSinkStats) returns (google.protobuf.Empty);
   rpc OnMiddlewareInstalled(MiddlewareInstalledInfo) returns (google.protobuf.Empty);
-  rpc OnMiddlewareInstalled(MiddlewareInstalledInfo) returns (google.protobuf.Empty);
   rpc OnMonitoredIpMatch(MonitoredIpMatch) returns (google.protobuf.Empty);
   rpc OnMonitoredUserAgentMatch(MonitoredUserAgentMatch) returns (google.protobuf.Empty);
 }
