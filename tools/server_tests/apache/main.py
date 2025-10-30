@@ -287,12 +287,11 @@ def apache_mod_php_process_test(test_data):
 
 
 def apache_mod_php_pre_tests():
-    pass
+    subprocess.run([f'/usr/sbin/{apache_binary}'])
 
 
 def apache_mod_php_start_server(test_data, test_lib_dir, valgrind):
-    print([f'/usr/sbin/{apache_binary}', '-f', test_data["apache_config"]])
-    return subprocess.Popen([f'/usr/sbin/{apache_binary}', '-f', test_data["apache_config"]], env=test_data["env"])
+    return None
 
 
 def apache_mod_php_uninit():

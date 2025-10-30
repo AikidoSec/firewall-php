@@ -173,8 +173,8 @@ def main(root_tests_dir, test_lib_dir, specific_test=None, server="php-built-in"
             test_data = server_process_test(test_data)
         tests_data.append(test_data)
             
-    if servers[server][2] is not None:
-        test_data = servers[server][2]()
+    if servers[server][PRE_TESTS] is not None:
+        test_data = servers[server][PRE_TESTS]()
             
     threads = []
     for test_data in tests_data:
