@@ -7,7 +7,9 @@ import (
 )
 
 type EnvironmentConfigData struct {
-	PlatformName string `json:"platform_name"` // PHP platform name (fpm-fcgi, cli-server, ...)
+	PlatformName        string `json:"platform_name"` // PHP platform name (fpm-fcgi, cli-server, ...)
+	ServerPID           int32
+	RequestProcessorPID int32
 }
 
 type AikidoConfigData struct {

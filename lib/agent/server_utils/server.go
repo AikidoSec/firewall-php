@@ -27,30 +27,38 @@ func storeConfig(server *ServerData, req *protos.Config) {
 	server.AikidoConfig.CollectApiSchema = req.GetCollectApiSchema()
 }
 
-func Register(token string, req *protos.Config) {
-	log.Infof(log.MainLogger, "Registering server \"AIK_RUNTIME_***%s\"...", utils.AnonymizeToken(token))
+func Register(serverKey ServerKey, requestProcessorPID int32, req *protos.Config) {
+	log.Infof(log.MainLogger, "Client (request processor PID: %d) connected. Registering server \"AIK_RUNTIME_***%s\" (server PID: %d)...", requestProcessorPID, utils.AnonymizeToken(serverKey.Token), serverKey.ServerPID)
 
-	server := globals.CreateServer(token)
+	server := globals.CreateServer(serverKey)
 	storeConfig(server, req)
-	server.Logger = log.CreateLogger(utils.AnonymizeToken(token), server.AikidoConfig.LogLevel, server.AikidoConfig.DiskLogs)
+	server.Logger = log.CreateLogger(utils.AnonymizeToken(serverKey.Token), server.AikidoConfig.LogLevel, server.AikidoConfig.DiskLogs)
+
+	log.Infof(server.Logger, "Server \"AIK_RUNTIME_***%s\" (server PID: %d) registered successfully!", utils.AnonymizeToken(serverKey.Token), serverKey.ServerPID)
 
 	atomic.StoreInt64(&server.LastConnectionTime, utils.GetTime())
 
 	cloud.Init(server)
+	if globals.IsPastDeletedServer(serverKey) {
+		log.Infof(server.Logger, "Server \"AIK_RUNTIME_***%s\" (server PID: %d) was registered before for this server PID, but deleted due to inactivity! Skipping start event as it was sent before...", utils.AnonymizeToken(serverKey.Token), serverKey.ServerPID)
+	} else {
+		cloud.SendStartEvent(server)
+	}
+
 	rate_limiting.Init(server)
 
-	log.Infof(log.MainLogger, "Server \"AIK_RUNTIME_***%s\" registered successfully!", utils.AnonymizeToken(token))
+	log.Infof(log.MainLogger, "Server \"AIK_RUNTIME_***%s\" (server PID: %d) registered successfully!", utils.AnonymizeToken(serverKey.Token), serverKey.ServerPID)
 }
 
-func Unregister(token string) {
-	log.Infof(log.MainLogger, "Unregistering server \"AIK_RUNTIME_***%s\"...", utils.AnonymizeToken(token))
-	server := globals.GetServer(token)
+func Unregister(serverKey ServerKey) {
+	log.Infof(log.MainLogger, "Unregistering server \"AIK_RUNTIME_***%s\" (server PID: %d)...", utils.AnonymizeToken(serverKey.Token), serverKey.ServerPID)
+	server := globals.GetServer(serverKey)
 	if server == nil {
 		return
 	}
 	rate_limiting.Uninit(server)
 	cloud.Uninit(server)
-	globals.DeleteServer(token)
+	globals.DeleteServer(serverKey)
 
-	log.Infof(log.MainLogger, "Server \"AIK_RUNTIME_***%s\" unregistered successfully!", utils.AnonymizeToken(token))
+	log.Infof(log.MainLogger, "Server \"AIK_RUNTIME_***%s\" (server PID: %d) unregistered successfully!", utils.AnonymizeToken(serverKey.Token), serverKey.ServerPID)
 }

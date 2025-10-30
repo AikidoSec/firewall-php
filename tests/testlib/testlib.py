@@ -93,7 +93,7 @@ def apply_config(config_file):
 
 def assert_events_length_is(events, length):
     assert isinstance(events, list), "Error: Events is not a list."
-    assert len(events) == length, f"Error: Events list contains {len(events)} elements and not {length} elements."
+    assert len(events) == length, f"Error: Events list contains {len(events)} elements and not {length} elements. Events: {events}"
 
 subset_keys_contains_check = ["stack"]
 subset_keys_version_check = {
