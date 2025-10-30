@@ -162,7 +162,6 @@ bool RequestProcessor::RequestInit() {
     if (AIKIDO_GLOBAL(sapi_name) == "apache2handler") {
       // Apache-mod-php can serve multiple sites per process
       // We need to reload config each request to detect token changes
-      // (either via set_token() API or if AIKIDO_TOKEN environment variable changed between requests)
         this->LoadConfigFromEnvironment();
     } else {
         // Server APIs that are not apache-mod-php (like php-fpm, cli-server, ...) 
