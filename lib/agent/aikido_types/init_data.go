@@ -8,11 +8,10 @@ import (
 )
 
 type MachineData struct {
-	HostName   string `json:"hostname"`
-	DomainName string `json:"domainname"`
-	OS         string `json:"os"`
-	OSVersion  string `json:"os_version"`
-	IPAddress  string `json:"ip_address"`
+	HostName  string `json:"hostname"`
+	OS        string `json:"os"`
+	OSVersion string `json:"os_version"`
+	IPAddress string `json:"ip_address"`
 }
 
 type AikidoConfigData struct {
@@ -194,9 +193,11 @@ type ServerData struct {
 	AttackDetectedEventsSentAtMutex sync.Mutex
 }
 
-const MaxNumberOfStoredHostnames = 2000
-const MaxNumberOfStoredUsers = 2000
-const MaxNumberOfStoredRoutes = 5000
+const (
+	MaxNumberOfStoredHostnames = 2000
+	MaxNumberOfStoredUsers     = 2000
+	MaxNumberOfStoredRoutes    = 5000
+)
 
 func NewServerData() *ServerData {
 	return &ServerData{
