@@ -166,7 +166,6 @@ func (s *GrpcServer) OnMonitoredUserAgentMatch(ctx context.Context, req *protos.
 	defer server.StatsData.StatsMutex.Unlock()
 
 	storeMonitoredListsMatches(&server.StatsData.UserAgentsMatches, req.GetLists())
-	storeMonitoredListsMatches(&server.StatsData.UserAgentsMatches, req.GetLists())
 	return &emptypb.Empty{}, nil
 }
 
