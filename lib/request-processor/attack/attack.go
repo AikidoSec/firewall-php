@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"html"
+	. "main/aikido_types"
 	"main/context"
 	"main/globals"
 	"main/grpc"
@@ -33,9 +34,9 @@ func GetHeadersProto() []*protos.Header {
 }
 
 /* Construct the AttackDetected protobuf structure to be sent via gRPC to the Agent */
-func GetAttackDetectedProto(res utils.InterceptorResult) *protos.AttackDetected {
+func GetAttackDetectedProto(server *ServerData, res utils.InterceptorResult) *protos.AttackDetected {
 	return &protos.AttackDetected{
-		Token: globals.CurrentToken,
+		Token: server.AikidoConfig.Token,
 		Request: &protos.Request{
 			Method:    context.GetMethod(),
 			IpAddress: context.GetIp(),
@@ -50,7 +51,7 @@ func GetAttackDetectedProto(res utils.InterceptorResult) *protos.AttackDetected 
 			Kind:      string(res.Kind),
 			Operation: res.Operation,
 			Module:    context.GetModule(),
-			Blocked:   utils.IsBlockingEnabled(globals.GetCurrentServer()),
+			Blocked:   utils.IsBlockingEnabled(server),
 			Source:    res.Source,
 			Path:      res.PathToPayload,
 			Stack:     context.GetStackTrace(),
@@ -91,6 +92,7 @@ func ReportAttackDetected(res *utils.InterceptorResult) string {
 		return ""
 	}
 
-	grpc.OnAttackDetected(GetAttackDetectedProto(*res))
+	attackDetectedProto := GetAttackDetectedProto(globals.GetCurrentServer(), *res)
+	go grpc.OnAttackDetected(attackDetectedProto)
 	return GetAttackDetectedAction(*res)
 }
