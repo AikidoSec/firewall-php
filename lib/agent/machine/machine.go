@@ -19,18 +19,6 @@ func getHostName() string {
 	return hostname
 }
 
-func getDomainName() string {
-	var domainName string
-
-	cmd := exec.Command("hostname", "--domain")
-	output, err := cmd.Output()
-	if err != nil {
-		return ""
-	}
-	domainName = strings.TrimSpace(string(output))
-	return domainName
-}
-
 func getOSVersion() string {
 	cmd := exec.Command("uname", "-r")
 	output, err := cmd.Output()
@@ -58,11 +46,10 @@ func getIPAddress() string {
 
 func Init() {
 	globals.Machine = MachineData{
-		HostName:   getHostName(),
-		DomainName: getDomainName(),
-		OS:         runtime.GOOS,
-		OSVersion:  getOSVersion(),
-		IPAddress:  getIPAddress(),
+		HostName:  getHostName(),
+		OS:        runtime.GOOS,
+		OSVersion: getOSVersion(),
+		IPAddress: getIPAddress(),
 	}
 
 	log.Infof(log.MainLogger, "Machine info: %+v", globals.Machine)
