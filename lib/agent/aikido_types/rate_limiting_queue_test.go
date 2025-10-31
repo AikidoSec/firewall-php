@@ -2,6 +2,7 @@ package aikido_types
 
 import (
 	"testing"
+
 	"github.com/stretchr/testify/assert"
 )
 
