@@ -143,7 +143,7 @@ def assert_event_contains_subset(event_subset_key, event, event_subset, dry_mode
     else:
         if event_subset_key in subset_keys_version_check:
             php_version = mock_server_get_php_version()
-            if mock_server_get_php_version() < subset_keys_version_check[event_subset_key]:
+            if php_version < subset_keys_version_check[event_subset_key]:
                 print(f"PHP version {php_version} is too old for checking key {event_subset_key}. Skipping check...")
                 return True
                 
@@ -262,3 +262,6 @@ def mock_server_get_token():
 
 def mock_server_get_php_version():
     return mock_server_get("/mock/php_version").json().get("php_version")
+
+def mock_server_get_platform_name():
+    return mock_server_get("/mock/platform_name").json().get("platform_name")

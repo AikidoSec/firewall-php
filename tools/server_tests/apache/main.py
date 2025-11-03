@@ -304,4 +304,4 @@ def apache_mod_php_start_server(test_data, test_lib_dir, valgrind):
 
 def apache_mod_php_uninit():
     subprocess.run(['pkill', apache_binary])
-    subprocess.run(['chown', '-R', f'{prev_owning_user}:{prev_owning_group}', '../'])
+    # subprocess.run(['chown', '-R', f'{prev_owning_user}:{prev_owning_group}', '../'])

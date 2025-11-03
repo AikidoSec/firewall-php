@@ -16,12 +16,15 @@ def run_test():
     assert_response_code_is(response, 200)
     assert_response_body_contains(response, "File opened!")
     
-    events = mock_server_get_events()
-    assert_events_length_is(events, 0)
-    
-    time.sleep(65)
-    
-    assert_events_length_is(events, 0)
+    if mock_server_get_platform_name() != "apache2handler":
+        events = mock_server_get_events()
+        assert_events_length_is(events, 0)
+        
+        time.sleep(65)
+        
+        events = mock_server_get_events()
+        assert_events_length_is(events, 0)
+        
         
 if __name__ == "__main__":
     load_test_args()

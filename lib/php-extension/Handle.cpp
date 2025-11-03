@@ -27,11 +27,6 @@ ACTION_STATUS aikido_process_event(EVENT_ID& eventId, std::string& sink) {
 ZEND_NAMED_FUNCTION(aikido_generic_handler) {
     ScopedTimer scopedTimer;
 
-    if (AIKIDO_GLOBAL(disable) == true) {
-        AIKIDO_LOG_INFO("Aikido generic handler finished earlier because AIKIDO_DISABLE is set to 1!\n");
-        return;
-    }
-
     AIKIDO_LOG_DEBUG("Aikido generic handler started!\n");
 
     zif_handler original_handler = nullptr;
@@ -82,6 +77,14 @@ ZEND_NAMED_FUNCTION(aikido_generic_handler) {
             original_handler = HOOKED_METHODS[method_key].original_handler;
         } else {
             AIKIDO_LOG_DEBUG("Nothing matches the current handler! Returning!\n");
+            return;
+        }
+
+        if (AIKIDO_GLOBAL(disable) == true) {
+            if (original_handler) {
+                original_handler(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+            }
+            AIKIDO_LOG_INFO("Aikido generic handler finished earlier because AIKIDO_DISABLE is set to 1!\n");
             return;
         }
 
