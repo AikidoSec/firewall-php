@@ -125,7 +125,7 @@ func GetRateLimitingStatus(server *ServerData, method string, route string, rout
 }
 
 /* Send request metadata (route, method & status code) to Aikido Agent via gRPC */
-func OnRequestShutdown(server *ServerData, method string, route string, routeParsed string, statusCode int, user string, ip string, rateLimitGroup string, apiSpec *protos.APISpec, rateLimited bool, isWebScanner bool, shouldDiscoverRoute bool) {
+func OnRequestShutdown(server *ServerData, method string, route string, routeParsed string, statusCode int, user string, username string, userAgent string, ip string, rateLimitGroup string, apiSpec *protos.APISpec, rateLimited bool, isWebScanner bool, shouldDiscoverRoute bool) {
 	if client == nil {
 		return
 	}
@@ -133,7 +133,7 @@ func OnRequestShutdown(server *ServerData, method string, route string, routePar
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	_, err := client.OnRequestShutdown(ctx, &protos.RequestMetadataShutdown{Token: server.AikidoConfig.Token, Method: method, Route: route, RouteParsed: routeParsed, StatusCode: int32(statusCode), User: user, Ip: ip, RateLimitGroup: rateLimitGroup, ApiSpec: apiSpec, RateLimited: rateLimited, IsWebScanner: isWebScanner, ShouldDiscoverRoute: shouldDiscoverRoute})
+	_, err := client.OnRequestShutdown(ctx, &protos.RequestMetadataShutdown{Token: server.AikidoConfig.Token, Method: method, Route: route, RouteParsed: routeParsed, StatusCode: int32(statusCode), User: user, UserName: username, UserAgent: userAgent, Ip: ip, RateLimitGroup: rateLimitGroup, ApiSpec: apiSpec, RateLimited: rateLimited, IsWebScanner: isWebScanner, ShouldDiscoverRoute: shouldDiscoverRoute})
 	if err != nil {
 		log.Warnf("Could not send request metadata %v %v %v: %v", method, route, statusCode, err)
 		return

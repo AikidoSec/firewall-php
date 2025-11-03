@@ -105,7 +105,7 @@ func Uninit(server *ServerData) {
 // - skips if an event was recently sent for IP (minBetween)
 // - increments current minute bucket for IP
 // - if sum(window) >= threshold => mark event time and send event to cloud
-func IncrementAndDetect(server *ServerData, ip string) bool {
+func IncrementAndDetect(server *ServerData, ip string, userId string, username string, userAgent string) bool {
 	if ip == "" {
 		return false
 	}
@@ -150,8 +150,8 @@ func IncrementAndDetect(server *ServerData, ip string) bool {
 	// report event to cloud
 	cloud.SendAttackDetectedEvent(server, &protos.AttackDetected{
 		Token:   server.AikidoConfig.Token,
-		Request: &protos.Request{IpAddress: ip},
-		Attack:  &protos.Attack{Metadata: []*protos.Metadata{}},
+		Request: &protos.Request{IpAddress: ip, UserAgent: userAgent},
+		Attack:  &protos.Attack{Metadata: []*protos.Metadata{}, UserId: userId},
 	}, "detected_attack_wave")
 
 	return true

@@ -17,7 +17,7 @@ func OnPreRequest() string {
 	return ""
 }
 
-func OnRequestShutdownReporting(server *ServerData, method, route, routeParsed string, statusCode int, user, ip, rateLimitGroup string, apiSpec *protos.APISpec, rateLimited bool, queryParsed map[string]interface{}) {
+func OnRequestShutdownReporting(server *ServerData, method, route, routeParsed string, statusCode int, user, username, userAgent, ip, rateLimitGroup string, apiSpec *protos.APISpec, rateLimited bool, queryParsed map[string]interface{}) {
 	if method == "" || route == "" || statusCode == 0 {
 		return
 	}
@@ -30,7 +30,7 @@ func OnRequestShutdownReporting(server *ServerData, method, route, routeParsed s
 	}
 
 	log.Info("[RSHUTDOWN] Got API spec: ", apiSpec)
-	grpc.OnRequestShutdown(server, method, route, routeParsed, statusCode, user, ip, rateLimitGroup, apiSpec, rateLimited, isWebScanner, shouldDiscoverRoute)
+	grpc.OnRequestShutdown(server, method, route, routeParsed, statusCode, user, username, userAgent, ip, rateLimitGroup, apiSpec, rateLimited, isWebScanner, shouldDiscoverRoute)
 }
 
 func OnPostRequest() string {
@@ -38,7 +38,7 @@ func OnPostRequest() string {
 	if server == nil {
 		return ""
 	}
-	go OnRequestShutdownReporting(server, context.GetMethod(), context.GetRoute(), context.GetParsedRoute(), context.GetStatusCode(), context.GetUserId(), context.GetIp(), context.GetRateLimitGroup(), api_discovery.GetApiInfo(server), context.IsEndpointRateLimited(), context.GetQueryParsed())
+	go OnRequestShutdownReporting(server, context.GetMethod(), context.GetRoute(), context.GetParsedRoute(), context.GetStatusCode(), context.GetUserId(), context.GetUserName(), context.GetUserAgent(), context.GetIp(), context.GetRateLimitGroup(), api_discovery.GetApiInfo(server), context.IsEndpointRateLimited(), context.GetQueryParsed())
 	context.Clear()
 	return ""
 }

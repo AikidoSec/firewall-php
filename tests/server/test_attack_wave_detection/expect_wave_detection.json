@@ -5,7 +5,11 @@
         "ipAddress": "5.8.19.22"
     },
     "attack": {
-        "metadata": {}
+        "metadata": {},
+        "user": {
+            "id": "12345",
+            "name": "Tudor"
+        }
     },
     "agent": {
         "dryMode": false,
