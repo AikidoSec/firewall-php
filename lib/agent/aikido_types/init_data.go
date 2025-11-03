@@ -173,9 +173,13 @@ type ServerData struct {
 	RateLimitingMutex sync.RWMutex
 
 	// Attack wave detection state
-	AttackWaveThreshold  int
+	// How many suspicious requests are allowed before triggering an alert
+	AttackWaveThreshold int
+	// In what time frame must these requests occur
 	AttackWaveWindowSize int
+	// Minimum time before reporting a new event for the same ip
 	AttackWaveMinBetween time.Duration
+	// Maximum number of entries in the LRU cache
 	AttackWaveMaxEntries int
 	AttackWaveIpQueues   map[string]*AttackWaveQueue
 	AttackWaveLastSent   map[string]time.Time
@@ -231,10 +235,10 @@ func NewServerData() *ServerData {
 		UsersQueue:              NewQueue[string](MaxNumberOfStoredUsers),
 		Packages:                make(map[string]Package),
 		PollingData:             NewServerDataPolling(),
-		AttackWaveThreshold:     15,
-		AttackWaveWindowSize:    1,
-		AttackWaveMinBetween:    20 * time.Minute,
-		AttackWaveMaxEntries:    10000,
+		AttackWaveThreshold:     15,               // Default: 15 requests
+		AttackWaveWindowSize:    1,                // Default: 1 minute
+		AttackWaveMinBetween:    20 * time.Minute, // Default: 20 minutes
+		AttackWaveMaxEntries:    10000,            // Default: 10000 entries
 		AttackWaveIpQueues:      make(map[string]*AttackWaveQueue),
 		AttackWaveLastSent:      make(map[string]time.Time),
 		AttackWaveLastSeen:      make(map[string]time.Time),
