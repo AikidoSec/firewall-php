@@ -298,35 +298,18 @@ jobs:
     runs-on: ${{ matrix.os }}
     container:
       image: amazonlinux:2
-      options: --privileged
     needs: [ build_rpm ]
     strategy:
       matrix:
         os: [ ubuntu-24.04, ubuntu-24.04-arm ]
       fail-fast: false
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
       - name: Get Arch
         run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
 
-      - name: Get Aikido version
-        run: |
-          AIKIDO_VERSION=$(grep '#define PHP_AIKIDO_VERSION' lib/php-extension/include/php_aikido.h | awk -F'"' '{print $2}')
-          echo $AIKIDO_VERSION
-          echo "AIKIDO_VERSION=$AIKIDO_VERSION" >> $GITHUB_ENV
-          echo "AIKIDO_RPM=aikido-php-firewall.${{ env.ARCH }}.rpm" >> $GITHUB_ENV
-
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
-        with:
-          pattern: |
-            ${{ env.AIKIDO_RPM }}
-
       - name: Install RPM
         run: |
-          rpm -Uvh --oldpackage ${{ env.AIKIDO_RPM }}/${{ env.AIKIDO_RPM }}
+          rpm -Uvh --oldpackage https://github.com/AikidoSec/firewall-php/releases/download/v1.4.3/aikido-php-firewall.${{ env.ARCH }}.rpm
 
   test_php_centos:
     runs-on: ${{ matrix.os }}
