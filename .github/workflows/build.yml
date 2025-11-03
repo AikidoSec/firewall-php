@@ -209,7 +209,7 @@ jobs:
           cd ~/rpmbuild/SOURCES
           tar czvf ~/rpmbuild/SOURCES/aikido-php-firewall-${{ env.AIKIDO_VERSION }}.tar.gz *
           rm -rf ~/rpmbuild/SOURCES/aikido-php-firewall-${{ env.AIKIDO_VERSION }}
-          rpmbuild -ba ~/rpmbuild/SPECS/aikido.spec
+          rpmbuild --define "_binary_payload w9.gzdio" --define "_source_payload w9.gzdio" -ba ~/rpmbuild/SPECS/aikido.spec
           ls -l ~/rpmbuild/RPMS/${{ env.ARCH }}/
           mv ~/rpmbuild/RPMS/${{ env.ARCH }}/${{ env.AIKIDO_ARTIFACT }} ~/rpmbuild/RPMS/${{ env.ARCH }}/${{ env.AIKIDO_ARTIFACT_RELEASE }}
 
