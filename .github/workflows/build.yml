@@ -294,23 +294,6 @@ jobs:
           path: |
             ${{ env.AIKIDO_ARTIFACT }}
 
-  test_amazonlinux2:
-    runs-on: ${{ matrix.os }}
-    container:
-      image: amazonlinux:2
-    needs: [ build_rpm ]
-    strategy:
-      matrix:
-        os: [ ubuntu-24.04, ubuntu-24.04-arm ]
-      fail-fast: false
-    steps:
-      - name: Get Arch
-        run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
-
-      - name: Install RPM
-        run: |
-          rpm -Uvh --oldpackage https://github.com/AikidoSec/firewall-php/releases/download/v1.4.3/aikido-php-firewall.${{ env.ARCH }}.rpm
-
   test_php_centos:
     runs-on: ${{ matrix.os }}
     container:
