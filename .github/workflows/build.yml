@@ -206,6 +206,7 @@ jobs:
 
       - name: Build rpm package
         run: |
+          cat /usr/lib/rpm/macros | grep level
           cd ~/rpmbuild/SOURCES
           tar czvf ~/rpmbuild/SOURCES/aikido-php-firewall-${{ env.AIKIDO_VERSION }}.tar.gz *
           rm -rf ~/rpmbuild/SOURCES/aikido-php-firewall-${{ env.AIKIDO_VERSION }}
