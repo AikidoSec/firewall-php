@@ -305,7 +305,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v2
 
       - name: Get Arch
         run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
