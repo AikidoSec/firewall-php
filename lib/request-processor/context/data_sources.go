@@ -10,4 +10,5 @@ var SOURCES = []Source{
 	{"query", GetQueryParsedFlattened},
 	{"headers", GetHeadersParsedFlattened},
 	{"cookies", GetCookiesParsedFlattened},
+	{"routeParams", GetRouteParamsParsedFlattened},
 }
