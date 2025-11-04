@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"net/url"
+	"regexp"
 	"strings"
 )
 
@@ -52,10 +53,38 @@ func UnescapeUrl(urlStr string) string {
 	return unescapedUrl
 }
 
+// ConvertIPv6Mapped converts IPv6-mapped IPv4 (only if it contains ::ffff:)
+// Example: "http://[::ffff:10.0.0.1]" -> "http://10.0.0.1"
+func convertIPv6Mapped(input string) string {
+	// Return immediately if not IPv6-mapped form
+	if !strings.Contains(input, "::ffff:") {
+		return input
+	}
+
+	// Extract URL scheme if present (http://, https://, etc.)
+	scheme := ""
+	if strings.Contains(input, "://") {
+		parts := strings.SplitN(input, "://", 2)
+		scheme = parts[0] + "://"
+		input = parts[1]
+	}
+
+	// Strip brackets
+	input = strings.TrimPrefix(input, "[")
+	input = strings.TrimSuffix(input, "]")
+
+	// Replace ::ffff:x.x.x.x -> x.x.x.x
+	re := regexp.MustCompile(`::ffff:(\d+\.\d+\.\d+\.\d+)`)
+	ip := re.ReplaceAllString(input, "$1")
+
+	return scheme + ip
+}
+
 func NormalizeRawUrl(urlStr string) string {
 	urlStr = UnescapeUrl(urlStr)
 	urlStr = removeCTLByte(urlStr)
 	urlStr = FixURL(urlStr)
 	urlStr = removeUserInfo(urlStr)
+	urlStr = convertIPv6Mapped(urlStr)
 	return urlStr
 }
