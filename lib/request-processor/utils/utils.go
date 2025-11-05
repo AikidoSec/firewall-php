@@ -461,3 +461,18 @@ func AnonymizeToken(token string) string {
 	}
 	return token[len(token)-4:]
 }
+
+func SliceToLowercase(slice []string) []string {
+	for i, v := range slice {
+		slice[i] = strings.ToLower(v)
+	}
+	return slice
+}
+
+func StringSliceToMap(slice []string) map[string]struct{} {
+	m := make(map[string]struct{})
+	for _, v := range slice {
+		m[v] = struct{}{}
+	}
+	return m
+}

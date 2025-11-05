@@ -1,6 +1,6 @@
 package paths
 
-import "strings"
+import "main/utils"
 
 var fileNamesList = []string{
 	".addressbook",
@@ -306,11 +306,4 @@ var fileNamesList = []string{
 	"ws_ftp.ini",
 }
 
-// to lowercase all file names and return a map (map lookup is faster than list lookup)
-var FileNames = func() map[string]struct{} {
-	lowercaseFileNames := make(map[string]struct{})
-	for _, fileName := range fileNamesList {
-		lowercaseFileNames[strings.ToLower(fileName)] = struct{}{}
-	}
-	return lowercaseFileNames
-}()
+var FileNames = utils.StringSliceToMap(utils.SliceToLowercase(fileNamesList))

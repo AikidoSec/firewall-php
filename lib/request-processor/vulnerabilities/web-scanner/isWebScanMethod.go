@@ -1,9 +1,14 @@
 package webscanner
 
-import "slices"
+import (
+	"main/utils"
+)
 
-var methods = []string{"BADMETHOD", "BADHTTPMETHOD", "BADDATA", "BADMTHD", "BDMTHD"}
+var methods = utils.StringSliceToMap([]string{"BADMETHOD", "BADHTTPMETHOD", "BADDATA", "BADMTHD", "BDMTHD"})
 
 func isWebScanMethod(method string) bool {
-	return slices.Contains(methods, method)
+	if _, ok := methods[method]; ok {
+		return true
+	}
+	return false
 }

@@ -1,6 +1,6 @@
 package paths
 
-import "strings"
+import "main/utils"
 
 var directoryNamesList = []string{
 	".",
@@ -51,11 +51,4 @@ var directoryNamesList = []string{
 	"%systemroot%",
 }
 
-// to lowercase all directory names and return a map (map lookup is faster than list lookup)
-var DirectoryNames = func() map[string]struct{} {
-	lowercaseDirectoryNames := make(map[string]struct{})
-	for _, directoryName := range directoryNamesList {
-		lowercaseDirectoryNames[strings.ToLower(directoryName)] = struct{}{}
-	}
-	return lowercaseDirectoryNames
-}()
+var DirectoryNames = utils.StringSliceToMap(utils.SliceToLowercase(directoryNamesList))

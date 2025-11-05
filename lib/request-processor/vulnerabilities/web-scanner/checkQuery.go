@@ -26,11 +26,11 @@ func checkQuery(queryParams map[string]interface{}) bool {
 		return false
 	}
 	for _, param := range queryParams {
-		// Performance optimization
 		paramString, ok := param.(string)
 		if !ok {
 			continue
 		}
+		// Performance optimization
 		if len(paramString) < 5 || len(paramString) > 1000 {
 			continue
 		}
