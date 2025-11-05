@@ -1,7 +1,6 @@
 package webscanner
 
 import (
-	"main/vulnerabilities/web-scanner/paths"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -58,19 +57,5 @@ func TestIsWebScanPath(t *testing.T) {
 				assert.Equal(t, test.expected, result)
 			})
 		}
-	})
-	t.Run("Test no duplicate in fileNames", func(t *testing.T) {
-		uniqueFileNames := make(map[string]bool)
-		for _, fileName := range paths.FileNames {
-			uniqueFileNames[fileName] = true
-		}
-		assert.Equal(t, len(uniqueFileNames), len(paths.FileNames))
-	})
-	t.Run("Test no duplicate in directoryNames", func(t *testing.T) {
-		uniqueDirectoryNames := make(map[string]bool)
-		for _, directoryName := range paths.DirectoryNames {
-			uniqueDirectoryNames[directoryName] = true
-		}
-		assert.Equal(t, len(uniqueDirectoryNames), len(paths.DirectoryNames))
 	})
 }

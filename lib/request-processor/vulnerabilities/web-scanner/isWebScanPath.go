@@ -13,7 +13,7 @@ func isWebScanPath(path string) bool {
 	segments := strings.Split(normalized, "/")
 	filename := segments[len(segments)-1]
 	if filename != "" {
-		if slices.Contains(paths.FileNames, filename) {
+		if _, ok := paths.FileNames[filename]; ok {
 			return true
 		}
 
@@ -29,7 +29,7 @@ func isWebScanPath(path string) bool {
 
 	// Check all directory names
 	for _, dir := range segments {
-		if slices.Contains(paths.DirectoryNames, dir) {
+		if _, ok := paths.DirectoryNames[dir]; ok {
 			return true
 		}
 	}

@@ -51,11 +51,11 @@ var directoryNamesList = []string{
 	"%systemroot%",
 }
 
-// to lowercase all directory names
-var DirectoryNames = func() []string {
-	lowercaseDirectoryNames := make([]string, len(directoryNamesList))
-	for i, directoryName := range directoryNamesList {
-		lowercaseDirectoryNames[i] = strings.ToLower(directoryName)
+// to lowercase all directory names and return a map (map lookup is faster than list lookup)
+var DirectoryNames = func() map[string]struct{} {
+	lowercaseDirectoryNames := make(map[string]struct{})
+	for _, directoryName := range directoryNamesList {
+		lowercaseDirectoryNames[strings.ToLower(directoryName)] = struct{}{}
 	}
 	return lowercaseDirectoryNames
 }()

@@ -306,10 +306,11 @@ var fileNamesList = []string{
 	"ws_ftp.ini",
 }
 
-var FileNames = func() []string {
-	lowercaseFileNames := make([]string, len(fileNamesList))
-	for i, fileName := range fileNamesList {
-		lowercaseFileNames[i] = strings.ToLower(fileName)
+// to lowercase all file names and return a map (map lookup is faster than list lookup)
+var FileNames = func() map[string]struct{} {
+	lowercaseFileNames := make(map[string]struct{})
+	for _, fileName := range fileNamesList {
+		lowercaseFileNames[strings.ToLower(fileName)] = struct{}{}
 	}
 	return lowercaseFileNames
 }()
