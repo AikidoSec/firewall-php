@@ -177,7 +177,6 @@ type ServerData struct {
 	AttackWaveMaxEntries int
 	AttackWaveIpQueues   map[string]*SlidingWindow
 	AttackWaveLastSent   map[string]time.Time
-	AttackWaveLastSeen   map[string]time.Time
 	AttackWaveMutex      sync.Mutex
 
 	// Users map, which holds the current users and their data
@@ -234,6 +233,5 @@ func NewServerData() *ServerData {
 		AttackWaveMaxEntries:    10000,            // Default: 10000 entries
 		AttackWaveIpQueues:      make(map[string]*SlidingWindow),
 		AttackWaveLastSent:      make(map[string]time.Time),
-		AttackWaveLastSeen:      make(map[string]time.Time),
 	}
 }

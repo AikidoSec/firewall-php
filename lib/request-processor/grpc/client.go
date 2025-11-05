@@ -140,7 +140,6 @@ func OnRequestShutdown(params RequestShutdownParams) {
 		RouteParsed:         params.RouteParsed,
 		StatusCode:          int32(params.StatusCode),
 		User:                params.User,
-		UserName:            params.Username,
 		UserAgent:           params.UserAgent,
 		Ip:                  params.IP,
 		RateLimitGroup:      params.RateLimitGroup,

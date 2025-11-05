@@ -79,7 +79,7 @@ func (s *GrpcServer) OnRequestShutdown(ctx context.Context, req *protos.RequestM
 	go storeTotalStats(server, req.GetRateLimited())
 	go storeRoute(server, req.GetMethod(), req.GetRouteParsed(), req.GetApiSpec(), req.GetRateLimited())
 	go updateRateLimitingCounts(server, req.GetMethod(), req.GetRoute(), req.GetRouteParsed(), req.GetUser(), req.GetIp(), req.GetRateLimitGroup())
-	go updateAttackWaveCountsAndDetect(server, req.GetIsWebScanner(), req.GetIp(), req.GetUser(), req.GetUserName(), req.GetUserAgent())
+	go updateAttackWaveCountsAndDetect(server, req.GetIsWebScanner(), req.GetIp(), req.GetUser(), req.GetUserAgent())
 
 	atomic.StoreUint32(&server.GotTraffic, 1)
 	return &emptypb.Empty{}, nil

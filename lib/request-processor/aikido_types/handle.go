@@ -16,7 +16,6 @@ type RequestShutdownParams struct {
 	RouteParsed         string
 	StatusCode          int
 	User                string
-	Username            string
 	UserAgent           string
 	IP                  string
 	RateLimitGroup      string

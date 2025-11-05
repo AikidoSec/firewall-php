@@ -44,7 +44,6 @@ func OnPostRequest() string {
 		RouteParsed:    context.GetParsedRoute(),
 		StatusCode:     context.GetStatusCode(),
 		User:           context.GetUserId(),
-		Username:       context.GetUserName(),
 		UserAgent:      context.GetUserAgent(),
 		IP:             context.GetIp(),
 		RateLimitGroup: context.GetRateLimitGroup(),

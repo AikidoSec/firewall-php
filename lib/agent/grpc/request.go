@@ -200,7 +200,14 @@ func isRateLimitingThresholdExceeded(config *RateLimitingConfig, countsMap map[s
 	return counts.Total >= config.MaxRequests
 }
 
-func updateAttackWaveCountsAndDetect(server *ServerData, isWebScanner bool, ip string, userId string, username string, userAgent string) {
+// updateAttackWaveCountsAndDetect implements the attack wave detection logic:
+//  1. Validates the request is from a web scanner and has a valid IP address
+//  2. Applies throttling: if an event was recently sent for this IP (within minBetween window),
+//     updates lastSeen timestamp for fair eviction but returns early without incrementing
+//  3. Increments the sliding window counter for this IP
+//  4. Checks if the total count within the sliding window exceeds the threshold
+//  5. If threshold exceeded: records the event time, logs the detection, and sends event to cloud
+func updateAttackWaveCountsAndDetect(server *ServerData, isWebScanner bool, ip string, userId string, userAgent string) {
 	if !isWebScanner || ip == "" {
 		return
 	}
@@ -212,14 +219,11 @@ func updateAttackWaveCountsAndDetect(server *ServerData, isWebScanner bool, ip s
 
 	// throttle repeated events
 	if last, ok := server.AttackWaveLastSent[ip]; ok && now.Sub(last) < server.AttackWaveMinBetween {
-		// still update lastSeen so eviction stays fair
-		server.AttackWaveLastSeen[ip] = now
 		return
 	}
 
-	// increment for this request and mark lastSeen
+	// increment for this request
 	queue := incrementSlidingWindowEntry(server.AttackWaveIpQueues, ip, server.AttackWaveWindowSize)
-	server.AttackWaveLastSeen[ip] = now
 
 	// check threshold within window
 	if queue == nil || queue.Total < server.AttackWaveThreshold {
