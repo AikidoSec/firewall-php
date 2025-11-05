@@ -51,7 +51,7 @@ func AdvanceSlidingWindowMap(windowMap map[string]*SlidingWindow) {
 		// Advance the sliding window for this entry
 		window.Advance()
 		// if total is 0, remove the entry
-		if window.Total == 0 {
+		if window.IsEmpty() {
 			delete(windowMap, key)
 		}
 	}

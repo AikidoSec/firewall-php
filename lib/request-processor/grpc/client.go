@@ -125,7 +125,7 @@ func GetRateLimitingStatus(server *ServerData, method string, route string, rout
 }
 
 /* Send request metadata (route, method & status code) to Aikido Agent via gRPC */
-func OnRequestShutdown(server *ServerData, method string, route string, routeParsed string, statusCode int, user string, username string, userAgent string, ip string, rateLimitGroup string, apiSpec *protos.APISpec, rateLimited bool, isWebScanner bool, shouldDiscoverRoute bool) {
+func OnRequestShutdown(params RequestShutdownParams) {
 	if client == nil {
 		return
 	}
@@ -133,13 +133,28 @@ func OnRequestShutdown(server *ServerData, method string, route string, routePar
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	_, err := client.OnRequestShutdown(ctx, &protos.RequestMetadataShutdown{Token: server.AikidoConfig.Token, Method: method, Route: route, RouteParsed: routeParsed, StatusCode: int32(statusCode), User: user, UserName: username, UserAgent: userAgent, Ip: ip, RateLimitGroup: rateLimitGroup, ApiSpec: apiSpec, RateLimited: rateLimited, IsWebScanner: isWebScanner, ShouldDiscoverRoute: shouldDiscoverRoute})
+	_, err := client.OnRequestShutdown(ctx, &protos.RequestMetadataShutdown{
+		Token:               params.Server.AikidoConfig.Token,
+		Method:              params.Method,
+		Route:               params.Route,
+		RouteParsed:         params.RouteParsed,
+		StatusCode:          int32(params.StatusCode),
+		User:                params.User,
+		UserName:            params.Username,
+		UserAgent:           params.UserAgent,
+		Ip:                  params.IP,
+		RateLimitGroup:      params.RateLimitGroup,
+		ApiSpec:             params.APISpec,
+		RateLimited:         params.RateLimited,
+		IsWebScanner:        params.IsWebScanner,
+		ShouldDiscoverRoute: params.ShouldDiscoverRoute,
+	})
 	if err != nil {
-		log.Warnf("Could not send request metadata %v %v %v: %v", method, route, statusCode, err)
+		log.Warnf("Could not send request metadata %v %v %v: %v", params.Method, params.Route, params.StatusCode, err)
 		return
 	}
 
-	log.Debugf("Request metadata sent via socket (%v %v %v)", method, route, statusCode)
+	log.Debugf("Request metadata sent via socket (%v %v %v)", params.Method, params.Route, params.StatusCode)
 }
 
 /* Get latest cloud config from Aikido Agent via gRPC */
