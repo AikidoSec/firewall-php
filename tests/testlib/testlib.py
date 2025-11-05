@@ -30,6 +30,9 @@ def load_test_args():
 def get_mock_port():
     return mock_port
 
+def get_php_port():
+    return php_port
+
 def localhost_get_request(port, route="", headers={}, benchmark=False):
     global benchmarks, s
 
