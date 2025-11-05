@@ -79,12 +79,6 @@ type UserAgentDetails struct {
 	Pattern string `json:"pattern"`
 }
 
-type AttackWaveQueue struct {
-	WindowSize int
-	Total      int
-	Queue      []int
-}
-
 type ListsConfigData struct {
 	Success              bool               `json:"success"`
 	ServiceId            int                `json:"serviceId"`
@@ -181,10 +175,9 @@ type ServerData struct {
 	AttackWaveMinBetween time.Duration
 	// Maximum number of entries in the LRU cache
 	AttackWaveMaxEntries int
-	AttackWaveIpQueues   map[string]*AttackWaveQueue
+	AttackWaveIpQueues   map[string]*SlidingWindow
 	AttackWaveLastSent   map[string]time.Time
 	AttackWaveLastSeen   map[string]time.Time
-	AttackWaveLastTick   time.Time
 	AttackWaveMutex      sync.Mutex
 
 	// Users map, which holds the current users and their data
@@ -239,7 +232,7 @@ func NewServerData() *ServerData {
 		AttackWaveWindowSize:    1,                // Default: 1 minute
 		AttackWaveMinBetween:    20 * time.Minute, // Default: 20 minutes
 		AttackWaveMaxEntries:    10000,            // Default: 10000 entries
-		AttackWaveIpQueues:      make(map[string]*AttackWaveQueue),
+		AttackWaveIpQueues:      make(map[string]*SlidingWindow),
 		AttackWaveLastSent:      make(map[string]time.Time),
 		AttackWaveLastSeen:      make(map[string]time.Time),
 	}

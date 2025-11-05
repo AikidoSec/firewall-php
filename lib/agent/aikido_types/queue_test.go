@@ -28,3 +28,29 @@ func TestNewQueue(t *testing.T) {
 		assert.True(t, q.IsEmpty())
 	})
 }
+
+func TestQueueIntOperations(t *testing.T) {
+	t.Run("it works with push, pop, and increment", func(t *testing.T) {
+		q := NewQueue[int](0)
+		q.Push(1)
+		q.Push(2)
+		q.Push(3)
+		q.IncrementLast()
+		assert.Equal(t, 3, q.Length())
+		assert.Equal(t, 1, q.Pop())
+		assert.Equal(t, 2, q.Pop())
+		// because it was incremented
+		assert.Equal(t, 4, q.Pop())
+	})
+
+	t.Run("pop returns 0 if queue is empty", func(t *testing.T) {
+		q := NewQueue[int](0)
+		assert.Equal(t, 0, q.Pop())
+	})
+
+	t.Run("increment last checks if queue is empty", func(t *testing.T) {
+		q := NewQueue[int](0)
+		q.IncrementLast()
+		assert.Equal(t, 0, q.Length())
+	})
+}

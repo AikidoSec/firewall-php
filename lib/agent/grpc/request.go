@@ -3,12 +3,14 @@ package grpc
 import (
 	. "main/aikido_types"
 	"main/api_discovery"
+	"main/cloud"
 	"main/constants"
 	"main/ipc/protos"
 	"main/log"
 	"main/utils"
 	"slices"
 	"strings"
+	"time"
 )
 
 func storeTotalStats(server *ServerData, rateLimited bool) {
@@ -156,19 +158,22 @@ func storeRoute(server *ServerData, method string, route string, apiSpec *protos
 	}
 }
 
-func incrementRateLimitingCounts(m map[string]*RateLimitingCounts, key string) {
+// incrementSlidingWindowEntry ensures a SlidingWindow exists for the given key,
+// optionally evicts via onEvict when maxEntries is reached (if > 0), and increments it.
+func incrementSlidingWindowEntry(m map[string]*SlidingWindow, key string, windowSize int) *SlidingWindow {
 	if key == "" {
-		return
+		return nil
 	}
 
-	rateLimitingData, exists := m[key]
+	entry, exists := m[key]
 	if !exists {
-		rateLimitingData = &RateLimitingCounts{}
-		m[key] = rateLimitingData
+		// TODO: add a limit of max entries
+		entry = NewSlidingWindow(windowSize)
+		m[key] = entry
 	}
 
-	rateLimitingData.TotalNumberOfRequests += 1
-	rateLimitingData.NumberOfRequestsPerWindow.IncrementLast()
+	entry.Increment()
+	return entry
 }
 
 func updateRateLimitingCounts(server *ServerData, method string, route string, routeParsed string, user string, ip string, rateLimitGroup string) {
@@ -180,18 +185,66 @@ func updateRateLimitingCounts(server *ServerData, method string, route string, r
 		return
 	}
 
-	incrementRateLimitingCounts(rateLimitingDataForEndpoint.UserCounts, user)
-	incrementRateLimitingCounts(rateLimitingDataForEndpoint.IpCounts, ip)
-	incrementRateLimitingCounts(rateLimitingDataForEndpoint.RateLimitGroupCounts, rateLimitGroup)
+	windowSize := rateLimitingDataForEndpoint.Config.WindowSizeInMinutes
+	incrementSlidingWindowEntry(rateLimitingDataForEndpoint.UserCounts, user, windowSize)
+	incrementSlidingWindowEntry(rateLimitingDataForEndpoint.IpCounts, ip, windowSize)
+	incrementSlidingWindowEntry(rateLimitingDataForEndpoint.RateLimitGroupCounts, rateLimitGroup, windowSize)
 }
 
-func isRateLimitingThresholdExceeded(config *RateLimitingConfig, countsMap map[string]*RateLimitingCounts, key string) bool {
+// isThresholdExceeded checks if a sliding window's total exceeds the given threshold.
+func isThresholdExceeded(window *SlidingWindow, threshold int) bool {
+	if window == nil {
+		return false
+	}
+	return window.Total >= threshold
+}
+
+func updateAttackWaveCountsAndDetect(server *ServerData, isWebScanner bool, ip string, userId string, username string, userAgent string) {
+	if !isWebScanner || ip == "" {
+		return
+	}
+
+	now := time.Now()
+
+	server.AttackWaveMutex.Lock()
+	defer server.AttackWaveMutex.Unlock()
+
+	// throttle repeated events
+	if last, ok := server.AttackWaveLastSent[ip]; ok && now.Sub(last) < server.AttackWaveMinBetween {
+		// still update lastSeen so eviction stays fair
+		server.AttackWaveLastSeen[ip] = now
+		return
+	}
+
+	// increment for this request and mark lastSeen
+	queue := incrementSlidingWindowEntry(server.AttackWaveIpQueues, ip, server.AttackWaveWindowSize)
+	server.AttackWaveLastSeen[ip] = now
+
+	// check threshold within window
+	if !isThresholdExceeded(queue, server.AttackWaveThreshold) {
+		return
+	}
+
+	// threshold reached -> record event and send to cloud
+	server.AttackWaveLastSent[ip] = now
+	if server.Logger != nil {
+		log.Infof(server.Logger, "Attack wave detected from IP: %s", ip)
+	}
+	// report event to cloud
+	cloud.SendAttackDetectedEvent(server, &protos.AttackDetected{
+		Token:   server.AikidoConfig.Token,
+		Request: &protos.Request{IpAddress: ip, UserAgent: userAgent},
+		Attack:  &protos.Attack{Metadata: []*protos.Metadata{}, UserId: userId},
+	}, "detected_attack_wave")
+}
+
+func isRateLimitingThresholdExceeded(config *RateLimitingConfig, countsMap map[string]*SlidingWindow, key string) bool {
 	counts, exists := countsMap[key]
 	if !exists {
 		return false
 	}
 
-	return counts.TotalNumberOfRequests >= config.MaxRequests
+	return isThresholdExceeded(counts, config.MaxRequests)
 }
 
 func getRateLimitingValue(server *ServerData, method, route string) *RateLimitingValue {
