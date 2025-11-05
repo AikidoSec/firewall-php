@@ -173,10 +173,7 @@ type ServerData struct {
 	AttackWaveWindowSize int
 	// Minimum time before reporting a new event for the same ip
 	AttackWaveMinBetween time.Duration
-	// Maximum number of entries in the LRU cache
-	AttackWaveMaxEntries int
 	AttackWaveIpQueues   map[string]*SlidingWindow
-	AttackWaveLastSent   map[string]time.Time
 	AttackWaveMutex      sync.Mutex
 
 	// Users map, which holds the current users and their data
@@ -230,8 +227,6 @@ func NewServerData() *ServerData {
 		AttackWaveThreshold:     15,               // Default: 15 requests
 		AttackWaveWindowSize:    1,                // Default: 1 minute
 		AttackWaveMinBetween:    20 * time.Minute, // Default: 20 minutes
-		AttackWaveMaxEntries:    10000,            // Default: 10000 entries
 		AttackWaveIpQueues:      make(map[string]*SlidingWindow),
-		AttackWaveLastSent:      make(map[string]time.Time),
 	}
 }
