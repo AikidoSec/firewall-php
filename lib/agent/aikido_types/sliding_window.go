@@ -5,18 +5,16 @@ import "time"
 // SlidingWindow represents a time-based sliding window counter.
 // It maintains a queue of counts per time bucket and a running total.
 type SlidingWindow struct {
-	WindowSize int        // Maximum number of time buckets to maintain
-	Total      int        // Running total of all counts in the window
-	Queue      Queue[int] // Queue of counts per time bucket
-	LastSent   time.Time  // Last time this sliding window triggered an event (used for attack wave detection)
+	Total    int        // Running total of all counts in the window
+	Queue    Queue[int] // Queue of counts per time bucket
+	LastSent time.Time  // Last time this sliding window triggered an event (used for attack wave detection)
 }
 
 // NewSlidingWindow creates a new sliding window with the specified size.
-func NewSlidingWindow(windowSize int) *SlidingWindow {
+func NewSlidingWindow() *SlidingWindow {
 	sw := &SlidingWindow{
-		WindowSize: windowSize,
-		Queue:      NewQueue[int](0), // no max size, we handle it manually
-		LastSent:   time.Time{},      // not sent yet
+		Queue:    NewQueue[int](0), // no max size, we handle it manually
+		LastSent: time.Time{},      // not sent yet
 	}
 	// Ensure there is a current bucket
 	sw.Queue.Push(0)
@@ -25,9 +23,9 @@ func NewSlidingWindow(windowSize int) *SlidingWindow {
 
 // Advance pushes a new (zeroed) time bucket,
 // evicting the oldest if we exceed the window size, and adjusting total accordingly.
-func (sw *SlidingWindow) Advance() {
+func (sw *SlidingWindow) Advance(windowSize int) {
 	// If we're at capacity, remove the oldest bucket first
-	if sw.Queue.Length() >= sw.WindowSize {
+	if sw.Queue.Length() >= windowSize {
 		dropped := sw.Queue.Pop()
 		sw.Total -= dropped
 	}
@@ -50,10 +48,10 @@ func (sw *SlidingWindow) IsEmpty() bool {
 }
 
 // AdvanceSlidingWindowMap advances all sliding windows in the map and removes entries where Total is 0.
-func AdvanceSlidingWindowMap(windowMap map[string]*SlidingWindow) {
+func AdvanceSlidingWindowMap(windowMap map[string]*SlidingWindow, windowSize int) {
 	for key, window := range windowMap {
 		// Advance the sliding window for this entry
-		window.Advance()
+		window.Advance(windowSize)
 		// if total is 0, remove the entry
 		if window.IsEmpty() {
 			delete(windowMap, key)

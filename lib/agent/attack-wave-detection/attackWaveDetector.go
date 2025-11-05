@@ -9,7 +9,7 @@ func AdvanceAttackWaveQueues(server *ServerData) {
 	server.AttackWaveMutex.Lock()
 	defer server.AttackWaveMutex.Unlock()
 
-	AdvanceSlidingWindowMap(server.AttackWave.IpQueues)
+	AdvanceSlidingWindowMap(server.AttackWave.IpQueues, server.AttackWave.WindowSize)
 }
 
 func Init(server *ServerData) {
