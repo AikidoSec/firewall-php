@@ -159,7 +159,7 @@ func storeRoute(server *ServerData, method string, route string, apiSpec *protos
 }
 
 // incrementSlidingWindowEntry ensures a SlidingWindow exists for the given key and increments it.
-func incrementSlidingWindowEntry(m map[string]*SlidingWindow, key string, windowSize int) *SlidingWindow {
+func incrementSlidingWindowEntry(m map[string]*SlidingWindow, key string) *SlidingWindow {
 	if key == "" {
 		return nil
 	}
@@ -167,7 +167,7 @@ func incrementSlidingWindowEntry(m map[string]*SlidingWindow, key string, window
 	entry, exists := m[key]
 	if !exists {
 		// TODO: add a limit of max entries
-		entry = NewSlidingWindow(windowSize)
+		entry = NewSlidingWindow()
 		m[key] = entry
 	}
 
@@ -184,10 +184,9 @@ func updateRateLimitingCounts(server *ServerData, method string, route string, r
 		return
 	}
 
-	windowSize := rateLimitingDataForEndpoint.Config.WindowSizeInMinutes
-	incrementSlidingWindowEntry(rateLimitingDataForEndpoint.UserCounts, user, windowSize)
-	incrementSlidingWindowEntry(rateLimitingDataForEndpoint.IpCounts, ip, windowSize)
-	incrementSlidingWindowEntry(rateLimitingDataForEndpoint.RateLimitGroupCounts, rateLimitGroup, windowSize)
+	incrementSlidingWindowEntry(rateLimitingDataForEndpoint.UserCounts, user)
+	incrementSlidingWindowEntry(rateLimitingDataForEndpoint.IpCounts, ip)
+	incrementSlidingWindowEntry(rateLimitingDataForEndpoint.RateLimitGroupCounts, rateLimitGroup)
 }
 
 func isRateLimitingThresholdExceeded(config *RateLimitingConfig, countsMap map[string]*SlidingWindow, key string) bool {
@@ -217,7 +216,7 @@ func updateAttackWaveCountsAndDetect(server *ServerData, isWebScanner bool, ip s
 	defer server.AttackWaveMutex.Unlock()
 
 	// increment for this request
-	queue := incrementSlidingWindowEntry(server.AttackWave.IpQueues, ip, server.AttackWave.WindowSize)
+	queue := incrementSlidingWindowEntry(server.AttackWave.IpQueues, ip)
 
 	// skip if the last event for this ip was already sent within the min between time
 	if queue != nil && !queue.LastSent.IsZero() && now.Sub(queue.LastSent) < server.AttackWave.MinBetween {

@@ -63,7 +63,7 @@ func (q *Queue[T]) Push(item T) {
 	q.items = append(q.items, item)
 }
 
-func (q *Queue[T]) Increment(index int) {
+func (q *Queue[T]) IncrementNumber(index int) {
 	if index >= 0 && index < len(q.items) {
 		// This only works for numeric types - for int specifically
 		// We'll need to use type assertion
@@ -75,6 +75,6 @@ func (q *Queue[T]) Increment(index int) {
 
 func (q *Queue[T]) IncrementLast() {
 	if len(q.items) > 0 {
-		q.Increment(len(q.items) - 1)
+		q.IncrementNumber(len(q.items) - 1)
 	}
 }

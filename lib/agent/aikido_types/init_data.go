@@ -86,7 +86,7 @@ type AttackWaveState struct {
 	WindowSize int // in minutes
 	// Minimum time before reporting a new event for the same ip
 	MinBetween time.Duration
-	// Map of IP addresses to their sliding window queues
+	// Queue of IP addresses to their sliding window queues
 	IpQueues map[string]*SlidingWindow
 }
 

@@ -29,4 +29,7 @@ func TestCheckQuery(t *testing.T) {
 	t.Run("It handles empty query object", func(t *testing.T) {
 		assert.Equal(t, false, checkQuery(map[string]interface{}{}))
 	})
+	t.Run("It handles non-string query parameters", func(t *testing.T) {
+		assert.Equal(t, false, checkQuery(map[string]interface{}{"test": 123}))
+	})
 }
