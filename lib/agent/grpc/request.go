@@ -217,15 +217,15 @@ func updateAttackWaveCountsAndDetect(server *ServerData, isWebScanner bool, ip s
 	defer server.AttackWaveMutex.Unlock()
 
 	// increment for this request
-	queue := incrementSlidingWindowEntry(server.AttackWaveIpQueues, ip, server.AttackWaveWindowSize)
+	queue := incrementSlidingWindowEntry(server.AttackWave.IpQueues, ip, server.AttackWave.WindowSize)
 
 	// skip if the last event for this ip was already sent within the min between time
-	if queue != nil && !queue.LastSent.IsZero() && now.Sub(queue.LastSent) < server.AttackWaveMinBetween {
+	if queue != nil && !queue.LastSent.IsZero() && now.Sub(queue.LastSent) < server.AttackWave.MinBetween {
 		return
 	}
 
 	// check threshold within window
-	if queue == nil || queue.Total < server.AttackWaveThreshold {
+	if queue == nil || queue.Total < server.AttackWave.Threshold {
 		return // threshold not reached
 	}
 

@@ -79,6 +79,17 @@ type UserAgentDetails struct {
 	Pattern string `json:"pattern"`
 }
 
+type AttackWaveState struct {
+	// How many suspicious requests are allowed before triggering an alert
+	Threshold int
+	// In what time frame must these requests occur
+	WindowSize int // in minutes
+	// Minimum time before reporting a new event for the same ip
+	MinBetween time.Duration
+	// Map of IP addresses to their sliding window queues
+	IpQueues map[string]*SlidingWindow
+}
+
 type ListsConfigData struct {
 	Success              bool               `json:"success"`
 	ServiceId            int                `json:"serviceId"`
@@ -167,14 +178,8 @@ type ServerData struct {
 	RateLimitingMutex sync.RWMutex
 
 	// Attack wave detection state
-	// How many suspicious requests are allowed before triggering an alert
-	AttackWaveThreshold int
-	// In what time frame must these requests occur
-	AttackWaveWindowSize int
-	// Minimum time before reporting a new event for the same ip
-	AttackWaveMinBetween time.Duration
-	AttackWaveIpQueues   map[string]*SlidingWindow
-	AttackWaveMutex      sync.Mutex
+	AttackWave      AttackWaveState
+	AttackWaveMutex sync.Mutex
 
 	// Users map, which holds the current users and their data
 	Users      map[string]User
@@ -224,9 +229,11 @@ func NewServerData() *ServerData {
 		UsersQueue:              NewQueue[string](MaxNumberOfStoredUsers),
 		Packages:                make(map[string]Package),
 		PollingData:             NewServerDataPolling(),
-		AttackWaveThreshold:     15,               // Default: 15 requests
-		AttackWaveWindowSize:    1,                // Default: 1 minute
-		AttackWaveMinBetween:    20 * time.Minute, // Default: 20 minutes
-		AttackWaveIpQueues:      make(map[string]*SlidingWindow),
+		AttackWave: AttackWaveState{
+			Threshold:  15,               // Default: 15 requests
+			WindowSize: 1,                // Default: 1 minute
+			MinBetween: 20 * time.Minute, // Default: 20 minutes
+			IpQueues:   make(map[string]*SlidingWindow),
+		},
 	}
 }
