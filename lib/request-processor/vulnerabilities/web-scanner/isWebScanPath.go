@@ -2,11 +2,22 @@ package webscanner
 
 import (
 	"main/vulnerabilities/web-scanner/paths"
-	"slices"
 	"strings"
 )
 
-var fileExtensions = []string{"env", "bak", "sql", "sqlite", "sqlite3", "db", "old", "save", "orig", "sqlitedb", "sqlite3db"}
+var fileExtensions = map[string]struct{}{
+	"env":       {},
+	"bak":       {},
+	"sql":       {},
+	"sqlite":    {},
+	"sqlite3":   {},
+	"db":        {},
+	"old":       {},
+	"save":      {},
+	"orig":      {},
+	"sqlitedb":  {},
+	"sqlite3db": {},
+}
 
 func isWebScanPath(path string) bool {
 	normalized := strings.ToLower(path)
@@ -21,7 +32,10 @@ func isWebScanPath(path string) bool {
 			// last one
 			parts := strings.Split(filename, ".")
 			ext := parts[len(parts)-1]
-			if ext != "" && slices.Contains(fileExtensions, ext) {
+			if ext == "" {
+				return false
+			}
+			if _, ok := fileExtensions[ext]; ok {
 				return true
 			}
 		}
