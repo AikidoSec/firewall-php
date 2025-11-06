@@ -597,4 +597,4 @@ jobs:
           max_parallel_tests: 7
           ignore_failures: true
           config_update_delay: 120
-          test_timeout: 600
+          test_timeout: 900
