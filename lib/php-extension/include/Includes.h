@@ -22,6 +22,7 @@
 #include <spawn.h>
 #include <fstream>
 #include <iostream>
+#include <set>
 
 #include "3rdparty/json.hpp"
 using namespace std;

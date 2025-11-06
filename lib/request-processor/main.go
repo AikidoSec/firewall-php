@@ -30,6 +30,12 @@ var eventHandlers = map[int]HandlerFunction{
 	C.EVENT_PRE_SQL_QUERY_EXECUTED:   OnPreSqlQueryExecuted,
 }
 
+func initializeServer(server *ServerData) {
+	grpc.SendAikidoConfig(server)
+	grpc.OnPackages(server, server.AikidoConfig.Packages)
+	grpc.GetCloudConfig(server, 5*time.Second)
+}
+
 //export RequestProcessorInit
 func RequestProcessorInit(initJson string) (initOk bool) {
 	defer func() {
@@ -48,10 +54,8 @@ func RequestProcessorInit(initJson string) (initOk bool) {
 		grpc.Init()
 		server := globals.GetCurrentServer()
 		if server != nil {
-			grpc.SendAikidoConfig(server)
-			grpc.OnPackages(server, server.AikidoConfig.Packages)
+			initializeServer(server)
 		}
-
 		grpc.StartCloudConfigRoutine()
 	}
 	if !zen_internals.Init() {
@@ -121,10 +125,7 @@ func RequestProcessorConfigUpdate(configJson string) (initOk bool) {
 	if server == nil {
 		return false
 	}
-	grpc.SendAikidoConfig(server)
-	grpc.OnPackages(server, server.AikidoConfig.Packages)
-	grpc.GetCloudConfig(server, 5*time.Second)
-
+	initializeServer(server)
 	return true
 }
 

@@ -13,7 +13,7 @@ jobs:
   build_libs:
     runs-on: ${{ matrix.os }}
     container:
-      image: ghcr.io/aikidosec/firewall-php-build-libs:v1  
+      image: ghcr.io/aikidosec/firewall-php-build-libs:v1
     strategy:
       matrix:
         os: [ ubuntu-24.04, ubuntu-24.04-arm ]
@@ -44,7 +44,7 @@ jobs:
         go test ./...
         go build -buildvcs=false -ldflags "-s -w" -o ../../build/aikido-agent
         ls -l ../../build
-    
+
 
     - name: Build Aikido Request Processor
       run: |
@@ -206,10 +206,11 @@ jobs:
 
       - name: Build rpm package
         run: |
+          cat /usr/lib/rpm/macros | grep level
           cd ~/rpmbuild/SOURCES
           tar czvf ~/rpmbuild/SOURCES/aikido-php-firewall-${{ env.AIKIDO_VERSION }}.tar.gz *
           rm -rf ~/rpmbuild/SOURCES/aikido-php-firewall-${{ env.AIKIDO_VERSION }}
-          rpmbuild -ba ~/rpmbuild/SPECS/aikido.spec
+          rpmbuild --define "_binary_payload w9.gzdio" --define "_source_payload w9.gzdio" -ba ~/rpmbuild/SPECS/aikido.spec
           ls -l ~/rpmbuild/RPMS/${{ env.ARCH }}/
           mv ~/rpmbuild/RPMS/${{ env.ARCH }}/${{ env.AIKIDO_ARTIFACT }} ~/rpmbuild/RPMS/${{ env.ARCH }}/${{ env.AIKIDO_ARTIFACT_RELEASE }}
 
@@ -426,7 +427,7 @@ jobs:
       - name: Ensure Apache uses PHP ${{ matrix.php_version }}
         if: matrix.server == 'apache-mod-php'
         run: |
-          a2-switch-php ${{ matrix.php_version }}    
+          a2-switch-php ${{ matrix.php_version }}
 
       - name: Install DEB
         run: |
@@ -477,7 +478,7 @@ jobs:
       - name: Overwrite aikido.sh install script
         run: |
           echo "#!/usr/bin/env bash" > ./zen-demo-php/.fly/scripts/aikido.sh
-          echo "dpkg -i -E \"/var/www/html/aikido-php-firewall.\$(uname -i).deb\"" >> ./zen-demo-php/.fly/scripts/aikido.sh 
+          echo "dpkg -i -E \"/var/www/html/aikido-php-firewall.\$(uname -i).deb\"" >> ./zen-demo-php/.fly/scripts/aikido.sh
       - name: Run Firewall QA Tests
         uses: AikidoSec/firewall-tester-action@add-control-server-tests
         with:
@@ -513,7 +514,7 @@ jobs:
       - name: Overwrite aikido.sh install script
         run: |
           echo "#!/usr/bin/env bash" > ./zen-demo-php/.fly/scripts/aikido.sh
-          echo "dpkg -i -E \"/var/www/html/aikido-php-firewall.\$(uname -i).deb\"" >> ./zen-demo-php/.fly/scripts/aikido.sh 
+          echo "dpkg -i -E \"/var/www/html/aikido-php-firewall.\$(uname -i).deb\"" >> ./zen-demo-php/.fly/scripts/aikido.sh
       - name: Run Firewall QA Tests
         uses: AikidoSec/firewall-tester-action@add-control-server-tests
         with:
@@ -549,7 +550,7 @@ jobs:
       - name: Overwrite aikido.sh install script
         run: |
           echo "#!/usr/bin/env bash" > ./zen-demo-php/.fly/scripts/aikido.sh
-          echo "dpkg -i -E \"/var/www/html/aikido-php-firewall.\$(uname -i).deb\"" >> ./zen-demo-php/.fly/scripts/aikido.sh 
+          echo "dpkg -i -E \"/var/www/html/aikido-php-firewall.\$(uname -i).deb\"" >> ./zen-demo-php/.fly/scripts/aikido.sh
       - name: Run Firewall QA Tests
         uses: AikidoSec/firewall-tester-action@add-control-server-tests
         with:
