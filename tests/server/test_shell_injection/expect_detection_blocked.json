@@ -16,7 +16,7 @@
         "operation": "passthru",
         "blocked": true,
         "source": "body",
-        "stack": "tests/server/test_shell_injection/index.php(12): passthru()",
+        "stack": "tests/server/test_shell_injection/index.php(24): passthru()",
         "path": ".command",
         "payload": "`whoami`",
         "metadata": {
