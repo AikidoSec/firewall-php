@@ -27,10 +27,6 @@ std::string GetDateTime() {
     return time_str;
 }
 
-std::string GenerateSocketPath() {
-    return "/run/aikido-" + std::string(PHP_AIKIDO_VERSION) + "/aikido-" + GetDateTime() + "-" + GetRandomNumber() + ".sock";
-}
-
 const char* GetEventName(EVENT_ID event) {
     switch (event) {
         case EVENT_PRE_REQUEST:
@@ -84,7 +80,7 @@ std::string ArrayToJson(zval* array) {
                     if (Z_TYPE_P(v) == IS_STRING) {
                         val_array.push_back(Z_STRVAL_P(v));
                     }
-                } 
+                }
                 ZEND_HASH_FOREACH_END();
                 query_json[key_str] = val_array;
             }
@@ -154,4 +150,54 @@ json CallPhpFunctionParseUrl(const std::string& url) {
         }
     }
     return json();
+}
+
+std::string AnonymizeToken(const std::string& str) {
+    return str.length() > 4 ? "AIK_RUNTIME_***" + str.substr(str.length() - 4) : "AIK_RUNTIME_***";
+}
+
+bool FileExists(const std::string& filePath) {
+    struct stat buffer;
+    if (stat(filePath.c_str(), &buffer) == 0) {
+        return true;
+    }
+    return false;
+}
+
+bool RemoveFile(const std::string& filePath) {
+    if (unlink(filePath.c_str()) == 0) {
+        return true;
+    }
+    return false;
+}
+
+
+std::string GetStackTrace() {
+#if PHP_VERSION_ID >= 80100
+    // Check if there's an active execution context
+    if (!EG(current_execute_data)) {
+        return "";
+    }
+
+    zval trace;
+    zend_fetch_debug_backtrace(&trace, 0, DEBUG_BACKTRACE_IGNORE_ARGS, 0);
+
+    if (Z_TYPE(trace) != IS_ARRAY) {
+        zval_ptr_dtor(&trace);
+        return "";
+    }
+
+    zend_string *trace_string = zend_trace_to_string(Z_ARRVAL(trace), true);
+
+    std::string result;
+    if (trace_string) {
+        result = std::string(ZSTR_VAL(trace_string), ZSTR_LEN(trace_string));
+        zend_string_release(trace_string);
+    }
+
+    zval_ptr_dtor(&trace);
+    return result;
+#else
+    return "";
+#endif
 }

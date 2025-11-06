@@ -21,7 +21,7 @@ def run_test():
     assert_events_length_is(events, 101)
     assert_started_event_is_valid(events[0])
     for e in events[1:101]:
-        assert_event_contains_subset(e, {"type": "detected_attack"})
+        assert_event_contains_subset("__root", e, {"type": "detected_attack"})
 
     
 if __name__ == "__main__":

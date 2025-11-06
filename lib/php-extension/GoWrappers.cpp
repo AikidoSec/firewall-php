@@ -124,6 +124,10 @@ char* GoContextCallback(int callbackId) {
                 ctx = "MODULE";
                 ret = eventCache.moduleName;
                 break;
+            case STACK_TRACE:
+                ctx = "STACK_TRACE";
+                ret = GetStackTrace();
+                break;
         }
     } catch (std::exception& e) {
         AIKIDO_LOG_DEBUG("Exception in GoContextCallback: %s\n", e.what());

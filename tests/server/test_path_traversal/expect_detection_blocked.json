@@ -16,6 +16,7 @@
         "blocked": true,
         "source": "body",
         "path": ".file",
+        "stack": "tests/server/test_path_traversal/index.php(13): fopen()",
         "payload": "/etc/passwd",
         "metadata": {
             "filename": "/etc/passwd"

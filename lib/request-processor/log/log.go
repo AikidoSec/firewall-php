@@ -43,6 +43,9 @@ func (f *AikidoFormatter) Format(level LogLevel, message string) string {
 		return "invalid log level"
 	}
 
+	if len(message) > 1024 {
+		message = message[:1024] + "... [truncated]"
+	}
 	if cliLogging {
 		return fmt.Sprintf("[AIKIDO][%s] %s\n", levelStr, message)
 	}
@@ -133,8 +136,8 @@ func SetLogLevel(level string) error {
 	return nil
 }
 
-func Init() {
-	if !globals.AikidoConfig.DiskLogs {
+func Init(diskLogs bool) {
+	if !diskLogs {
 		return
 	}
 	cliLogging = false

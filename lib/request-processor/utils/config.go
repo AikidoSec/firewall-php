@@ -2,24 +2,26 @@ package utils
 
 import (
 	. "main/aikido_types"
-	"main/globals"
 )
 
-func GetWildcardEndpointsConfigsForMethod(method string) []WildcardEndpointData {
-	wildcardRoutesForMethod, found := globals.CloudConfig.WildcardEndpoints[method]
+func GetWildcardEndpointsConfigsForMethod(server *ServerData, method string) []WildcardEndpointData {
+	wildcardRoutesForMethod, found := server.CloudConfig.WildcardEndpoints[method]
 	if !found {
 		return []WildcardEndpointData{}
 	}
 	return wildcardRoutesForMethod
 }
 
-func GetWildcardEndpointsConfigs(method string, route string) []EndpointData {
-	globals.CloudConfigMutex.Lock()
-	defer globals.CloudConfigMutex.Unlock()
+func GetWildcardEndpointsConfigs(server *ServerData, method string, route string) []EndpointData {
+	if server == nil {
+		return []EndpointData{}
+	}
+	server.CloudConfigMutex.Lock()
+	defer server.CloudConfigMutex.Unlock()
 
 	// We prioritize defined methods over wildcard methods
-	wildcardRoutes := GetWildcardEndpointsConfigsForMethod(method)
-	wildcardRoutes = append(wildcardRoutes, GetWildcardEndpointsConfigsForMethod("*")...)
+	wildcardRoutes := GetWildcardEndpointsConfigsForMethod(server, method)
+	wildcardRoutes = append(wildcardRoutes, GetWildcardEndpointsConfigsForMethod(server, "*")...)
 
 	matchedEndpointsData := []EndpointData{}
 	for _, wildcardEndpointData := range wildcardRoutes {
@@ -30,11 +32,14 @@ func GetWildcardEndpointsConfigs(method string, route string) []EndpointData {
 	return matchedEndpointsData
 }
 
-func GetEndpointConfig(method string, route string) *EndpointData {
-	globals.CloudConfigMutex.Lock()
-	defer globals.CloudConfigMutex.Unlock()
+func GetEndpointConfig(server *ServerData, method string, route string) *EndpointData {
+	if server == nil {
+		return nil
+	}
+	server.CloudConfigMutex.Lock()
+	defer server.CloudConfigMutex.Unlock()
 
-	endpointData, exists := globals.CloudConfig.Endpoints[EndpointKey{Method: method, Route: route}]
+	endpointData, exists := server.CloudConfig.Endpoints[EndpointKey{Method: method, Route: route}]
 	if !exists {
 		return nil
 	}
@@ -42,9 +47,9 @@ func GetEndpointConfig(method string, route string) *EndpointData {
 	return &endpointData
 }
 
-func GetCloudConfigUpdatedAt() int64 {
-	globals.CloudConfigMutex.Lock()
-	defer globals.CloudConfigMutex.Unlock()
+func GetCloudConfigUpdatedAt(server *ServerData) int64 {
+	server.CloudConfigMutex.Lock()
+	defer server.CloudConfigMutex.Unlock()
 
-	return globals.CloudConfig.ConfigUpdatedAt
+	return server.CloudConfig.ConfigUpdatedAt
 }

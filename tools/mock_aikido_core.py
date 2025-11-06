@@ -15,6 +15,7 @@ responses = {
 
 events = []
 server_down = False
+php_version = ""
 
 excluded_routes = ['mock_get_events', 'mock_tests_simple', 'mock_down', 'mock_up']
 
@@ -89,7 +90,12 @@ def get_lists_config():
 def post_events():
     print("Got event: ", request.get_json())
     if request.get_json():
-        events.append(request.get_json())
+        e = request.get_json()
+        global php_version
+        if e["type"] == "started" and php_version == "":
+            php_version = e["agent"]["platform"]["version"]
+            print("PHP version: ", php_version)
+        events.append(e)
     return gzip_response(responses["config"])
 
 @app.route('/mock/config', methods=['POST'])
@@ -117,6 +123,10 @@ def mock_get_events():
 def mock_tests_simple():
     time.sleep(1)
     return gzip_response("{}")
+
+@app.route('/mock/php_version', methods=['GET'])
+def mock_get_php_version():
+    return gzip_response({"php_version": php_version})
 
 @app.route('/mock/token', methods=['GET'])
 def mock_get_token():

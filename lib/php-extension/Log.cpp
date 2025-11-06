@@ -5,6 +5,10 @@ void Log::Init() {
         return;
     }
 
+    if (this->logFile) {
+        return;
+    }
+
     this->logFilePath = "/var/log/aikido-" + std::string(PHP_AIKIDO_VERSION) + "/aikido-extension-php-" + GetDateTime() + "-" + std::to_string(getpid()) + ".log";
     this->logFile = fopen(this->logFilePath.c_str(), "w");
     AIKIDO_LOG_INFO("Opened log file %s!\n", this->logFilePath.c_str());

@@ -6,14 +6,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	. "main/aikido_types"
 	"main/config"
 	"main/log"
 	"net/http"
 	"net/url"
 )
 
-func SendCloudRequest(endpoint string, route string, method string, payload interface{}) ([]byte, error) {
-	token := config.GetToken()
+func SendCloudRequest(server *ServerData, endpoint string, route string, method string, payload interface{}) ([]byte, error) {
+	token := config.GetToken(server)
 	if token == "" {
 		return nil, fmt.Errorf("no token set")
 	}
@@ -31,11 +32,11 @@ func SendCloudRequest(endpoint string, route string, method string, payload inte
 			return nil, fmt.Errorf("failed to marshal payload: %v", err)
 		}
 
-		log.Infof("Sending %s request to %s with size %d and content: %s", method, apiEndpoint, len(jsonData), jsonData)
+		log.Infof(server.Logger, "Sending %s request to %s with size %d and content: %s", method, apiEndpoint, len(jsonData), jsonData)
 
 		req, err = http.NewRequest(method, apiEndpoint, bytes.NewBuffer(jsonData))
 	} else {
-		log.Infof("Sending %s request to %s", method, apiEndpoint)
+		log.Infof(server.Logger, "Sending %s request to %s", method, apiEndpoint)
 		req, err = http.NewRequest(method, apiEndpoint, nil)
 	}
 
@@ -72,6 +73,6 @@ func SendCloudRequest(endpoint string, route string, method string, payload inte
 		return nil, fmt.Errorf("failed to read response body: %v", err)
 	}
 
-	log.Debugf("Got response: %s", body)
+	log.Debugf(server.Logger, "Got response: %s", body)
 	return body, nil
 }
