@@ -165,8 +165,9 @@ func ParseHeaders(headers string) map[string]interface{} {
 	return j
 }
 
-func ParseRouteParams(RouteParams string) map[string]interface{} {
-	parts := strings.Split(RouteParams, "/")
+func ParseRouteParams(routeParams string) map[string]interface{} {
+	decodedRouteParams := DecodeURIComponent(routeParams)
+	parts := strings.Split(decodedRouteParams, "/")
 	return map[string]interface{}{"parts": parts}
 }
 
