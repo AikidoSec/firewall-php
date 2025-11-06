@@ -62,16 +62,18 @@ message RateLimitingInfo {
 
 message RequestMetadataShutdown {
   string token = 1;
-  int32 server_pid = 2;
-  string method = 3;
-  string route = 4;
-  string routeParsed = 5;
-  int32 statusCode = 6;
-  string user = 7;
+  string method = 2;
+  string route = 3;
+  string routeParsed = 4;
+  int32 statusCode = 5;
+  string user = 6;
+  string userAgent = 7;
   string ip = 8;
   string rateLimitGroup = 9;
   APISpec apiSpec = 10;
   bool rateLimited = 11;
+  bool isWebScanner = 12;
+  bool shouldDiscoverRoute = 13;
 }
 
 message MiddlewareInstalledInfo {

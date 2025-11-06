@@ -78,6 +78,17 @@ type UserAgentDetails struct {
 	Pattern string `json:"pattern"`
 }
 
+type AttackWaveState struct {
+	// How many suspicious requests are allowed before triggering an alert
+	Threshold int
+	// In what time frame must these requests occur
+	WindowSize int // in minutes
+	// Minimum time before reporting a new event for the same ip
+	MinBetween time.Duration
+	// Queue of IP addresses to their sliding window queues
+	IpQueues map[string]*SlidingWindow
+}
+
 type ListsConfigData struct {
 	Success              bool               `json:"success"`
 	ServiceId            int                `json:"serviceId"`
@@ -101,6 +112,8 @@ type ServerDataPolling struct {
 	ConfigPollingTicker         *time.Ticker
 	RateLimitingChannel         chan struct{}
 	RateLimitingTicker          *time.Ticker
+	AttackWaveChannel           chan struct{}
+	AttackWaveTicker            *time.Ticker
 }
 
 func NewServerDataPolling() *ServerDataPolling {
@@ -111,6 +124,8 @@ func NewServerDataPolling() *ServerDataPolling {
 		ConfigPollingTicker:         time.NewTicker(1 * time.Minute),
 		RateLimitingChannel:         make(chan struct{}),
 		RateLimitingTicker:          time.NewTicker(constants.MinRateLimitingIntervalInMs * time.Millisecond),
+		AttackWaveChannel:           make(chan struct{}),
+		AttackWaveTicker:            time.NewTicker(1 * time.Minute),
 	}
 }
 
@@ -166,6 +181,10 @@ type ServerData struct {
 	// Rate limiting mutex used to sync access across the go routines
 	RateLimitingMutex sync.RWMutex
 
+	// Attack wave detection state
+	AttackWave      AttackWaveState
+	AttackWaveMutex sync.Mutex
+
 	// Users map, which holds the current users and their data
 	Users      map[string]User
 	UsersQueue Queue[string]
@@ -216,5 +235,11 @@ func NewServerData() *ServerData {
 		UsersQueue:              NewQueue[string](MaxNumberOfStoredUsers),
 		Packages:                make(map[string]Package),
 		PollingData:             NewServerDataPolling(),
+		AttackWave: AttackWaveState{
+			Threshold:  15,               // Default: 15 requests
+			WindowSize: 1,                // Default: 1 minute
+			MinBetween: 20 * time.Minute, // Default: 20 minutes
+			IpQueues:   make(map[string]*SlidingWindow),
+		},
 	}
 }

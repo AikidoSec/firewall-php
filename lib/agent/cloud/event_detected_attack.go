@@ -70,7 +70,7 @@ func ShouldSendAttackDetectedEvent(server *ServerData) bool {
 	server.AttackDetectedEventsSentAt = filteredEvents
 
 	if len(server.AttackDetectedEventsSentAt) >= constants.MaxAttackDetectedEventsPerInterval {
-		log.Warnf(server.Logger, "Maximum (server, %d) number of \"detected_attack\" events exceeded for timeframe: %d / %d ms",
+		log.Warnf(server.Logger, "Maximum (server, %d) number of \"detected_attack\" + \"detected_attack_wave\" events exceeded for timeframe: %d / %d ms",
 			constants.MaxAttackDetectedEventsPerInterval, len(server.AttackDetectedEventsSentAt), constants.AttackDetectedEventsIntervalInMs)
 		return false
 	}
@@ -79,12 +79,12 @@ func ShouldSendAttackDetectedEvent(server *ServerData) bool {
 	return true
 }
 
-func SendAttackDetectedEvent(server *ServerData, req *protos.AttackDetected) {
+func SendAttackDetectedEvent(server *ServerData, req *protos.AttackDetected, attackType string) {
 	if !ShouldSendAttackDetectedEvent(server) {
 		return
 	}
 	detectedAttackEvent := DetectedAttack{
-		Type:    "detected_attack",
+		Type:    attackType,
 		Agent:   GetAgentInfo(server),
 		Request: GetRequestInfo(req.Request),
 		Attack:  GetAttackDetails(server, req.Attack),
