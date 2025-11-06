@@ -55,7 +55,7 @@ def is_port_in_active_use(port):
 def generate_unique_port():
     with lock:
         while True:
-            port = random.randint(1024, 65535)
+            port = random.randint(1024, 9999)
             if port not in used_ports and not is_port_in_active_use(port):
                 used_ports.add(port)
                 return port
@@ -135,15 +135,8 @@ def handle_test_scenario(data, root_tests_dir, test_lib_dir, server, benchmark, 
             print(f"Mock server on port {mock_port} stopped.")
 
 
-def main(root_tests_dir, test_lib_dir, specific_test=None, server="php-built-in", benchmark=False, valgrind=False, debug=False, max_tests=0xFFFFFFFF):    
-    if specific_test:
-        test_dirs = [os.path.join(root_tests_dir, specific_test)]
-    else:
-        test_dirs = [f.path for f in os.scandir(root_tests_dir) if f.is_dir()]
-        random.shuffle(test_dirs)
-        if max_tests != 0xFFFFFFFF:
-            test_dirs = test_dirs[:max_tests]
-       
+
+def main(root_tests_dir, test_lib_dir, test_dirs, server="php-built-in", benchmark=False, valgrind=False, debug=False):
     server_init = servers[server][INIT] 
     if server_init is not None:
         server_init(root_tests_dir)
@@ -193,23 +186,20 @@ def main(root_tests_dir, test_lib_dir, specific_test=None, server="php-built-in"
     server_uninit = servers[server][UNINIT]
     if server_uninit is not None:
         server_uninit()
-            
-    print_test_results("Passed tests:", passed_tests)
-    print_test_results("Failed tests:", failed_tests)
-    assert failed_tests == [], f"Found failed tests: {failed_tests}"
-    print("All tests passed!")
+
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Script for running PHP server tests with Aikido Firewall installed.")
     parser.add_argument("root_folder_path", type=str, help="Path to the root folder of the tests to be ran.")
     parser.add_argument("test_lib_dir", type=str, help="Directory for the test libraries.")
-    parser.add_argument("--test", type=str, default=None, help="Run a single test from the root folder.")
+    parser.add_argument("--test", type=str, nargs='+', default=None, help="Run specific tests from the root folder (space-separated list).")
     parser.add_argument("--benchmark", action="store_true", help="Enable benchmarking.")
     parser.add_argument("--valgrind", action="store_true", help="Enable valgrind.")
     parser.add_argument("--debug", action="store_true", help="Enable debugging logs.")
-    parser.add_argument("--max-tests", type=int, default=0xFFFFFFFF, help="Maximum number of tests to execute.")
-    parser.add_argument("--server", type=str, choices=["php-built-in", "apache-mod-php", "nginx-php-fpm"], default="php-built-in", help="Enable nginx & php-fpm testing.")
+    parser.add_argument("--server", type=str, choices=["php-built-in", "apache-mod-php", "nginx-php-fpm"], default="php-built-in", help="Select the type of server testing.")
+    parser.add_argument("--max-tests", type=int, default=0, help="Maximum number of tests to execute.")
+    parser.add_argument("--max-runs", type=int, default=1, help="Maximum number of test runs.")
 
     # Parse arguments
     args = parser.parse_args()
@@ -217,4 +207,31 @@ if __name__ == "__main__":
     # Extract values from parsed arguments
     root_folder = os.path.abspath(args.root_folder_path)
     test_lib_dir = os.path.abspath(args.test_lib_dir)
-    main(root_folder, test_lib_dir, args.test, args.server, args.benchmark, args.valgrind, args.debug, args.max_tests)
+
+    test_dirs = []
+    if args.test:
+        test_dirs = [os.path.join(root_folder, t) for t in args.test]
+    else:
+        test_dirs = [f.path for f in os.scandir(root_folder) if f.is_dir()]
+
+    i = 1
+    while i <= args.max_runs:
+        random.shuffle(test_dirs)
+        if args.max_tests != 0:
+            test_dirs = test_dirs[:args.max_tests]
+
+        print(f"Starting test run number {i}...")
+
+        main(root_folder, test_lib_dir, test_dirs, args.server, args.benchmark, args.valgrind, args.debug)
+
+        if len(failed_tests) == 0:
+            break
+
+        test_dirs = [os.path.join(root_folder, t) for t in failed_tests]
+
+        i += 1
+
+    print_test_results("Passed tests:", passed_tests)
+    print_test_results("Failed tests:", failed_tests)
+    assert failed_tests == [], f"Found failed tests: {failed_tests}"
+    print("All tests passed!")

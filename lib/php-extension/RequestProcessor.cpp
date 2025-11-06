@@ -83,7 +83,10 @@ bool RequestProcessor::IsBlockingEnabled() {
     }
     int ret = this->requestProcessorGetBlockingModeFn();
     if (ret == -1) {
-        return AIKIDO_GLOBAL(blocking);
+        ret = AIKIDO_GLOBAL(blocking);
+    }
+    if (ret == 1) {
+        AIKIDO_LOG_INFO("Blocking is enabled!\n");
     }
     return ret;
 }
