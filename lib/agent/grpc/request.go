@@ -3,12 +3,14 @@ package grpc
 import (
 	. "main/aikido_types"
 	"main/api_discovery"
+	"main/cloud"
 	"main/constants"
 	"main/ipc/protos"
 	"main/log"
 	"main/utils"
 	"slices"
 	"strings"
+	"time"
 )
 
 func storeTotalStats(server *ServerData, rateLimited bool) {
@@ -156,19 +158,23 @@ func storeRoute(server *ServerData, method string, route string, apiSpec *protos
 	}
 }
 
-func incrementRateLimitingCounts(m map[string]*RateLimitingCounts, key string) {
+// incrementSlidingWindowEntry ensures a SlidingWindow exists for the given key and increments it.
+func incrementSlidingWindowEntry(m map[string]*SlidingWindow, key string) *SlidingWindow {
 	if key == "" {
-		return
+		return nil
 	}
 
-	rateLimitingData, exists := m[key]
+	entry, exists := m[key]
 	if !exists {
-		rateLimitingData = &RateLimitingCounts{}
-		m[key] = rateLimitingData
+		if len(m) >= constants.MaxSlidingWindowEntries {
+			return nil
+		}
+		entry = NewSlidingWindow()
+		m[key] = entry
 	}
 
-	rateLimitingData.TotalNumberOfRequests += 1
-	rateLimitingData.NumberOfRequestsPerWindow.IncrementLast()
+	entry.Increment()
+	return entry
 }
 
 func updateRateLimitingCounts(server *ServerData, method string, route string, routeParsed string, user string, ip string, rateLimitGroup string) {
@@ -180,18 +186,61 @@ func updateRateLimitingCounts(server *ServerData, method string, route string, r
 		return
 	}
 
-	incrementRateLimitingCounts(rateLimitingDataForEndpoint.UserCounts, user)
-	incrementRateLimitingCounts(rateLimitingDataForEndpoint.IpCounts, ip)
-	incrementRateLimitingCounts(rateLimitingDataForEndpoint.RateLimitGroupCounts, rateLimitGroup)
+	incrementSlidingWindowEntry(rateLimitingDataForEndpoint.UserCounts, user)
+	incrementSlidingWindowEntry(rateLimitingDataForEndpoint.IpCounts, ip)
+	incrementSlidingWindowEntry(rateLimitingDataForEndpoint.RateLimitGroupCounts, rateLimitGroup)
 }
 
-func isRateLimitingThresholdExceeded(config *RateLimitingConfig, countsMap map[string]*RateLimitingCounts, key string) bool {
+func isRateLimitingThresholdExceeded(config *RateLimitingConfig, countsMap map[string]*SlidingWindow, key string) bool {
 	counts, exists := countsMap[key]
 	if !exists {
 		return false
 	}
 
-	return counts.TotalNumberOfRequests >= config.MaxRequests
+	return counts.Total >= config.MaxRequests
+}
+
+// updateAttackWaveCountsAndDetect implements the attack wave detection logic:
+//  1. Validates the request is from a web scanner and has a valid IP address
+//  2. Increments the sliding window counter for this IP
+//  3. Applies throttling: if an event was recently sent for this IP (within minBetween window),
+//     returns early without checking threshold or sending another event
+//  4. Checks if the total count within the sliding window exceeds the threshold
+//  5. If threshold exceeded: records the event time on the queue, logs the detection, and sends event to cloud
+func updateAttackWaveCountsAndDetect(server *ServerData, isWebScanner bool, ip string, userId string, userAgent string) {
+	if !isWebScanner || ip == "" {
+		return
+	}
+
+	now := time.Now()
+
+	server.AttackWaveMutex.Lock()
+	defer server.AttackWaveMutex.Unlock()
+
+	// increment for this request
+	queue := incrementSlidingWindowEntry(server.AttackWave.IpQueues, ip)
+
+	// skip if the last event for this ip was already sent within the min between time
+	if queue != nil && !queue.LastSent.IsZero() && now.Sub(queue.LastSent) < server.AttackWave.MinBetween {
+		return
+	}
+
+	// check threshold within window
+	if queue == nil || queue.Total < server.AttackWave.Threshold {
+		return // threshold not reached
+	}
+
+	// threshold reached -> record event and send to cloud
+	queue.LastSent = now
+	if server.Logger != nil {
+		log.Infof(server.Logger, "Attack wave detected from IP: %s", ip)
+	}
+	// report event to cloud
+	cloud.SendAttackDetectedEvent(server, &protos.AttackDetected{
+		Token:   server.AikidoConfig.Token,
+		Request: &protos.Request{IpAddress: ip, UserAgent: userAgent},
+		Attack:  &protos.Attack{Metadata: []*protos.Metadata{}, UserId: userId},
+	}, "detected_attack_wave")
 }
 
 func getRateLimitingValue(server *ServerData, method, route string) *RateLimitingValue {
