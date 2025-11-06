@@ -47,7 +47,12 @@ func RequestProcessorInit(initJson string) (initOk bool) {
 
 	config.Init(initJson)
 
-	log.Debugf("Aikido Request Processor v%s started in \"%s\" mode!", globals.Version, globals.EnvironmentConfig.PlatformName)
+	log.Debugf("Aikido Request Processor v%s (server PID: %d, request processor PID: %d) started in \"%s\" mode!",
+		globals.Version,
+		globals.EnvironmentConfig.ServerPID,
+		globals.EnvironmentConfig.RequestProcessorPID,
+		globals.EnvironmentConfig.PlatformName,
+	)
 	log.Debugf("Init data: %s", initJson)
 
 	if globals.EnvironmentConfig.PlatformName != "cli" {

@@ -135,11 +135,14 @@ def handle_test_scenario(data, root_tests_dir, test_lib_dir, server, benchmark, 
             print(f"Mock server on port {mock_port} stopped.")
 
 
-def main(root_tests_dir, test_lib_dir, specific_test=None, server="php-built-in", benchmark=False, valgrind=False, debug=False):    
+def main(root_tests_dir, test_lib_dir, specific_test=None, server="php-built-in", benchmark=False, valgrind=False, debug=False, max_tests=0xFFFFFFFF):    
     if specific_test:
         test_dirs = [os.path.join(root_tests_dir, specific_test)]
     else:
         test_dirs = [f.path for f in os.scandir(root_tests_dir) if f.is_dir()]
+        random.shuffle(test_dirs)
+        if max_tests != 0xFFFFFFFF:
+            test_dirs = test_dirs[:max_tests]
        
     server_init = servers[server][INIT] 
     if server_init is not None:
@@ -205,6 +208,7 @@ if __name__ == "__main__":
     parser.add_argument("--benchmark", action="store_true", help="Enable benchmarking.")
     parser.add_argument("--valgrind", action="store_true", help="Enable valgrind.")
     parser.add_argument("--debug", action="store_true", help="Enable debugging logs.")
+    parser.add_argument("--max-tests", type=int, default=0xFFFFFFFF, help="Maximum number of tests to execute.")
     parser.add_argument("--server", type=str, choices=["php-built-in", "apache-mod-php", "nginx-php-fpm"], default="php-built-in", help="Enable nginx & php-fpm testing.")
 
     # Parse arguments
@@ -213,4 +217,4 @@ if __name__ == "__main__":
     # Extract values from parsed arguments
     root_folder = os.path.abspath(args.root_folder_path)
     test_lib_dir = os.path.abspath(args.test_lib_dir)
-    main(root_folder, test_lib_dir, args.test, args.server, args.benchmark, args.valgrind, args.debug)
+    main(root_folder, test_lib_dir, args.test, args.server, args.benchmark, args.valgrind, args.debug, args.max_tests)
