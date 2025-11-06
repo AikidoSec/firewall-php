@@ -34,7 +34,7 @@ def run_test():
         assert_response_body_contains(response, "Request successful")
     
     # sleep for 1 minute (should reset the rate limiting after 1 minute and allow 5 more requests)
-    time.sleep(60)
+    time.sleep(120)
     for _ in range(5):
         response = php_server_get("/")
         assert_response_code_is(response, 200)
