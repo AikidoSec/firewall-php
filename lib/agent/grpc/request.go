@@ -136,11 +136,7 @@ func getMergedApiSpec(currentApiSpec *protos.APISpec, newApiSpec *protos.APISpec
 	}
 }
 
-func storeRoute(server *ServerData, shouldDiscoverRoute bool, method string, route string, apiSpec *protos.APISpec, rateLimited bool) {
-	if !shouldDiscoverRoute {
-		return
-	}
-
+func storeRoute(server *ServerData, method string, route string, apiSpec *protos.APISpec, rateLimited bool) {
 	server.RoutesMutex.Lock()
 	defer server.RoutesMutex.Unlock()
 
