@@ -50,6 +50,6 @@ Follow the installation instructions in the [README](../README.md#install) for y
 If you still can’t resolve the issue:
 
 - Use the in-app chat to reach our support team directly.
-- Or create an issue on [GitHub](../../issues) with details about your setup, framework, and logs.
+- Or create an issue on [GitHub](https://github.com/AikidoSec/firewall-php/issues) with details about your setup, framework, and logs.
 
 Include as much context as possible (framework, logs, and how Aikido was added) so we can help you quickly.
