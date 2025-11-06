@@ -12,7 +12,7 @@
             "hits": 10
         },
         {
-            "hostname": "httpbin.org",
+            "hostname": "ssrf-redirects.testssandbox.com",
             "port": 443,
             "hits": 1
         },
@@ -30,6 +30,15 @@
             "hostname": "www.aikido.dev",
             "port": 443,
             "hits": 3
+        },
+        {
+            "hostname": "some-invalid-domain.com",
+            "port": 4113,
+            "hits": 1
+        },
+        {
+            "hostname": "127.0.0.1",
+            "hits": 1
         }
     ],
     "routes": [

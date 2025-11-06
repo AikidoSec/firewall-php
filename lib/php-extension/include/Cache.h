@@ -5,6 +5,8 @@ class RequestCache {
     std::string userId;
     std::string userName;
     std::string rateLimitGroup;
+    std::string outgoingRequestUrl;
+    std::string outgoingRequestRedirectUrl;
 
     RequestCache() = default;
     void Reset();
@@ -24,6 +26,7 @@ class EventCache {
     std::string outgoingRequestEffectiveUrl;
     std::string outgoingRequestPort;
     std::string outgoingRequestResolvedIp;
+    std::string outgoingRequestEffectiveUrlPort;
 
     std::string sqlQuery;
     std::string sqlDialect;
