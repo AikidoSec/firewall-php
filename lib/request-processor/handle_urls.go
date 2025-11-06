@@ -79,6 +79,11 @@ func OnPostOutgoingRequest() string {
 		return ""
 	}
 
+	if ssrf.IsRequestToItself(effectiveHostname, effectivePort) {
+		log.Infof("Request to itself detected -> will not run detection logic!")
+		return ""
+	}
+
 	res := ssrf.CheckResolvedIpForSSRF(resolvedIp)
 	if effectiveHostname != hostname {
 		log.Infof("EffectiveHostname \"%s\" is different than Hostname \"%s\"!", effectiveHostname, hostname)

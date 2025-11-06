@@ -11,12 +11,12 @@ This test verifies that:
 3. The HTTP/HTTPS special case is handled correctly
 '''
 
-def check_request_to_itself(url, response_code, response_body):
+def check_request_to_itself(url, response_code, response_body, domain="localhost"):
     """
     Verify that a request to itself is NOT blocked and does NOT generate a detection event
     """
     
-    response = php_server_post("/testDetection", {"url": url})
+    response = php_server_post_custom_domain(domain, "/testDetection", {"url": url})
     assert_response_code_is(response, response_code)
     assert_response_body_contains(response, response_body)
     
@@ -26,8 +26,6 @@ def run_test():
     print(f"\n=== Testing SSRF Request-to-Itself Prevention ===")
     print(f"PHP Server Port: {php_port}")
   
-    # Test 1: Request to localhost (same server) should NOT be blocked
-    # This simulates a server making a request to itself on the same port
     print("\n[Test 1] Request to itself (localhost) should not be blocked...")
     check_request_to_itself(
         f"http://localhost:{php_port}/test",
@@ -35,7 +33,6 @@ def run_test():
         "Got URL content!"
     )
     
-    # Test 2: [HTTPS] Request to localhost (same server) should NOT be blocked
     print("\n[Test 2] Request to itself (localhost - HTTPS) should not be blocked...")
     check_request_to_itself(
         f"https//localhost:{php_port}/test",
@@ -49,7 +46,16 @@ def run_test():
         500,
         "Aikido firewall has blocked a server-side request forgery"
     )
-    
+
+    print("\n[Test 4] Request to itself (request-to-itself.example.local) should not be blocked...")
+    add_to_hosts_file("request-to-itself.example.local", "127.0.0.1")
+    check_request_to_itself(
+        f"http://request-to-itself.example.local:{php_port}/test",
+        200,
+        "Got URL content!",
+        domain="request-to-itself.example.local"
+    )
+
     print("\n=== All tests passed! ===\n")
     
 if __name__ == "__main__":

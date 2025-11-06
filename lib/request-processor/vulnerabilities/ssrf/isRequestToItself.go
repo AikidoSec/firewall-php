@@ -44,16 +44,12 @@ func IsRequestToItself(outboundHostname string, outboundPort uint32) bool {
 		return true
 	}
 
-	// Special case: HTTP/HTTPS cross-protocol requests to the same hostname
-	// If server is on port 80 (HTTP) and outbound is port 443 (HTTPS), or vice versa,
-	// consider it as a request to itself
-	isServerHTTP := serverPort == 80
-	isServerHTTPS := serverPort == 443
-	isOutboundHTTP := outboundPort == 80
-	isOutboundHTTPS := outboundPort == 443
-
-	// Allow cross-protocol requests between standard HTTP/HTTPS ports
-	if (isServerHTTP && isOutboundHTTPS) || (isServerHTTPS && isOutboundHTTP) {
+	// Special case for HTTP/HTTPS ports
+	// In production, the app will be served on port 80 and 443
+	if serverPort == 80 && outboundPort == 443 {
+		return true
+	}
+	if serverPort == 443 && outboundPort == 80 {
 		return true
 	}
 

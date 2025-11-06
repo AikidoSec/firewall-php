@@ -50,12 +50,12 @@ def localhost_get_request(port, route="", headers={}, benchmark=False):
     time.sleep(0.001)
     return r
 
-def localhost_post_request(port, route, data, headers={}, benchmark=False):
+def localhost_post_request(port, route, data, headers={}, benchmark=False, domain="localhost"):
     global benchmarks, s
 
     start_time = datetime.datetime.now()
 
-    r = s.post(f"http://localhost:{port}{route}", json=data, headers=headers)
+    r = s.post(f"http://{domain}:{port}{route}", json=data, headers=headers)
     end_time = datetime.datetime.now()
     delta = end_time - start_time
     elapsed_ms = delta.total_seconds() * 1000
@@ -71,6 +71,9 @@ def php_server_get(route="", headers={}, benchmark=False):
 
 def php_server_post(route, data, headers={}, benchmark=False):
     return localhost_post_request(php_port, route, data, headers, benchmark)
+
+def php_server_post_custom_domain(domain, route, data, headers={}, benchmark=False):
+    return localhost_post_request(php_port, route, data, headers, benchmark, domain)
 
 def mock_server_get(route=""):
     return localhost_get_request(mock_port, route, False)
