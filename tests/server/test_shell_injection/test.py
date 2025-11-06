@@ -23,7 +23,8 @@ def check_shell_injection(response_code, response_body, event_id, expected_json)
 
 
 def check_shell_injection_route_params():
-    response = php_server_get("/api/execute/ls")
+    response = php_server_get("/api/execute/ls%20-la")
+    assert_response_body_contains(response, "Aikido firewall has blocked a shell injection")
     assert_response_code_is(response, 500)
 
 
