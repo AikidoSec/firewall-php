@@ -2,70 +2,101 @@ package main
 
 import (
 	"C"
-	"main/config"
+	. "main/aikido_types"
 	"main/globals"
 	"main/grpc"
 	"main/log"
 	"main/machine"
-)
-import (
-	"main/cloud"
-	"main/rate_limiting"
+	"main/server_utils"
+	"main/utils"
 	"os"
 	"os/signal"
+	"sync/atomic"
 	"syscall"
+	"time"
+)
+import (
+	"fmt"
+	"main/constants"
 )
 
-func AgentInit(initJson string) (initOk bool) {
+var serversCleanupChannel = make(chan struct{})
+var serversCleanupTicker = time.NewTicker(2 * time.Minute)
+
+func serversCleanupRoutine(_ *ServerData) {
+	for _, token := range globals.GetServersTokens() {
+		server := globals.GetServer(token)
+		if server == nil {
+			continue
+		}
+		now := utils.GetTime()
+		lastConnectionTime := atomic.LoadInt64(&server.LastConnectionTime)
+		if now-lastConnectionTime > constants.MinServerInactivityForCleanup {
+			log.Infof(log.MainLogger, "Server \"AIK_RUNTIME_***%s\" has been inactive for more than 2 minutes, unregistering...", utils.AnonymizeToken(token))
+			server_utils.Unregister(token)
+		}
+	}
+}
+
+func writePidFile() {
+	pidFile, err := os.Create(constants.PidPath)
+	if err != nil {
+		log.Errorf(log.MainLogger, "Failed to create pid file: %v", err)
+		return
+	}
+	defer pidFile.Close()
+	pidFile.WriteString(fmt.Sprintf("%d", os.Getpid()))
+}
+
+func removePidFile() {
+	if _, err := os.Stat(constants.PidPath); err == nil {
+		os.Remove(constants.PidPath)
+	}
+}
+
+func AgentInit() (initOk bool) {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Warn("Recovered from panic:", r)
+			log.Warn(log.MainLogger, "Recovered from panic:", r)
 			initOk = false
 		}
 	}()
 
-	if !config.Init(initJson) {
-		return false
-	}
 	log.Init()
-	log.Infof("Loaded local config: %+v", globals.EnvironmentConfig)
-
 	machine.Init()
 	if !grpc.Init() {
 		return false
 	}
 
-	cloud.Init()
-	rate_limiting.Init()
+	writePidFile()
+	utils.StartPollingRoutine(serversCleanupChannel, serversCleanupTicker, serversCleanupRoutine, nil)
 
-	log.Infof("Aikido Agent v%s started!", globals.Version)
+	log.Infof(log.MainLogger, "Aikido Agent v%s started!", constants.Version)
 	return true
 }
 
 func AgentUninit() {
-	rate_limiting.Uninit()
-	cloud.Uninit()
-	grpc.Uninit()
-	config.Uninit()
+	utils.StopPollingRoutine(serversCleanupChannel)
 
-	log.Infof("Aikido Agent v%s stopped!", globals.Version)
+	for _, token := range globals.GetServersTokens() {
+		server_utils.Unregister(token)
+	}
+	grpc.Uninit()
+	removePidFile()
+	log.Infof(log.MainLogger, "Aikido Agent v%s stopped!", constants.Version)
 	log.Uninit()
 }
 
 func main() {
-	if len(os.Args) != 2 {
-		log.Errorf("Usage: %s <init_json>", os.Args[0])
-		os.Exit(-1)
-	}
-	if !AgentInit(os.Args[1]) {
-		log.Errorf("Agent initialization failed!")
+	if !AgentInit() {
+		log.Errorf(log.MainLogger, "Agent initialization failed!")
 		os.Exit(-2)
 	}
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT)
 
 	signal := <-sigChan
-	log.Infof("Received signal: %s", signal)
+	log.Infof(log.MainLogger, "Received signal: %s", signal)
 	AgentUninit()
 	os.Exit(0)
 }

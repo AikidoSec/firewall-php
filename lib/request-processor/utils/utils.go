@@ -2,7 +2,6 @@ package utils
 
 import (
 	"fmt"
-	"main/globals"
 	"main/helpers"
 	"main/log"
 	"net"
@@ -166,6 +165,11 @@ func ParseHeaders(headers string) map[string]interface{} {
 	return j
 }
 
+func ParseRouteParams(RouteParams string) map[string]interface{} {
+	parts := strings.Split(RouteParams, "/")
+	return map[string]interface{}{"parts": parts}
+}
+
 func isIP(ip string) bool {
 	return net.ParseIP(ip) != nil
 }
@@ -198,19 +202,25 @@ func IsIpInSet(ipSet *netipx.IPSet, ip string) int {
 	return NotFound
 }
 
-func IsIpAllowedOnEndpoint(allowedIps *netipx.IPSet, ip string) int {
-	if globals.EnvironmentConfig.LocalhostAllowedByDefault && isLocalhost(ip) {
+func IsIpAllowedOnEndpoint(server *ServerData, allowedIps *netipx.IPSet, ip string) int {
+	if server == nil {
+		return NoConfig
+	}
+	if server.AikidoConfig.LocalhostAllowedByDefault && isLocalhost(ip) {
 		return Found
 	}
 
 	return IsIpInSet(allowedIps, ip)
 }
 
-func IsIpBypassed(ip string) bool {
-	globals.CloudConfigMutex.Lock()
-	defer globals.CloudConfigMutex.Unlock()
+func IsIpBypassed(server *ServerData, ip string) bool {
+	if server == nil {
+		return false
+	}
+	server.CloudConfigMutex.Lock()
+	defer server.CloudConfigMutex.Unlock()
 
-	return IsIpInSet(globals.CloudConfig.BypassedIps, ip) == Found
+	return IsIpInSet(server.CloudConfig.BypassedIps, ip) == Found
 }
 
 func getIpFromXForwardedFor(value string) string {
@@ -259,8 +269,11 @@ func getIpFromXForwardedFor(value string) string {
 	return ""
 }
 
-func GetIpFromRequest(remoteAddress string, xForwardedFor string) string {
-	if xForwardedFor != "" && globals.EnvironmentConfig.TrustProxy {
+func GetIpFromRequest(server *ServerData, remoteAddress string, xForwardedFor string) string {
+	if server == nil {
+		return ""
+	}
+	if xForwardedFor != "" && server.AikidoConfig.TrustProxy {
 		ip := getIpFromXForwardedFor(xForwardedFor)
 		if isIP(ip) {
 			return ip
@@ -274,20 +287,26 @@ func GetIpFromRequest(remoteAddress string, xForwardedFor string) string {
 	return ""
 }
 
-func GetBlockingMode() int {
-	globals.CloudConfigMutex.Lock()
-	defer globals.CloudConfigMutex.Unlock()
-	return globals.CloudConfig.Block
+func GetBlockingMode(server *ServerData) int {
+	if server == nil {
+		return NoConfig
+	}
+	server.CloudConfigMutex.Lock()
+	defer server.CloudConfigMutex.Unlock()
+	return server.CloudConfig.Block
 }
 
-func IsBlockingEnabled() bool {
-	return GetBlockingMode() == 1
+func IsBlockingEnabled(server *ServerData) bool {
+	return GetBlockingMode(server) == 1
 }
 
-func IsUserBlocked(userID string) bool {
-	globals.CloudConfigMutex.Lock()
-	defer globals.CloudConfigMutex.Unlock()
-	return KeyExists(globals.CloudConfig.BlockedUserIds, userID)
+func IsUserBlocked(server *ServerData, userID string) bool {
+	if server == nil {
+		return false
+	}
+	server.CloudConfigMutex.Lock()
+	defer server.CloudConfigMutex.Unlock()
+	return KeyExists(server.CloudConfig.BlockedUserIds, userID)
 }
 
 type IpListMatch struct {
@@ -319,41 +338,41 @@ func IsIpInList(ipList map[string]IpList, ip string) (int, []IpListMatch) {
 	return Found, matches
 }
 
-func IsIpAllowed(ip string) bool {
-	globals.CloudConfigMutex.Lock()
-	defer globals.CloudConfigMutex.Unlock()
+func IsIpAllowed(server *ServerData, ip string) bool {
+	server.CloudConfigMutex.Lock()
+	defer server.CloudConfigMutex.Unlock()
 
 	if helpers.IsPrivateIP(ip) {
 		return true
 	}
 
-	result, _ := IsIpInList(globals.CloudConfig.AllowedIps, ip)
+	result, _ := IsIpInList(server.CloudConfig.AllowedIps, ip)
 	// IP is allowed if it's found in the allowed lists or if the allowed lists are not configured
 	return result == Found || result == NoConfig
 }
 
-func IsIpBlocked(ip string) (bool, []IpListMatch) {
-	globals.CloudConfigMutex.Lock()
-	defer globals.CloudConfigMutex.Unlock()
-	result, matches := IsIpInList(globals.CloudConfig.BlockedIps, ip)
+func IsIpBlocked(server *ServerData, ip string) (bool, []IpListMatch) {
+	server.CloudConfigMutex.Lock()
+	defer server.CloudConfigMutex.Unlock()
+	result, matches := IsIpInList(server.CloudConfig.BlockedIps, ip)
 	return result == Found, matches
 }
 
-func IsIpMonitored(ip string) (bool, []IpListMatch) {
-	globals.CloudConfigMutex.Lock()
-	defer globals.CloudConfigMutex.Unlock()
-	result, matches := IsIpInList(globals.CloudConfig.MonitoredIps, ip)
+func IsIpMonitored(server *ServerData, ip string) (bool, []IpListMatch) {
+	server.CloudConfigMutex.Lock()
+	defer server.CloudConfigMutex.Unlock()
+	result, matches := IsIpInList(server.CloudConfig.MonitoredIps, ip)
 	return result == Found, matches
 }
 
-func IsUserAgentInBlocklist(userAgent string, blocklist *regexp.Regexp) (bool, []string) {
+func IsUserAgentInBlocklist(server *ServerData, userAgent string, blocklist *regexp.Regexp) (bool, []string) {
 	if blocklist == nil {
 		return false, []string{}
 	}
 
 	if blocklist.MatchString(userAgent) {
 		matchedDetails := []string{}
-		for key, valueRegex := range globals.CloudConfig.UserAgentDetails {
+		for key, valueRegex := range server.CloudConfig.UserAgentDetails {
 			if valueRegex != nil && valueRegex.MatchString(userAgent) {
 				matchedDetails = append(matchedDetails, key)
 			}
@@ -365,16 +384,16 @@ func IsUserAgentInBlocklist(userAgent string, blocklist *regexp.Regexp) (bool, [
 	return false, []string{}
 }
 
-func IsUserAgentBlocked(userAgent string) (bool, []string) {
-	globals.CloudConfigMutex.Lock()
-	defer globals.CloudConfigMutex.Unlock()
-	return IsUserAgentInBlocklist(userAgent, globals.CloudConfig.BlockedUserAgents)
+func IsUserAgentBlocked(server *ServerData, userAgent string) (bool, []string) {
+	server.CloudConfigMutex.Lock()
+	defer server.CloudConfigMutex.Unlock()
+	return IsUserAgentInBlocklist(server, userAgent, server.CloudConfig.BlockedUserAgents)
 }
 
-func IsUserAgentMonitored(userAgent string) (bool, []string) {
-	globals.CloudConfigMutex.Lock()
-	defer globals.CloudConfigMutex.Unlock()
-	return IsUserAgentInBlocklist(userAgent, globals.CloudConfig.MonitoredUserAgents)
+func IsUserAgentMonitored(server *ServerData, userAgent string) (bool, []string) {
+	server.CloudConfigMutex.Lock()
+	defer server.CloudConfigMutex.Unlock()
+	return IsUserAgentInBlocklist(server, userAgent, server.CloudConfig.MonitoredUserAgents)
 }
 
 type DatabaseType int
@@ -439,4 +458,26 @@ func GetArch() string {
 
 func IsWildcardEndpoint(method, route string) bool {
 	return method == "*" || strings.Contains(route, "*")
+}
+
+func AnonymizeToken(token string) string {
+	if len(token) <= 4 {
+		return token
+	}
+	return token[len(token)-4:]
+}
+
+func SliceToLowercase(slice []string) []string {
+	for i, v := range slice {
+		slice[i] = strings.ToLower(v)
+	}
+	return slice
+}
+
+func StringSliceToMap(slice []string) map[string]struct{} {
+	m := make(map[string]struct{})
+	for _, v := range slice {
+		m[v] = struct{}{}
+	}
+	return m
 }

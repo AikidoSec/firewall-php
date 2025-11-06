@@ -3,40 +3,42 @@ package grpc
 import (
 	. "main/aikido_types"
 	"main/api_discovery"
-	"main/globals"
+	"main/cloud"
+	"main/constants"
 	"main/ipc/protos"
 	"main/log"
 	"main/utils"
 	"slices"
 	"strings"
+	"time"
 )
 
-func storeTotalStats(rateLimited bool) {
-	globals.StatsData.StatsMutex.Lock()
-	defer globals.StatsData.StatsMutex.Unlock()
+func storeTotalStats(server *ServerData, rateLimited bool) {
+	server.StatsData.StatsMutex.Lock()
+	defer server.StatsData.StatsMutex.Unlock()
 
-	globals.StatsData.Requests += 1
+	server.StatsData.Requests += 1
 	if rateLimited {
-		globals.StatsData.RequestsRateLimited += 1
+		server.StatsData.RequestsRateLimited += 1
 	}
 }
 
-func storeAttackStats(req *protos.AttackDetected) {
-	globals.StatsData.StatsMutex.Lock()
-	defer globals.StatsData.StatsMutex.Unlock()
+func storeAttackStats(server *ServerData, req *protos.AttackDetected) {
+	server.StatsData.StatsMutex.Lock()
+	defer server.StatsData.StatsMutex.Unlock()
 
-	globals.StatsData.Attacks += 1
+	server.StatsData.Attacks += 1
 	if req.GetAttack().GetBlocked() {
-		globals.StatsData.AttacksBlocked += 1
+		server.StatsData.AttacksBlocked += 1
 	}
 }
 
-func storePackages(packages map[string]string) {
-	globals.PackagesMutex.Lock()
-	defer globals.PackagesMutex.Unlock()
+func storePackages(server *ServerData, packages map[string]string) {
+	server.PackagesMutex.Lock()
+	defer server.PackagesMutex.Unlock()
 
 	for packageName, packageVersion := range packages {
-		globals.Packages[packageName] = Package{
+		server.Packages[packageName] = Package{
 			Name:       packageName,
 			Version:    packageVersion,
 			RequiredAt: utils.GetTime(),
@@ -57,12 +59,12 @@ func storeMonitoredListsMatches(m *map[string]int, lists []string) {
 	}
 }
 
-func storeSinkStats(protoSinkStats *protos.MonitoredSinkStats) {
-	globals.StatsData.StatsMutex.Lock()
-	defer globals.StatsData.StatsMutex.Unlock()
+func storeSinkStats(server *ServerData, protoSinkStats *protos.MonitoredSinkStats) {
+	server.StatsData.StatsMutex.Lock()
+	defer server.StatsData.StatsMutex.Unlock()
 
 	sink := protoSinkStats.GetSink()
-	monitoredSinkTimings, found := globals.StatsData.MonitoredSinkTimings[sink]
+	monitoredSinkTimings, found := server.StatsData.MonitoredSinkTimings[sink]
 	if !found {
 		monitoredSinkTimings = MonitoredSinkTimings{}
 	}
@@ -74,7 +76,7 @@ func storeSinkStats(protoSinkStats *protos.MonitoredSinkStats) {
 	monitoredSinkTimings.WithoutContext += int(protoSinkStats.GetWithoutContext())
 	monitoredSinkTimings.Total += int(protoSinkStats.GetTotal())
 	monitoredSinkTimings.Timings = append(monitoredSinkTimings.Timings, protoSinkStats.GetTimings()...)
-	if len(monitoredSinkTimings.Timings) >= globals.MinStatsCollectedForRelevantMetrics {
+	if len(monitoredSinkTimings.Timings) >= constants.MinStatsCollectedForRelevantMetrics {
 		monitoredSinkTimings.CompressedTimings = append(monitoredSinkTimings.CompressedTimings, CompressedTiming{
 			AverageInMS:  utils.ComputeAverage(monitoredSinkTimings.Timings),
 			Percentiles:  utils.ComputePercentiles(monitoredSinkTimings.Timings),
@@ -83,7 +85,7 @@ func storeSinkStats(protoSinkStats *protos.MonitoredSinkStats) {
 		monitoredSinkTimings.Timings = []int64{}
 	}
 
-	globals.StatsData.MonitoredSinkTimings[sink] = monitoredSinkTimings
+	server.StatsData.MonitoredSinkTimings[sink] = monitoredSinkTimings
 }
 
 func getApiSpecData(apiSpec *protos.APISpec) (*protos.DataSchema, string, *protos.DataSchema, []*protos.APIAuthType) {
@@ -134,19 +136,19 @@ func getMergedApiSpec(currentApiSpec *protos.APISpec, newApiSpec *protos.APISpec
 	}
 }
 
-func storeRoute(method string, route string, apiSpec *protos.APISpec, rateLimited bool) {
-	globals.RoutesMutex.Lock()
-	defer globals.RoutesMutex.Unlock()
+func storeRoute(server *ServerData, method string, route string, apiSpec *protos.APISpec, rateLimited bool) {
+	server.RoutesMutex.Lock()
+	defer server.RoutesMutex.Unlock()
 
-	if _, ok := globals.Routes[route]; !ok {
-		globals.Routes[route] = make(map[string]*Route)
-		utils.RemoveOldestFromMapIfMaxExceeded(&globals.Routes, &globals.RoutesQueue, route)
+	if _, ok := server.Routes[route]; !ok {
+		server.Routes[route] = make(map[string]*Route)
+		utils.RemoveOldestFromMapIfMaxExceeded(&server.Routes, &server.RoutesQueue, route)
 	}
 
-	routeData, ok := globals.Routes[route][method]
+	routeData, ok := server.Routes[route][method]
 	if !ok {
 		routeData = &Route{Path: route, Method: method}
-		globals.Routes[route][method] = routeData
+		server.Routes[route][method] = routeData
 	}
 
 	routeData.Hits++
@@ -156,56 +158,103 @@ func storeRoute(method string, route string, apiSpec *protos.APISpec, rateLimite
 	}
 }
 
-func incrementRateLimitingCounts(m map[string]*RateLimitingCounts, key string) {
+// incrementSlidingWindowEntry ensures a SlidingWindow exists for the given key and increments it.
+func incrementSlidingWindowEntry(m map[string]*SlidingWindow, key string) *SlidingWindow {
 	if key == "" {
-		return
+		return nil
 	}
 
-	rateLimitingData, exists := m[key]
+	entry, exists := m[key]
 	if !exists {
-		rateLimitingData = &RateLimitingCounts{}
-		m[key] = rateLimitingData
+		if len(m) >= constants.MaxSlidingWindowEntries {
+			return nil
+		}
+		entry = NewSlidingWindow()
+		m[key] = entry
 	}
 
-	rateLimitingData.TotalNumberOfRequests += 1
-	rateLimitingData.NumberOfRequestsPerWindow.IncrementLast()
+	entry.Increment()
+	return entry
 }
 
-func updateRateLimitingCounts(method string, route string, routeParsed string, user string, ip string, rateLimitGroup string) {
-	globals.RateLimitingMutex.Lock()
-	defer globals.RateLimitingMutex.Unlock()
+func updateRateLimitingCounts(server *ServerData, method string, route string, routeParsed string, user string, ip string, rateLimitGroup string) {
+	server.RateLimitingMutex.Lock()
+	defer server.RateLimitingMutex.Unlock()
 
-	rateLimitingDataForEndpoint := getRateLimitingDataForEndpoint(method, route, routeParsed)
+	rateLimitingDataForEndpoint := getRateLimitingDataForEndpoint(server, method, route, routeParsed)
 	if rateLimitingDataForEndpoint == nil {
 		return
 	}
 
-	incrementRateLimitingCounts(rateLimitingDataForEndpoint.UserCounts, user)
-	incrementRateLimitingCounts(rateLimitingDataForEndpoint.IpCounts, ip)
-	incrementRateLimitingCounts(rateLimitingDataForEndpoint.RateLimitGroupCounts, rateLimitGroup)
+	incrementSlidingWindowEntry(rateLimitingDataForEndpoint.UserCounts, user)
+	incrementSlidingWindowEntry(rateLimitingDataForEndpoint.IpCounts, ip)
+	incrementSlidingWindowEntry(rateLimitingDataForEndpoint.RateLimitGroupCounts, rateLimitGroup)
 }
 
-func isRateLimitingThresholdExceeded(config *RateLimitingConfig, countsMap map[string]*RateLimitingCounts, key string) bool {
+func isRateLimitingThresholdExceeded(config *RateLimitingConfig, countsMap map[string]*SlidingWindow, key string) bool {
 	counts, exists := countsMap[key]
 	if !exists {
 		return false
 	}
 
-	return counts.TotalNumberOfRequests >= config.MaxRequests
+	return counts.Total >= config.MaxRequests
 }
 
-func getRateLimitingValue(method, route string) *RateLimitingValue {
-	rateLimitingDataForEndpoint, exists := globals.RateLimitingMap[RateLimitingKey{Method: method, Route: route}]
+// updateAttackWaveCountsAndDetect implements the attack wave detection logic:
+//  1. Validates the request is from a web scanner and has a valid IP address
+//  2. Increments the sliding window counter for this IP
+//  3. Applies throttling: if an event was recently sent for this IP (within minBetween window),
+//     returns early without checking threshold or sending another event
+//  4. Checks if the total count within the sliding window exceeds the threshold
+//  5. If threshold exceeded: records the event time on the queue, logs the detection, and sends event to cloud
+func updateAttackWaveCountsAndDetect(server *ServerData, isWebScanner bool, ip string, userId string, userAgent string) {
+	if !isWebScanner || ip == "" {
+		return
+	}
+
+	now := time.Now()
+
+	server.AttackWaveMutex.Lock()
+	defer server.AttackWaveMutex.Unlock()
+
+	// increment for this request
+	queue := incrementSlidingWindowEntry(server.AttackWave.IpQueues, ip)
+
+	// skip if the last event for this ip was already sent within the min between time
+	if queue != nil && !queue.LastSent.IsZero() && now.Sub(queue.LastSent) < server.AttackWave.MinBetween {
+		return
+	}
+
+	// check threshold within window
+	if queue == nil || queue.Total < server.AttackWave.Threshold {
+		return // threshold not reached
+	}
+
+	// threshold reached -> record event and send to cloud
+	queue.LastSent = now
+	if server.Logger != nil {
+		log.Infof(server.Logger, "Attack wave detected from IP: %s", ip)
+	}
+	// report event to cloud
+	cloud.SendAttackDetectedEvent(server, &protos.AttackDetected{
+		Token:   server.AikidoConfig.Token,
+		Request: &protos.Request{IpAddress: ip, UserAgent: userAgent},
+		Attack:  &protos.Attack{Metadata: []*protos.Metadata{}, UserId: userId},
+	}, "detected_attack_wave")
+}
+
+func getRateLimitingValue(server *ServerData, method, route string) *RateLimitingValue {
+	rateLimitingDataForEndpoint, exists := server.RateLimitingMap[RateLimitingKey{Method: method, Route: route}]
 	if !exists {
 		return nil
 	}
 	return rateLimitingDataForEndpoint
 }
 
-func getWildcardRateLimitingValues(method, route string) []*RateLimitingValue {
+func getWildcardRateLimitingValues(server *ServerData, method, route string) []*RateLimitingValue {
 	wildcardRatelimitingValues := []*RateLimitingValue{}
 
-	for key, r := range globals.RateLimitingWildcardMap {
+	for key, r := range server.RateLimitingWildcardMap {
 		if key.Method != method {
 			continue
 		}
@@ -216,14 +265,14 @@ func getWildcardRateLimitingValues(method, route string) []*RateLimitingValue {
 	return wildcardRatelimitingValues
 }
 
-func getWildcardMatchingRateLimitingValues(method, route, routeParsed string) []*RateLimitingValue {
+func getWildcardMatchingRateLimitingValues(server *ServerData, method, route, routeParsed string) []*RateLimitingValue {
 	rateLimitingDataArray := []*RateLimitingValue{}
-	wildcardMethodRateLimitingData := getRateLimitingValue("*", routeParsed)
+	wildcardMethodRateLimitingData := getRateLimitingValue(server, "*", routeParsed)
 	if wildcardMethodRateLimitingData != nil {
 		rateLimitingDataArray = append(rateLimitingDataArray, wildcardMethodRateLimitingData)
 	}
-	rateLimitingDataArray = append(rateLimitingDataArray, getWildcardRateLimitingValues(method, route)...)
-	rateLimitingDataArray = append(rateLimitingDataArray, getWildcardRateLimitingValues("*", route)...)
+	rateLimitingDataArray = append(rateLimitingDataArray, getWildcardRateLimitingValues(server, method, route)...)
+	rateLimitingDataArray = append(rateLimitingDataArray, getWildcardRateLimitingValues(server, "*", route)...)
 
 	slices.SortFunc(rateLimitingDataArray, func(i, j *RateLimitingValue) int {
 		// Sort endpoints based on the amount of * in the route
@@ -232,15 +281,15 @@ func getWildcardMatchingRateLimitingValues(method, route, routeParsed string) []
 	return rateLimitingDataArray
 }
 
-func getRateLimitingDataForEndpoint(method, route, routeParsed string) *RateLimitingValue {
+func getRateLimitingDataForEndpoint(server *ServerData, method, route, routeParsed string) *RateLimitingValue {
 	// Check for exact match first
-	rateLimitingDataMatch := getRateLimitingValue(method, routeParsed)
+	rateLimitingDataMatch := getRateLimitingValue(server, method, routeParsed)
 	if rateLimitingDataMatch != nil {
 		return rateLimitingDataMatch
 	}
 
 	// If no exact match, check for the most restrictive wildcard match
-	wildcardMatches := getWildcardMatchingRateLimitingValues(method, route, routeParsed)
+	wildcardMatches := getWildcardMatchingRateLimitingValues(server, method, route, routeParsed)
 	if len(wildcardMatches) == 0 {
 		return nil
 	}
@@ -254,11 +303,15 @@ func getRateLimitingDataForEndpoint(method, route, routeParsed string) *RateLimi
 	return wildcardMatches[0]
 }
 
-func getRateLimitingStatus(method, route, routeParsed, user, ip, rateLimitGroup string) *protos.RateLimitingStatus {
-	globals.RateLimitingMutex.RLock()
-	defer globals.RateLimitingMutex.RUnlock()
+func getRateLimitingStatus(server *ServerData, method, route, routeParsed, user, ip, rateLimitGroup string) *protos.RateLimitingStatus {
+	if server == nil {
+		return nil
+	}
 
-	rateLimitingDataMatch := getRateLimitingDataForEndpoint(method, route, routeParsed)
+	server.RateLimitingMutex.RLock()
+	defer server.RateLimitingMutex.RUnlock()
+
+	rateLimitingDataMatch := getRateLimitingDataForEndpoint(server, method, route, routeParsed)
 	if rateLimitingDataMatch == nil {
 		return &protos.RateLimitingStatus{Block: false}
 	}
@@ -266,19 +319,19 @@ func getRateLimitingStatus(method, route, routeParsed, user, ip, rateLimitGroup 
 	if rateLimitGroup != "" {
 		// If the rate limit group exists, we only try to rate limit by rate limit group
 		if isRateLimitingThresholdExceeded(&rateLimitingDataMatch.Config, rateLimitingDataMatch.RateLimitGroupCounts, rateLimitGroup) {
-			log.Infof("Rate limited request for group %s - %s %s - %v", rateLimitGroup, method, routeParsed, rateLimitingDataMatch.RateLimitGroupCounts[rateLimitGroup])
+			log.Infof(server.Logger, "Rate limited request for group %s - %s %s - %v", rateLimitGroup, method, routeParsed, rateLimitingDataMatch.RateLimitGroupCounts[rateLimitGroup])
 			return &protos.RateLimitingStatus{Block: true, Trigger: "group"}
 		}
 	} else if user != "" {
 		// Otherwise, if the user exists, we try to rate limit by user
 		if isRateLimitingThresholdExceeded(&rateLimitingDataMatch.Config, rateLimitingDataMatch.UserCounts, user) {
-			log.Infof("Rate limited request for user %s - %s %s - %v", user, method, routeParsed, rateLimitingDataMatch.UserCounts[user])
+			log.Infof(server.Logger, "Rate limited request for user %s - %s %s - %v", user, method, routeParsed, rateLimitingDataMatch.UserCounts[user])
 			return &protos.RateLimitingStatus{Block: true, Trigger: "user"}
 		}
 	} else {
 		// Otherwise, we try to rate limit by ip
 		if isRateLimitingThresholdExceeded(&rateLimitingDataMatch.Config, rateLimitingDataMatch.IpCounts, ip) {
-			log.Infof("Rate limited request for ip %s - %s %s - %v", ip, method, routeParsed, rateLimitingDataMatch.IpCounts[ip])
+			log.Infof(server.Logger, "Rate limited request for ip %s - %s %s - %v", ip, method, routeParsed, rateLimitingDataMatch.IpCounts[ip])
 			return &protos.RateLimitingStatus{Block: true, Trigger: "ip"}
 		}
 	}
@@ -294,30 +347,34 @@ func getIpsList(ipsList map[string]IpBlocklist) map[string]*protos.IpList {
 	return m
 }
 
-func getCloudConfig(configUpdatedAt int64) *protos.CloudConfig {
-	isBlockingEnabled := utils.IsBlockingEnabled()
+func getCloudConfig(server *ServerData, configUpdatedAt int64) *protos.CloudConfig {
+	if server == nil {
+		return nil
+	}
 
-	globals.CloudConfigMutex.Lock()
-	defer globals.CloudConfigMutex.Unlock()
+	isBlockingEnabled := utils.IsBlockingEnabled(server)
 
-	if globals.CloudConfig.ConfigUpdatedAt <= configUpdatedAt {
+	server.CloudConfigMutex.Lock()
+	defer server.CloudConfigMutex.Unlock()
+
+	if server.CloudConfig.ConfigUpdatedAt <= configUpdatedAt {
 		return nil
 	}
 
 	cloudConfig := &protos.CloudConfig{
-		ConfigUpdatedAt:     globals.CloudConfig.ConfigUpdatedAt,
-		BlockedUserIds:      globals.CloudConfig.BlockedUserIds,
-		BypassedIps:         globals.CloudConfig.BypassedIps,
-		BlockedIps:          getIpsList(globals.CloudConfig.BlockedIpsList),
-		AllowedIps:          getIpsList(globals.CloudConfig.AllowedIpsList),
-		BlockedUserAgents:   globals.CloudConfig.BlockedUserAgents,
-		MonitoredIps:        getIpsList(globals.CloudConfig.MonitoredIpsList),
-		MonitoredUserAgents: globals.CloudConfig.MonitoredUserAgents,
-		UserAgentDetails:    globals.CloudConfig.UserAgentDetails,
+		ConfigUpdatedAt:     server.CloudConfig.ConfigUpdatedAt,
+		BlockedUserIds:      server.CloudConfig.BlockedUserIds,
+		BypassedIps:         server.CloudConfig.BypassedIps,
+		BlockedIps:          getIpsList(server.CloudConfig.BlockedIpsList),
+		AllowedIps:          getIpsList(server.CloudConfig.AllowedIpsList),
+		BlockedUserAgents:   server.CloudConfig.BlockedUserAgents,
+		MonitoredIps:        getIpsList(server.CloudConfig.MonitoredIpsList),
+		MonitoredUserAgents: server.CloudConfig.MonitoredUserAgents,
+		UserAgentDetails:    server.CloudConfig.UserAgentDetails,
 		Block:               isBlockingEnabled,
 	}
 
-	for _, endpoint := range globals.CloudConfig.Endpoints {
+	for _, endpoint := range server.CloudConfig.Endpoints {
 		cloudConfig.Endpoints = append(cloudConfig.Endpoints, &protos.Endpoint{
 			Method:             endpoint.Method,
 			Route:              endpoint.Route,
@@ -332,24 +389,24 @@ func getCloudConfig(configUpdatedAt int64) *protos.CloudConfig {
 	return cloudConfig
 }
 
-func onUserEvent(id string, username string, ip string) {
-	globals.UsersMutex.Lock()
-	defer globals.UsersMutex.Unlock()
+func onUserEvent(server *ServerData, id string, username string, ip string) {
+	server.UsersMutex.Lock()
+	defer server.UsersMutex.Unlock()
 
-	if _, exists := globals.Users[id]; exists {
-		globals.Users[id] = User{
+	if _, exists := server.Users[id]; exists {
+		server.Users[id] = User{
 			ID:            id,
 			Name:          username,
 			LastIpAddress: ip,
-			FirstSeenAt:   globals.Users[id].FirstSeenAt,
+			FirstSeenAt:   server.Users[id].FirstSeenAt,
 			LastSeenAt:    utils.GetTime(),
 		}
 		return
 	}
 
-	utils.RemoveOldestFromMapIfMaxExceeded(&globals.Users, &globals.UsersQueue, id)
+	utils.RemoveOldestFromMapIfMaxExceeded(&server.Users, &server.UsersQueue, id)
 
-	globals.Users[id] = User{
+	server.Users[id] = User{
 		ID:            id,
 		Name:          username,
 		LastIpAddress: ip,

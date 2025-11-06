@@ -18,7 +18,7 @@
         "blocked": true,
         "source": "body",
         "path": ".url",
-        "stack": "",
+        "stack": "tests/server/test_ssrf_file_get_contents/index.php(12): file_get_contents()",
         "payload": "http://127.0.0.1:8081",
         "metadata": {
             "hostname": "127.0.0.1",

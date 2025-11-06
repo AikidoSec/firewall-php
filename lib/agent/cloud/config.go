@@ -3,13 +3,22 @@ package cloud
 import (
 	"encoding/json"
 	. "main/aikido_types"
-	"main/globals"
+	"main/constants"
 )
 
-func CheckConfigUpdatedAt() {
-	response, err := SendCloudRequest(globals.EnvironmentConfig.ConfigEndpoint, globals.ConfigUpdatedAtAPI, globals.ConfigUpdatedAtMethod, nil)
+func WasConfigUpdated(server *ServerData, configUpdatedAt int64) bool {
+	server.CloudConfigMutex.Lock()
+	defer server.CloudConfigMutex.Unlock()
+	if configUpdatedAt <= server.CloudConfig.ConfigUpdatedAt {
+		return false
+	}
+	return true
+}
+
+func CheckConfigUpdatedAt(server *ServerData) {
+	response, err := SendCloudRequest(server, server.AikidoConfig.ConfigEndpoint, constants.ConfigUpdatedAtAPI, constants.ConfigUpdatedAtMethod, nil)
 	if err != nil {
-		LogCloudRequestError("Error in sending polling config request: ", err)
+		LogCloudRequestError(server, "Error in sending polling config request: ", err)
 		return
 	}
 
@@ -19,15 +28,15 @@ func CheckConfigUpdatedAt() {
 		return
 	}
 
-	if cloudConfigUpdatedAt.ConfigUpdatedAt <= globals.CloudConfig.ConfigUpdatedAt {
+	if !WasConfigUpdated(server, cloudConfigUpdatedAt.ConfigUpdatedAt) {
 		return
 	}
 
-	configResponse, err := SendCloudRequest(globals.EnvironmentConfig.Endpoint, globals.ConfigAPI, globals.ConfigAPIMethod, nil)
+	configResponse, err := SendCloudRequest(server, server.AikidoConfig.Endpoint, constants.ConfigAPI, constants.ConfigAPIMethod, nil)
 	if err != nil {
-		LogCloudRequestError("Error in sending config request: ", err)
+		LogCloudRequestError(server, "Error in sending config request: ", err)
 		return
 	}
 
-	StoreCloudConfig(configResponse)
+	StoreCloudConfig(server, configResponse)
 }

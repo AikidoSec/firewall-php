@@ -27,10 +27,6 @@ std::string GetDateTime() {
     return time_str;
 }
 
-std::string GenerateSocketPath() {
-    return "/run/aikido-" + std::string(PHP_AIKIDO_VERSION) + "/aikido-" + GetDateTime() + "-" + GetRandomNumber() + ".sock";
-}
-
 const char* GetEventName(EVENT_ID event) {
     switch (event) {
         case EVENT_PRE_REQUEST:
@@ -84,7 +80,7 @@ std::string ArrayToJson(zval* array) {
                     if (Z_TYPE_P(v) == IS_STRING) {
                         val_array.push_back(Z_STRVAL_P(v));
                     }
-                } 
+                }
                 ZEND_HASH_FOREACH_END();
                 query_json[key_str] = val_array;
             }
@@ -117,4 +113,91 @@ bool StartsWith(const std::string& str, const std::string& prefix, bool caseSens
         prefixToCompare = ToLowercase(prefix);
     }
     return strToCompare.size() >= prefixToCompare.size() && strToCompare.compare(0, prefixToCompare.length(), prefixToCompare) == 0;
+}
+
+json CallPhpFunctionParseUrl(const std::string& url) {
+    if (url.empty()) {
+        return json();
+    }
+
+    zval retval;
+    if (CallPhpFunctionWithOneParam("parse_url", url, &retval)) {
+        if (Z_TYPE(retval) == IS_ARRAY) {
+            json result_json;
+            zval* host = zend_hash_str_find(Z_ARRVAL(retval), "host", sizeof("host") - 1);
+            if (host && Z_TYPE_P(host) == IS_STRING) {
+                result_json["host"] = Z_STRVAL_P(host);
+            }
+           
+            zval* port = zend_hash_str_find(Z_ARRVAL(retval), "port", sizeof("port") - 1);
+            if (port && Z_TYPE_P(port) == IS_LONG) {
+                result_json["port"] = Z_LVAL_P(port);
+            } else {
+                zval* scheme = zend_hash_str_find(Z_ARRVAL(retval), "scheme", sizeof("scheme") - 1);
+                if (scheme && Z_TYPE_P(scheme) == IS_STRING) {
+                    if (strcmp(Z_STRVAL_P(scheme), "https") == 0) {
+                        result_json["port"] = 443;
+                    } 
+                    else if (strcmp(Z_STRVAL_P(scheme), "http") == 0) {
+                        result_json["port"] = 80;
+                    } 
+                    else {
+                        result_json["port"] = 0;
+                    }
+                }
+            }
+            return result_json;
+        }
+    }
+    return json();
+}
+
+std::string AnonymizeToken(const std::string& str) {
+    return str.length() > 4 ? "AIK_RUNTIME_***" + str.substr(str.length() - 4) : "AIK_RUNTIME_***";
+}
+
+bool FileExists(const std::string& filePath) {
+    struct stat buffer;
+    if (stat(filePath.c_str(), &buffer) == 0) {
+        return true;
+    }
+    return false;
+}
+
+bool RemoveFile(const std::string& filePath) {
+    if (unlink(filePath.c_str()) == 0) {
+        return true;
+    }
+    return false;
+}
+
+
+std::string GetStackTrace() {
+#if PHP_VERSION_ID >= 80100
+    // Check if there's an active execution context
+    if (!EG(current_execute_data)) {
+        return "";
+    }
+
+    zval trace;
+    zend_fetch_debug_backtrace(&trace, 0, DEBUG_BACKTRACE_IGNORE_ARGS, 0);
+
+    if (Z_TYPE(trace) != IS_ARRAY) {
+        zval_ptr_dtor(&trace);
+        return "";
+    }
+
+    zend_string *trace_string = zend_trace_to_string(Z_ARRVAL(trace), true);
+
+    std::string result;
+    if (trace_string) {
+        result = std::string(ZSTR_VAL(trace_string), ZSTR_LEN(trace_string));
+        zend_string_release(trace_string);
+    }
+
+    zval_ptr_dtor(&trace);
+    return result;
+#else
+    return "";
+#endif
 }

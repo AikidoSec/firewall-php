@@ -36,17 +36,18 @@ enum CALLBACK_ID {
 
     CONTEXT_USER_ID,
     CONTEXT_USER_NAME,
-    
+
     CONTEXT_RATE_LIMIT_GROUP,
 
     FUNCTION_NAME,
+    STACK_TRACE,
 
     OUTGOING_REQUEST_URL,
     OUTGOING_REQUEST_EFFECTIVE_URL,  // Effective URL after redirects (the final
                                      // URL were the request was actually made)
     OUTGOING_REQUEST_PORT,
     OUTGOING_REQUEST_RESOLVED_IP,
-
+    OUTGOING_REQUEST_EFFECTIVE_URL_PORT,
     CMD,
 
     FILENAME,

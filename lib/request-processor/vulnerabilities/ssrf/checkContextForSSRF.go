@@ -9,6 +9,13 @@ import (
 /* This is called before a request is made to check for SSRF and block the request (not execute it) if SSRF found */
 func CheckContextForSSRF(hostname string, port uint32, operation string) *utils.InterceptorResult {
 	trimmedHostname := helpers.TrimInvisible(hostname)
+
+	// Check if this is a request to the server itself (including HTTP/HTTPS special case)
+	// If so, don't block it as it's not an SSRF attack
+	if IsRequestToItself(trimmedHostname, port) {
+		return nil
+	}
+
 	for _, source := range context.SOURCES {
 		mapss := source.CacheGet()
 
@@ -76,7 +83,7 @@ func CheckEffectiveHostnameForSSRF(effectiveHostname string) *utils.InterceptorR
 		}
 	}
 
-	return nil
+	return interceptorResult
 }
 
 /* This is called after the request is made to check for SSRF in the resolvedIP - IP optained from the PHP library that made the request (curl) */

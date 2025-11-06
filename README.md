@@ -16,6 +16,7 @@ Zen will autonomously protect your PHP applications from the inside against:
 * 🛡️ [Command injection attacks](https://www.aikido.dev/blog/command-injection-in-2024-unpacked)
 * 🛡️ [Path traversal attacks](https://owasp.org/www-community/attacks/Path_Traversal)
 * 🛡️ [Server-side request forgery (SSRF)](./docs/ssrf.md)
+* 🛡️ [Attack wave detection](https://help.aikido.dev/zen-firewall/zen-features/attack-wave-protection)
 
 Zen operates autonomously on the same server as your PHP app to:
 
@@ -38,25 +39,25 @@ Prerequisites:
 
 ##### x86_64
 ```
-rpm -Uvh --oldpackage https://github.com/AikidoSec/firewall-php/releases/download/v1.3.5/aikido-php-firewall.x86_64.rpm
+rpm -Uvh --oldpackage https://github.com/AikidoSec/firewall-php/releases/download/v1.4.5/aikido-php-firewall.x86_64.rpm
 ```
 
 ##### arm64 / aarch64
 ```
-rpm -Uvh --oldpackage https://github.com/AikidoSec/firewall-php/releases/download/v1.3.5/aikido-php-firewall.aarch64.rpm
+rpm -Uvh --oldpackage https://github.com/AikidoSec/firewall-php/releases/download/v1.4.5/aikido-php-firewall.aarch64.rpm
 ```
 
 #### For Debian-based Systems (Debian, Ubuntu)
 
 ##### x86_64
 ```
-curl -L -O https://github.com/AikidoSec/firewall-php/releases/download/v1.3.5/aikido-php-firewall.x86_64.deb
+curl -L -O https://github.com/AikidoSec/firewall-php/releases/download/v1.4.5/aikido-php-firewall.x86_64.deb
 dpkg -i -E ./aikido-php-firewall.x86_64.deb
 ```
 
 ##### arm64 / aarch64
 ```
-curl -L -O https://github.com/AikidoSec/firewall-php/releases/download/v1.3.5/aikido-php-firewall.aarch64.deb
+curl -L -O https://github.com/AikidoSec/firewall-php/releases/download/v1.4.5/aikido-php-firewall.aarch64.deb
 dpkg -i -E ./aikido-php-firewall.aarch64.deb
 ```
 
@@ -80,6 +81,9 @@ You can run on Debian 10, by doing this setup before install: [Debian10 setup](.
 ### Troubleshooting
 
 [Read our troubleshooting documentation.](./docs/troubleshooting.md)
+
+> [!IMPORTANT]
+> If you switch PHP versions after installing Zen, you will need to reinstall the firewall. See [Switching PHP versions](./docs/troubleshooting.md#switching-php-versions) in the troubleshooting documentation for detailed instructions.
 
 ## Supported libraries and frameworks
 

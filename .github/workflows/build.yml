@@ -13,7 +13,7 @@ jobs:
   build_libs:
     runs-on: ${{ matrix.os }}
     container:
-      image: ghcr.io/aikidosec/firewall-php-build-libs:v1  
+      image: ghcr.io/aikidosec/firewall-php-build-libs:v1
     strategy:
       matrix:
         os: [ ubuntu-24.04, ubuntu-24.04-arm ]
@@ -44,7 +44,7 @@ jobs:
         go test ./...
         go build -buildvcs=false -ldflags "-s -w" -o ../../build/aikido-agent
         ls -l ../../build
-    
+
 
     - name: Build Aikido Request Processor
       run: |
@@ -114,7 +114,7 @@ jobs:
         cd lib/php-extension
         phpize
         cd ../../build
-        CXX=g++ CXXFLAGS="-fPIC -O2 -I../lib/php-extension/include" LDFLAGS="-lstdc++" ../lib/php-extension/configure
+        CXX=g++ CXXFLAGS="-fPIC -g -O2 -I../lib/php-extension/include" LDFLAGS="-lstdc++" ../lib/php-extension/configure
         make -j"$(nproc)"
 
     - name: Version Aikido extension
@@ -206,16 +206,17 @@ jobs:
 
       - name: Build rpm package
         run: |
+          cat /usr/lib/rpm/macros | grep level
           cd ~/rpmbuild/SOURCES
           tar czvf ~/rpmbuild/SOURCES/aikido-php-firewall-${{ env.AIKIDO_VERSION }}.tar.gz *
           rm -rf ~/rpmbuild/SOURCES/aikido-php-firewall-${{ env.AIKIDO_VERSION }}
-          rpmbuild -ba ~/rpmbuild/SPECS/aikido.spec
+          rpmbuild --define "_binary_payload w9.gzdio" --define "_source_payload w9.gzdio" -ba ~/rpmbuild/SPECS/aikido.spec
           ls -l ~/rpmbuild/RPMS/${{ env.ARCH }}/
           mv ~/rpmbuild/RPMS/${{ env.ARCH }}/${{ env.AIKIDO_ARTIFACT }} ~/rpmbuild/RPMS/${{ env.ARCH }}/${{ env.AIKIDO_ARTIFACT_RELEASE }}
 
       - name: Check rpm dependencies
         run: |
-          yum deplist ~/rpmbuild/RPMS/${{ env.ARCH }}/${{ env.AIKIDO_ARTIFACT_RELEASE }} | grep -E "GLIBC_2.32|GLIBC_2.34|GLIBCXX_3.4.29" && exit 1 || exit 0
+          yum deplist ~/rpmbuild/RPMS/${{ env.ARCH }}/${{ env.AIKIDO_ARTIFACT_RELEASE }} | grep -E "GLIBC_2.32|GLIBC_2.34|GLIBCXX_3.4.26|GLIBCXX_3.4.29" && exit 1 || exit 0
 
       - name: Archive rpm package
         uses: actions/upload-artifact@v4
@@ -410,6 +411,11 @@ jobs:
           pattern: |
             ${{ env.AIKIDO_DEB }}
 
+      - name: Prepare php-fpm
+        run: |
+          ls -l /usr/sbin | grep php
+          ln -s /usr/sbin/php-fpm${{ matrix.php_version }} /usr/sbin/php-fpm
+
       # MariaDB startup compatible with your current approach
       - name: Start MariaDB (background)
         run: |
@@ -422,7 +428,6 @@ jobs:
         if: matrix.server == 'apache-mod-php'
         run: |
           a2-switch-php ${{ matrix.php_version }}
-    
 
       - name: Install DEB
         run: |
@@ -447,6 +452,113 @@ jobs:
           path: |
             ${{ github.workspace }}/tests/cli/**/*.diff
 
+  test_php_qa_action_controlling_tests_apache_mod_php:
+    name: Tests (apache2 - mod_php)
+    runs-on: ubuntu-latest
+    needs: [ build_deb ]
+    steps:
+
+      - name: Checkout zen-demo-php
+        uses: actions/checkout@v4
+        with:
+          repository: Aikido-demo-apps/zen-demo-php
+          path: zen-demo-php
+          ref: apache-mod-php-control-server
+          submodules: recursive
+
+      - name: Get Arch
+        run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: aikido-php-firewall.${{ env.ARCH }}.deb
+          path: ./zen-demo-php
+
+      - name: Overwrite aikido.sh install script
+        run: |
+          echo "#!/usr/bin/env bash" > ./zen-demo-php/.fly/scripts/aikido.sh
+          echo "dpkg -i -E \"/var/www/html/aikido-php-firewall.\$(uname -i).deb\"" >> ./zen-demo-php/.fly/scripts/aikido.sh
+      - name: Run Firewall QA Tests
+        uses: AikidoSec/firewall-tester-action@add-control-server-tests
+        with:
+          dockerfile_path: ./zen-demo-php/Dockerfile
+          extra_args: '--env-file=./zen-demo-php/.env.example -e APP_KEY=base64:W2v6u6VR4lURkxuMT9xZ6pdhXSt5rxsmWTbd1HGqlIM='
+          sleep_before_test: 20
+          max_parallel_tests: 7
+          test_type: control
+
+  test_php_qa_action_controlling_tests_apache_php_fpm:
+    name: Tests (apache2 - php-fpm)
+    runs-on: ubuntu-latest
+    needs: [ build_deb ]
+    steps:
+
+      - name: Checkout zen-demo-php
+        uses: actions/checkout@v4
+        with:
+          repository: Aikido-demo-apps/zen-demo-php
+          path: zen-demo-php
+          ref: apache-php-fpm-control-server
+          submodules: recursive
+
+      - name: Get Arch
+        run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: aikido-php-firewall.${{ env.ARCH }}.deb
+          path: ./zen-demo-php
+
+      - name: Overwrite aikido.sh install script
+        run: |
+          echo "#!/usr/bin/env bash" > ./zen-demo-php/.fly/scripts/aikido.sh
+          echo "dpkg -i -E \"/var/www/html/aikido-php-firewall.\$(uname -i).deb\"" >> ./zen-demo-php/.fly/scripts/aikido.sh
+      - name: Run Firewall QA Tests
+        uses: AikidoSec/firewall-tester-action@add-control-server-tests
+        with:
+          dockerfile_path: ./zen-demo-php/Dockerfile
+          extra_args: '--env-file=./zen-demo-php/.env.example -e APP_KEY=base64:W2v6u6VR4lURkxuMT9xZ6pdhXSt5rxsmWTbd1HGqlIM='
+          sleep_before_test: 20
+          max_parallel_tests: 7
+          test_type: control
+
+  test_php_qa_action_controlling_tests_nginx_php_fpm:
+    name: Tests (nginx - php-fpm)
+    runs-on: ubuntu-latest
+    needs: [ build_deb ]
+    steps:
+
+      - name: Checkout zen-demo-php
+        uses: actions/checkout@v4
+        with:
+          repository: Aikido-demo-apps/zen-demo-php
+          path: zen-demo-php
+          ref: nginx-php-fpm-control-server
+          submodules: recursive
+
+      - name: Get Arch
+        run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: aikido-php-firewall.${{ env.ARCH }}.deb
+          path: ./zen-demo-php
+
+      - name: Overwrite aikido.sh install script
+        run: |
+          echo "#!/usr/bin/env bash" > ./zen-demo-php/.fly/scripts/aikido.sh
+          echo "dpkg -i -E \"/var/www/html/aikido-php-firewall.\$(uname -i).deb\"" >> ./zen-demo-php/.fly/scripts/aikido.sh
+      - name: Run Firewall QA Tests
+        uses: AikidoSec/firewall-tester-action@add-control-server-tests
+        with:
+          dockerfile_path: ./zen-demo-php/Dockerfile
+          extra_args: '--env-file=./zen-demo-php/.env.example -e APP_KEY=base64:W2v6u6VR4lURkxuMT9xZ6pdhXSt5rxsmWTbd1HGqlIM='
+          sleep_before_test: 20
+          max_parallel_tests: 7
+          test_type: control
 
   test_php_qa_action:
     runs-on: ubuntu-latest

@@ -36,11 +36,6 @@ type RateLimitingConfig struct {
 	WindowSizeInMinutes int
 }
 
-type RateLimitingCounts struct {
-	NumberOfRequestsPerWindow RateLimitingQueue
-	TotalNumberOfRequests     int
-}
-
 type RateLimitingKey struct {
 	Method string
 	Route  string
@@ -50,9 +45,9 @@ type RateLimitingValue struct {
 	Method               string
 	Route                string
 	Config               RateLimitingConfig
-	UserCounts           map[string]*RateLimitingCounts
-	IpCounts             map[string]*RateLimitingCounts
-	RateLimitGroupCounts map[string]*RateLimitingCounts
+	UserCounts           map[string]*SlidingWindow
+	IpCounts             map[string]*SlidingWindow
+	RateLimitGroupCounts map[string]*SlidingWindow
 }
 
 type RateLimitingWildcardValue struct {

@@ -92,6 +92,10 @@ char* GoContextCallback(int callbackId) {
                 ctx = "OUTGOING_REQUEST_PORT";
                 ret = eventCache.outgoingRequestPort;
                 break;
+            case OUTGOING_REQUEST_EFFECTIVE_URL_PORT:
+                ctx = "OUTGOING_REQUEST_EFFECTIVE_URL_PORT";
+                ret = eventCache.outgoingRequestEffectiveUrlPort;
+                break;
             case OUTGOING_REQUEST_RESOLVED_IP:
                 ctx = "OUTGOING_REQUEST_RESOLVED_IP";
                 ret = eventCache.outgoingRequestResolvedIp;
@@ -119,6 +123,10 @@ char* GoContextCallback(int callbackId) {
             case MODULE:
                 ctx = "MODULE";
                 ret = eventCache.moduleName;
+                break;
+            case STACK_TRACE:
+                ctx = "STACK_TRACE";
+                ret = GetStackTrace();
                 break;
         }
     } catch (std::exception& e) {

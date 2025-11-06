@@ -1,12 +1,14 @@
 package main
 
 import (
+	. "main/aikido_types"
 	"main/api_discovery"
 	"main/context"
+	"main/globals"
 	"main/grpc"
-	"main/ipc/protos"
 	"main/log"
 	"main/utils"
+	webscanner "main/vulnerabilities/web-scanner"
 )
 
 func OnPreRequest() string {
@@ -14,23 +16,41 @@ func OnPreRequest() string {
 	return ""
 }
 
-func OnRequestShutdownReporting(method, route, routeParsed string, statusCode int, user, ip, rateLimitGroup string, apiSpec *protos.APISpec, rateLimited bool) {
-	if method == "" || route == "" || statusCode == 0 {
+func OnRequestShutdownReporting(params RequestShutdownParams) {
+	if params.Method == "" || params.Route == "" || params.StatusCode == 0 {
 		return
 	}
 
-	log.Info("[RSHUTDOWN] Got request metadata: ", method, " ", route, " ", statusCode)
-
-	if !rateLimited && !utils.ShouldDiscoverRoute(statusCode, route, method) {
+	log.Info("[RSHUTDOWN] Got request metadata: ", params.Method, " ", params.Route, " ", params.StatusCode)
+	params.IsWebScanner = webscanner.IsWebScanner(params.Method, params.Route, params.QueryParsed)
+	params.ShouldDiscoverRoute = utils.ShouldDiscoverRoute(params.StatusCode, params.Route, params.Method)
+	if !params.RateLimited && !params.ShouldDiscoverRoute && !params.IsWebScanner {
 		return
 	}
 
-	log.Info("[RSHUTDOWN] Got API spec: ", apiSpec)
-	grpc.OnRequestShutdown(method, route, routeParsed, statusCode, user, ip, rateLimitGroup, apiSpec, rateLimited)
+	log.Info("[RSHUTDOWN] Got API spec: ", params.APISpec)
+	grpc.OnRequestShutdown(params)
 }
 
 func OnPostRequest() string {
-	go OnRequestShutdownReporting(context.GetMethod(), context.GetRoute(), context.GetParsedRoute(), context.GetStatusCode(), context.GetUserId(), context.GetIp(), context.GetRateLimitGroup(), api_discovery.GetApiInfo(), context.IsEndpointRateLimited())
+	server := globals.GetCurrentServer()
+	if server == nil {
+		return ""
+	}
+	go OnRequestShutdownReporting(RequestShutdownParams{
+		Server:         server,
+		Method:         context.GetMethod(),
+		Route:          context.GetRoute(),
+		RouteParsed:    context.GetParsedRoute(),
+		StatusCode:     context.GetStatusCode(),
+		User:           context.GetUserId(),
+		UserAgent:      context.GetUserAgent(),
+		IP:             context.GetIp(),
+		RateLimitGroup: context.GetRateLimitGroup(),
+		APISpec:        api_discovery.GetApiInfo(server),
+		RateLimited:    context.IsEndpointRateLimited(),
+		QueryParsed:    context.GetQueryParsed(),
+	})
 	context.Clear()
 	return ""
 }

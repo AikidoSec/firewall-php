@@ -8,11 +8,11 @@ import (
 )
 
 func GetOutgoingRequestHostnameAndPort() (string, uint32) {
-	return getHostNameAndPort(C.OUTGOING_REQUEST_URL)
+	return getHostNameAndPort(C.OUTGOING_REQUEST_URL, C.OUTGOING_REQUEST_PORT)
 }
 
 func GetOutgoingRequestEffectiveHostnameAndPort() (string, uint32) {
-	return getHostNameAndPort(C.OUTGOING_REQUEST_EFFECTIVE_URL)
+	return getHostNameAndPort(C.OUTGOING_REQUEST_EFFECTIVE_URL, C.OUTGOING_REQUEST_EFFECTIVE_URL_PORT)
 }
 
 func GetOutgoingRequestResolvedIp() string {
@@ -47,7 +47,11 @@ func GetModule() string {
 	return Context.Callback(C.MODULE)
 }
 
-func getHostNameAndPort(urlCallbackId int) (string, uint32) { // urlcallbackid is the type of data we request, eg C.OUTGOING_REQUEST_URL
+func GetStackTrace() string {
+	return Context.Callback(C.STACK_TRACE)
+}
+
+func getHostNameAndPort(urlCallbackId int, portCallbackId int) (string, uint32) { // urlcallbackid is the type of data we request, eg C.OUTGOING_REQUEST_URL
 	urlStr := Context.Callback(urlCallbackId)
 	urlParsed, err := url.Parse(urlStr)
 	if err != nil {
@@ -56,7 +60,7 @@ func getHostNameAndPort(urlCallbackId int) (string, uint32) { // urlcallbackid i
 	hostname := urlParsed.Hostname()
 	portFromURL := helpers.GetPortFromURL(urlParsed)
 
-	portStr := Context.Callback(C.OUTGOING_REQUEST_PORT)
+	portStr := Context.Callback(portCallbackId)
 	port := helpers.ParsePort(portStr)
 	if port == 0 {
 		port = portFromURL

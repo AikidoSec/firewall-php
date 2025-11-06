@@ -1,0 +1,18 @@
+
+{
+    "type": "detected_attack_wave",
+    "request": {
+        "ipAddress": "5.8.19.23"
+    },
+    "attack": {
+        "metadata": {},
+        "user": {
+            "id": "12345",
+            "name": "Tudor"
+        }
+    },
+    "agent": {
+        "dryMode": false,
+        "library": "firewall-php"
+    }
+}
