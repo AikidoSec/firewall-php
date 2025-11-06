@@ -1,4 +1,4 @@
-package attackwavedetection
+package attack_wave_detection
 
 import (
 	. "main/aikido_types"

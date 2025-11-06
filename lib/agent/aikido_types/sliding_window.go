@@ -27,7 +27,9 @@ func (sw *SlidingWindow) Advance(windowSize int) {
 	// If we're at capacity, remove the oldest bucket first
 	if sw.Queue.Length() >= windowSize {
 		dropped := sw.Queue.Pop()
-		sw.Total -= dropped
+		if sw.Total >= dropped { // safety check to avoid negative total
+			sw.Total -= dropped
+		}
 	}
 	// Add a new bucket for the current time period
 	sw.Queue.Push(0)

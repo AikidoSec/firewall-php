@@ -2,7 +2,7 @@ package server_utils
 
 import (
 	. "main/aikido_types"
-	attackwavedetection "main/attack-wave-detection"
+	attack_wave_detection "main/attack-wave-detection"
 	"main/cloud"
 	"main/globals"
 	"main/ipc/protos"
@@ -39,7 +39,7 @@ func Register(token string, req *protos.Config) {
 
 	cloud.Init(server)
 	rate_limiting.Init(server)
-	attackwavedetection.Init(server)
+	attack_wave_detection.Init(server)
 
 	log.Infof(log.MainLogger, "Server \"AIK_RUNTIME_***%s\" registered successfully!", utils.AnonymizeToken(token))
 }
@@ -50,7 +50,7 @@ func Unregister(token string) {
 	if server == nil {
 		return
 	}
-	attackwavedetection.Uninit(server)
+	attack_wave_detection.Uninit(server)
 	rate_limiting.Uninit(server)
 	cloud.Uninit(server)
 	globals.DeleteServer(token)

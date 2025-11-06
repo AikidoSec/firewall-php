@@ -170,7 +170,9 @@ func incrementSlidingWindowEntry(m map[string]*SlidingWindow, key string) *Slidi
 
 	entry, exists := m[key]
 	if !exists {
-		// TODO: add a limit of max entries
+		if len(m) >= constants.MaxSlidingWindowEntries {
+			return nil
+		}
 		entry = NewSlidingWindow()
 		m[key] = entry
 	}
