@@ -6,6 +6,7 @@ import (
 	"main/log"
 	"net"
 	"net/netip"
+	"net/url"
 	"regexp"
 	"runtime"
 	"strings"
@@ -165,9 +166,20 @@ func ParseHeaders(headers string) map[string]interface{} {
 	return j
 }
 
-func ParseRouteParams(RouteParams string) map[string]interface{} {
-	parts := strings.Split(RouteParams, "/")
-	return map[string]interface{}{"parts": parts}
+func ParseRouteParams(routeParams string) map[string]interface{} {
+	parts := strings.Split(routeParams, "/")
+	filteredParts := make([]string, 0, len(parts))
+	for _, part := range parts {
+		unescapedPart, err := url.QueryUnescape(part)
+		if err != nil {
+			unescapedPart = part
+		}
+		if unescapedPart != "" {
+			filteredParts = append(filteredParts, unescapedPart)
+		}
+	}
+
+	return map[string]interface{}{"parts": filteredParts}
 }
 
 func isIP(ip string) bool {

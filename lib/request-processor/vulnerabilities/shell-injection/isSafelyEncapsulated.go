@@ -1,19 +1,20 @@
 package shell_injection
 
 import (
-	"main/helpers"
 	"strings"
 )
 
-var escapeChars = []string{`"`, `'`}
-var dangerousCharsInsideDoubleQuotes = []string{"$", "`", "\\", "!"}
+var (
+	escapeChars                      = []string{`"`, `'`}
+	dangerousCharsInsideDoubleQuotes = []string{"$", "`", "\\", "!"}
+)
 
 func isSafelyEncapsulated(command, userInput string) bool {
-	segments := helpers.GetCurrentAndNextSegments(strings.Split(command, userInput))
+	segments := strings.Split(command, userInput)
 
-	for _, segment := range segments {
-		currentSegment := segment["currentSegment"]
-		nextSegment := segment["nextSegment"]
+	for i := 0; i < len(segments)-1; i++ {
+		currentSegment := segments[i]
+		nextSegment := segments[i+1]
 
 		// Get the character before and after the user input
 		charBeforeUserInput := ""
