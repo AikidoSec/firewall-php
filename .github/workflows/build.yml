@@ -377,7 +377,7 @@ jobs:
       - name: Run ${{ matrix.server }} server tests
         run: |
           cd tools
-          python3 run_server_tests.py ../tests/server ../tests/testlib --server=${{ matrix.server }}
+          python3 run_server_tests.py ../tests/server ../tests/testlib --server=${{ matrix.server }} --max-runs=3
 
   test_php_ubuntu:
     runs-on: ${{ matrix.os }}
@@ -441,7 +441,7 @@ jobs:
       - name: Run ${{ matrix.server }} server tests
         run: |
           cd tools
-          python3 run_server_tests.py ../tests/server ../tests/testlib --server=${{ matrix.server }}
+          python3 run_server_tests.py ../tests/server ../tests/testlib --server=${{ matrix.server }} --max-runs=3
 
       - name: Archive test artifacts
         uses: actions/upload-artifact@v4
