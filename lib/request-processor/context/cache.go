@@ -33,7 +33,7 @@ func ContextSetMap(contextId int, rawDataPtr **string, parsedPtr **map[string]in
 		parsed := parseFunc(contextData)
 		*parsedPtr = &parsed
 		if stringsPtr != nil {
-			strings := helpers.ExtractStringsFromUserInput(parsed, []helpers.PathPart{})
+			strings := helpers.ExtractStringsFromUserInput(parsed, []helpers.PathPart{}, 0)
 			*stringsPtr = &strings
 		}
 	}
