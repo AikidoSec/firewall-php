@@ -97,13 +97,14 @@ bool LoadLaravelEnvFile() {
 }
 
 std::string GetLaravelEnvVariable(const std::string& env_key) {
-    if (AIKIDO_GLOBAL(laravelEnv).find(env_key) != AIKIDO_GLOBAL(laravelEnv).end()) {
+    const auto& laravelEnv = AIKIDO_GLOBAL(laravelEnv);
+    if (laravelEnv.find(env_key) != laravelEnv.end()) {
         if (env_key == "AIKIDO_TOKEN") {
-            AIKIDO_LOG_DEBUG("laravel_env[%s] = %s\n", env_key.c_str(), AnonymizeToken(AIKIDO_GLOBAL(laravelEnv)[env_key]).c_str());
+            AIKIDO_LOG_DEBUG("laravel_env[%s] = %s\n", env_key.c_str(), AnonymizeToken(laravelEnv.at(env_key)).c_str());
         } else {
-            AIKIDO_LOG_DEBUG("laravel_env[%s] = %s\n", env_key.c_str(), AIKIDO_GLOBAL(laravelEnv)[env_key].c_str());
+            AIKIDO_LOG_DEBUG("laravel_env[%s] = %s\n", env_key.c_str(), laravelEnv.at(env_key).c_str());
         }
-        return AIKIDO_GLOBAL(laravelEnv)[env_key];
+        return laravelEnv.at(env_key);
     }
     return "";
 }
@@ -166,12 +167,14 @@ unsigned int GetEnvNumber(const std::string& env_key, unsigned int default_value
 }
 
 void LoadEnvironment() {
+    auto& logLevelStr = AIKIDO_GLOBAL(log_level_str);
+    auto& logLevel = AIKIDO_GLOBAL(log_level);
     if (GetEnvBool("AIKIDO_DEBUG", false)) {
-        AIKIDO_GLOBAL(log_level_str) = "DEBUG";
-        AIKIDO_GLOBAL(log_level) = AIKIDO_LOG_LEVEL_DEBUG;
+        logLevelStr = "DEBUG";
+        logLevel = AIKIDO_LOG_LEVEL_DEBUG;
     } else {
-        AIKIDO_GLOBAL(log_level_str) = GetEnvString("AIKIDO_LOG_LEVEL", "WARN");
-        AIKIDO_GLOBAL(log_level) = Log::ToLevel(AIKIDO_GLOBAL(log_level_str));
+        logLevelStr = GetEnvString("AIKIDO_LOG_LEVEL", "WARN");
+        logLevel = Log::ToLevel(logLevelStr);
     }
 
     AIKIDO_GLOBAL(blocking) = GetEnvBool("AIKIDO_BLOCK", false) || GetEnvBool("AIKIDO_BLOCKING", false);;

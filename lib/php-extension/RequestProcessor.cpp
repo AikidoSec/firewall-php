@@ -4,12 +4,13 @@ std::string RequestProcessor::GetInitData(const std::string& token) {
     LoadLaravelEnvFile();
     LoadEnvironment();
 
+    auto& globalToken = AIKIDO_GLOBAL(token);
     if (!token.empty()) {
-        AIKIDO_GLOBAL(token) = token;
+        globalToken = token;
     }
 
     json initData = {
-        {"token", AIKIDO_GLOBAL(token)},
+        {"token", globalToken},
         {"platform_name", AIKIDO_GLOBAL(sapi_name)},
         {"platform_version", PHP_VERSION},
         {"endpoint", AIKIDO_GLOBAL(endpoint)},
@@ -86,7 +87,8 @@ bool RequestProcessor::IsBlockingEnabled() {
 bool RequestProcessor::ReportStats() {
     AIKIDO_LOG_INFO("Reporting stats to Aikido Request Processor...\n");
 
-    for (std::unordered_map<std::string, SinkStats>::const_iterator it = AIKIDO_GLOBAL(stats).begin(); it != AIKIDO_GLOBAL(stats).end(); ++it) {
+    auto& statsMap = AIKIDO_GLOBAL(stats);
+    for (std::unordered_map<std::string, SinkStats>::const_iterator it = statsMap.begin(); it != statsMap.end(); ++it) {
         const std::string& sink = it->first;
         const SinkStats& sinkStats = it->second;
         AIKIDO_LOG_INFO("Reporting stats for sink \"%s\" to Aikido Request Processor...\n", sink.c_str());
@@ -101,7 +103,7 @@ bool RequestProcessor::ReportStats() {
             GoCreateSlice(sinkStats.timings)
         );
     }
-    AIKIDO_GLOBAL(stats).clear();
+    statsMap.clear();
     return true;
 }
 
@@ -168,7 +170,8 @@ bool RequestProcessor::RequestInit() {
         return false;
     }
     
-    if (AIKIDO_GLOBAL(sapi_name) == "apache2handler") {
+    const auto& sapiName = AIKIDO_GLOBAL(sapi_name);
+    if (sapiName == "apache2handler") {
       // Apache-mod-php can serve multiple sites per process
       // We need to reload config each request to detect token changes
         this->LoadConfigFromEnvironment();
@@ -177,7 +180,7 @@ bool RequestProcessor::RequestInit() {
         //  can only serve one site per process, so the config should be loaded only once.
         // After that, subsequent requests cannot change the config so we do not need to reload it.
         if (this->numberOfRequests == 0) {
-            AIKIDO_LOG_INFO("Loading Aikido config one time for non-apache-mod-php SAPI: %s...\n", AIKIDO_GLOBAL(sapi_name).c_str());
+            AIKIDO_LOG_INFO("Loading Aikido config one time for non-apache-mod-php SAPI: %s...\n", sapiName.c_str());
             this->LoadConfigFromEnvironment();
         }
     }
@@ -210,9 +213,10 @@ void RequestProcessor::LoadConfig(const std::string& previousToken, const std::s
 }
 
 void RequestProcessor::LoadConfigFromEnvironment() {
-    std::string previousToken = AIKIDO_GLOBAL(token);
+    auto& globalToken = AIKIDO_GLOBAL(token);
+    std::string previousToken = globalToken;
     LoadEnvironment();
-    std::string currentToken = AIKIDO_GLOBAL(token);
+    std::string currentToken = globalToken;
     LoadConfig(previousToken, currentToken);
 }
 

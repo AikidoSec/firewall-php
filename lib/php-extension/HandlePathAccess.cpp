@@ -27,26 +27,28 @@ void helper_handle_pre_file_path_access(char *filename, EVENT_ID &eventId) {
     filenameString = get_resource_or_original_from_php_filter(filenameString);
 
     // if filename starts with http:// or https://, it's a URL so we treat it as an outgoing request
+    auto& eventCache = AIKIDO_GLOBAL(eventCache);
     if (StartsWith(filenameString, "http://", false) ||
         StartsWith(filenameString, "https://", false)) {
         eventId = EVENT_PRE_OUTGOING_REQUEST;
-        AIKIDO_GLOBAL(eventCache).outgoingRequestUrl = filenameString;
+        eventCache.outgoingRequestUrl = filenameString;
     } else {
         eventId = EVENT_PRE_PATH_ACCESSED;
-        AIKIDO_GLOBAL(eventCache).filename = filenameString;
+        eventCache.filename = filenameString;
     }
 }
 
 /* Helper for handle post file path access */
 void helper_handle_post_file_path_access(EVENT_ID &eventId) {
-    if (!AIKIDO_GLOBAL(eventCache).outgoingRequestUrl.empty()) {
+    auto& eventCache = AIKIDO_GLOBAL(eventCache);
+    if (!eventCache.outgoingRequestUrl.empty()) {
         // If the pre handler for path access determined this was actually an URL,
         // we need to notify that the request finished.
         eventId = EVENT_POST_OUTGOING_REQUEST;
 
         // As we cannot extract the effective URL for these fopen wrappers,
-        // we will just assume it's the same as the initial URL.
-        AIKIDO_GLOBAL(eventCache).outgoingRequestEffectiveUrl = AIKIDO_GLOBAL(eventCache).outgoingRequestUrl;
+        // we will assume it's the same as the initial URL.
+        eventCache.outgoingRequestEffectiveUrl = eventCache.outgoingRequestUrl;
     }
 }
 

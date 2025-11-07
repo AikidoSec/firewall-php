@@ -6,20 +6,24 @@ ACTION_STATUS aikido_process_event(EVENT_ID& eventId, std::string& sink) {
         return CONTINUE;
     }
 
-    std::string outputEvent;
-    AIKIDO_GLOBAL(requestProcessor).SendEvent(eventId, outputEvent);
+    auto& requestProcessor = AIKIDO_GLOBAL(requestProcessor);
+    auto& action = AIKIDO_GLOBAL(action);
+    auto& statsMap = AIKIDO_GLOBAL(stats);
 
-    if (AIKIDO_GLOBAL(action).IsDetection(outputEvent)) {
-        AIKIDO_GLOBAL(stats)[sink].IncrementAttacksDetected();
+    std::string outputEvent;
+    requestProcessor.SendEvent(eventId, outputEvent);
+
+    if (action.IsDetection(outputEvent)) {
+        statsMap[sink].IncrementAttacksDetected();
     }
 
-    if (!AIKIDO_GLOBAL(requestProcessor).IsBlockingEnabled()) {
+    if (!requestProcessor.IsBlockingEnabled()) {
         return CONTINUE;
     }
 
-    ACTION_STATUS action_status = AIKIDO_GLOBAL(action).Execute(outputEvent);
+    ACTION_STATUS action_status = action.Execute(outputEvent);
     if (action_status == BLOCK) {
-        AIKIDO_GLOBAL(stats)[sink].IncrementAttacksBlocked();
+        statsMap[sink].IncrementAttacksBlocked();
     }
     return action_status;
 }
@@ -36,8 +40,9 @@ ZEND_NAMED_FUNCTION(aikido_generic_handler) {
     std::string outputEvent;
     bool caughtException = false;
 
-    AIKIDO_GLOBAL(eventCache).Reset();
-    AIKIDO_GLOBAL(eventCache).functionName = ZSTR_VAL(execute_data->func->common.function_name);
+    auto& eventCache = AIKIDO_GLOBAL(eventCache);
+    eventCache.Reset();
+    eventCache.functionName = ZSTR_VAL(execute_data->func->common.function_name);
 
     try {
         zend_execute_data* exec_data = EG(current_execute_data);

@@ -10,15 +10,17 @@ void ast_to_clean_dtor(zval *zv) {
 } 
 
 void ensure_ast_hashtable_initialized() {
-    if (!AIKIDO_GLOBAL(global_ast_to_clean)) {
-        ALLOC_HASHTABLE(AIKIDO_GLOBAL(global_ast_to_clean));
-        zend_hash_init(AIKIDO_GLOBAL(global_ast_to_clean), 8, NULL, ast_to_clean_dtor, 1);
+    auto& globalAstToClean = AIKIDO_GLOBAL(global_ast_to_clean);
+    if (!globalAstToClean) {
+        ALLOC_HASHTABLE(globalAstToClean);
+        zend_hash_init(globalAstToClean, 8, NULL, ast_to_clean_dtor, 1);
     }
 }
 
 zend_ast *create_ast_call(const char *name) {
     ensure_ast_hashtable_initialized();
 
+    auto& globalAstToClean = AIKIDO_GLOBAL(global_ast_to_clean);
     zend_ast *call;
     zend_ast_zval *name_var;
     zend_ast_list *arg_list;
@@ -28,14 +30,14 @@ zend_ast *create_ast_call(const char *name) {
     name_var->kind = ZEND_AST_ZVAL;
     ZVAL_STRING(&name_var->val, name);
     name_var->val.u2.lineno = 0;
-    zend_hash_next_index_insert_ptr(AIKIDO_GLOBAL(global_ast_to_clean), name_var);
+    zend_hash_next_index_insert_ptr(globalAstToClean, name_var);
 
     // Create empty argument list
     arg_list = (zend_ast_list*)emalloc(sizeof(zend_ast_list));
     arg_list->kind = ZEND_AST_ARG_LIST;
     arg_list->lineno = 0;
     arg_list->children = 0;
-    zend_hash_next_index_insert_ptr(AIKIDO_GLOBAL(global_ast_to_clean), arg_list);
+    zend_hash_next_index_insert_ptr(globalAstToClean, arg_list);
 
     // Create function call node
     call = (zend_ast*)emalloc(sizeof(zend_ast) + sizeof(zend_ast*));
@@ -43,7 +45,7 @@ zend_ast *create_ast_call(const char *name) {
     call->lineno = 0;
     call->child[0] = (zend_ast*)name_var;
     call->child[1] = (zend_ast*)arg_list;
-    zend_hash_next_index_insert_ptr(AIKIDO_GLOBAL(global_ast_to_clean), call);
+    zend_hash_next_index_insert_ptr(globalAstToClean, call);
 
     return call;
 }
@@ -105,7 +107,8 @@ void insert_call_to_ast(zend_ast *ast) {
     block->children = 2;
     block->child[0] = call;
     block->child[1] = stmt_list->child[insertion_point];
-    zend_hash_next_index_insert_ptr(AIKIDO_GLOBAL(global_ast_to_clean), block);
+    auto& globalAstToClean = AIKIDO_GLOBAL(global_ast_to_clean);
+    zend_hash_next_index_insert_ptr(globalAstToClean, block);
 
     stmt_list->child[insertion_point] = (zend_ast*)block;
 }
@@ -113,39 +116,43 @@ void insert_call_to_ast(zend_ast *ast) {
 void aikido_ast_process(zend_ast *ast) {
     insert_call_to_ast(ast);
 
-    if(AIKIDO_GLOBAL(original_ast_process)){
-        AIKIDO_GLOBAL(original_ast_process)(ast);
+    auto& originalAstProcess = AIKIDO_GLOBAL(original_ast_process);
+    if(originalAstProcess){
+        originalAstProcess(ast);
     }
 }
 
 void HookAstProcess() {
-    if (AIKIDO_GLOBAL(original_ast_process)) {
-        AIKIDO_LOG_WARN("\"zend_ast_process\" already hooked (original handler %p)!\n", AIKIDO_GLOBAL(original_ast_process));
+    auto& originalAstProcess = AIKIDO_GLOBAL(original_ast_process);
+    if (originalAstProcess) {
+        AIKIDO_LOG_WARN("\"zend_ast_process\" already hooked (original handler %p)!\n", originalAstProcess);
         return;
     }
 
-    AIKIDO_GLOBAL(original_ast_process) = zend_ast_process;
+    originalAstProcess = zend_ast_process;
     zend_ast_process = aikido_ast_process;
 
-    AIKIDO_LOG_INFO("Hooked \"zend_ast_process\" (original handler %p)!\n", AIKIDO_GLOBAL(original_ast_process));
+    AIKIDO_LOG_INFO("Hooked \"zend_ast_process\" (original handler %p)!\n", originalAstProcess);
 }
 
 void UnhookAstProcess() {
-    AIKIDO_LOG_INFO("Unhooked \"zend_ast_process\" (original handler %p)!\n", AIKIDO_GLOBAL(original_ast_process));
+    auto& originalAstProcess = AIKIDO_GLOBAL(original_ast_process);
+    AIKIDO_LOG_INFO("Unhooked \"zend_ast_process\" (original handler %p)!\n", originalAstProcess);
 
    // As it's not mandatory to have a zend_ast_process installed, we need to ensure UnhookAstProcess() restores zend_ast_process even if the original was NULL
    // Only unhook if the current handler is still ours, avoiding clobbering others
     if (zend_ast_process == aikido_ast_process){
-        zend_ast_process = AIKIDO_GLOBAL(original_ast_process);
+        zend_ast_process = originalAstProcess;
     }
 
-    AIKIDO_GLOBAL(original_ast_process) = nullptr;
+    originalAstProcess = nullptr;
 }
 
 void DestroyAstToClean() {
-    if (AIKIDO_GLOBAL(global_ast_to_clean)) {
-        zend_hash_destroy(AIKIDO_GLOBAL(global_ast_to_clean));
-        FREE_HASHTABLE(AIKIDO_GLOBAL(global_ast_to_clean));
-        AIKIDO_GLOBAL(global_ast_to_clean) = nullptr;
+    auto& globalAstToClean = AIKIDO_GLOBAL(global_ast_to_clean);
+    if (globalAstToClean) {
+        zend_hash_destroy(globalAstToClean);
+        FREE_HASHTABLE(globalAstToClean);
+        globalAstToClean = nullptr;
     }
 }

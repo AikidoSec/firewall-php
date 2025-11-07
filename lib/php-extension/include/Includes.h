@@ -13,6 +13,7 @@
 #include <sys/utsname.h>
 #include <sys/wait.h>
 #include <sys/syscall.h>
+#include <inttypes.h>
 
 #include <functional>
 #include <random>

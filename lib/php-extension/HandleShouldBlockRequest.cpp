@@ -18,9 +18,11 @@ bool CheckBlocking(EVENT_ID eventId, bool& checkedBlocking) {
     ScopedTimer scopedTimer("check_blocking", "aikido_op");
 
     try {
+        auto& requestProcessor = AIKIDO_GLOBAL(requestProcessor);
+        auto& action = AIKIDO_GLOBAL(action);
         std::string output;
-        AIKIDO_GLOBAL(requestProcessor).SendEvent(eventId, output);
-        AIKIDO_GLOBAL(action).Execute(output);
+        requestProcessor.SendEvent(eventId, output);
+        action.Execute(output);
         checkedBlocking = true;
         return true;
     } catch (const std::exception &e) {
@@ -56,12 +58,13 @@ ZEND_FUNCTION(should_block_request) {
 #else
     zval *obj = return_value;
 #endif
-    zend_update_property_bool(blockingStatusClass, obj, "block", sizeof("block") - 1, AIKIDO_GLOBAL(action).Block());
-    zend_update_property_string(blockingStatusClass, obj, "type", sizeof("type") - 1, AIKIDO_GLOBAL(action).Type());
-    zend_update_property_string(blockingStatusClass, obj, "trigger", sizeof("trigger") - 1, AIKIDO_GLOBAL(action).Trigger());
-    zend_update_property_string(blockingStatusClass, obj, "description", sizeof("description") - 1, AIKIDO_GLOBAL(action).Description());
-    zend_update_property_string(blockingStatusClass, obj, "ip", sizeof("ip") - 1, AIKIDO_GLOBAL(action).Ip());
-    zend_update_property_string(blockingStatusClass, obj, "user_agent", sizeof("user_agent") - 1, AIKIDO_GLOBAL(action).UserAgent());
+    auto& action = AIKIDO_GLOBAL(action);
+    zend_update_property_bool(blockingStatusClass, obj, "block", sizeof("block") - 1, action.Block());
+    zend_update_property_string(blockingStatusClass, obj, "type", sizeof("type") - 1, action.Type());
+    zend_update_property_string(blockingStatusClass, obj, "trigger", sizeof("trigger") - 1, action.Trigger());
+    zend_update_property_string(blockingStatusClass, obj, "description", sizeof("description") - 1, action.Description());
+    zend_update_property_string(blockingStatusClass, obj, "ip", sizeof("ip") - 1, action.Ip());
+    zend_update_property_string(blockingStatusClass, obj, "user_agent", sizeof("user_agent") - 1, action.UserAgent());
 }
 
 ZEND_FUNCTION(auto_block_request) {
