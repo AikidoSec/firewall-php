@@ -13,7 +13,7 @@ void ensure_ast_hashtable_initialized() {
     auto& globalAstToClean = AIKIDO_GLOBAL(global_ast_to_clean);
     if (!globalAstToClean) {
         ALLOC_HASHTABLE(globalAstToClean);
-        zend_hash_init(globalAstToClean, 8, NULL, ast_to_clean_dtor, 1);
+        zend_hash_init(globalAstToClean, 8, NULL, ast_to_clean_dtor, 0);
     }
 }
 

@@ -137,11 +137,6 @@ PHP_GINIT_FUNCTION(aikido) {
 }
 
 PHP_GSHUTDOWN_FUNCTION(aikido) {
-    if (aikido_globals->global_ast_to_clean) {
-        zend_hash_destroy(aikido_globals->global_ast_to_clean);
-        FREE_HASHTABLE(aikido_globals->global_ast_to_clean);
-        aikido_globals->global_ast_to_clean = nullptr;
-    }
     aikido_globals->laravelEnv.~unordered_map();
     aikido_globals->stats.~unordered_map();
     aikido_globals->phpLifecycle.~PhpLifecycle();
