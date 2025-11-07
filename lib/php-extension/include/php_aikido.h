@@ -18,7 +18,7 @@ bool disk_logs; // When enabled, it writes logs to disk instead of stdout. It's 
 bool collect_api_schema;
 bool trust_proxy;
 bool localhost_allowed_by_default;
-bool has_symfony_http_foundation;
+bool uses_symfony_http_foundation; // If true, method override is supported using X-HTTP-METHOD-OVERRIDE or _method query param
 unsigned int report_stats_interval_to_agent; // Report once every X requests the collected stats to Agent
 std::string log_level_str;
 std::string sapi_name;

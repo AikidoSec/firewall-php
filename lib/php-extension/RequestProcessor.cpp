@@ -10,7 +10,7 @@ std::string RequestProcessor::GetInitData(const std::string& token) {
         AIKIDO_GLOBAL(token) = token;
     }
     unordered_map<std::string, std::string> packages = GetPackages();
-    AIKIDO_GLOBAL(has_symfony_http_foundation) = packages.find("symfony/http-foundation") != packages.end();
+    AIKIDO_GLOBAL(uses_symfony_http_foundation) = packages.find("symfony/http-foundation") != packages.end();
     json initData = {
         {"token", AIKIDO_GLOBAL(token)},
         {"platform_name", AIKIDO_GLOBAL(sapi_name)},
