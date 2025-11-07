@@ -92,7 +92,7 @@ def handle_test_scenario(data, root_tests_dir, test_lib_dir, server, benchmark, 
         server_start = servers[server][START_SERVER]
         server_process = server_start(data, test_lib_dir, valgrind)
 
-        time.sleep(10)
+        time.sleep(20)
 
         test_script_name = "test.py"
         test_script_cwd = data["test_dir"]

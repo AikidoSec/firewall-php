@@ -187,6 +187,8 @@ bool RequestProcessor::RequestInit() {
         }
     }
 
+    AIKIDO_LOG_DEBUG("RINIT started!\n");
+
     if (AIKIDO_GLOBAL(disable) == true) {
         AIKIDO_LOG_INFO("Request Processor initialization skipped because AIKIDO_DISABLE is set to 1!\n");
         return true;

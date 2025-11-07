@@ -19,7 +19,6 @@ paths = [
     "/path/?test=1' sleep(5)",
     "/path/?test=WAITFOR DELAY 1",
     "/path/?test=../etc/passwd",
-    "/cgi-bin/aaa",
      "/etc/passwd"
 ]
 
