@@ -593,7 +593,6 @@ jobs:
           dockerfile_path: ./zen-demo-php/Dockerfile
           extra_args: '--env-file=./zen-demo-php/.env.example -e APP_KEY=base64:W2v6u6VR4lURkxuMT9xZ6pdhXSt5rxsmWTbd1HGqlIM='
           sleep_before_test: 30
-          skip_tests: test_rate_limiting_group_id_1_minute
           max_parallel_tests: 7
           ignore_failures: true
           config_update_delay: 120
