@@ -59,8 +59,12 @@ std::string Server::GetMethodFromQuery() {
 std::string Server::GetMethod() {
     std::string method = ToUppercase(this->GetVar("REQUEST_METHOD"));
     
-    // TODO: Add a check here to see if the request is from Symfony or Laravel
-   
+    // if symfony http foundation is not used, return the method as is, otherwise we need to check the method override
+    if (!AIKIDO_GLOBAL(has_symfony_http_foundation)) { 
+        return method;
+    }
+
+    // only for POST requests, we need to check the method override
     if (method != "POST") {
         return method;
     }

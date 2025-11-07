@@ -9,7 +9,8 @@ std::string RequestProcessor::GetInitData(const std::string& token) {
     if (!token.empty()) {
         AIKIDO_GLOBAL(token) = token;
     }
-
+    unordered_map<std::string, std::string> packages = GetPackages();
+    AIKIDO_GLOBAL(has_symfony_http_foundation) = packages.find("symfony/http-foundation") != packages.end();
     json initData = {
         {"token", AIKIDO_GLOBAL(token)},
         {"platform_name", AIKIDO_GLOBAL(sapi_name)},
@@ -22,7 +23,7 @@ std::string RequestProcessor::GetInitData(const std::string& token) {
         {"disk_logs", AIKIDO_GLOBAL(disk_logs)},
         {"localhost_allowed_by_default", AIKIDO_GLOBAL(localhost_allowed_by_default)},
         {"collect_api_schema", AIKIDO_GLOBAL(collect_api_schema)},
-        {"packages", GetPackages()}};
+        {"packages", packages}};
     return NormalizeAndDumpJson(initData);
 }
 
