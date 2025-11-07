@@ -1,12 +1,12 @@
 #include "Includes.h"
 
-Action action;
+#define CONTENT_TYPE_HEADER "Content-Type: text/plain"
 
 ACTION_STATUS Action::executeThrow(json &event) {
     int _code = event["code"].get<int>();
     std::string _message = event["message"].get<std::string>();
+    SG(sapi_headers).http_response_code = _code;
     zend_throw_exception(zend_exception_get_default(), _message.c_str(), _code);
-    CallPhpFunctionWithOneParam("http_response_code", _code);
     return BLOCK;
 }
 
@@ -16,8 +16,14 @@ ACTION_STATUS Action::executeExit(json &event) {
 
     // CallPhpFunction("ob_clean");
     CallPhpFunction("header_remove");
-    CallPhpFunctionWithOneParam("http_response_code", _response_code);
-    CallPhpFunctionWithOneParam("header", "Content-Type: text/plain");
+    SG(sapi_headers).http_response_code = _response_code;
+    
+    sapi_header_line ctr = {0};
+    ctr.line = CONTENT_TYPE_HEADER;
+    ctr.line_len = sizeof(CONTENT_TYPE_HEADER) - 1;
+    ctr.response_code = 0;
+    sapi_header_op(SAPI_HEADER_REPLACE, &ctr);
+    
     CallPhpEcho(_message);
     CallPhpExit();
     return EXIT;

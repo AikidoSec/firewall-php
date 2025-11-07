@@ -27,6 +27,13 @@ std::string GetDateTime() {
     return time_str;
 }
 
+pid_t GetThreadID() {
+#ifdef SYS_gettid
+    return syscall(SYS_gettid);
+#else
+    return (pid_t)getpid(); // Fallback for non-Linux systems
+#endif
+}
 const char* GetEventName(EVENT_ID event) {
     switch (event) {
         case EVENT_PRE_REQUEST:

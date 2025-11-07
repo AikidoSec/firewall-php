@@ -58,7 +58,7 @@ std::string GetComposerPackageVersion(const std::string& version) {
 unordered_map<std::string, std::string> GetComposerPackages() {
     unordered_map<std::string, std::string> packages;
 
-    std::string docRoot = server.GetVar("DOCUMENT_ROOT");
+    std::string docRoot = AIKIDO_GLOBAL(server).GetVar("DOCUMENT_ROOT");
     if (docRoot.empty()) {
         return packages;
     }

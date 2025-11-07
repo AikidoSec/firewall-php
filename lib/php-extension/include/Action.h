@@ -41,5 +41,3 @@ class Action {
         char* Ip();
         char* UserAgent();
 };
-
-extern Action action;

@@ -12,6 +12,7 @@
 #include <sys/types.h>
 #include <sys/utsname.h>
 #include <sys/wait.h>
+#include <sys/syscall.h>
 
 #include <functional>
 #include <random>
@@ -39,18 +40,11 @@ using json = nlohmann::json;
 #include "GoWrappers.h"
 
 #include "../../API.h"
-#include "Log.h"
-#include "Agent.h"
 #include "php_aikido.h"
 #include "Environment.h"
-#include "Action.h"
-#include "Cache.h"
 #include "Stats.h"
 #include "Hooks.h"
 #include "PhpWrappers.h"
-#include "Server.h"
-#include "RequestProcessor.h"
-#include "PhpLifecycle.h"
 #include "Packages.h"
 
 #include "Utils.h"

@@ -6,8 +6,6 @@
         return ""; \
     }
 
-Server server;
-
 /* Always load the current "_SERVER" variable from PHP, 
 so we make sure it's always available and it's the correct one */
 zval* Server::GetServerVar() {
@@ -128,8 +126,8 @@ std::string Server::GetHeaders() {
     ZEND_HASH_FOREACH_END();
 
     json headers_json;
-    for (auto const& [key, val] : headers) {
-        headers_json[key] = val;
+    for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it) {
+        headers_json[it->first] = it->second;
     }
     return NormalizeAndDumpJson(headers_json);
 }

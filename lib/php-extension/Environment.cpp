@@ -33,15 +33,13 @@ std::string GetSystemEnvVariable(const std::string& env_key) {
     return env_value;
 }
 
-std::unordered_map<std::string, std::string> laravelEnv;
-bool laravelEnvLoaded = false;
 
 bool LoadLaravelEnvFile() {
-    if (laravelEnvLoaded) {
+    if (AIKIDO_GLOBAL(laravelEnvLoaded)) {
         return true;
     }
 
-    std::string docRoot = server.GetVar("DOCUMENT_ROOT");
+    std::string docRoot = AIKIDO_GLOBAL(server).GetVar("DOCUMENT_ROOT");
     AIKIDO_LOG_DEBUG("Trying to load .env file, starting with DOCUMENT_ROOT: %s\n", docRoot.c_str());
     if (docRoot.empty()) {
         AIKIDO_LOG_DEBUG("DOCUMENT_ROOT is empty!\n");
@@ -89,23 +87,23 @@ bool LoadLaravelEnvFile() {
                      (value.front() == '\'' && value.back() == '\''))) {
                     value = value.substr(1, value.length() - 2);
                 }
-                laravelEnv[key] = value;
+                AIKIDO_GLOBAL(laravelEnv)[key] = value;
             }
         }
     }
-    laravelEnvLoaded = true;
+    AIKIDO_GLOBAL(laravelEnvLoaded) = true;
     AIKIDO_LOG_DEBUG("Loaded Laravel env file: %s\n", laravelEnvPath.c_str());
     return true;
 }
 
 std::string GetLaravelEnvVariable(const std::string& env_key) {
-    if (laravelEnv.find(env_key) != laravelEnv.end()) {
+    if (AIKIDO_GLOBAL(laravelEnv).find(env_key) != AIKIDO_GLOBAL(laravelEnv).end()) {
         if (env_key == "AIKIDO_TOKEN") {
-            AIKIDO_LOG_DEBUG("laravel_env[%s] = %s\n", env_key.c_str(), AnonymizeToken(laravelEnv[env_key]).c_str());
+            AIKIDO_LOG_DEBUG("laravel_env[%s] = %s\n", env_key.c_str(), AnonymizeToken(AIKIDO_GLOBAL(laravelEnv)[env_key]).c_str());
         } else {
-            AIKIDO_LOG_DEBUG("laravel_env[%s] = %s\n", env_key.c_str(), laravelEnv[env_key].c_str());
+            AIKIDO_LOG_DEBUG("laravel_env[%s] = %s\n", env_key.c_str(), AIKIDO_GLOBAL(laravelEnv)[env_key].c_str());
         }
-        return laravelEnv[env_key];
+        return AIKIDO_GLOBAL(laravelEnv)[env_key];
     }
     return "";
 }

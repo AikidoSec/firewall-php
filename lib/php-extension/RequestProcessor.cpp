@@ -1,7 +1,5 @@
 #include "Includes.h"
 
-RequestProcessor requestProcessor;
-
 std::string RequestProcessor::GetInitData(const std::string& token) {
     LoadLaravelEnvFile();
     LoadEnvironment();
@@ -54,7 +52,7 @@ void RequestProcessor::SendPreRequestEvent() {
     try {
         std::string outputEvent;
         SendEvent(EVENT_PRE_REQUEST, outputEvent);
-        action.Execute(outputEvent);
+        AIKIDO_GLOBAL(action).Execute(outputEvent);
     } catch (const std::exception& e) {
         AIKIDO_LOG_ERROR("Exception encountered in processing request init metadata: %s\n", e.what());
     }
@@ -64,7 +62,7 @@ void RequestProcessor::SendPostRequestEvent() {
     try {
         std::string outputEvent;
         SendEvent(EVENT_POST_REQUEST, outputEvent);
-        action.Execute(outputEvent);
+        AIKIDO_GLOBAL(action).Execute(outputEvent);
     } catch (const std::exception& e) {
         AIKIDO_LOG_ERROR("Exception encountered in processing request shutdown metadata: %s\n", e.what());
     }
@@ -88,11 +86,22 @@ bool RequestProcessor::IsBlockingEnabled() {
 bool RequestProcessor::ReportStats() {
     AIKIDO_LOG_INFO("Reporting stats to Aikido Request Processor...\n");
 
-    for (const auto& [sink, sinkStats] : stats) {
+    for (std::unordered_map<std::string, SinkStats>::const_iterator it = AIKIDO_GLOBAL(stats).begin(); it != AIKIDO_GLOBAL(stats).end(); ++it) {
+        const std::string& sink = it->first;
+        const SinkStats& sinkStats = it->second;
         AIKIDO_LOG_INFO("Reporting stats for sink \"%s\" to Aikido Request Processor...\n", sink.c_str());
-        requestProcessorReportStatsFn(GoCreateString(sink), GoCreateString(sinkStats.kind), sinkStats.attacksDetected, sinkStats.attacksBlocked, sinkStats.interceptorThrewError, sinkStats.withoutContext, sinkStats.timings.size(), GoCreateSlice(sinkStats.timings));
+        requestProcessorReportStatsFn(
+            GoCreateString(sink),
+            GoCreateString(sinkStats.kind),
+            sinkStats.attacksDetected,
+            sinkStats.attacksBlocked,
+            sinkStats.interceptorThrewError,
+            sinkStats.withoutContext,
+            static_cast<GoInt>(sinkStats.timings.size()),
+            GoCreateSlice(sinkStats.timings)
+        );
     }
-    stats.clear();
+    AIKIDO_GLOBAL(stats).clear();
     return true;
 }
 
@@ -180,7 +189,7 @@ bool RequestProcessor::RequestInit() {
     SendPreRequestEvent();
 
     if ((this->numberOfRequests % AIKIDO_GLOBAL(report_stats_interval_to_agent)) == 0) {
-        requestProcessor.ReportStats();
+        AIKIDO_GLOBAL(requestProcessor).ReportStats();
     }
     return true;
 }

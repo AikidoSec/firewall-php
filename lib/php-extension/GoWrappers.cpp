@@ -1,11 +1,13 @@
 #include "Includes.h"
 
 GoString GoCreateString(const std::string& s) {
-    return GoString{s.c_str(), s.length()};
+    return GoString{ s.c_str(), static_cast<ptrdiff_t>(s.size()) };
 }
 
 GoSlice GoCreateSlice(const std::vector<int64_t>& v) {
-    return GoSlice{ (void*)v.data(), v.size(), v.capacity() };
+    return GoSlice{ static_cast<void*>(const_cast<int64_t*>(v.data())),
+                    static_cast<GoInt>(v.size()),
+                    static_cast<GoInt>(v.capacity()) };
 }
 /*
     Callback wrapper called by the RequestProcessor (GO) whenever it needs data from PHP (C++ extension).
@@ -18,79 +20,79 @@ char* GoContextCallback(int callbackId) {
         switch (callbackId) {
             case CONTEXT_REMOTE_ADDRESS:
                 ctx = "REMOTE_ADDRESS";
-                ret = server.GetVar("REMOTE_ADDR");
+                ret = AIKIDO_GLOBAL(server).GetVar("REMOTE_ADDR");
                 break;
             case CONTEXT_METHOD:
                 ctx = "METHOD";
-                ret = server.GetVar("REQUEST_METHOD");
+                ret = AIKIDO_GLOBAL(server).GetVar("REQUEST_METHOD");
                 break;
             case CONTEXT_ROUTE:
                 ctx = "ROUTE";
-                ret = server.GetRoute();
+                ret = AIKIDO_GLOBAL(server).GetRoute();
                 break;
             case CONTEXT_STATUS_CODE:
                 ctx = "STATUS_CODE";
-                ret = server.GetStatusCode();
+                ret = AIKIDO_GLOBAL(server).GetStatusCode();
                 break;
             case CONTEXT_BODY:
                 ctx = "BODY";
-                ret = server.GetBody();
+                ret = AIKIDO_GLOBAL(server).GetBody();
                 break;
             case CONTEXT_HEADER_X_FORWARDED_FOR:
                 ctx = "HEADER_X_FORWARDED_FOR";
-                ret = server.GetVar("HTTP_X_FORWARDED_FOR");
+                ret = AIKIDO_GLOBAL(server).GetVar("HTTP_X_FORWARDED_FOR");
                 break;
             case CONTEXT_COOKIES:
                 ctx = "COOKIES";
-                ret = server.GetVar("HTTP_COOKIE");
+                ret = AIKIDO_GLOBAL(server).GetVar("HTTP_COOKIE");
                 break;
             case CONTEXT_QUERY:
                 ctx = "QUERY";
-                ret = server.GetQuery();
+                ret = AIKIDO_GLOBAL(server).GetQuery();
                 break;
             case CONTEXT_HTTPS:
                 ctx = "HTTPS";
-                ret = server.GetVar("HTTPS");
+                ret = AIKIDO_GLOBAL(server).GetVar("HTTPS");
                 break;
             case CONTEXT_URL:
                 ctx = "URL";
-                ret = server.GetUrl();
+                ret = AIKIDO_GLOBAL(server).GetUrl();
                 break;
             case CONTEXT_HEADERS:
                 ctx = "HEADERS";
-                ret = server.GetHeaders();
+                ret = AIKIDO_GLOBAL(server).GetHeaders();
                 break;
             case CONTEXT_HEADER_USER_AGENT:
                 ctx = "USER_AGENT";
-                ret = server.GetVar("HTTP_USER_AGENT");
+                ret = AIKIDO_GLOBAL(server).GetVar("HTTP_USER_AGENT");
                 break;
             case CONTEXT_USER_ID:
                 ctx = "USER_ID";
-                ret = requestCache.userId;
+                ret = AIKIDO_GLOBAL(requestCache).userId;
                 break;
             case CONTEXT_USER_NAME:
                 ctx = "USER_NAME";
-                ret = requestCache.userName;
+                ret = AIKIDO_GLOBAL(requestCache).userName;
                 break;
             case CONTEXT_RATE_LIMIT_GROUP:
                 ctx = "RATE_LIMIT_GROUP";
-                ret = requestCache.rateLimitGroup;
+                ret = AIKIDO_GLOBAL(requestCache).rateLimitGroup;
                 break;
             case FUNCTION_NAME:
                 ctx = "FUNCTION_NAME";
-                ret = eventCache.functionName;
+                ret = AIKIDO_GLOBAL(eventCache).functionName;
                 break;
             case OUTGOING_REQUEST_URL:
                 ctx = "OUTGOING_REQUEST_URL";
-                ret = eventCache.outgoingRequestUrl;
+                ret = AIKIDO_GLOBAL(eventCache).outgoingRequestUrl;
                 break;
             case OUTGOING_REQUEST_EFFECTIVE_URL:
                 ctx = "OUTGOING_REQUEST_EFFECTIVE_URL";
-                ret = eventCache.outgoingRequestEffectiveUrl;
+                ret = AIKIDO_GLOBAL(eventCache).outgoingRequestEffectiveUrl;
                 break;
             case OUTGOING_REQUEST_PORT:
                 ctx = "OUTGOING_REQUEST_PORT";
-                ret = eventCache.outgoingRequestPort;
+                ret = AIKIDO_GLOBAL(eventCache).outgoingRequestPort;
                 break;
             case OUTGOING_REQUEST_EFFECTIVE_URL_PORT:
                 ctx = "OUTGOING_REQUEST_EFFECTIVE_URL_PORT";
@@ -98,31 +100,31 @@ char* GoContextCallback(int callbackId) {
                 break;
             case OUTGOING_REQUEST_RESOLVED_IP:
                 ctx = "OUTGOING_REQUEST_RESOLVED_IP";
-                ret = eventCache.outgoingRequestResolvedIp;
+                ret = AIKIDO_GLOBAL(eventCache).outgoingRequestResolvedIp;
                 break;
             case CMD:
                 ctx = "CMD";
-                ret = eventCache.cmd;
+                ret = AIKIDO_GLOBAL(eventCache).cmd;
                 break;
             case FILENAME:
                 ctx = "FILENAME";
-                ret = eventCache.filename;
+                ret = AIKIDO_GLOBAL(eventCache).filename;
                 break;
             case FILENAME2:
                 ctx = "FILENAME2";
-                ret = eventCache.filename2;
+                ret = AIKIDO_GLOBAL(eventCache).filename2;
                 break;
             case SQL_QUERY:
                 ctx = "SQL_QUERY";
-                ret = eventCache.sqlQuery;
+                ret = AIKIDO_GLOBAL(eventCache).sqlQuery;
                 break;
             case SQL_DIALECT:
                 ctx = "SQL_DIALECT";
-                ret = eventCache.sqlDialect;
+                ret = AIKIDO_GLOBAL(eventCache).sqlDialect;
                 break;
             case MODULE:
                 ctx = "MODULE";
-                ret = eventCache.moduleName;
+                ret = AIKIDO_GLOBAL(eventCache).moduleName;
                 break;
             case STACK_TRACE:
                 ctx = "STACK_TRACE";

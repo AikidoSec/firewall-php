@@ -24,9 +24,9 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_pdo_query) {
     }
 
     eventId = EVENT_PRE_SQL_QUERY_EXECUTED;
-    eventCache.moduleName = "PDO";
-    eventCache.sqlQuery = ZSTR_VAL(query);
-    eventCache.sqlDialect = GetSqlDialectFromPdo(pdo_object);
+    AIKIDO_GLOBAL(eventCache).moduleName = "PDO";
+    AIKIDO_GLOBAL(eventCache).sqlQuery = ZSTR_VAL(query);
+    AIKIDO_GLOBAL(eventCache).sqlDialect = GetSqlDialectFromPdo(pdo_object);
 }
 
 AIKIDO_HANDLER_FUNCTION(handle_pre_pdo_exec) {
@@ -47,9 +47,9 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_pdo_exec) {
     }
 
     eventId = EVENT_PRE_SQL_QUERY_EXECUTED;
-    eventCache.moduleName = "PDO";
-    eventCache.sqlQuery = ZSTR_VAL(query);
-    eventCache.sqlDialect = GetSqlDialectFromPdo(pdo_object);
+    AIKIDO_GLOBAL(eventCache).moduleName = "PDO";
+    AIKIDO_GLOBAL(eventCache).sqlQuery = ZSTR_VAL(query);
+    AIKIDO_GLOBAL(eventCache).sqlDialect = GetSqlDialectFromPdo(pdo_object);
 }
 
 AIKIDO_HANDLER_FUNCTION(handle_pre_pdostatement_execute) {
@@ -66,11 +66,11 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_pdostatement_execute) {
     }
 
     eventId = EVENT_PRE_SQL_QUERY_EXECUTED;
-    eventCache.moduleName = "PDOStatement"; 
-    eventCache.sqlQuery = PHP_GET_CHAR_PTR(stmt->query_string);    
+    AIKIDO_GLOBAL(eventCache).moduleName = "PDOStatement"; 
+    AIKIDO_GLOBAL(eventCache).sqlQuery = PHP_GET_CHAR_PTR(stmt->query_string);    
 
     zval *pdo_object = &stmt->database_object_handle;
-    eventCache.sqlDialect = GetSqlDialectFromPdo(pdo_object);
+    AIKIDO_GLOBAL(eventCache).sqlDialect = GetSqlDialectFromPdo(pdo_object);
 }
 
 zend_class_entry* helper_load_mysqli_link_class_entry() {
@@ -109,7 +109,7 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_mysqli_query){
     scopedTimer.SetSink(sink, "sql_op");
 
     eventId = EVENT_PRE_SQL_QUERY_EXECUTED;
-    eventCache.moduleName = "mysqli";
-    eventCache.sqlQuery = query;
-    eventCache.sqlDialect = "mysql";
+    AIKIDO_GLOBAL(eventCache).moduleName = "mysqli";
+    AIKIDO_GLOBAL(eventCache).sqlQuery = query;
+    AIKIDO_GLOBAL(eventCache).sqlDialect = "mysql";
 }

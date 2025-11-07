@@ -1,13 +1,13 @@
 #include "Includes.h"
 
 bool SendUserEvent(std::string id, std::string username) {
-    requestCache.userId = id;
-    requestCache.userName = username;
+    AIKIDO_GLOBAL(requestCache).userId = id;
+    AIKIDO_GLOBAL(requestCache).userName = username;
 
     try {
         std::string output;
-        requestProcessor.SendEvent(EVENT_SET_USER, output);
-        action.Execute(output);
+        AIKIDO_GLOBAL(requestProcessor).SendEvent(EVENT_SET_USER, output);
+        AIKIDO_GLOBAL(action).Execute(output);
         return true;
     } catch (const std::exception &e) {
         AIKIDO_LOG_ERROR("Exception encountered in processing user event: %s\n", e.what());

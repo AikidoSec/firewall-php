@@ -17,11 +17,11 @@ ZEND_FUNCTION(set_rate_limit_group) {
         RETURN_BOOL(false);
     }
 
-    requestCache.rateLimitGroup = std::string(group, groupLength);
+    AIKIDO_GLOBAL(requestCache).rateLimitGroup = std::string(group, groupLength);
 
     std::string outputEvent;
-    requestProcessor.SendEvent(EVENT_SET_RATE_LIMIT_GROUP, outputEvent);
-    AIKIDO_LOG_DEBUG("Set rate limit group to %s\n", requestCache.rateLimitGroup.c_str());
+    AIKIDO_GLOBAL(requestProcessor).SendEvent(EVENT_SET_RATE_LIMIT_GROUP, outputEvent);
+    AIKIDO_LOG_DEBUG("Set rate limit group to %s\n", AIKIDO_GLOBAL(requestCache).rateLimitGroup.c_str());
 
     RETURN_BOOL(true);
 }
