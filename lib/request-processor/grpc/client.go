@@ -174,7 +174,7 @@ func GetCloudConfig(server *ServerData, timeout time.Duration) {
 		return
 	}
 
-	log.Debugf("Got cloud config!")
+	log.Debugf("Got cloud config for server \"AIK_RUNTIME_***%s\"!", utils.AnonymizeToken(server.AikidoConfig.Token))
 	setCloudConfig(server, cloudConfig)
 }
 

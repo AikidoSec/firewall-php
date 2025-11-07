@@ -205,7 +205,7 @@ bool RequestProcessor::RequestInit() {
 }
 
 void RequestProcessor::LoadConfig(const std::string& previousToken, const std::string& currentToken) {
-    if (!this->requestInitialized || this->requestProcessorConfigUpdateFn == nullptr) {
+    if (this->requestProcessorConfigUpdateFn == nullptr) {
         return;
     }
     if (currentToken.empty()) {

@@ -193,7 +193,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Script for running PHP server tests with Aikido Firewall installed.")
     parser.add_argument("root_folder_path", type=str, help="Path to the root folder of the tests to be ran.")
     parser.add_argument("test_lib_dir", type=str, help="Directory for the test libraries.")
-    parser.add_argument("--test", type=str, nargs='+', default=None, help="Run specific tests from the root folder (space-separated list).")
+    parser.add_argument("--test", type=str, action='append', default=None, help="Run specific tests from the root folder (can be specified multiple times).")
     parser.add_argument("--benchmark", action="store_true", help="Enable benchmarking.")
     parser.add_argument("--valgrind", action="store_true", help="Enable valgrind.")
     parser.add_argument("--debug", action="store_true", help="Enable debugging logs.")
