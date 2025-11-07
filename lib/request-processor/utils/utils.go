@@ -168,16 +168,18 @@ func ParseHeaders(headers string) map[string]interface{} {
 
 func ParseRouteParams(routeParams string) map[string]interface{} {
 	parts := strings.Split(routeParams, "/")
-	for i, part := range parts {
+	filteredParts := make([]string, 0, len(parts))
+	for _, part := range parts {
 		unescapedPart, err := url.QueryUnescape(part)
 		if err != nil {
-			parts[i] = part
-		} else {
-			parts[i] = unescapedPart
+			unescapedPart = part
+		}
+		if unescapedPart != "" {
+			filteredParts = append(filteredParts, unescapedPart)
 		}
 	}
 
-	return map[string]interface{}{"parts": parts}
+	return map[string]interface{}{"parts": filteredParts}
 }
 
 func isIP(ip string) bool {
