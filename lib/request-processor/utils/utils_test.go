@@ -643,3 +643,139 @@ func TestGetIpFromRequest(t *testing.T) {
 	}
 
 }
+
+func TestParseRouteParams(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected []string
+	}{
+		{
+			name:     "empty string",
+			input:    "",
+			expected: []string{},
+		},
+		{
+			name:     "root path",
+			input:    "/",
+			expected: []string{},
+		},
+		{
+			name:     "simple api route",
+			input:    "/api/v1/users",
+			expected: []string{"api", "v1", "users"},
+		},
+		{
+			name:     "api route with trailing slash",
+			input:    "/api/v1/users/",
+			expected: []string{"api", "v1", "users"},
+		},
+		{
+			name:     "single segment",
+			input:    "/users",
+			expected: []string{"users"},
+		},
+		{
+			name:     "multiple segments",
+			input:    "/api/v1/users/123/posts/456",
+			expected: []string{"api", "v1", "users", "123", "posts", "456"},
+		},
+		{
+			name:     "url encoded space",
+			input:    "/api/v1/users/john%20doe",
+			expected: []string{"api", "v1", "users", "john doe"},
+		},
+		{
+			name:     "url encoded special characters",
+			input:    "/api/v1/search?q=test%26value",
+			expected: []string{"api", "v1", "search?q=test&value"},
+		},
+		{
+			name:     "url encoded plus sign",
+			input:    "/api/v1/users/john%2Bdoe",
+			expected: []string{"api", "v1", "users", "john+doe"},
+		},
+		{
+			name:     "url encoded slash",
+			input:    "/api/v1/path%2Fto%2Fresource",
+			expected: []string{"api", "v1", "path/to/resource"},
+		},
+		{
+			name:     "multiple url encoded segments",
+			input:    "/api/v1/users/john%20doe/posts/my%2Bpost",
+			expected: []string{"api", "v1", "users", "john doe", "posts", "my+post"},
+		},
+		{
+			name:     "no leading slash",
+			input:    "api/v1/users",
+			expected: []string{"api", "v1", "users"},
+		},
+		{
+			name:     "consecutive slashes",
+			input:    "/api//v1//users",
+			expected: []string{"api", "v1", "users"},
+		},
+		{
+			name:     "only slashes",
+			input:    "///",
+			expected: []string{},
+		},
+		{
+			name:     "numeric segments",
+			input:    "/api/v1/users/123",
+			expected: []string{"api", "v1", "users", "123"},
+		},
+		{
+			name:     "uuid-like segment",
+			input:    "/api/v1/users/d9428888-122b-11e1-b85c-61cd3cbb3210",
+			expected: []string{"api", "v1", "users", "d9428888-122b-11e1-b85c-61cd3cbb3210"},
+		},
+		{
+			name:     "url encoded percent sign",
+			input:    "/api/v1/discount/50%25",
+			expected: []string{"api", "v1", "discount", "50%"},
+		},
+		{
+			name:     "mixed encoded and plain segments",
+			input:    "/api/v1/users/john%20doe/active",
+			expected: []string{"api", "v1", "users", "john doe", "active"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := ParseRouteParams(tt.input)
+			parts, ok := result["parts"].([]string)
+			if !ok {
+				// Try to convert if it's []interface{}
+				if partsInterface, ok := result["parts"].([]interface{}); ok {
+					parts = make([]string, len(partsInterface))
+					for i, v := range partsInterface {
+						if str, ok := v.(string); ok {
+							parts[i] = str
+						} else {
+							t.Fatalf("expected string in parts[%d], got %T", i, v)
+						}
+					}
+				} else {
+					t.Fatalf("expected result[\"parts\"] to be []string or []interface{}, got %T", result["parts"])
+				}
+			}
+
+			if len(parts) != len(tt.expected) {
+				t.Errorf("ParseRouteParams(%q) parts length = %d, want %d. Got: %v, Want: %v", tt.input, len(parts), len(tt.expected), parts, tt.expected)
+				return
+			}
+
+			for i, expectedPart := range tt.expected {
+				if i >= len(parts) {
+					t.Errorf("ParseRouteParams(%q) missing part at index %d, want %q", tt.input, i, expectedPart)
+					continue
+				}
+				if parts[i] != expectedPart {
+					t.Errorf("ParseRouteParams(%q) parts[%d] = %q, want %q", tt.input, i, parts[i], expectedPart)
+				}
+			}
+		})
+	}
+}
