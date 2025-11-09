@@ -220,7 +220,8 @@ if __name__ == "__main__":
         if args.max_tests != 0:
             test_dirs = test_dirs[:args.max_tests]
 
-        print(f"Starting test run number {i}...")
+        print(f"Starting test run number {i} with {len(test_dirs)} tests...")
+        print(f"Tests: {[os.path.basename(os.path.normpath(t)) for t in test_dirs]}")
 
         main(root_folder, test_lib_dir, test_dirs, args.server, args.benchmark, args.valgrind, args.debug)
 

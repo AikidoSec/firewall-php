@@ -122,16 +122,25 @@ func RequestProcessorConfigUpdate(configJson string) (initOk bool) {
 
 	log.Debugf("Reloading Aikido config...")
 	conf := AikidoConfigData{}
-	if !config.ReloadAikidoConfig(&conf, configJson) {
-		return false
-	}
 
+	reloadResult := config.ReloadAikidoConfig(&conf, configJson)
 	server := globals.GetCurrentServer()
 	if server == nil {
 		return false
 	}
-	initializeServer(server)
-	return true
+	switch reloadResult {
+	case config.ReloadWithNewToken:
+		initializeServer(server)
+		return true
+	case config.ReloadWithPastSeenToken:
+		grpc.GetCloudConfig(server, 5*time.Second)
+		return true
+	case config.ReloadWithSameToken:
+		return true
+	case config.ReloadError:
+		return false
+	}
+	return false
 }
 
 //export RequestProcessorOnEvent
