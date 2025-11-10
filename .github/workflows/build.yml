@@ -295,6 +295,7 @@ jobs:
             ${{ env.AIKIDO_ARTIFACT }}
 
   test_php_centos:
+    name: CentOS E2E ${{ matrix.server }} php-${{ matrix.php_version }} ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     container:
       image: ghcr.io/aikidosec/firewall-php-test-centos:${{ matrix.php_version }}-v1
@@ -380,6 +381,7 @@ jobs:
           python3 run_server_tests.py ../tests/server ../tests/testlib --server=${{ matrix.server }}
 
   test_php_ubuntu:
+    name: Ubuntu E2E ${{ matrix.server }} php-${{ matrix.php_version }} ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     container:
       image: ghcr.io/aikidosec/firewall-php-test-ubuntu:${{ matrix.php_version }}-v1

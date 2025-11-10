@@ -95,8 +95,6 @@ func (s *GrpcServer) GetCloudConfig(ctx context.Context, req *protos.CloudConfig
 		return nil, status.Errorf(codes.Canceled, "Server not found")
 	}
 
-	log.Debugf(server.Logger, "Getting cloud config update for server \"AIK_RUNTIME_***%s\"!", utils.AnonymizeToken(req.GetToken()))
-
 	atomic.StoreInt64(&server.LastConnectionTime, utils.GetTime())
 	cloudConfig := getCloudConfig(server, req.GetConfigUpdatedAt())
 	if cloudConfig == nil {

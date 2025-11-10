@@ -35,21 +35,19 @@ func Register(serverKey ServerKey, requestProcessorPID int32, req *protos.Config
 	storeConfig(server, req)
 	server.Logger = log.CreateLogger(utils.AnonymizeToken(serverKey.Token), server.AikidoConfig.LogLevel, server.AikidoConfig.DiskLogs)
 
-	log.Infof(server.Logger, "Server \"AIK_RUNTIME_***%s\" (server PID: %d) registered successfully!", utils.AnonymizeToken(serverKey.Token), serverKey.ServerPID)
+	log.InfofMainAndServer(server.Logger, "Server \"AIK_RUNTIME_***%s\" (server PID: %d) registered successfully!", utils.AnonymizeToken(serverKey.Token), serverKey.ServerPID)
 
 	atomic.StoreInt64(&server.LastConnectionTime, utils.GetTime())
 
 	cloud.Init(server)
 	if globals.IsPastDeletedServer(serverKey) {
-		log.Infof(server.Logger, "Server \"AIK_RUNTIME_***%s\" (server PID: %d) was registered before for this server PID, but deleted due to inactivity! Skipping start event as it was sent before...", utils.AnonymizeToken(serverKey.Token), serverKey.ServerPID)
+		log.InfofMainAndServer(server.Logger, "Server \"AIK_RUNTIME_***%s\" (server PID: %d) was registered before for this server PID, but deleted due to inactivity! Skipping start event as it was sent before...", utils.AnonymizeToken(serverKey.Token), serverKey.ServerPID)
 	} else {
 		cloud.SendStartEvent(server)
 	}
 
 	rate_limiting.Init(server)
 	attack_wave_detection.Init(server)
-
-	log.Infof(log.MainLogger, "Server \"AIK_RUNTIME_***%s\" (server PID: %d) registered successfully!", utils.AnonymizeToken(serverKey.Token), serverKey.ServerPID)
 }
 
 func Unregister(serverKey ServerKey) {
