@@ -295,7 +295,17 @@ def apache_mod_php_process_test(test_data):
 
 
 def apache_mod_php_pre_tests():
-    subprocess.run([f'/usr/sbin/{apache_binary}'])
+    if os.path.exists('/etc/httpd'):
+        # CentOS/RHEL
+        subprocess.run([f'/usr/sbin/{apache_binary}', '-k', 'start'])
+    else:
+        # Debian/Ubuntu - use apachectl or envvars
+        env = os.environ.copy()
+        if os.path.exists('/etc/apache2/envvars'):
+            # Source envvars by running apache2ctl which handles this
+            subprocess.run(['/usr/sbin/apache2ctl', 'start'])
+        else:
+            subprocess.run([f'/usr/sbin/{apache_binary}', '-k', 'start'])
 
 
 def apache_mod_php_start_server(test_data, test_lib_dir, valgrind):
