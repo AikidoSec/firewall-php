@@ -16,7 +16,7 @@ PROCESS_TEST = 1
 PRE_TESTS = 2
 START_SERVER = 3
 UNINIT = 4
-    
+
 servers = {
     "php-built-in": (
         None,
@@ -25,18 +25,18 @@ servers = {
         php_built_in_start_server,
         None
     ),
-    "apache-mod-php": ( 
-        apache_mod_php_init, 
-        apache_mod_php_process_test, 
-        apache_mod_php_pre_tests, 
-        apache_mod_php_start_server, 
+    "apache-mod-php": (
+        apache_mod_php_init,
+        apache_mod_php_process_test,
+        apache_mod_php_pre_tests,
+        apache_mod_php_start_server,
         apache_mod_php_uninit
     ),
-    "nginx-php-fpm": ( 
-        nginx_php_fpm_init, 
-        nginx_php_fpm_process_test, 
-        nginx_php_fpm_pre_tests, 
-        nginx_php_fpm_start_server, 
+    "nginx-php-fpm": (
+        nginx_php_fpm_init,
+        nginx_php_fpm_process_test,
+        nginx_php_fpm_pre_tests,
+        nginx_php_fpm_start_server,
         nginx_php_fpm_uninit
     ),
 }
@@ -67,15 +67,14 @@ def load_env_from_json(file_path):
     with open(file_path) as f:
         env_vars = json.load(f)
         return env_vars
-    
+
 def print_test_results(s, tests):
     if not len(tests):
         return
-    
+
     print(s)
     for t in tests:
         print(f"\t- {t}")
-
 
 def handle_test_scenario(data, root_tests_dir, test_lib_dir, server, benchmark, valgrind, debug):
     test_name = data["test_name"]
@@ -88,7 +87,7 @@ def handle_test_scenario(data, root_tests_dir, test_lib_dir, server, benchmark, 
         time.sleep(5)
 
         print(f"Starting {server} server on port {server_port} for {test_name}...")
-        
+
         server_start = servers[server][START_SERVER]
         server_process = server_start(data, test_lib_dir, valgrind)
 
@@ -102,12 +101,12 @@ def handle_test_scenario(data, root_tests_dir, test_lib_dir, server, benchmark, 
             test_script_cwd = root_tests_dir
         else:
             print(f"Running test.py for {test_name}...")
-            
-        subprocess.run(["python3", test_script_name, str(server_port), str(mock_port), test_name], 
+
+        subprocess.run(["python3", test_script_name, str(server_port), str(mock_port), test_name],
                        env=dict(os.environ, PYTHONPATH=f"{test_lib_dir}:$PYTHONPATH"),
                        cwd=test_script_cwd,
                        check=True, timeout=600, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        
+
         passed_tests.append(test_name)
 
     except subprocess.CalledProcessError as e:
@@ -117,12 +116,17 @@ def handle_test_scenario(data, root_tests_dir, test_lib_dir, server, benchmark, 
         print(f"Test stdout: {e.stdout.decode()}")
         print(f"Test stderr: {e.stderr.decode()}")
         failed_tests.append(test_name)
-        
+
     except subprocess.TimeoutExpired:
         print(f"Error in testing scenario {test_name}:")
         print(f"Execution timed out.")
         failed_tests.append(test_name)
-        
+
+    except Exception as e:
+        print(f"Error in testing scenario {test_name}:")
+        print(f"Generic exception: {e}")
+        failed_tests.append(test_name)
+
     finally:
         if server_process:
             server_process.terminate()
@@ -134,13 +138,11 @@ def handle_test_scenario(data, root_tests_dir, test_lib_dir, server, benchmark, 
             mock_aikido_core.wait()
             print(f"Mock server on port {mock_port} stopped.")
 
-
-
 def main(root_tests_dir, test_lib_dir, test_dirs, server="php-built-in", benchmark=False, valgrind=False, debug=False):
-    server_init = servers[server][INIT] 
+    server_init = servers[server][INIT]
     if server_init is not None:
         server_init(root_tests_dir)
-        
+
     tests_data = []
     for test_dir in test_dirs:
         mock_port = generate_unique_port()
@@ -163,15 +165,15 @@ def main(root_tests_dir, test_lib_dir, test_dirs, server="php-built-in", benchma
         env.update(load_env_from_json(test_data["env_path"]))
         env = {k: v for k, v in env.items() if v != ""}
         test_data["env"] = env
-        
+
         server_process_test = servers[server][PROCESS_TEST]
         if server_process_test is not None:
             test_data = server_process_test(test_data)
         tests_data.append(test_data)
-            
+
     if servers[server][PRE_TESTS] is not None:
         test_data = servers[server][PRE_TESTS]()
-            
+
     threads = []
     for test_data in tests_data:
         args = (test_data, root_tests_dir, test_lib_dir, server, benchmark, valgrind, debug)
@@ -182,12 +184,10 @@ def main(root_tests_dir, test_lib_dir, test_dirs, server="php-built-in", benchma
 
     for thread in threads:
         thread.join()
-        
+
     server_uninit = servers[server][UNINIT]
     if server_uninit is not None:
         server_uninit()
-
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Script for running PHP server tests with Aikido Firewall installed.")
