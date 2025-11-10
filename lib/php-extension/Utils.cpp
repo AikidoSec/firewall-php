@@ -6,6 +6,12 @@ std::string ToLowercase(const std::string& str) {
     return result;
 }
 
+std::string ToUppercase(const std::string& str) {
+    std::string result = str;
+    std::transform(result.begin(), result.end(), result.begin(), [](unsigned char c) { return std::toupper(c); });
+    return result;
+}
+
 std::string GetRandomNumber() {
     std::random_device rd;
     std::mt19937 gen(rd());
