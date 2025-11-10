@@ -223,14 +223,14 @@ if __name__ == "__main__":
         print(f"Starting test run number {i} with {len(test_dirs)} tests...")
         print(f"Tests: {[os.path.basename(os.path.normpath(t)) for t in test_dirs]}")
 
+        failed_tests = []
+        
         main(root_folder, test_lib_dir, test_dirs, args.server, args.benchmark, args.valgrind, args.debug)
 
         if len(failed_tests) == 0:
             break
 
         test_dirs = [os.path.join(root_folder, t) for t in failed_tests]
-        failed_tests = []
-
         i += 1
 
     print_test_results("Passed tests:", passed_tests)
