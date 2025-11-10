@@ -2,11 +2,13 @@
 
 std::string GetPhpPackageVersion(const std::string& packageName) {
     zval return_value;
+    std::string result = "";
     CallPhpFunctionWithOneParam("phpversion", packageName, &return_value);
     if (Z_TYPE(return_value) == IS_STRING) {
-        return Z_STRVAL(return_value);
+        result = Z_STRVAL(return_value);
     }
-    return "";
+    zval_ptr_dtor(&return_value);
+    return result;
 }
 
 unordered_map<std::string, std::string> GetPhpPackages() {
