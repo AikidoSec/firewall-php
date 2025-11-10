@@ -32,7 +32,7 @@ else:
     apache_conf_mpm_worker_file = f"{apache_server_root}/mods-available/mpm_worker.conf"
     apache_conf_mpm_event_file = f"{apache_server_root}/mods-available/mpm_event.conf"
     apache_conf_mpm_prefork_file = f"{apache_server_root}/mods-available/mpm_prefork.conf"
-    apache_conf_folder = f"{apache_server_root}/sites-available"
+    apache_conf_folder = f"{apache_server_root}/sites-enabled"
     apache_log_folder = "/var/log/apache2"
     apache_run_folder = "/run/apache2"
     apache_include_conf = """IncludeOptional mods-enabled/*.load
@@ -296,7 +296,7 @@ def apache_mod_php_process_test(test_data):
 
 def apache_mod_php_pre_tests():
     subprocess.run([f'/usr/sbin/{apache_binary}', '-k', 'start'])
-    
+
 
 def apache_mod_php_start_server(test_data, test_lib_dir, valgrind):
     return None
@@ -304,4 +304,4 @@ def apache_mod_php_start_server(test_data, test_lib_dir, valgrind):
 
 def apache_mod_php_uninit():
     subprocess.run(['pkill', apache_binary])
-    # subprocess.run(['chown', '-R', f'{prev_owning_user}:{prev_owning_group}', '../'])
+    subprocess.run(['chown', '-R', f'{prev_owning_user}:{prev_owning_group}', '../'])
