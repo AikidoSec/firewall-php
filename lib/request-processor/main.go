@@ -54,6 +54,7 @@ func RequestProcessorInit(initJson string) (initOk bool) {
 		globals.EnvironmentConfig.PlatformName,
 	)
 	log.Debugf("Init data: %s", initJson)
+	log.Debugf("Started with token: \"AIK_RUNTIME_***%s\"", utils.AnonymizeToken(globals.CurrentToken))
 
 	if globals.EnvironmentConfig.PlatformName != "cli" {
 		grpc.Init()

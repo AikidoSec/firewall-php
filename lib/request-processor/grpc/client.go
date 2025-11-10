@@ -171,6 +171,7 @@ func GetCloudConfig(server *ServerData, timeout time.Duration) {
 
 	cloudConfig, err := client.GetCloudConfig(ctx, &protos.CloudConfigUpdatedAt{Token: server.AikidoConfig.Token, ServerPid: globals.EnvironmentConfig.ServerPID, ConfigUpdatedAt: utils.GetCloudConfigUpdatedAt(server)})
 	if err != nil {
+		log.Debugf("Could not get cloud config for server \"AIK_RUNTIME_***%s\": %v", utils.AnonymizeToken(server.AikidoConfig.Token), err)
 		return
 	}
 
