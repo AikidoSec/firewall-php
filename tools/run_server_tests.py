@@ -229,6 +229,7 @@ if __name__ == "__main__":
             break
 
         test_dirs = [os.path.join(root_folder, t) for t in failed_tests]
+        failed_tests = []
 
         i += 1
 
