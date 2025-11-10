@@ -79,7 +79,7 @@ jobs:
           ${{ github.workspace }}/build/aikido-request-processor.so
 
   build_php_extension:
-    name: Build extension${{ matrix.arch }} ${{ matrix.php_version }}
+    name: Build PHP-${{ matrix.php_version }} extension${{ matrix.arch }} 
     runs-on: ubuntu-24.04${{ matrix.arch }}
     container: ghcr.io/aikidosec/firewall-php-build-extension:${{ matrix.php_version }}-v1
     strategy:
@@ -135,7 +135,7 @@ jobs:
           ${{ github.workspace }}/tests/*.diff
 
   build_rpm:
-    name: Build rpm${{ matrix.arch }}
+    name: Build rpm-${{ matrix.arch }}
     runs-on: ubuntu-24.04${{ matrix.arch }}
     container:
       image: quay.io/centos/centos:stream9
@@ -299,7 +299,7 @@ jobs:
             ${{ env.AIKIDO_ARTIFACT }}
 
   test_php_centos:
-    name: CentOS${{ matrix.arch }} ${{ matrix.server }} ${{ matrix.php_version }}
+    name: CentOS PHP-${{ matrix.php_version }} ${{ matrix.server }}-${{ matrix.arch }}
     runs-on: ubuntu-24.04${{ matrix.arch }}
     container:
       image: ghcr.io/aikidosec/firewall-php-test-centos:${{ matrix.php_version }}-v1
@@ -385,7 +385,7 @@ jobs:
           python3 run_server_tests.py ../tests/server ../tests/testlib --server=${{ matrix.server }}
 
   test_php_ubuntu:
-    name: ubuntu${{ matrix.arch }} ${{ matrix.server }} ${{ matrix.php_version }} 
+    name: Ubuntu PHP-${{ matrix.php_version }} ${{ matrix.server }}-${{ matrix.arch }}
     runs-on: ubuntu-24.04${{ matrix.arch }}
     container:
       image: ghcr.io/aikidosec/firewall-php-test-ubuntu:${{ matrix.php_version }}-v1
