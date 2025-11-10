@@ -11,7 +11,7 @@ on:
 
 jobs:
   build_libs:
-    name: Build go libs${{ matrix.arch }}
+    name: Build Go libs${{ matrix.arch }}
     runs-on: ubuntu-24.04${{ matrix.arch }}
     container:
       image: ghcr.io/aikidosec/firewall-php-build-libs:v1
@@ -135,7 +135,7 @@ jobs:
           ${{ github.workspace }}/tests/*.diff
 
   build_rpm:
-    name: Build rpm-${{ matrix.arch }}
+    name: Build rpm${{ matrix.arch }}
     runs-on: ubuntu-24.04${{ matrix.arch }}
     container:
       image: quay.io/centos/centos:stream9
