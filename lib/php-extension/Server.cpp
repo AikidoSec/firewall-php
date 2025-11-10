@@ -74,7 +74,9 @@ std::string Server::GetBody() {
     stream = php_stream_open_wrapper("php://input", "rb", 0 | REPORT_ERRORS, NULL);
     if ((contents = php_stream_copy_to_mem(stream, maxlen, 0)) != NULL) {
         php_stream_close(stream);
-        return std::string(ZSTR_VAL(contents));
+        std::string result = std::string(ZSTR_VAL(contents), ZSTR_LEN(contents));
+        zend_string_release(contents);
+        return result;
     }
     php_stream_close(stream);
     return "";

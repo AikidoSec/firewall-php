@@ -141,12 +141,12 @@ PHP_GSHUTDOWN_FUNCTION(aikido) {
     aikido_globals->phpLifecycle.~PhpLifecycle();
     aikido_globals->action.~Action();
     aikido_globals->requestProcessor.~RequestProcessor();
-    aikido_globals->eventCache.~EventCache();
-    aikido_globals->requestCache.~RequestCache();
     aikido_globals->stats.~unordered_map();
     aikido_globals->server.~Server();
     aikido_globals->logger.~Log();
     aikido_globals->agent.~Agent();
+    aikido_globals->eventCache.~EventCache();
+    aikido_globals->requestCache.~RequestCache();
     aikido_globals->config_endpoint.~string();
     aikido_globals->endpoint.~string();
     aikido_globals->token.~string();
