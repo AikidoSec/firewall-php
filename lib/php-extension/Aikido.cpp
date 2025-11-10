@@ -137,6 +137,7 @@ PHP_GINIT_FUNCTION(aikido) {
 }
 
 PHP_GSHUTDOWN_FUNCTION(aikido) {
+#ifdef ZTS
     aikido_globals->laravelEnv.~unordered_map();
     aikido_globals->phpLifecycle.~PhpLifecycle();
     aikido_globals->action.~Action();
@@ -152,6 +153,7 @@ PHP_GSHUTDOWN_FUNCTION(aikido) {
     aikido_globals->token.~string();
     aikido_globals->sapi_name.~string();
     aikido_globals->log_level_str.~string();
+#endif
 }
 
 zend_module_entry aikido_module_entry = {

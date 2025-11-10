@@ -24,6 +24,8 @@ AIKIDO_HANDLER_FUNCTION(handle_shell_execution) {
 
 
 AIKIDO_HANDLER_FUNCTION(handle_shell_execution_with_array) {
+    scopedTimer.SetSink(sink, "exec_op");
+
     zval *cmdVal = nullptr;
 
     ZEND_PARSE_PARAMETERS_START(0, -1)

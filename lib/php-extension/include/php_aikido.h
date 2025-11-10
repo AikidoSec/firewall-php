@@ -35,28 +35,31 @@ bool collect_api_schema;
 bool trust_proxy;
 bool localhost_allowed_by_default;
 unsigned int report_stats_interval_to_agent; // Report once every X requests the collected stats to Agent
-std::string log_level_str;
-std::string sapi_name;
-std::string token;
-std::string endpoint;
-std::string config_endpoint;
-Log logger;
-Agent agent;
-Server server;
-RequestProcessor requestProcessor;
-Action action;
-RequestCache requestCache;
-EventCache eventCache;
-PhpLifecycle phpLifecycle;
-std::unordered_map<std::string, SinkStats> stats;
 std::chrono::high_resolution_clock::time_point currentRequestStart;
 uint64_t totalOverheadForCurrentRequest;
-std::unordered_map<std::string, std::string> laravelEnv;
 bool laravelEnvLoaded;
 bool checkedAutoBlock;
 bool checkedShouldBlockRequest;
 HashTable *global_ast_to_clean;
 void (*original_ast_process)(zend_ast *ast);
+// IMPORTANT: The order of these objects MUST NOT be changed due to object interdependencies.
+// This ensures proper construction/destruction order in both ZTS and non-ZTS modes.
+// Objects are constructed in this order and destroyed in reverse order.
+std::string log_level_str;
+std::string sapi_name;
+std::string token;
+std::string endpoint;
+std::string config_endpoint;
+RequestCache requestCache;
+EventCache eventCache;
+Agent agent;
+Log logger;
+Server server;
+std::unordered_map<std::string, SinkStats> stats;
+RequestProcessor requestProcessor;
+Action action;
+PhpLifecycle phpLifecycle;
+std::unordered_map<std::string, std::string> laravelEnv;
 ZEND_END_MODULE_GLOBALS(aikido)
 
 ZEND_EXTERN_MODULE_GLOBALS(aikido)
