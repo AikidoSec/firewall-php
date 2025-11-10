@@ -299,7 +299,7 @@ jobs:
             ${{ env.AIKIDO_ARTIFACT }}
 
   test_php_centos:
-    name: CentOS php${{ matrix.php_version }} ${{ matrix.server }}${{ matrix.arch }}
+    name: CentOS php-${{ matrix.php_version }} ${{ matrix.server }}${{ matrix.arch }}
     runs-on: ubuntu-24.04${{ matrix.arch }}
     container:
       image: ghcr.io/aikidosec/firewall-php-test-centos:${{ matrix.php_version }}-v1
@@ -385,7 +385,7 @@ jobs:
           python3 run_server_tests.py ../tests/server ../tests/testlib --server=${{ matrix.server }}
 
   test_php_ubuntu:
-    name: Ubuntu PHP${{ matrix.php_version }} ${{ matrix.server }}${{ matrix.arch }}
+    name: Ubuntu php-${{ matrix.php_version }} ${{ matrix.server }}${{ matrix.arch }}
     runs-on: ubuntu-24.04${{ matrix.arch }}
     container:
       image: ghcr.io/aikidosec/firewall-php-test-ubuntu:${{ matrix.php_version }}-v1
@@ -448,6 +448,55 @@ jobs:
           . /etc/apache2/envvars
           cd tools
           python3 run_server_tests.py ../tests/server ../tests/testlib --server=${{ matrix.server }}
+
+      - name: Store Apache error logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: apache-error-logs-${{ matrix.php_version }}-${{ matrix.server }}-${{ env.ARCH }}
+          if-no-files-found: ignore
+          path: |
+            /var/log/apache2/*.log
+            /var/log/httpd/*.log
+
+      - name: Store Apache configuration
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: apache-config-${{ matrix.php_version }}-${{ matrix.server }}-${{ env.ARCH }}
+          if-no-files-found: ignore
+          path: |
+            /etc/apache2/**/*.conf
+            /etc/httpd/**/*.conf
+
+      - name: Store Aikido logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: aikido-logs-${{ matrix.php_version }}-${{ matrix.server }}-${{ env.ARCH }}
+          if-no-files-found: ignore
+          path: |
+            /var/log/aikido*/**/*.log
+
+      - name: Store PHP configuration
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: php-config-${{ matrix.php_version }}-${{ matrix.server }}-${{ env.ARCH }}
+          if-no-files-found: ignore
+          path: |
+            /etc/php/**/*.ini
+            /etc/php*/**/*.ini
+
+      - name: Store system logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: system-logs-${{ matrix.php_version }}-${{ matrix.server }}-${{ env.ARCH }}
+          if-no-files-found: ignore
+          path: |
+            /var/log/syslog
+            /var/log/messages
 
   test_php_qa_action_controlling_tests_apache_mod_php:
     name: QA apache-mod-php
