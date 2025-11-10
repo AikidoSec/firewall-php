@@ -295,8 +295,8 @@ jobs:
             ${{ env.AIKIDO_ARTIFACT }}
 
   test_php_centos:
-    name: CentOS E2E ${{ matrix.server }} php-${{ matrix.php_version }} ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
+    name: CentOS${{ matrix.arch }} ${{ matrix.server }} ${{ matrix.php_version }}
+    runs-on: ubuntu-24.04${{ matrix.arch }}
     container:
       image: ghcr.io/aikidosec/firewall-php-test-centos:${{ matrix.php_version }}-v1
       options: --privileged
@@ -305,7 +305,7 @@ jobs:
       matrix:
         php_version: ['7.4', '8.0', '8.1', '8.2', '8.3', '8.4']
         server: ['nginx-php-fpm', 'apache-mod-php', 'php-built-in']
-        os: ['ubuntu-24.04', 'ubuntu-24.04-arm']
+        arch: ['', '-arm']
       fail-fast: false
 
     steps:
@@ -381,15 +381,15 @@ jobs:
           python3 run_server_tests.py ../tests/server ../tests/testlib --server=${{ matrix.server }}
 
   test_php_ubuntu:
-    name: Ubuntu E2E ${{ matrix.server }} php-${{ matrix.php_version }} ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
+    name: ubuntu${{ matrix.arch }} ${{ matrix.server }} ${{ matrix.php_version }} 
+    runs-on: ubuntu-24.04${{ matrix.arch }}
     container:
       image: ghcr.io/aikidosec/firewall-php-test-ubuntu:${{ matrix.php_version }}-v1
       options: --privileged
     needs: [ build_deb ]
     strategy:
       matrix:
-        os: ['ubuntu-24.04', 'ubuntu-24.04-arm']
+        arch: ['', '-arm']
         php_version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4']
         server: ['nginx-php-fpm', 'apache-mod-php', 'php-built-in']
       fail-fast: false
@@ -436,7 +436,6 @@ jobs:
           dpkg -i -E ${{ env.AIKIDO_DEB }}/${{ env.AIKIDO_DEB }}
 
       - name: Run CLI tests
-        if: matrix.os == 'ubuntu-24.04' || matrix.os == 'ubuntu-24.04-arm'
         run: |
           php lib/php-extension/run-tests.php ./tests/cli
 
@@ -445,15 +444,6 @@ jobs:
           . /etc/apache2/envvars
           cd tools
           python3 run_server_tests.py ../tests/server ../tests/testlib --server=${{ matrix.server }}
-
-      - name: Archive test artifacts
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: test-results-aikido-${{ env.AIKIDO_VERSION }}-${{ matrix.os }}-php-${{ matrix.php_version }}
-          if-no-files-found: ignore
-          path: |
-            ${{ github.workspace }}/tests/cli/**/*.diff
 
   test_php_qa_action_controlling_tests_apache_mod_php:
     name: Tests (apache2 - mod_php)
