@@ -9,6 +9,8 @@ func Init(server *ServerData) {
 	server.StatsData.StartedAt = utils.GetTime()
 	server.StatsData.MonitoredSinkTimings = make(map[string]MonitoredSinkTimings)
 
+	CheckConfigUpdatedAt(server)
+
 	utils.StartPollingRoutine(server.PollingData.HeartbeatRoutineChannel, server.PollingData.HeartbeatTicker, SendHeartbeatEvent, server)
 	utils.StartPollingRoutine(server.PollingData.ConfigPollingRoutineChannel, server.PollingData.ConfigPollingTicker, CheckConfigUpdatedAt, server)
 }

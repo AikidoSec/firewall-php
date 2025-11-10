@@ -92,7 +92,7 @@ func (s *GrpcServer) GetCloudConfig(ctx context.Context, req *protos.CloudConfig
 	server := globals.GetServer(ServerKey{Token: req.GetToken(), ServerPID: req.GetServerPid()})
 	if server == nil {
 		log.Warnf(log.MainLogger, "Server \"AIK_RUNTIME_***%s\" not found, returning nil", utils.AnonymizeToken(req.GetToken()))
-		return nil, status.Errorf(codes.Canceled, "CloudConfig was not updated")
+		return nil, status.Errorf(codes.Canceled, "Server not found")
 	}
 
 	log.Debugf(server.Logger, "Getting cloud config update for server \"AIK_RUNTIME_***%s\"!", utils.AnonymizeToken(req.GetToken()))
