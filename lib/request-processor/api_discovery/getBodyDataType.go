@@ -16,13 +16,9 @@ func getBodyDataType(headers map[string]interface{}) string {
 		return Undefined
 	}
 
-	// Check if contentType has multiple values (comma separated or otherwise)
-	// and use the first one.
-	if strings.Contains(contentType, ",") {
-		contentType = strings.Split(contentType, ",")[0]
-	}
+	contentType = strings.ToLower(strings.TrimSpace(contentType))
 
-	if IsJsonContentType(contentType) {
+	if isJSONContentType(contentType) {
 		return JSON
 	}
 
@@ -34,9 +30,31 @@ func getBodyDataType(headers map[string]interface{}) string {
 		return FormData
 	}
 
-	if strings.Contains(contentType, "xml") {
+	if isXMLContentType(contentType) {
 		return XML
 	}
 
 	return Undefined
+}
+
+var jsonContentTypes = []string{
+	"application/json",
+	"application/csp-report",
+	"application/x-json",
+}
+
+func isJSONContentType(contentType string) bool {
+	for _, jsonType := range jsonContentTypes {
+		if strings.HasPrefix(contentType, jsonType) {
+			return true
+		}
+	}
+
+	return strings.Contains(contentType, "+json")
+}
+
+func isXMLContentType(contentType string) bool {
+	return strings.HasPrefix(contentType, "application/xml") ||
+		strings.HasPrefix(contentType, "text/xml") ||
+		strings.Contains(contentType, "+xml")
 }
