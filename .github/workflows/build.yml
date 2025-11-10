@@ -440,9 +440,7 @@ jobs:
 
       - name: Run ${{ matrix.server }} server tests
         run: |
-          cat /etc/apache2/apache2.conf
-          ls -l /etc/apache2/envvars
-          source /etc/apache2/envvars
+          . /etc/apache2/envvars
           cd tools
           python3 run_server_tests.py ../tests/server ../tests/testlib --server=${{ matrix.server }}
 
