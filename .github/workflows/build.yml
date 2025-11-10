@@ -382,7 +382,7 @@ jobs:
       - name: Run ${{ matrix.server }} server tests
         run: |
           cd tools
-          python3 run_server_tests.py ../tests/server ../tests/testlib --server=${{ matrix.server }}
+          python3 run_server_tests.py ../tests/server ../tests/testlib --server=${{ matrix.server }} --max-runs=3
 
   test_php_ubuntu:
     name: Ubuntu php-${{ matrix.php_version }} ${{ matrix.server }}${{ matrix.arch }}
@@ -447,7 +447,7 @@ jobs:
         run: |
           . /etc/apache2/envvars
           cd tools
-          python3 run_server_tests.py ../tests/server ../tests/testlib --server=${{ matrix.server }}
+          python3 run_server_tests.py ../tests/server ../tests/testlib --server=${{ matrix.server }} --max-runs=3
 
       - name: Store Apache error logs
         if: always()
