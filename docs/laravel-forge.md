@@ -7,30 +7,15 @@ There are two ways to install Aikido in Laravel forge.
 
 ## Portal
 
-1. In Forge go to `[server_name] -> [site_name] -> Environment`, add the `AIKIDO_TOKEN` and `AIKIDO_BLOCK` environment values and save. 
-
+1. In Forge go to your server -> `Settings` -> `Environment` and add the `AIKIDO_TOKEN` in the .env file. Optionally, you can set `AIKIDO_BLOCK` to 1 to enabling blocking mode for attacks.
+![Forge Environment](./forge-environment.png)
 You can get your token from the [Aikido Security Dashboard](https://help.aikido.dev/doc/creating-an-aikido-zen-firewall-token/doc6vRJNzC4u).
 
-2. In Forge go to "Recipes" and create a new recipe called "Install Aikido Firewall".
-
-3. Based on the running OS, use the [Manual install](../README.md#Manual-install) commands to configure the new recipe and select "root" as user.
-
-Example for Debian-based systems:
+2. Go to "Commands" and run the following by replacing the sudo password with the one that Forge displays when the server is created:
 ```
-cd /tmp
-
-# Install commands from the "Manual install" section below, based on your OS
-
-curl -L -O https://github.com/AikidoSec/firewall-php/releases/download/v1.4.6/aikido-php-firewall.x86_64.deb
-dpkg -i -E ./aikido-php-firewall.x86_64.deb
-
-# Restarting the php services in order to load the Aikido PHP Firewall
-for service in $(systemctl list-units | grep php | awk '{print $1}'); do
-    sudo systemctl restart $service
-done
+curl -L -O https://github.com/AikidoSec/firewall-php/releases/download/v1.4.6/aikido-php-firewall.x86_64.deb && echo "YOUR_SUDO_PASSWORD_HERE" | sudo -S dpkg -i -E ./aikido-php-firewall.x86_64.deb && echo "YOUR_SUDO_PASSWORD_HERE" | sudo service php8.4-fpm restart
 ```
-
-4. Run the created recipes to install the Aikido PHP Firewall.
+![Forge Commands](./forge-commands.png)
 
 ## SSH
 
