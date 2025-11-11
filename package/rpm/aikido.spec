@@ -57,18 +57,18 @@ fi
 
 
 # Check if FrankenPHP is installed
-FRANKENPHP_PHP_VERSION=""
-if command -v frankenphp -v >/dev/null 2>&1; then
-    if frankenphp -v >/dev/null 2>&1; then
-        FRANKENPHP_PHP_VERSION=$(frankenphp -v 2>/dev/null | grep -oP 'PHP \K\d+\.\d+' | head -n 1)
-    fi
-    
-    if [ -n "$FRANKENPHP_PHP_VERSION" ]; then
-        echo "Found FrankenPHP with embedded PHP $FRANKENPHP_PHP_VERSION"
-    else
-        echo "Found FrankenPHP but could not determine PHP version"
-    fi
-fi
+# FRANKENPHP_PHP_VERSION=""
+# if command -v frankenphp -v >/dev/null 2>&1; then
+#     if frankenphp -v >/dev/null 2>&1; then
+#         FRANKENPHP_PHP_VERSION=$(frankenphp -v 2>/dev/null | grep -oP 'PHP \K\d+\.\d+' | head -n 1)
+#     fi
+#     
+#     if [ -n "$FRANKENPHP_PHP_VERSION" ]; then
+#         echo "Found FrankenPHP with embedded PHP $FRANKENPHP_PHP_VERSION"
+#     else
+#         echo "Found FrankenPHP but could not determine PHP version"
+#     fi
+# fi
 
 for PHP_VERSION in "${PHP_VERSIONS[@]}"; do
     echo "Installing for PHP $PHP_VERSION..."
@@ -131,35 +131,37 @@ for PHP_VERSION in "${PHP_VERSIONS[@]}"; do
 done
 
 # Install for FrankenPHP if installed
-if [ -n "$FRANKENPHP_PHP_VERSION" ]; then
-    echo "Installing for FrankenPHP with PHP $FRANKENPHP_PHP_VERSION..."
-    
-    FRANKENPHP_EXT_DIR="/usr/lib/frankenphp/modules"
-    FRANKENPHP_INI_DIR="/etc/frankenphp/php.d"
-    
-    # Install Aikido PHP extension for FrankenPHP
-    if [ -d "$FRANKENPHP_EXT_DIR" ]; then
-        echo "Installing new Aikido extension in $FRANKENPHP_EXT_DIR/aikido-%{version}.so..."
-        ln -sf /opt/aikido-%{version}/aikido-extension-php-$FRANKENPHP_PHP_VERSION.so $FRANKENPHP_EXT_DIR/aikido-%{version}.so
-    else
-        echo "FrankenPHP extension directory $FRANKENPHP_EXT_DIR not found! Creating it..."
-        mkdir -p $FRANKENPHP_EXT_DIR
-        ln -sf /opt/aikido-%{version}/aikido-extension-php-$FRANKENPHP_PHP_VERSION.so $FRANKENPHP_EXT_DIR/aikido-%{version}.so
-    fi
-    
-    # Install Aikido ini file for FrankenPHP
-    if [ -d "$FRANKENPHP_INI_DIR" ]; then
-        echo "Installing new Aikido mod in $FRANKENPHP_INI_DIR/zz-aikido-%{version}.ini..."
-        ln -sf /opt/aikido-%{version}/aikido.ini $FRANKENPHP_INI_DIR/zz-aikido-%{version}.ini
-    else
-        echo "FrankenPHP ini directory $FRANKENPHP_INI_DIR not found! Creating it..."
-        mkdir -p $FRANKENPHP_INI_DIR
-        ln -sf /opt/aikido-%{version}/aikido.ini $FRANKENPHP_INI_DIR/zz-aikido-%{version}.ini
-    fi
-fi
+# if [ -n "$FRANKENPHP_PHP_VERSION" ]; then
+#     echo "Installing for FrankenPHP with PHP $FRANKENPHP_PHP_VERSION..."
+#     
+#     FRANKENPHP_EXT_DIR="/usr/lib/frankenphp/modules"
+#     FRANKENPHP_INI_DIR="/etc/frankenphp/php.d"
+#     
+#     # Install Aikido PHP extension for FrankenPHP
+#     if [ -d "$FRANKENPHP_EXT_DIR" ]; then
+#         echo "Installing new Aikido extension in $FRANKENPHP_EXT_DIR/aikido-%{version}.so..."
+#         ln -sf /opt/aikido-%{version}/aikido-extension-php-$FRANKENPHP_PHP_VERSION.so $FRANKENPHP_EXT_DIR/aikido-%{version}.so
+#     else
+#         echo "FrankenPHP extension directory $FRANKENPHP_EXT_DIR not found! Creating it..."
+#         mkdir -p $FRANKENPHP_EXT_DIR
+#         ln -sf /opt/aikido-%{version}/aikido-extension-php-$FRANKENPHP_PHP_VERSION.so $FRANKENPHP_EXT_DIR/aikido-%{version}.so
+#     fi
+#     
+#     # Install Aikido ini file for FrankenPHP
+#     if [ -d "$FRANKENPHP_INI_DIR" ]; then
+#         echo "Installing new Aikido mod in $FRANKENPHP_INI_DIR/zz-aikido-%{version}.ini..."
+#         ln -sf /opt/aikido-%{version}/aikido.ini $FRANKENPHP_INI_DIR/zz-aikido-%{version}.ini
+#     else
+#         echo "FrankenPHP ini directory $FRANKENPHP_INI_DIR not found! Creating it..."
+#         mkdir -p $FRANKENPHP_INI_DIR
+#         ln -sf /opt/aikido-%{version}/aikido.ini $FRANKENPHP_INI_DIR/zz-aikido-%{version}.ini
+#     fi
+# fi
 
-if [ ${#PHP_VERSIONS[@]} -eq 0 ] && [ -z "$FRANKENPHP_PHP_VERSION" ]; then
-    echo "No PHP or FrankenPHP found! Exiting!"
+if [ ${#PHP_VERSIONS[@]} -eq 0 ]; then
+# if [ ${#PHP_VERSIONS[@]} -eq 0 ] && [ -z "$FRANKENPHP_PHP_VERSION" ]; then
+    echo "No PHP found! Exiting!"
+#     echo "No PHP or FrankenPHP found! Exiting!"
     exit 1
 fi
 
@@ -200,12 +202,12 @@ done
 echo "Found PHP versions: ${PHP_VERSIONS[*]}"
 
 # Check if FrankenPHP directories exist for uninstall
-FRANKENPHP_INSTALLED=false
-FRANKENPHP_EXT_DIR="/usr/lib/frankenphp/modules"
-FRANKENPHP_INI_DIR="/etc/frankenphp/php.d"
-if [ -d "$FRANKENPHP_EXT_DIR" ] || [ -d "$FRANKENPHP_INI_DIR" ]; then
-    FRANKENPHP_INSTALLED=true
-fi
+# FRANKENPHP_INSTALLED=false
+# FRANKENPHP_EXT_DIR="/usr/lib/frankenphp/modules"
+# FRANKENPHP_INI_DIR="/etc/frankenphp/php.d"
+# if [ -d "$FRANKENPHP_EXT_DIR" ] || [ -d "$FRANKENPHP_INI_DIR" ]; then
+#     FRANKENPHP_INSTALLED=true
+# fi
 
 for PHP_VERSION in "${PHP_VERSIONS[@]}"; do
     echo "Uninstalling for PHP $PHP_VERSION..."
@@ -262,21 +264,21 @@ for PHP_VERSION in "${PHP_VERSIONS[@]}"; do
 done
 
 # Uninstall for FrankenPHP if directories exist
-FRANKENPHP_EXT_DIR="/usr/lib/frankenphp/modules"
-FRANKENPHP_INI_DIR="/etc/frankenphp/php.d"
-if [ -d "$FRANKENPHP_EXT_DIR" ] || [ -d "$FRANKENPHP_INI_DIR" ]; then
-    echo "Uninstalling for FrankenPHP..."
-    
-    if [ -f "$FRANKENPHP_EXT_DIR/aikido-%{version}.so" ]; then
-        echo "Uninstalling Aikido extension from $FRANKENPHP_EXT_DIR/aikido-%{version}.so..."
-        rm -f $FRANKENPHP_EXT_DIR/aikido-%{version}.so
-    fi
-    
-    if [ -f "$FRANKENPHP_INI_DIR/zz-aikido-%{version}.ini" ]; then
-        echo "Uninstalling Aikido mod from $FRANKENPHP_INI_DIR/zz-aikido-%{version}.ini..."
-        rm -f $FRANKENPHP_INI_DIR/zz-aikido-%{version}.ini
-    fi
-fi
+# FRANKENPHP_EXT_DIR="/usr/lib/frankenphp/modules"
+# FRANKENPHP_INI_DIR="/etc/frankenphp/php.d"
+# if [ -d "$FRANKENPHP_EXT_DIR" ] || [ -d "$FRANKENPHP_INI_DIR" ]; then
+#     echo "Uninstalling for FrankenPHP..."
+#     
+#     if [ -f "$FRANKENPHP_EXT_DIR/aikido-%{version}.so" ]; then
+#         echo "Uninstalling Aikido extension from $FRANKENPHP_EXT_DIR/aikido-%{version}.so..."
+#         rm -f $FRANKENPHP_EXT_DIR/aikido-%{version}.so
+#     fi
+#     
+#     if [ -f "$FRANKENPHP_INI_DIR/zz-aikido-%{version}.ini" ]; then
+#         echo "Uninstalling Aikido mod from $FRANKENPHP_INI_DIR/zz-aikido-%{version}.ini..."
+#         rm -f $FRANKENPHP_INI_DIR/zz-aikido-%{version}.ini
+#     fi
+# fi
 
 # Remove the Aikido logs folder
 rm -rf /var/log/aikido-%{version}
