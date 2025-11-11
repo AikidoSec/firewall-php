@@ -9,6 +9,7 @@ import (
 	. "main/aikido_types"
 	"main/config"
 	"main/log"
+	"main/utils"
 	"net/http"
 	"net/url"
 )
@@ -32,11 +33,11 @@ func SendCloudRequest(server *ServerData, endpoint string, route string, method 
 			return nil, fmt.Errorf("failed to marshal payload: %v", err)
 		}
 
-		log.Infof(server.Logger, "Sending %s request to %s with size %d and content: %s", method, apiEndpoint, len(jsonData), jsonData)
+		log.Infof(server.Logger, "[%s] Sending %s request to %s with size %d and content: %s", utils.AnonymizeToken(token), method, apiEndpoint, len(jsonData), jsonData)
 
 		req, err = http.NewRequest(method, apiEndpoint, bytes.NewBuffer(jsonData))
 	} else {
-		log.Infof(server.Logger, "Sending %s request to %s", method, apiEndpoint)
+		log.Infof(server.Logger, "[%s] Sending %s request to %s", utils.AnonymizeToken(token), method, apiEndpoint)
 		req, err = http.NewRequest(method, apiEndpoint, nil)
 	}
 

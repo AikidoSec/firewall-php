@@ -101,6 +101,11 @@ func Infof(serverLogger *AikidoLogger, format string, args ...interface{}) {
 	logMessagef(serverLogger, InfoLevel, format, args...)
 }
 
+func InfofMainAndServer(serverLogger *AikidoLogger, format string, args ...interface{}) {
+	logMessagef(serverLogger, InfoLevel, format, args...)
+	logMessagef(MainLogger, InfoLevel, format, args...)
+}
+
 func Warnf(serverLogger *AikidoLogger, format string, args ...interface{}) {
 	logMessagef(serverLogger, WarnLevel, format, args...)
 }

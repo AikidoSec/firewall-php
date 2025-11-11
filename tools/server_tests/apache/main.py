@@ -32,7 +32,7 @@ else:
     apache_conf_mpm_worker_file = f"{apache_server_root}/mods-available/mpm_worker.conf"
     apache_conf_mpm_event_file = f"{apache_server_root}/mods-available/mpm_event.conf"
     apache_conf_mpm_prefork_file = f"{apache_server_root}/mods-available/mpm_prefork.conf"
-    apache_conf_folder = f"{apache_server_root}/sites-available"
+    apache_conf_folder = f"{apache_server_root}/sites-enabled"
     apache_log_folder = "/var/log/apache2"
     apache_run_folder = "/run/apache2"
     apache_include_conf = """IncludeOptional mods-enabled/*.load
@@ -85,6 +85,9 @@ LogFormat "%h %l %u %t %r %>s %b" combined
         RewriteRule ^(.*)$ index.php [L]
 
         SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1
+
+{env_conf}
+
     </Directory>
 
     ErrorLog {log_dir}/error_{name}.log
@@ -209,6 +212,10 @@ def get_user_and_group(folder_path):
 
 
 def apache_create_config_file(test_name, test_dir, server_port, env):
+    env_conf = ""
+    for e in env:
+        env_conf += f"\t\tSetEnv {e} {env[e]}\n"
+
     apache_config = apache_conf_template.format(
         server_root = apache_server_root,
         server_binary = apache_binary,
@@ -218,11 +225,12 @@ def apache_create_config_file(test_name, test_dir, server_port, env):
         test_dir = test_dir,
         log_dir = apache_log_folder,
         user = apache_user,
-        optional_conf = apache_include_conf,
-        error_log = apache_error_log
+        optional_conf = "", # apache_include_conf,
+        error_log = apache_error_log,
+        env_conf = env_conf
     )
 
-    apache_config_file = os.path.join(test_dir, f"{test_name}.conf")
+    apache_config_file = os.path.join(apache_conf_folder, f"{test_name}.conf")
     with open(apache_config_file, "w") as f:
         f.write(apache_config)
 
@@ -287,12 +295,11 @@ def apache_mod_php_process_test(test_data):
 
 
 def apache_mod_php_pre_tests():
-    pass
+    subprocess.run([f'/usr/sbin/{apache_binary}', '-k', 'start'])
 
 
 def apache_mod_php_start_server(test_data, test_lib_dir, valgrind):
-    print([f'/usr/sbin/{apache_binary}', '-f', test_data["apache_config"]])
-    return subprocess.Popen([f'/usr/sbin/{apache_binary}', '-f', test_data["apache_config"]], env=test_data["env"])
+    return None
 
 
 def apache_mod_php_uninit():

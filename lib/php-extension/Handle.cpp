@@ -80,6 +80,14 @@ ZEND_NAMED_FUNCTION(aikido_generic_handler) {
             return;
         }
 
+        if (AIKIDO_GLOBAL(disable) == true) {
+            if (original_handler) {
+                original_handler(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+            }
+            AIKIDO_LOG_INFO("Aikido generic handler finished earlier because AIKIDO_DISABLE is set to 1!\n");
+            return;
+        }
+
         sink = scope_name;
 
         AIKIDO_LOG_DEBUG("Calling handler for \"%s\"!\n", scope_name.c_str());

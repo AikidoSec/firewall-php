@@ -11,12 +11,13 @@ on:
 
 jobs:
   build_libs:
-    runs-on: ${{ matrix.os }}
+    name: Build Go libs${{ matrix.arch }}
+    runs-on: ubuntu-24.04${{ matrix.arch }}
     container:
       image: ghcr.io/aikidosec/firewall-php-build-libs:v1
     strategy:
       matrix:
-        os: [ ubuntu-24.04, ubuntu-24.04-arm ]
+        arch: [ '', '-arm' ]
       fail-fast: false
 
     steps:
@@ -78,12 +79,13 @@ jobs:
           ${{ github.workspace }}/build/aikido-request-processor.so
 
   build_php_extension:
-    runs-on: ${{ matrix.os }}
+    name: Build php${{ matrix.php_version }} extension${{ matrix.arch }}
+    runs-on: ubuntu-24.04${{ matrix.arch }}
     container: ghcr.io/aikidosec/firewall-php-build-extension:${{ matrix.php_version }}-v1
     strategy:
       matrix:
         php_version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4']
-        os: [ ubuntu-24.04, ubuntu-24.04-arm ]
+        arch: [ '', '-arm' ]
       fail-fast: false
 
     steps:
@@ -133,12 +135,13 @@ jobs:
           ${{ github.workspace }}/tests/*.diff
 
   build_rpm:
-    runs-on: ${{ matrix.os }}
+    name: Build rpm${{ matrix.arch }}
+    runs-on: ubuntu-24.04${{ matrix.arch }}
     container:
       image: quay.io/centos/centos:stream9
     strategy:
       matrix:
-        os: ['ubuntu-24.04', 'ubuntu-24.04-arm']
+        arch: ['', '-arm']
       fail-fast: false
     needs: [ build_libs, build_php_extension ]
     steps:
@@ -227,12 +230,13 @@ jobs:
             ~/rpmbuild/RPMS/${{ env.ARCH }}/${{ env.AIKIDO_ARTIFACT_RELEASE }}
 
   build_deb:
-    runs-on: ${{ matrix.os }}
+    name: Build deb${{ matrix.arch }}
+    runs-on: ubuntu-24.04${{ matrix.arch }}
     container:
       image: ubuntu:22.04
     strategy:
       matrix:
-        os: [ ubuntu-24.04, ubuntu-24.04-arm ]
+        arch: [ '', '-arm' ]
       fail-fast: false
     needs: [ build_rpm ]
     steps:
@@ -295,7 +299,8 @@ jobs:
             ${{ env.AIKIDO_ARTIFACT }}
 
   test_php_centos:
-    runs-on: ${{ matrix.os }}
+    name: CentOS php-${{ matrix.php_version }} ${{ matrix.server }}${{ matrix.arch }}
+    runs-on: ubuntu-24.04${{ matrix.arch }}
     container:
       image: ghcr.io/aikidosec/firewall-php-test-centos:${{ matrix.php_version }}-v1
       options: --privileged
@@ -304,7 +309,7 @@ jobs:
       matrix:
         php_version: ['7.4', '8.0', '8.1', '8.2', '8.3', '8.4']
         server: ['nginx-php-fpm', 'apache-mod-php', 'php-built-in']
-        os: ['ubuntu-24.04', 'ubuntu-24.04-arm']
+        arch: ['', '-arm']
       fail-fast: false
 
     steps:
@@ -377,17 +382,18 @@ jobs:
       - name: Run ${{ matrix.server }} server tests
         run: |
           cd tools
-          python3 run_server_tests.py ../tests/server ../tests/testlib --server=${{ matrix.server }}
+          python3 run_server_tests.py ../tests/server ../tests/testlib --server=${{ matrix.server }} --max-runs=3
 
   test_php_ubuntu:
-    runs-on: ${{ matrix.os }}
+    name: Ubuntu php-${{ matrix.php_version }} ${{ matrix.server }}${{ matrix.arch }}
+    runs-on: ubuntu-24.04${{ matrix.arch }}
     container:
       image: ghcr.io/aikidosec/firewall-php-test-ubuntu:${{ matrix.php_version }}-v1
       options: --privileged
     needs: [ build_deb ]
     strategy:
       matrix:
-        os: ['ubuntu-24.04', 'ubuntu-24.04-arm']
+        arch: ['', '-arm']
         php_version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4']
         server: ['nginx-php-fpm', 'apache-mod-php', 'php-built-in']
       fail-fast: false
@@ -434,26 +440,17 @@ jobs:
           dpkg -i -E ${{ env.AIKIDO_DEB }}/${{ env.AIKIDO_DEB }}
 
       - name: Run CLI tests
-        if: matrix.os == 'ubuntu-24.04' || matrix.os == 'ubuntu-24.04-arm'
         run: |
           php lib/php-extension/run-tests.php ./tests/cli
 
       - name: Run ${{ matrix.server }} server tests
         run: |
+          . /etc/apache2/envvars
           cd tools
-          python3 run_server_tests.py ../tests/server ../tests/testlib --server=${{ matrix.server }}
-
-      - name: Archive test artifacts
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: test-results-aikido-${{ env.AIKIDO_VERSION }}-${{ matrix.os }}-php-${{ matrix.php_version }}
-          if-no-files-found: ignore
-          path: |
-            ${{ github.workspace }}/tests/cli/**/*.diff
+          python3 run_server_tests.py ../tests/server ../tests/testlib --server=${{ matrix.server }} --max-runs=3
 
   test_php_qa_action_controlling_tests_apache_mod_php:
-    name: Tests (apache2 - mod_php)
+    name: QA apache-mod-php
     runs-on: ubuntu-latest
     needs: [ build_deb ]
     steps:
@@ -480,7 +477,7 @@ jobs:
           echo "#!/usr/bin/env bash" > ./zen-demo-php/.fly/scripts/aikido.sh
           echo "dpkg -i -E \"/var/www/html/aikido-php-firewall.\$(uname -i).deb\"" >> ./zen-demo-php/.fly/scripts/aikido.sh
       - name: Run Firewall QA Tests
-        uses: AikidoSec/firewall-tester-action@add-control-server-tests
+        uses: AikidoSec/firewall-tester-action@releases/v1
         with:
           dockerfile_path: ./zen-demo-php/Dockerfile
           extra_args: '--env-file=./zen-demo-php/.env.example -e APP_KEY=base64:W2v6u6VR4lURkxuMT9xZ6pdhXSt5rxsmWTbd1HGqlIM='
@@ -489,7 +486,7 @@ jobs:
           test_type: control
 
   test_php_qa_action_controlling_tests_apache_php_fpm:
-    name: Tests (apache2 - php-fpm)
+    name: QA apache-php-fpm
     runs-on: ubuntu-latest
     needs: [ build_deb ]
     steps:
@@ -516,7 +513,7 @@ jobs:
           echo "#!/usr/bin/env bash" > ./zen-demo-php/.fly/scripts/aikido.sh
           echo "dpkg -i -E \"/var/www/html/aikido-php-firewall.\$(uname -i).deb\"" >> ./zen-demo-php/.fly/scripts/aikido.sh
       - name: Run Firewall QA Tests
-        uses: AikidoSec/firewall-tester-action@add-control-server-tests
+        uses: AikidoSec/firewall-tester-action@releases/v1
         with:
           dockerfile_path: ./zen-demo-php/Dockerfile
           extra_args: '--env-file=./zen-demo-php/.env.example -e APP_KEY=base64:W2v6u6VR4lURkxuMT9xZ6pdhXSt5rxsmWTbd1HGqlIM='
@@ -525,7 +522,7 @@ jobs:
           test_type: control
 
   test_php_qa_action_controlling_tests_nginx_php_fpm:
-    name: Tests (nginx - php-fpm)
+    name: QA nginx-php-fpm
     runs-on: ubuntu-latest
     needs: [ build_deb ]
     steps:
@@ -552,7 +549,7 @@ jobs:
           echo "#!/usr/bin/env bash" > ./zen-demo-php/.fly/scripts/aikido.sh
           echo "dpkg -i -E \"/var/www/html/aikido-php-firewall.\$(uname -i).deb\"" >> ./zen-demo-php/.fly/scripts/aikido.sh
       - name: Run Firewall QA Tests
-        uses: AikidoSec/firewall-tester-action@add-control-server-tests
+        uses: AikidoSec/firewall-tester-action@releases/v1
         with:
           dockerfile_path: ./zen-demo-php/Dockerfile
           extra_args: '--env-file=./zen-demo-php/.env.example -e APP_KEY=base64:W2v6u6VR4lURkxuMT9xZ6pdhXSt5rxsmWTbd1HGqlIM='
