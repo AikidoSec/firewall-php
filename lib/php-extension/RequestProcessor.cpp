@@ -8,7 +8,8 @@ std::string RequestProcessor::GetInitData(const std::string& token) {
     if (!token.empty()) {
         globalToken = token;
     }
-
+    unordered_map<std::string, std::string> packages = GetPackages();
+    AIKIDO_GLOBAL(uses_symfony_http_foundation) = packages.find("symfony/http-foundation") != packages.end();
     json initData = {
         {"token", globalToken},
         {"platform_name", AIKIDO_GLOBAL(sapi_name)},
@@ -21,22 +22,25 @@ std::string RequestProcessor::GetInitData(const std::string& token) {
         {"disk_logs", AIKIDO_GLOBAL(disk_logs)},
         {"localhost_allowed_by_default", AIKIDO_GLOBAL(localhost_allowed_by_default)},
         {"collect_api_schema", AIKIDO_GLOBAL(collect_api_schema)},
-        {"packages", GetPackages()}};
+        {"packages", packages}};
     return NormalizeAndDumpJson(initData);
 }
 
 bool RequestProcessor::ContextInit() {
+    if (!this->requestInitialized || this->requestProcessorContextInitFn == nullptr) {
+        return false;
+    }
     return this->requestProcessorContextInitFn(GoContextCallback);
 }
 
 bool RequestProcessor::SendEvent(EVENT_ID eventId, std::string& output) {
-    if (!this->requestInitialized) {
+    if (!this->requestInitialized || this->requestProcessorOnEventFn == nullptr) {
         return false;
     }
 
     AIKIDO_LOG_DEBUG("Sending event %s...\n", GetEventName(eventId));
 
-    char* charPtr = requestProcessorOnEventFn(eventId);
+    char* charPtr = this->requestProcessorOnEventFn(eventId);
     if (!charPtr) {
         AIKIDO_LOG_DEBUG("Got event reply: nullptr\n");
         return true;
@@ -74,17 +78,23 @@ void RequestProcessor::SendPostRequestEvent() {
         Otherwise, return the env variable AIKIDO_BLOCK.
 */
 bool RequestProcessor::IsBlockingEnabled() {
-    if (!this->requestInitialized) {
+    if (!this->requestInitialized || this->requestProcessorGetBlockingModeFn == nullptr) {
         return false;
     }
-    int ret = requestProcessorGetBlockingModeFn();
+    int ret = this->requestProcessorGetBlockingModeFn();
     if (ret == -1) {
-        return AIKIDO_GLOBAL(blocking);
+        ret = AIKIDO_GLOBAL(blocking);
+    }
+    if (ret == 1) {
+        AIKIDO_LOG_INFO("Blocking is enabled!\n");
     }
     return ret;
 }
 
 bool RequestProcessor::ReportStats() {
+    if (this->requestProcessorReportStatsFn == nullptr) {
+        return false;
+    }
     AIKIDO_LOG_INFO("Reporting stats to Aikido Request Processor...\n");
 
     auto& statsMap = AIKIDO_GLOBAL(stats);
@@ -117,9 +127,14 @@ bool RequestProcessor::Init() {
     }
 
     std::string initDataString = this->GetInitData();
-
-    if (AIKIDO_GLOBAL(disable) == true) {
-        AIKIDO_LOG_INFO("Request Processor initialization skipped because AIKIDO_DISABLE is set to 1!\n");
+    if (AIKIDO_GLOBAL(disable) == true && AIKIDO_GLOBAL(sapi_name) != "apache2handler") {
+        /* 
+            As you can set AIKIDO_DISABLE per site, in an apache-mod-php setup, as a process can serve multiple sites,
+            we can't just not initialize the request processor, as it can be disabled for one site but not for another.
+            When subsequent requests come in for the non-disabled sites, the request processor needs to be initialized.
+            For non-apache-mod-php SAPI, we can just not initialize the request processor if AIKIDO_DISABLE is set to 1.
+        */
+        AIKIDO_LOG_INFO("Request Processor initialization skipped because AIKIDO_DISABLE is set to 1 and SAPI is not apache2handler!\n");
         return false;
     }
 
@@ -185,6 +200,13 @@ bool RequestProcessor::RequestInit() {
         }
     }
 
+    AIKIDO_LOG_DEBUG("RINIT started!\n");
+
+    if (AIKIDO_GLOBAL(disable) == true) {
+        AIKIDO_LOG_INFO("Request Processor initialization skipped because AIKIDO_DISABLE is set to 1!\n");
+        return true;
+    }
+
     this->requestInitialized = true;
     this->numberOfRequests++;
 
@@ -198,6 +220,9 @@ bool RequestProcessor::RequestInit() {
 }
 
 void RequestProcessor::LoadConfig(const std::string& previousToken, const std::string& currentToken) {
+    if (this->requestProcessorConfigUpdateFn == nullptr) {
+        return;
+    }
     if (currentToken.empty()) {
         AIKIDO_LOG_INFO("Current token is empty, skipping config reload...!\n");
         return;

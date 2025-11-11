@@ -5,6 +5,7 @@ import (
 	"main/context"
 	"main/ipc/protos"
 	"main/log"
+	"reflect"
 )
 
 func GetApiInfo(server *ServerData) *protos.APISpec {
@@ -57,7 +58,10 @@ func GetApiInfo(server *ServerData) *protos.APISpec {
 }
 
 func isObject(data interface{}) bool {
+	if data == nil {
+		return false
+	}
+
 	// Helper function to determine if the data is an object (map in Go)
-	_, ok := data.(map[string]interface{})
-	return ok
+	return reflect.TypeOf(data).Kind() == reflect.Map
 }

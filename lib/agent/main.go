@@ -21,19 +21,19 @@ import (
 )
 
 var serversCleanupChannel = make(chan struct{})
-var serversCleanupTicker = time.NewTicker(2 * time.Minute)
+var serversCleanupTicker = time.NewTicker(time.Minute)
 
 func serversCleanupRoutine(_ *ServerData) {
-	for _, token := range globals.GetServersTokens() {
-		server := globals.GetServer(token)
+	for _, serverKey := range globals.GetServersKeys() {
+		server := globals.GetServer(serverKey)
 		if server == nil {
 			continue
 		}
 		now := utils.GetTime()
 		lastConnectionTime := atomic.LoadInt64(&server.LastConnectionTime)
 		if now-lastConnectionTime > constants.MinServerInactivityForCleanup {
-			log.Infof(log.MainLogger, "Server \"AIK_RUNTIME_***%s\" has been inactive for more than 2 minutes, unregistering...", utils.AnonymizeToken(token))
-			server_utils.Unregister(token)
+			log.InfofMainAndServer(server.Logger, "Server \"AIK_RUNTIME_***%s\" (server PID: %d) has been inactive for more than 2 minutes, unregistering...", utils.AnonymizeToken(serverKey.Token), serverKey.ServerPID)
+			server_utils.Unregister(serverKey)
 		}
 	}
 }
@@ -78,8 +78,8 @@ func AgentInit() (initOk bool) {
 func AgentUninit() {
 	utils.StopPollingRoutine(serversCleanupChannel)
 
-	for _, token := range globals.GetServersTokens() {
-		server_utils.Unregister(token)
+	for _, serverKey := range globals.GetServersKeys() {
+		server_utils.Unregister(serverKey)
 	}
 	grpc.Uninit()
 	removePidFile()

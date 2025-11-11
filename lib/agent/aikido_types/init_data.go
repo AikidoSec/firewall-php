@@ -129,6 +129,11 @@ func NewServerDataPolling() *ServerDataPolling {
 	}
 }
 
+type ServerKey struct {
+	ServerPID int32
+	Token     string
+}
+
 type ServerData struct {
 	// Logger for the server
 	Logger *log.AikidoLogger

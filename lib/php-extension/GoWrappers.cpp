@@ -28,7 +28,7 @@ char* GoContextCallback(int callbackId) {
                 break;
             case CONTEXT_METHOD:
                 ctx = "METHOD";
-                ret = server.GetVar("REQUEST_METHOD");
+                ret = server.GetMethod();
                 break;
             case CONTEXT_ROUTE:
                 ctx = "ROUTE";

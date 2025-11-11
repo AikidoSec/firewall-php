@@ -1,19 +1,12 @@
 package api_discovery
 
-func onlyContainsPrimitiveTypes(types interface{}) bool {
-	switch t := types.(type) {
-	case string:
-		return isPrimitiveType(t)
-	case []string:
-		for _, item := range t {
-			if !isPrimitiveType(item) {
-				return false
-			}
+func onlyContainsPrimitiveTypes(types []string) bool {
+	for _, item := range types {
+		if !isPrimitiveType(item) {
+			return false
 		}
-		return true
-	default:
-		return false
 	}
+	return true
 }
 
 func isPrimitiveType(typeStr string) bool {

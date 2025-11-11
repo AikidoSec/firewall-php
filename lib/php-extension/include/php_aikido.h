@@ -19,7 +19,7 @@
 extern zend_module_entry aikido_module_entry;
 #define phpext_aikido_ptr &aikido_module_entry
 
-#define PHP_AIKIDO_VERSION "1.4.5"
+#define PHP_AIKIDO_VERSION "1.4.6"
 
 #if defined(ZTS) && defined(COMPILE_DL_AIKIDO)
 ZEND_TSRMLS_CACHE_EXTERN()
@@ -34,6 +34,7 @@ bool disk_logs; // When enabled, it writes logs to disk instead of stdout. It's 
 bool collect_api_schema;
 bool trust_proxy;
 bool localhost_allowed_by_default;
+bool uses_symfony_http_foundation; // If true, method override is supported using X-HTTP-METHOD-OVERRIDE or _method query param
 unsigned int report_stats_interval_to_agent; // Report once every X requests the collected stats to Agent
 std::chrono::high_resolution_clock::time_point currentRequestStart;
 uint64_t totalOverheadForCurrentRequest;

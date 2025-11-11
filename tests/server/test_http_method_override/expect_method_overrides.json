@@ -1,0 +1,32 @@
+{
+    "type": "heartbeat",
+    "routes": [
+        {
+            "path": "/",
+            "method": "GET",
+            "hits": 8,
+            "rateLimitedCount": 3
+        },
+        {
+            "path": "/",
+            "method": "POST",
+            "hits": 1
+        },
+        {
+            "path": "/",
+            "method": "PUT",
+            "hits": 3
+        },
+        {
+            "path": "/",
+            "method": "DELETE",
+            "hits": 1
+        },
+        {
+            "path": "/",
+            "method": "PATCH",
+            "hits": 1
+        }
+    ]
+}
+

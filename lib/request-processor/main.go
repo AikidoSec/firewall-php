@@ -47,8 +47,14 @@ func RequestProcessorInit(initJson string) (initOk bool) {
 
 	config.Init(initJson)
 
-	log.Debugf("Aikido Request Processor v%s started in \"%s\" mode!", globals.Version, globals.EnvironmentConfig.PlatformName)
+	log.Debugf("Aikido Request Processor v%s (server PID: %d, request processor PID: %d) started in \"%s\" mode!",
+		globals.Version,
+		globals.EnvironmentConfig.ServerPID,
+		globals.EnvironmentConfig.RequestProcessorPID,
+		globals.EnvironmentConfig.PlatformName,
+	)
 	log.Debugf("Init data: %s", initJson)
+	log.Debugf("Started with token: \"AIK_RUNTIME_***%s\"", utils.AnonymizeToken(globals.CurrentToken))
 
 	if globals.EnvironmentConfig.PlatformName != "cli" {
 		grpc.Init()
@@ -117,16 +123,25 @@ func RequestProcessorConfigUpdate(configJson string) (initOk bool) {
 
 	log.Debugf("Reloading Aikido config...")
 	conf := AikidoConfigData{}
-	if !config.ReloadAikidoConfig(&conf, configJson) {
-		return false
-	}
 
+	reloadResult := config.ReloadAikidoConfig(&conf, configJson)
 	server := globals.GetCurrentServer()
 	if server == nil {
 		return false
 	}
-	initializeServer(server)
-	return true
+	switch reloadResult {
+	case config.ReloadWithNewToken:
+		initializeServer(server)
+		return true
+	case config.ReloadWithPastSeenToken:
+		grpc.GetCloudConfig(server, 5*time.Second)
+		return true
+	case config.ReloadWithSameToken:
+		return true
+	case config.ReloadError:
+		return false
+	}
+	return false
 }
 
 //export RequestProcessorOnEvent

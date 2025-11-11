@@ -33,7 +33,7 @@ compiler_CXX="g++"\
 # ### END LIBTOOL TAG CONFIG: CXX\
 ' libtool
 fi
-make
+make -j$(nproc)
 cd ./modules/
 mv aikido.so $AIKIDO_EXTENSION
 objcopy --only-keep-debug $AIKIDO_EXTENSION $AIKIDO_EXTENSION_DEBUG

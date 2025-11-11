@@ -15,6 +15,8 @@ import (
 	"path/filepath"
 	"sync/atomic"
 
+	. "main/aikido_types"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -31,18 +33,18 @@ func (s *GrpcServer) OnConfig(ctx context.Context, req *protos.Config) (*emptypb
 		return &emptypb.Empty{}, nil
 	}
 
-	server := globals.GetServer(token)
+	server := globals.GetServer(ServerKey{Token: token, ServerPID: req.GetServerPid()})
 	if server != nil {
-		log.Debugf(server.Logger, "Server %s already exists, skipping config update...", token)
+		log.Debugf(server.Logger, "Server \"AIK_RUNTIME_***%s\" already exists, skipping config update (request processor PID: %d, server PID: %d)", utils.AnonymizeToken(token), req.GetRequestProcessorPid(), req.GetServerPid())
 		return &emptypb.Empty{}, nil
 	}
 
-	server_utils.Register(token, req)
+	server_utils.Register(ServerKey{Token: token, ServerPID: req.GetServerPid()}, req.GetRequestProcessorPid(), req)
 	return &emptypb.Empty{}, nil
 }
 
 func (s *GrpcServer) OnPackages(ctx context.Context, req *protos.Packages) (*emptypb.Empty, error) {
-	server := globals.GetServer(req.GetToken())
+	server := globals.GetServer(ServerKey{Token: req.GetToken(), ServerPID: req.GetServerPid()})
 	if server == nil {
 		return &emptypb.Empty{}, nil
 	}
@@ -51,7 +53,7 @@ func (s *GrpcServer) OnPackages(ctx context.Context, req *protos.Packages) (*emp
 }
 
 func (s *GrpcServer) OnDomain(ctx context.Context, req *protos.Domain) (*emptypb.Empty, error) {
-	server := globals.GetServer(req.GetToken())
+	server := globals.GetServer(ServerKey{Token: req.GetToken(), ServerPID: req.GetServerPid()})
 	if server == nil {
 		return &emptypb.Empty{}, nil
 	}
@@ -61,7 +63,7 @@ func (s *GrpcServer) OnDomain(ctx context.Context, req *protos.Domain) (*emptypb
 }
 
 func (s *GrpcServer) GetRateLimitingStatus(ctx context.Context, req *protos.RateLimitingInfo) (*protos.RateLimitingStatus, error) {
-	server := globals.GetServer(req.GetToken())
+	server := globals.GetServer(ServerKey{Token: req.GetToken(), ServerPID: req.GetServerPid()})
 	if server == nil {
 		return &protos.RateLimitingStatus{Block: false}, nil
 	}
@@ -70,7 +72,7 @@ func (s *GrpcServer) GetRateLimitingStatus(ctx context.Context, req *protos.Rate
 }
 
 func (s *GrpcServer) OnRequestShutdown(ctx context.Context, req *protos.RequestMetadataShutdown) (*emptypb.Empty, error) {
-	server := globals.GetServer(req.GetToken())
+	server := globals.GetServer(ServerKey{Token: req.GetToken(), ServerPID: req.GetServerPid()})
 	if server == nil {
 		return &emptypb.Empty{}, nil
 	}
@@ -87,10 +89,10 @@ func (s *GrpcServer) OnRequestShutdown(ctx context.Context, req *protos.RequestM
 }
 
 func (s *GrpcServer) GetCloudConfig(ctx context.Context, req *protos.CloudConfigUpdatedAt) (*protos.CloudConfig, error) {
-	server := globals.GetServer(req.GetToken())
+	server := globals.GetServer(ServerKey{Token: req.GetToken(), ServerPID: req.GetServerPid()})
 	if server == nil {
 		log.Warnf(log.MainLogger, "Server \"AIK_RUNTIME_***%s\" not found, returning nil", utils.AnonymizeToken(req.GetToken()))
-		return nil, status.Errorf(codes.Canceled, "CloudConfig was not updated")
+		return nil, status.Errorf(codes.Canceled, "Server not found")
 	}
 
 	atomic.StoreInt64(&server.LastConnectionTime, utils.GetTime())
@@ -98,12 +100,12 @@ func (s *GrpcServer) GetCloudConfig(ctx context.Context, req *protos.CloudConfig
 	if cloudConfig == nil {
 		return nil, status.Errorf(codes.Canceled, "CloudConfig was not updated")
 	}
-	log.Debugf(server.Logger, "Returning cloud config update to request processor!")
+	log.Debugf(server.Logger, "Returning cloud config update for server \"AIK_RUNTIME_***%s\"!", utils.AnonymizeToken(req.GetToken()))
 	return cloudConfig, nil
 }
 
 func (s *GrpcServer) OnUser(ctx context.Context, req *protos.User) (*emptypb.Empty, error) {
-	server := globals.GetServer(req.GetToken())
+	server := globals.GetServer(ServerKey{Token: req.GetToken(), ServerPID: req.GetServerPid()})
 	if server == nil {
 		return &emptypb.Empty{}, nil
 	}
@@ -113,7 +115,7 @@ func (s *GrpcServer) OnUser(ctx context.Context, req *protos.User) (*emptypb.Emp
 }
 
 func (s *GrpcServer) OnAttackDetected(ctx context.Context, req *protos.AttackDetected) (*emptypb.Empty, error) {
-	server := globals.GetServer(req.GetToken())
+	server := globals.GetServer(ServerKey{Token: req.GetToken(), ServerPID: req.GetServerPid()})
 	if server == nil {
 		return &emptypb.Empty{}, nil
 	}
@@ -123,7 +125,7 @@ func (s *GrpcServer) OnAttackDetected(ctx context.Context, req *protos.AttackDet
 }
 
 func (s *GrpcServer) OnMonitoredSinkStats(ctx context.Context, req *protos.MonitoredSinkStats) (*emptypb.Empty, error) {
-	server := globals.GetServer(req.GetToken())
+	server := globals.GetServer(ServerKey{Token: req.GetToken(), ServerPID: req.GetServerPid()})
 	if server == nil {
 		return &emptypb.Empty{}, nil
 	}
@@ -132,7 +134,7 @@ func (s *GrpcServer) OnMonitoredSinkStats(ctx context.Context, req *protos.Monit
 }
 
 func (s *GrpcServer) OnMiddlewareInstalled(ctx context.Context, req *protos.MiddlewareInstalledInfo) (*emptypb.Empty, error) {
-	server := globals.GetServer(req.GetToken())
+	server := globals.GetServer(ServerKey{Token: req.GetToken(), ServerPID: req.GetServerPid()})
 	if server == nil {
 		return &emptypb.Empty{}, nil
 	}
@@ -142,7 +144,7 @@ func (s *GrpcServer) OnMiddlewareInstalled(ctx context.Context, req *protos.Midd
 }
 
 func (s *GrpcServer) OnMonitoredIpMatch(ctx context.Context, req *protos.MonitoredIpMatch) (*emptypb.Empty, error) {
-	server := globals.GetServer(req.GetToken())
+	server := globals.GetServer(ServerKey{Token: req.GetToken(), ServerPID: req.GetServerPid()})
 	if server == nil {
 		return &emptypb.Empty{}, nil
 	}
@@ -156,7 +158,7 @@ func (s *GrpcServer) OnMonitoredIpMatch(ctx context.Context, req *protos.Monitor
 }
 
 func (s *GrpcServer) OnMonitoredUserAgentMatch(ctx context.Context, req *protos.MonitoredUserAgentMatch) (*emptypb.Empty, error) {
-	server := globals.GetServer(req.GetToken())
+	server := globals.GetServer(ServerKey{Token: req.GetToken(), ServerPID: req.GetServerPid()})
 	if server == nil {
 		return &emptypb.Empty{}, nil
 	}

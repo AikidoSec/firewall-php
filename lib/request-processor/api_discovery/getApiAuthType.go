@@ -3,6 +3,7 @@ package api_discovery
 import (
 	"main/context"
 	"main/ipc/protos"
+	"slices"
 	"strings"
 )
 
@@ -98,7 +99,7 @@ func findApiKeys() []*protos.APIAuthType {
 	if len(cookies) > 0 {
 		for cookieName := range cookies {
 			lowerCookieName := strings.ToLower(cookieName)
-			if contains(commonAuthCookieNames, lowerCookieName) {
+			if slices.Contains(commonAuthCookieNames, lowerCookieName) {
 				result = append(result, &protos.APIAuthType{
 					Type: "apiKey",
 					In:   "cookie",
@@ -111,21 +112,11 @@ func findApiKeys() []*protos.APIAuthType {
 	return result
 }
 
-// contains checks if a string exists in a slice.
-func contains(slice []string, item string) bool {
-	for _, a := range slice {
-		if a == item {
-			return true
-		}
-	}
-	return false
-}
-
 // isHTTPAuthScheme checks if the given string is a valid HTTP authentication scheme.
 // You will need to implement this function similar to the TypeScript helper function.
 func isHTTPAuthScheme(scheme string) bool {
 	// You can add proper logic here to check the scheme, e.g., "basic", "bearer", etc.
 	// For example:
 	allowedSchemes := []string{"basic", "bearer"}
-	return contains(allowedSchemes, strings.ToLower(scheme))
+	return slices.Contains(allowedSchemes, strings.ToLower(scheme))
 }
