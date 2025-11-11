@@ -114,6 +114,7 @@ PHP_GINIT_FUNCTION(aikido) {
     aikido_globals->checkedShouldBlockRequest = false;
     aikido_globals->global_ast_to_clean = nullptr;
     aikido_globals->original_ast_process = nullptr;
+#ifdef ZTS
     new (&aikido_globals->log_level_str) std::string();
     new (&aikido_globals->sapi_name) std::string();
     new (&aikido_globals->token) std::string();
@@ -129,6 +130,7 @@ PHP_GINIT_FUNCTION(aikido) {
     new (&aikido_globals->phpLifecycle) PhpLifecycle();
     new (&aikido_globals->stats) std::unordered_map<std::string, SinkStats>();
     new (&aikido_globals->laravelEnv) std::unordered_map<std::string, std::string>();
+#endif
 }
 
 PHP_GSHUTDOWN_FUNCTION(aikido) {
