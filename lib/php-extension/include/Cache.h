@@ -34,6 +34,3 @@ class EventCache {
     EventCache() = default;
     void Reset();
 };
-
-extern RequestCache requestCache;
-extern EventCache eventCache;

@@ -31,6 +31,16 @@ go mod tidy
 go build -ldflags "-s -w" -buildmode=c-shared  -o ../../build/aikido-request-processor.so
 cd ../../build
 CXX=g++ CXXFLAGS="-fPIC -g -O2 -I../lib/php-extension/include" LDFLAGS="-lstdc++" ../lib/php-extension/configure
+sed -i "s/available_tags=''/available_tags='CXX'/" libtool
+if ! grep -q "BEGIN LIBTOOL TAG CONFIG: CXX" libtool; then
+  sed -i '/^# ### BEGIN LIBTOOL TAG CONFIG: disable-shared$/i\
+# ### BEGIN LIBTOOL TAG CONFIG: CXX\
+LTCXX="g++"\
+CXXFLAGS="-fPIC -g -O2"\
+compiler_CXX="g++"\
+# ### END LIBTOOL TAG CONFIG: CXX\
+' libtool
+fi
 make
 cd ./modules/
 mv aikido.so $AIKIDO_EXTENSION

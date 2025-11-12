@@ -1,10 +1,13 @@
 #include "Includes.h"
 
 bool SendUserEvent(std::string id, std::string username) {
+    auto& requestCache = AIKIDO_GLOBAL(requestCache);
     requestCache.userId = id;
     requestCache.userName = username;
 
     try {
+        auto& requestProcessor = AIKIDO_GLOBAL(requestProcessor);
+        auto& action = AIKIDO_GLOBAL(action);
         std::string output;
         requestProcessor.SendEvent(EVENT_SET_USER, output);
         action.Execute(output);

@@ -1,18 +1,17 @@
 #include "Includes.h"
 
-RequestProcessor requestProcessor;
-
 std::string RequestProcessor::GetInitData(const std::string& token) {
     LoadLaravelEnvFile();
     LoadEnvironment();
 
+    auto& globalToken = AIKIDO_GLOBAL(token);
     if (!token.empty()) {
-        AIKIDO_GLOBAL(token) = token;
+        globalToken = token;
     }
     unordered_map<std::string, std::string> packages = GetPackages();
     AIKIDO_GLOBAL(uses_symfony_http_foundation) = packages.find("symfony/http-foundation") != packages.end();
     json initData = {
-        {"token", AIKIDO_GLOBAL(token)},
+        {"token", globalToken},
         {"platform_name", AIKIDO_GLOBAL(sapi_name)},
         {"platform_version", PHP_VERSION},
         {"endpoint", AIKIDO_GLOBAL(endpoint)},
@@ -58,7 +57,7 @@ void RequestProcessor::SendPreRequestEvent() {
     try {
         std::string outputEvent;
         SendEvent(EVENT_PRE_REQUEST, outputEvent);
-        action.Execute(outputEvent);
+        AIKIDO_GLOBAL(action).Execute(outputEvent);
     } catch (const std::exception& e) {
         AIKIDO_LOG_ERROR("Exception encountered in processing request init metadata: %s\n", e.what());
     }
@@ -68,7 +67,7 @@ void RequestProcessor::SendPostRequestEvent() {
     try {
         std::string outputEvent;
         SendEvent(EVENT_POST_REQUEST, outputEvent);
-        action.Execute(outputEvent);
+        AIKIDO_GLOBAL(action).Execute(outputEvent);
     } catch (const std::exception& e) {
         AIKIDO_LOG_ERROR("Exception encountered in processing request shutdown metadata: %s\n", e.what());
     }
@@ -98,11 +97,23 @@ bool RequestProcessor::ReportStats() {
     }
     AIKIDO_LOG_INFO("Reporting stats to Aikido Request Processor...\n");
 
-    for (const auto& [sink, sinkStats] : stats) {
+    auto& statsMap = AIKIDO_GLOBAL(stats);
+    for (std::unordered_map<std::string, SinkStats>::const_iterator it = statsMap.begin(); it != statsMap.end(); ++it) {
+        const std::string& sink = it->first;
+        const SinkStats& sinkStats = it->second;
         AIKIDO_LOG_INFO("Reporting stats for sink \"%s\" to Aikido Request Processor...\n", sink.c_str());
-        this->requestProcessorReportStatsFn(GoCreateString(sink), GoCreateString(sinkStats.kind), sinkStats.attacksDetected, sinkStats.attacksBlocked, sinkStats.interceptorThrewError, sinkStats.withoutContext, sinkStats.timings.size(), GoCreateSlice(sinkStats.timings));
+        requestProcessorReportStatsFn(
+            GoCreateString(sink),
+            GoCreateString(sinkStats.kind),
+            sinkStats.attacksDetected,
+            sinkStats.attacksBlocked,
+            sinkStats.interceptorThrewError,
+            sinkStats.withoutContext,
+            static_cast<GoInt>(sinkStats.timings.size()),
+            GoCreateSlice(sinkStats.timings)
+        );
     }
-    stats.clear();
+    statsMap.clear();
     return true;
 }
 
@@ -174,7 +185,8 @@ bool RequestProcessor::RequestInit() {
         return false;
     }
     
-    if (AIKIDO_GLOBAL(sapi_name) == "apache2handler") {
+    const auto& sapiName = AIKIDO_GLOBAL(sapi_name);
+    if (sapiName == "apache2handler") {
       // Apache-mod-php can serve multiple sites per process
       // We need to reload config each request to detect token changes
         this->LoadConfigFromEnvironment();
@@ -183,7 +195,7 @@ bool RequestProcessor::RequestInit() {
         //  can only serve one site per process, so the config should be loaded only once.
         // After that, subsequent requests cannot change the config so we do not need to reload it.
         if (this->numberOfRequests == 0) {
-            AIKIDO_LOG_INFO("Loading Aikido config one time for non-apache-mod-php SAPI: %s...\n", AIKIDO_GLOBAL(sapi_name).c_str());
+            AIKIDO_LOG_INFO("Loading Aikido config one time for non-apache-mod-php SAPI: %s...\n", sapiName.c_str());
             this->LoadConfigFromEnvironment();
         }
     }
@@ -202,7 +214,7 @@ bool RequestProcessor::RequestInit() {
     SendPreRequestEvent();
 
     if ((this->numberOfRequests % AIKIDO_GLOBAL(report_stats_interval_to_agent)) == 0) {
-        requestProcessor.ReportStats();
+        AIKIDO_GLOBAL(requestProcessor).ReportStats();
     }
     return true;
 }
@@ -226,9 +238,10 @@ void RequestProcessor::LoadConfig(const std::string& previousToken, const std::s
 }
 
 void RequestProcessor::LoadConfigFromEnvironment() {
-    std::string previousToken = AIKIDO_GLOBAL(token);
+    auto& globalToken = AIKIDO_GLOBAL(token);
+    std::string previousToken = globalToken;
     LoadEnvironment();
-    std::string currentToken = AIKIDO_GLOBAL(token);
+    std::string currentToken = globalToken;
     LoadConfig(previousToken, currentToken);
 }
 
