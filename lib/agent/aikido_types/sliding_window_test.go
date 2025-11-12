@@ -13,7 +13,7 @@ func TestNewSlidingWindow(t *testing.T) {
 		assert.NotNil(t, sw)
 		assert.Equal(t, 0, sw.Total)
 		assert.Equal(t, 1, sw.Queue.Length())
-		assert.Equal(t, time.Time{}, sw.LastSent)
+		assert.Equal(t, int64(0), sw.LastSent)
 	})
 
 	t.Run("first bucket is initialized to zero", func(t *testing.T) {
@@ -42,7 +42,7 @@ func TestSlidingWindowIncrement(t *testing.T) {
 	t.Run("handles empty queue by creating a bucket", func(t *testing.T) {
 		sw := &SlidingWindow{
 			Queue:    NewQueue[int](0),
-			LastSent: time.Time{},
+			LastSent: 0,
 		}
 		sw.Increment()
 		assert.Equal(t, 1, sw.Total)
@@ -200,7 +200,7 @@ func TestAdvanceSlidingWindowMap(t *testing.T) {
 	})
 
 	t.Run("preserves LastSent timestamp", func(t *testing.T) {
-		now := time.Now()
+		now := time.Now().UnixMilli()
 		windowMap := map[string]*SlidingWindow{
 			"key1": NewSlidingWindow(),
 		}
