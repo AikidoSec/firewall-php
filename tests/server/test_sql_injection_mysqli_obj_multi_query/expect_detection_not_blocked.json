@@ -13,7 +13,7 @@
     },
     "attack": {
         "kind": "sql_injection",
-        "operation": "multi_query",
+        "operation": "mysqli->multi_query",
         "module": "mysqli",
         "blocked": false,
         "source": "body",

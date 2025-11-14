@@ -7,7 +7,7 @@
     },
     "attack": {
         "kind": "sql_injection",
-        "operation": "execute",
+        "operation": "pdostatement->execute",
         "module": "PDOStatement",
         "blocked": true,
         "source": "query",

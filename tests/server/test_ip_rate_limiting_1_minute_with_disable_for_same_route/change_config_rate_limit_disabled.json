@@ -1,0 +1,22 @@
+{
+    "success": true,
+    "serviceId": 1,
+    "heartbeatIntervalInMS": 300000,
+    "endpoints": [
+        {
+            "method": "GET",
+            "route": "\/",
+            "forceProtectionOff": false,
+            "graphql": null,
+            "allowedIPAddresses": [],
+            "rateLimiting": {
+                "enabled": false,
+                "maxRequests": 5,
+                "windowSizeInMS": 60000
+            }
+        }
+    ],
+    "blockedUserIds": [],
+    "allowedIPAddresses": [],
+    "receivedAnyStats": true
+}

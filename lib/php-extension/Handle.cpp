@@ -37,7 +37,6 @@ ZEND_NAMED_FUNCTION(aikido_generic_handler) {
     bool caughtException = false;
 
     eventCache.Reset();
-    eventCache.functionName = ZSTR_VAL(execute_data->func->common.function_name);
 
     try {
         zend_execute_data* exec_data = EG(current_execute_data);
@@ -88,6 +87,7 @@ ZEND_NAMED_FUNCTION(aikido_generic_handler) {
             return;
         }
 
+        eventCache.functionName = scope_name;
         sink = scope_name;
 
         AIKIDO_LOG_DEBUG("Calling handler for \"%s\"!\n", scope_name.c_str());
