@@ -60,6 +60,13 @@ func UpdateRateLimitingConfig(server *ServerData) {
 		k := RateLimitingKey{Method: newEndpointConfig.Method, Route: newEndpointConfig.Route}
 		UpdatedEndpoints[k] = true
 
+		if !newEndpointConfig.RateLimiting.Enabled {
+			log.Infof(server.Logger, "Got new rate limiting endpoint config, but is disabled: %v", newEndpointConfig)
+			delete(server.RateLimitingMap, k)
+			delete(server.RateLimitingWildcardMap, k)
+			continue
+		}
+
 		rateLimitingData, exists := server.RateLimitingMap[k]
 		if exists {
 			if rateLimitingData.Config.MaxRequests == newEndpointConfig.RateLimiting.MaxRequests &&
@@ -71,11 +78,6 @@ func UpdateRateLimitingConfig(server *ServerData) {
 			log.Infof(server.Logger, "Rate limiting endpoint config has changed: %v", newEndpointConfig)
 			delete(server.RateLimitingMap, k)
 			delete(server.RateLimitingWildcardMap, k)
-		}
-
-		if !newEndpointConfig.RateLimiting.Enabled {
-			log.Infof(server.Logger, "Got new rate limiting endpoint config, but is disabled: %v", newEndpointConfig)
-			continue
 		}
 
 		if newEndpointConfig.RateLimiting.WindowSizeInMS < constants.MinRateLimitingIntervalInMs ||
