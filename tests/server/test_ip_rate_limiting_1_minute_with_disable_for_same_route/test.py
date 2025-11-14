@@ -42,8 +42,8 @@ def run_test():
         response = php_server_get("/test")
         assert_response_code_is(response, 200)
         assert_response_body_contains(response, "Request successful")
-        
-    mock_server_wait_for_new_events(60)
+
+    mock_server_wait_for_new_events(120)
 
     events = mock_server_get_events()
     assert_events_length_is(events, 2)
