@@ -7,22 +7,21 @@ import (
 	"unsafe"
 )
 
-// RequestProcessorInstance encapsulates all thread-local/request-scoped globals
+// RequestProcessorInstance holds per-request state for each PHP thread.
+// In NTS mode (standard PHP), there's one global instance.
+// In ZTS mode (FrankenPHP), each thread gets its own instance with locking.
 type RequestProcessorInstance struct {
-	// Per-request state (changes with each request/token update)
 	CurrentToken    string
 	CurrentServer   *ServerData
 	RequestContext  context.RequestContextData
-	ContextInstance unsafe.Pointer // Stores instance pointer for context callbacks
-	ContextCallback unsafe.Pointer // Callback function pointer (C.ContextCallback) - must be instance-local for ZTS
+	ContextInstance unsafe.Pointer // For context callbacks
+	ContextCallback unsafe.Pointer // C function pointer, must be per-instance in ZTS
 
-	// Lock for thread safety (only used/locked in ZTS)
-	mu    sync.Mutex
-	isZTS bool // Set once at creation time - determines if locking is needed
+	mu    sync.Mutex // Only used when isZTS is true
+	isZTS bool
 }
 
-// NewRequestProcessorInstance creates a new instance
-// isZTS: true for Franken PHP (ZTS), false for standard PHP (NTS)
+// NewRequestProcessorInstance creates an instance. Pass isZTS=true for FrankenPHP.
 func NewRequestProcessorInstance(isZTS bool) *RequestProcessorInstance {
 	return &RequestProcessorInstance{
 		CurrentToken:   "",
@@ -32,8 +31,6 @@ func NewRequestProcessorInstance(isZTS bool) *RequestProcessorInstance {
 	}
 }
 
-// SetCurrentServer updates the current server for this instance
-// Conditional locking: only locks if ZTS mode
 func (i *RequestProcessorInstance) SetCurrentServer(server *ServerData) {
 	if i.isZTS {
 		i.mu.Lock()
@@ -42,8 +39,6 @@ func (i *RequestProcessorInstance) SetCurrentServer(server *ServerData) {
 	i.CurrentServer = server
 }
 
-// GetCurrentServer returns the current server for this instance
-// Conditional locking: only locks if ZTS mode
 func (i *RequestProcessorInstance) GetCurrentServer() *ServerData {
 	if i.isZTS {
 		i.mu.Lock()
@@ -52,8 +47,6 @@ func (i *RequestProcessorInstance) GetCurrentServer() *ServerData {
 	return i.CurrentServer
 }
 
-// SetCurrentToken updates the current token for this instance
-// Conditional locking: only locks if ZTS mode
 func (i *RequestProcessorInstance) SetCurrentToken(token string) {
 	if i.isZTS {
 		i.mu.Lock()
@@ -62,8 +55,6 @@ func (i *RequestProcessorInstance) SetCurrentToken(token string) {
 	i.CurrentToken = token
 }
 
-// GetCurrentToken returns the current token for this instance
-// Conditional locking: only locks if ZTS mode
 func (i *RequestProcessorInstance) GetCurrentToken() string {
 	if i.isZTS {
 		i.mu.Lock()
@@ -72,8 +63,6 @@ func (i *RequestProcessorInstance) GetCurrentToken() string {
 	return i.CurrentToken
 }
 
-// SetRequestContext updates the request context for this instance
-// Conditional locking: only locks if ZTS mode
 func (i *RequestProcessorInstance) SetRequestContext(ctx context.RequestContextData) {
 	if i.isZTS {
 		i.mu.Lock()
@@ -82,8 +71,6 @@ func (i *RequestProcessorInstance) SetRequestContext(ctx context.RequestContextD
 	i.RequestContext = ctx
 }
 
-// GetRequestContext returns the request context for this instance
-// Conditional locking: only locks if ZTS mode
 func (i *RequestProcessorInstance) GetRequestContext() *context.RequestContextData {
 	if i.isZTS {
 		i.mu.Lock()
@@ -92,7 +79,6 @@ func (i *RequestProcessorInstance) GetRequestContext() *context.RequestContextDa
 	return &i.RequestContext
 }
 
-// IsInitialized checks if this instance has been initialized
 func (i *RequestProcessorInstance) IsInitialized() bool {
 	if i.isZTS {
 		i.mu.Lock()
@@ -101,13 +87,10 @@ func (i *RequestProcessorInstance) IsInitialized() bool {
 	return i.CurrentServer != nil
 }
 
-// IsZTS returns whether this instance is running in ZTS mode
 func (i *RequestProcessorInstance) IsZTS() bool {
 	return i.isZTS
 }
 
-// SetContextCallback stores the context callback for this instance
-// Conditional locking: only locks if ZTS mode
 func (i *RequestProcessorInstance) SetContextCallback(callback unsafe.Pointer) {
 	if i.isZTS {
 		i.mu.Lock()
@@ -116,8 +99,6 @@ func (i *RequestProcessorInstance) SetContextCallback(callback unsafe.Pointer) {
 	i.ContextCallback = callback
 }
 
-// GetContextCallback returns the context callback for this instance
-// Conditional locking: only locks if ZTS mode
 func (i *RequestProcessorInstance) GetContextCallback() unsafe.Pointer {
 	if i.isZTS {
 		i.mu.Lock()

@@ -6,44 +6,29 @@ import (
 	"unsafe"
 )
 
-// Global instance storage - unified for both NTS and ZTS
-// Key: Thread ID
-//
-//   - NTS: Always use threadID = 0 (single process-wide instance)
-//   - ZTS: Use pthread_self() (unique per thread)
+// Stores instances keyed by thread ID:
+// - NTS (standard PHP): threadID is always 0, single instance
+// - ZTS (FrankenPHP): threadID is pthread_self(), one per thread
 var (
 	instances      = make(map[uint64]*RequestProcessorInstance)
 	instancesMutex sync.RWMutex
-	pinners        = make(map[uint64]runtime.Pinner) // Keeps instances pinned for CGO
+	pinners        = make(map[uint64]runtime.Pinner) // Prevents GC while C++ holds pointers
 )
 
-// CreateInstance creates and stores a new instance
-//
-// threadID:
-//
-//   - For NTS: pass 0 (creates/reuses single instance)
-//   - For ZTS: pass pthread_self() (creates per-thread instance)
-//
-// isZTS:
-//
-//   - true if running in Franken PHP (ZTS mode)
-//   - false if running in standard PHP (NTS mode)
-//
-// Returns: unsafe.Pointer to the instance (for C++ to store)
+// CreateInstance creates or reuses an instance for the given thread.
+// Returns an unsafe.Pointer for C++ to store.
 func CreateInstance(threadID uint64, isZTS bool) unsafe.Pointer {
 	instancesMutex.Lock()
 	defer instancesMutex.Unlock()
 
-	// Check if instance already exists for this thread/process
 	if existingInstance, exists := instances[threadID]; exists {
 		return unsafe.Pointer(existingInstance)
 	}
 
-	// Create new instance
 	instance := NewRequestProcessorInstance(isZTS)
 	instances[threadID] = instance
 
-	// Pin the instance to prevent garbage collection while C++ holds pointer
+	// Pin to prevent GC while C++ holds the pointer
 	var pinner runtime.Pinner
 	pinner.Pin(instance)
 	pinners[threadID] = pinner
@@ -51,7 +36,6 @@ func CreateInstance(threadID uint64, isZTS bool) unsafe.Pointer {
 	return unsafe.Pointer(instance)
 }
 
-// GetInstance retrieves an instance by its pointer
 func GetInstance(instancePtr unsafe.Pointer) *RequestProcessorInstance {
 	if instancePtr == nil {
 		return nil
@@ -59,17 +43,10 @@ func GetInstance(instancePtr unsafe.Pointer) *RequestProcessorInstance {
 	return (*RequestProcessorInstance)(instancePtr)
 }
 
-// DestroyInstance removes an instance from storage
-//
-// threadID:
-//
-//   - For NTS: pass 0
-//   - For ZTS: pass pthread_self()
 func DestroyInstance(threadID uint64) {
 	instancesMutex.Lock()
 	defer instancesMutex.Unlock()
 
-	// Unpin the instance to allow garbage collection
 	if pinner, exists := pinners[threadID]; exists {
 		pinner.Unpin()
 		delete(pinners, threadID)
@@ -78,7 +55,7 @@ func DestroyInstance(threadID uint64) {
 	delete(instances, threadID)
 }
 
-// GetAllInstances returns all active instances (for testing/debugging)
+// GetAllInstances is used for testing and debugging
 func GetAllInstances() []*RequestProcessorInstance {
 	instancesMutex.RLock()
 	defer instancesMutex.RUnlock()
@@ -90,7 +67,6 @@ func GetAllInstances() []*RequestProcessorInstance {
 	return result
 }
 
-// GetInstanceCount returns the number of active instances
 func GetInstanceCount() int {
 	instancesMutex.RLock()
 	defer instancesMutex.RUnlock()
