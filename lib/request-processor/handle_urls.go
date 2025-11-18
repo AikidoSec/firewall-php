@@ -3,8 +3,8 @@ package main
 import (
 	"main/attack"
 	"main/context"
-	"main/globals"
 	"main/grpc"
+	"main/instance"
 	"main/log"
 	ssrf "main/vulnerabilities/ssrf"
 )
@@ -19,7 +19,7 @@ import (
 All these checks first verify if the hostname was provided via user input.
 Protects both curl and fopen wrapper functions (file_get_contents, etc...).
 */
-func OnPreOutgoingRequest() string {
+func OnPreOutgoingRequest(inst *instance.RequestProcessorInstance) string {
 	if context.IsEndpointProtectionTurnedOff() {
 		log.Infof("Protection is turned off -> will not run detection logic!")
 		return ""
@@ -54,7 +54,7 @@ func OnPreOutgoingRequest() string {
 All these checks first verify if the hostname was provided via user input.
 Protects curl.
 */
-func OnPostOutgoingRequest() string {
+func OnPostOutgoingRequest(inst *instance.RequestProcessorInstance) string {
 	defer context.ResetEventContext()
 
 	hostname, port := context.GetOutgoingRequestHostnameAndPort()
@@ -66,7 +66,7 @@ func OnPostOutgoingRequest() string {
 
 	log.Info("[AFTER] Got domain: ", hostname, " port: ", port)
 
-	server := globals.GetCurrentServer()
+	server := inst.GetCurrentServer()
 	if server != nil {
 		go grpc.OnDomain(server, hostname, port)
 		if effectiveHostname != hostname {

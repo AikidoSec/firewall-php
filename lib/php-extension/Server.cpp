@@ -21,7 +21,7 @@ zval* Server::GetServerVar() {
     }
 
     /* Get the "_SERVER" PHP global variable */
-    return &PG(http_globals)[TRACK_VARS_SERVER];
+        return &PG(http_globals)[TRACK_VARS_SERVER];
 }
 
 std::string Server::GetVar(const char* var) {

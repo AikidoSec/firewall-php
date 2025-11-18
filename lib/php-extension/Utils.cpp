@@ -33,12 +33,8 @@ std::string GetDateTime() {
     return time_str;
 }
 
-pid_t GetThreadID() {
-#ifdef SYS_gettid
-    return syscall(SYS_gettid);
-#else
-    return (pid_t)getpid(); // Fallback for non-Linux systems
-#endif
+uint64_t GetThreadID() {
+    return (uint64_t)pthread_self();
 }
 const char* GetEventName(EVENT_ID event) {
     switch (event) {

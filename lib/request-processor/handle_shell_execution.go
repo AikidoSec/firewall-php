@@ -3,11 +3,12 @@ package main
 import (
 	"main/attack"
 	"main/context"
+	"main/instance"
 	"main/log"
 	shell_injection "main/vulnerabilities/shell-injection"
 )
 
-func OnPreShellExecuted() string {
+func OnPreShellExecuted(inst *instance.RequestProcessorInstance) string {
 	cmd := context.GetCmd()
 	operation := context.GetFunctionName()
 	if cmd == "" {

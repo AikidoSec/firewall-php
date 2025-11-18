@@ -3,11 +3,12 @@ package main
 import (
 	"main/attack"
 	"main/context"
+	"main/instance"
 	"main/log"
 	sql_injection "main/vulnerabilities/sql-injection"
 )
 
-func OnPreSqlQueryExecuted() string {
+func OnPreSqlQueryExecuted(inst *instance.RequestProcessorInstance) string {
 	query := context.GetSqlQuery()
 	dialect := context.GetSqlDialect()
 	operation := context.GetFunctionName()

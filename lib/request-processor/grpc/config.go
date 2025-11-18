@@ -8,12 +8,15 @@ import (
 	"regexp"
 	"runtime"
 	"strings"
+	"sync"
 	"time"
 )
 
 var (
-	stopChan          chan struct{}
-	cloudConfigTicker = time.NewTicker(1 * time.Minute)
+	stopChan           chan struct{}
+	cloudConfigTicker  = time.NewTicker(1 * time.Minute)
+	cloudConfigStarted bool
+	cloudConfigMutex   sync.Mutex
 )
 
 func buildIpList(cloudIpList map[string]*protos.IpList) map[string]IpList {
@@ -135,6 +138,14 @@ func setCloudConfig(server *ServerData, cloudConfigFromAgent *protos.CloudConfig
 }
 
 func StartCloudConfigRoutine() {
+	cloudConfigMutex.Lock()
+	defer cloudConfigMutex.Unlock()
+
+	if cloudConfigStarted {
+		return
+	}
+	cloudConfigStarted = true
+
 	stopChan = make(chan struct{})
 
 	go func() {
@@ -151,7 +162,12 @@ func StartCloudConfigRoutine() {
 }
 
 func stopCloudConfigRoutine() {
+	cloudConfigMutex.Lock()
+	defer cloudConfigMutex.Unlock()
+
 	if stopChan != nil {
 		close(stopChan)
+		stopChan = nil
 	}
+	cloudConfigStarted = false
 }

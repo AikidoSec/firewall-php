@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"html"
 	"main/context"
-	"main/globals"
 	"main/grpc"
 	"main/ipc/protos"
 	"main/utils"
@@ -35,8 +34,8 @@ func GetHeadersProto() []*protos.Header {
 /* Construct the AttackDetected protobuf structure to be sent via gRPC to the Agent */
 func GetAttackDetectedProto(res utils.InterceptorResult) *protos.AttackDetected {
 	return &protos.AttackDetected{
-		Token:     globals.CurrentToken,
-		ServerPid: globals.EnvironmentConfig.ServerPID,
+		Token:     context.GetCurrentServerToken(),
+		ServerPid: context.GetServerPID(),
 		Request: &protos.Request{
 			Method:    context.GetMethod(),
 			IpAddress: context.GetIp(),
@@ -51,7 +50,7 @@ func GetAttackDetectedProto(res utils.InterceptorResult) *protos.AttackDetected 
 			Kind:      string(res.Kind),
 			Operation: res.Operation,
 			Module:    context.GetModule(),
-			Blocked:   utils.IsBlockingEnabled(globals.GetCurrentServer()),
+			Blocked:   utils.IsBlockingEnabled(context.GetCurrentServer()),
 			Source:    res.Source,
 			Path:      res.PathToPayload,
 			Stack:     context.GetStackTrace(),

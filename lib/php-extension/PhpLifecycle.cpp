@@ -23,6 +23,10 @@ void PhpLifecycle::RequestShutdown() {
 }
 
 void PhpLifecycle::ModuleShutdown() {
+#ifdef ZTS
+    AIKIDO_LOG_INFO("ZTS mode: Uninitializing Aikido Request Processor to stop background goroutines...\n");
+    AIKIDO_GLOBAL(requestProcessor).Uninit();
+#else
     if (this->mainPID == getpid()) {
         AIKIDO_LOG_INFO("Module shutdown called on main PID.\n");
         AIKIDO_LOG_INFO("Unhooking functions...\n");
@@ -33,6 +37,7 @@ void PhpLifecycle::ModuleShutdown() {
         AIKIDO_LOG_INFO("Module shutdown NOT called on main PID. Uninitializing Aikido Request Processor...\n");
         AIKIDO_GLOBAL(requestProcessor).Uninit();
     }
+#endif
 }
 
 void PhpLifecycle::HookAll() {

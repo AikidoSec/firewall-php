@@ -1,3 +1,5 @@
+set -e
+
 export PATH="$PATH:$HOME/go/bin:$HOME/.local/bin"
 
 PHP_VERSION=$(php -v | grep -oP 'PHP \K\d+\.\d+' | head -n 1)

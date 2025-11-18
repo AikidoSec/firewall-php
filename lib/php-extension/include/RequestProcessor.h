@@ -1,19 +1,29 @@
 #pragma once
 
-typedef GoUint8 (*RequestProcessorInitFn)(GoString initJson);
-typedef GoUint8 (*RequestProcessorContextInitFn)(ContextCallback);
-typedef GoUint8 (*RequestProcessorConfigUpdateFn)(GoString initJson);
-typedef char* (*RequestProcessorOnEventFn)(GoInt eventId);
-typedef int (*RequestProcessorGetBlockingModeFn)();
-typedef void (*RequestProcessorReportStats)(GoString, GoString, GoInt32, GoInt32, GoInt32, GoInt32, GoInt32, GoSlice);
-typedef void (*RequestProcessorUninitFn)();
+typedef void* (*CreateInstanceFn)(uint64_t threadId, bool isZTS);
+typedef void (*DestroyInstanceFn)(uint64_t threadId);
+
+// Updated typedefs with instance pointer as first parameter
+typedef GoUint8 (*RequestProcessorInitFn)(void* instancePtr, GoString initJson);
+typedef GoUint8 (*RequestProcessorContextInitFn)(void* instancePtr, ContextCallback);
+typedef GoUint8 (*RequestProcessorConfigUpdateFn)(void* instancePtr, GoString initJson);
+typedef char* (*RequestProcessorOnEventFn)(void* instancePtr, GoInt eventId);
+typedef int (*RequestProcessorGetBlockingModeFn)(void* instancePtr);
+typedef void (*RequestProcessorReportStats)(void* instancePtr, GoString, GoString, GoInt32, GoInt32, GoInt32, GoInt32, GoInt32, GoSlice);
+typedef void (*RequestProcessorUninitFn)(void* instancePtr);
 
 class RequestProcessor {
    private:
     bool initFailed = false;
     bool requestInitialized = false;
     void* libHandle = nullptr;
+    void* requestProcessorInstance = nullptr; 
     uint64_t numberOfRequests = 0;
+    
+    // Function pointers to Go-exported functions
+    CreateInstanceFn createInstanceFn = nullptr;
+    DestroyInstanceFn destroyInstanceFn = nullptr;
+    RequestProcessorInitFn requestProcessorInitFn = nullptr;
     RequestProcessorContextInitFn requestProcessorContextInitFn = nullptr;
     RequestProcessorConfigUpdateFn requestProcessorConfigUpdateFn = nullptr;
     RequestProcessorOnEventFn requestProcessorOnEventFn = nullptr;

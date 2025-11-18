@@ -4,7 +4,9 @@ package context
 import "C"
 import (
 	. "main/aikido_types"
+	"main/globals"
 	"main/log"
+	"unsafe"
 )
 
 type CallbackFunction func(int) string
@@ -45,8 +47,60 @@ type RequestContextData struct {
 }
 
 var Context RequestContextData
+var contextInstance unsafe.Pointer
 
-func Init(callback CallbackFunction) bool {
+type requestProcessorInstance struct {
+	CurrentToken  string
+	CurrentServer *ServerData
+}
+
+func GetCurrentServer() (result *ServerData) {
+	defer func() {
+		if r := recover(); r != nil {
+			result = nil
+		}
+	}()
+
+	if contextInstance == nil {
+		if TestServer != nil {
+			return GetTestServer()
+		}
+		return nil
+	}
+
+	instPtr := (*requestProcessorInstance)(contextInstance)
+	if instPtr == nil {
+		if TestServer != nil {
+			return GetTestServer()
+		}
+		return nil
+	}
+	result = instPtr.CurrentServer
+	return result
+}
+
+func GetCurrentServerToken() string {
+	if contextInstance == nil {
+		return ""
+	}
+
+	instPtr := (*requestProcessorInstance)(contextInstance)
+	if instPtr == nil {
+		return ""
+	}
+	return instPtr.CurrentToken
+}
+
+func GetServerPID() int32 {
+	return globals.EnvironmentConfig.ServerPID
+}
+
+func GetInstancePtr() unsafe.Pointer {
+	return contextInstance
+}
+
+func Init(instPtr unsafe.Pointer, callback CallbackFunction) bool {
+	contextInstance = instPtr
 	Context = RequestContextData{
 		Callback: callback,
 	}
@@ -67,7 +121,9 @@ func GetFromCache[T any](fetchDataFn func(), s **T) T {
 	}
 	if *s == nil {
 		var t T
-		log.Warnf("Error getting from cache. Returning default value %v...", t)
+		if GetCurrentServer() != nil {
+			log.Warnf("Error getting from cache. Returning default value %v...", t)
+		}
 		return t
 	}
 	return **s
