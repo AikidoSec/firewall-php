@@ -1,7 +1,5 @@
 #include "Includes.h"
 
-#define CONTENT_TYPE_HEADER "Content-Type: text/plain"
-
 ACTION_STATUS Action::executeThrow(json &event) {
     int _code = event["code"].get<int>();
     std::string _message = event["message"].get<std::string>();
