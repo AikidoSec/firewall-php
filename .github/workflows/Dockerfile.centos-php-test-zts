@@ -1,0 +1,91 @@
+# syntax=docker/dockerfile:1.7
+# CentOS Stream 9 test image with PHP built from source in ZTS mode
+# Used for testing the extension with FrankenPHP and other ZTS environments
+
+ARG BASE_IMAGE=quay.io/centos/centos:stream9
+ARG PHP_VERSION=8.3
+ARG PHP_SRC_REF=PHP-${PHP_VERSION}
+
+FROM ${BASE_IMAGE} AS base
+SHELL ["/bin/bash", "-euo", "pipefail", "-c"]
+
+ENV TZ=Etc/UTC \
+    LC_ALL=C.UTF-8 \
+    LANG=C.UTF-8 \
+    PHP_VERSION=${PHP_VERSION}
+
+RUN yum install -y yum-utils && \
+    dnf config-manager --set-enabled crb || dnf config-manager --set-enabled powertools || true
+
+# Install minimal tools needed for re2c build (replace curl-minimal with full curl)
+RUN yum install -y xz tar gcc gcc-c++ make
+
+ENV RE2C_VERSION=3.1
+RUN curl -fsSL -o /tmp/re2c.tar.xz https://github.com/skvadrik/re2c/releases/download/${RE2C_VERSION}/re2c-${RE2C_VERSION}.tar.xz \
+    && mkdir -p /tmp/re2c-src \
+    && tar -xJf /tmp/re2c.tar.xz -C /tmp/re2c-src --strip-components=1 \
+    && cd /tmp/re2c-src \
+    && ./configure \
+    && make -j"$(nproc)" \
+    && make install \
+    && rm -rf /tmp/re2c-src /tmp/re2c.tar.xz
+
+# Install remaining build dependencies and tools
+RUN yum install -y autoconf bison pkgconfig \
+    libxml2-devel sqlite-devel libcurl-devel openssl-devel \
+    libzip-devel oniguruma-devel libjpeg-turbo-devel libpng-devel libwebp-devel \
+    libicu-devel readline-devel libxslt-devel \
+    git wget \
+    python3 python3-devel python3-pip \
+    nginx httpd procps-ng \
+ && yum clean all
+
+# Install mariadb-devel separately (may need different repo or skip if not critical)
+RUN yum install -y mariadb-devel || yum install -y mariadb-connector-c-devel || echo "Warning: mariadb-devel not available, continuing without it"
+
+# Fetch and build PHP from source with ZTS
+FROM base AS php-build
+ARG PHP_SRC_REF
+WORKDIR /usr/src
+RUN git clone --depth 1 --branch "${PHP_SRC_REF}" https://github.com/php/php-src.git
+WORKDIR /usr/src/php-src
+RUN ./buildconf --force
+
+# Build PHP with ZTS enabled
+RUN ./configure \
+      --prefix=/usr/local \
+      --with-config-file-path=/usr/local/lib \
+      --with-config-file-scan-dir=/usr/local/etc/php/conf.d \
+      --enable-zts \
+      --enable-fpm \
+      --enable-mbstring \
+      --enable-pcntl \
+      --enable-intl \
+      --with-curl \
+      --with-mysqli \
+      --with-openssl \
+      --with-zlib \
+      --with-zip \
+&& make -j"$(nproc)" \
+&& make install \
+&& strip /usr/local/bin/php /usr/local/sbin/php-fpm || true
+
+# Final image with PHP and test infrastructure
+FROM base AS final
+COPY --from=php-build /usr/local /usr/local
+
+# Verify ZTS is enabled
+RUN php -v | grep -q "(ZTS)" || (echo "ERROR: ZTS not enabled!" && exit 1) && \
+    php -m | grep -E 'curl|mysqli' >/dev/null
+
+ENV PATH="/usr/local/bin:${PATH}"
+
+# Python deps used by test harness
+RUN python3 -m pip install --no-cache-dir --upgrade pip && \
+    python3 -m pip install --no-cache-dir flask requests psutil
+
+# Quality-of-life
+WORKDIR /work
+CMD ["bash"]
+
+

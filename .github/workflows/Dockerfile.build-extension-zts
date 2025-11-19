@@ -1,0 +1,78 @@
+# syntax=docker/dockerfile:1.7
+
+ARG BASE_IMAGE=ubuntu:20.04
+ARG PHP_VERSION=8.3
+ARG PHP_SRC_REF=PHP-${PHP_VERSION}
+
+FROM ${BASE_IMAGE} AS base
+SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    TZ=Etc/UTC \
+    LC_ALL=C.UTF-8 \
+    LANG=C.UTF-8 \
+    LANGUAGE=C.UTF-8
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends tzdata ca-certificates git wget curl xz-utils \
+ && ln -fs /usr/share/zoneinfo/${TZ} /etc/localtime \
+ && echo "${TZ}" > /etc/timezone \
+ && dpkg-reconfigure -f noninteractive tzdata \
+ && update-ca-certificates \
+ && git config --global http.sslCAInfo /etc/ssl/certs/ca-certificates.crt \
+ && git config --global http.sslVerify true \
+ && rm -rf /var/lib/apt/lists/*
+
+# Builder: toolchain + dev libs
+FROM base AS build-deps
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential autoconf bison re2c pkg-config \
+    libxml2-dev libsqlite3-dev libcurl4-openssl-dev libssl-dev \
+    libzip-dev libonig-dev libjpeg-dev libpng-dev libwebp-dev \
+    libicu-dev libreadline-dev libxslt1-dev default-libmysqlclient-dev \
+    wget tar \
+ && rm -rf /var/lib/apt/lists/*
+
+
+# Fetch php-src
+FROM build-deps AS php-src
+ARG PHP_SRC_REF
+WORKDIR /usr/src
+RUN git clone --depth 1 --branch "${PHP_SRC_REF}" https://github.com/php/php-src.git
+WORKDIR /usr/src/php-src
+RUN ./buildconf --force
+
+
+# Build PHP with ZTS enabled
+FROM php-src AS php-build
+# Configure flags with --enable-zts for thread safety
+RUN ./configure \
+      --prefix=/usr/local \
+      --with-config-file-path=/usr/local/lib \
+      --with-config-file-scan-dir=/usr/local/etc/php/conf.d \
+      --enable-zts \
+      --enable-mbstring \
+      --enable-pcntl \
+      --enable-intl \
+      --with-curl \
+      --with-mysqli \
+      --with-openssl \
+      --with-zlib \
+      --with-zip \
+ && make -j"$(nproc)" \
+ && make install \
+ && strip /usr/local/bin/php || true
+
+
+FROM build-deps AS dev
+COPY --from=php-build /usr/local /usr/local
+# Sanity check: verify ZTS is enabled and required extensions are available
+RUN php -v | grep -q "(ZTS)" || (echo "ERROR: ZTS not enabled!" && exit 1) && \
+    php -m | grep -E 'curl|mysqli' >/dev/null
+ENV PATH="/usr/local/bin:${PATH}"
+
+RUN mkdir -p /usr/local/etc/php/conf.d
+WORKDIR /work
+CMD ["php", "-v"]
+
+
