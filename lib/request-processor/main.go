@@ -17,40 +17,20 @@ import (
 	"unsafe"
 )
 
+type HandlerFunction func(*instance.RequestProcessorInstance) string
+
 var eventHandlers = map[int]HandlerFunction{
-	C.EVENT_PRE_REQUEST: func(i interface{}) string {
-		return OnPreRequest(i.(*instance.RequestProcessorInstance))
-	},
-	C.EVENT_POST_REQUEST: func(i interface{}) string {
-		return OnPostRequest(i.(*instance.RequestProcessorInstance))
-	},
-	C.EVENT_SET_USER: func(i interface{}) string {
-		return OnUserEvent(i.(*instance.RequestProcessorInstance))
-	},
-	C.EVENT_SET_RATE_LIMIT_GROUP: func(i interface{}) string {
-		return OnRateLimitGroupEvent(i.(*instance.RequestProcessorInstance))
-	},
-	C.EVENT_GET_AUTO_BLOCKING_STATUS: func(i interface{}) string {
-		return OnGetAutoBlockingStatus(i.(*instance.RequestProcessorInstance))
-	},
-	C.EVENT_GET_BLOCKING_STATUS: func(i interface{}) string {
-		return OnGetBlockingStatus(i.(*instance.RequestProcessorInstance))
-	},
-	C.EVENT_PRE_OUTGOING_REQUEST: func(i interface{}) string {
-		return OnPreOutgoingRequest(i.(*instance.RequestProcessorInstance))
-	},
-	C.EVENT_POST_OUTGOING_REQUEST: func(i interface{}) string {
-		return OnPostOutgoingRequest(i.(*instance.RequestProcessorInstance))
-	},
-	C.EVENT_PRE_SHELL_EXECUTED: func(i interface{}) string {
-		return OnPreShellExecuted(i.(*instance.RequestProcessorInstance))
-	},
-	C.EVENT_PRE_PATH_ACCESSED: func(i interface{}) string {
-		return OnPrePathAccessed(i.(*instance.RequestProcessorInstance))
-	},
-	C.EVENT_PRE_SQL_QUERY_EXECUTED: func(i interface{}) string {
-		return OnPreSqlQueryExecuted(i.(*instance.RequestProcessorInstance))
-	},
+	C.EVENT_PRE_REQUEST:              OnPreRequest,
+	C.EVENT_POST_REQUEST:             OnPostRequest,
+	C.EVENT_SET_USER:                 OnUserEvent,
+	C.EVENT_SET_RATE_LIMIT_GROUP:     OnRateLimitGroupEvent,
+	C.EVENT_GET_AUTO_BLOCKING_STATUS: OnGetAutoBlockingStatus,
+	C.EVENT_GET_BLOCKING_STATUS:      OnGetBlockingStatus,
+	C.EVENT_PRE_OUTGOING_REQUEST:     OnPreOutgoingRequest,
+	C.EVENT_POST_OUTGOING_REQUEST:    OnPostOutgoingRequest,
+	C.EVENT_PRE_SHELL_EXECUTED:       OnPreShellExecuted,
+	C.EVENT_PRE_PATH_ACCESSED:        OnPrePathAccessed,
+	C.EVENT_PRE_SQL_QUERY_EXECUTED:   OnPreSqlQueryExecuted,
 }
 
 func initializeServer(server *ServerData) {

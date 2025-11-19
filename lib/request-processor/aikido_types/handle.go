@@ -2,8 +2,6 @@ package aikido_types
 
 import "main/ipc/protos"
 
-type HandlerFunction func(interface{}) string
-
 type Method struct {
 	ClassName  string
 	MethodName string
