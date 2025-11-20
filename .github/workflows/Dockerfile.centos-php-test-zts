@@ -37,7 +37,7 @@ RUN yum install -y autoconf bison pkgconfig \
     libicu-devel readline-devel libxslt-devel \
     git wget \
     python3 python3-devel python3-pip \
-    nginx httpd procps-ng \
+    nginx httpd procps-ng mysql-server \
  && yum clean all
 
 # Install mariadb-devel separately (may need different repo or skip if not critical)
@@ -84,6 +84,44 @@ RUN ./configure \
 && make -j"$(nproc)" \
 && make install \
 && strip /usr/local/bin/php /usr/local/sbin/php-fpm || true
+
+# Install PHP-FPM configuration files
+RUN mkdir -p /usr/local/etc/php-fpm.d && \
+    if [ -f sapi/fpm/php-fpm.conf ]; then \
+        cp sapi/fpm/php-fpm.conf /usr/local/etc/php-fpm.conf.default || \
+        cp sapi/fpm/php-fpm.conf.default /usr/local/etc/php-fpm.conf.default || true; \
+    fi && \
+    if [ -f sapi/fpm/www.conf ]; then \
+        cp sapi/fpm/www.conf /usr/local/etc/php-fpm.d/www.conf.default || \
+        cp sapi/fpm/www.conf.default /usr/local/etc/php-fpm.d/www.conf.default || true; \
+    fi && \
+    if [ ! -f /usr/local/etc/php-fpm.conf ]; then \
+        if [ -f /usr/local/etc/php-fpm.conf.default ]; then \
+            cp /usr/local/etc/php-fpm.conf.default /usr/local/etc/php-fpm.conf; \
+        else \
+            echo "[global]" > /usr/local/etc/php-fpm.conf && \
+            echo "pid = /var/run/php-fpm.pid" >> /usr/local/etc/php-fpm.conf && \
+            echo "error_log = /var/log/php-fpm.log" >> /usr/local/etc/php-fpm.conf && \
+            echo "include=/usr/local/etc/php-fpm.d/*.conf" >> /usr/local/etc/php-fpm.conf; \
+        fi; \
+    fi && \
+    if [ ! -f /usr/local/etc/php-fpm.d/www.conf ]; then \
+        if [ -f /usr/local/etc/php-fpm.d/www.conf.default ]; then \
+            cp /usr/local/etc/php-fpm.d/www.conf.default /usr/local/etc/php-fpm.d/www.conf; \
+        else \
+            echo "[www]" > /usr/local/etc/php-fpm.d/www.conf && \
+            echo "user = nobody" >> /usr/local/etc/php-fpm.d/www.conf && \
+            echo "group = nobody" >> /usr/local/etc/php-fpm.d/www.conf && \
+            echo "listen = 127.0.0.1:9000" >> /usr/local/etc/php-fpm.d/www.conf && \
+            echo "listen.owner = nobody" >> /usr/local/etc/php-fpm.d/www.conf && \
+            echo "listen.group = nobody" >> /usr/local/etc/php-fpm.d/www.conf && \
+            echo "pm = dynamic" >> /usr/local/etc/php-fpm.d/www.conf && \
+            echo "pm.max_children = 5" >> /usr/local/etc/php-fpm.d/www.conf && \
+            echo "pm.start_servers = 2" >> /usr/local/etc/php-fpm.d/www.conf && \
+            echo "pm.min_spare_servers = 1" >> /usr/local/etc/php-fpm.d/www.conf && \
+            echo "pm.max_spare_servers = 3" >> /usr/local/etc/php-fpm.d/www.conf; \
+        fi; \
+    fi
 
 # Final image with PHP and test infrastructure
 FROM base AS final

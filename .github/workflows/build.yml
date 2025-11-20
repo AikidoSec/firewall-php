@@ -491,12 +491,12 @@ jobs:
         if: matrix.server == 'nginx-php-fpm'
         run: |
           # Verify ZTS-built PHP-FPM exists and is ZTS-enabled
-          /usr/local/sbin/php-fpm -v | grep -q "ZTS" || (echo "ERROR: PHP-FPM not built with ZTS!" && exit 1)
           /usr/local/sbin/php-fpm -v
+          /usr/local/sbin/php-fpm -i | grep -q "Thread Safety => enabled" || (echo "ERROR: PHP-FPM not built with ZTS!" && exit 1)
           # Create symlink for nginx to find php-fpm
           ln -sf /usr/local/sbin/php-fpm /usr/sbin/php-fpm || true
           # Verify symlink works
-          php-fpm -v | grep -q "ZTS" || (echo "ERROR: php-fpm symlink not working!" && exit 1)
+          php-fpm -i | grep -q "Thread Safety => enabled" || (echo "ERROR: php-fpm symlink not working or not ZTS!" && exit 1)
 
       - name: Start MariaDB (background)
         run: |
