@@ -76,7 +76,6 @@ RUN ./configure \
       --enable-fpm \
       --enable-mbstring \
       --enable-pcntl \
-      --enable-intl \
       --with-curl \
       --with-mysqli \
       --with-openssl \
@@ -91,10 +90,7 @@ FROM base AS final
 COPY --from=php-build /usr/local /usr/local
 
 # Verify ZTS is enabled
-RUN echo "=== DEBUG: php -v output ===" && \
-    php -v && \
-    echo "=== END DEBUG ===" && \
-    php -v | grep -q "(ZTS)" || (echo "ERROR: ZTS not enabled!" && exit 1) && \
+RUN php -v | grep -q "ZTS" || (echo "ERROR: ZTS not enabled!" && exit 1) && \
     php -m | grep -E 'curl|mysqli' >/dev/null
 
 ENV PATH="/usr/local/bin:${PATH}"
