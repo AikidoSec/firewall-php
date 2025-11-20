@@ -57,6 +57,7 @@ RUN ./configure \
       --with-config-file-path=/usr/local/lib \
       --with-config-file-scan-dir=/usr/local/etc/php/conf.d \
       --enable-zts \
+      --enable-maintainer-zts \
       --enable-fpm \
       --enable-mbstring \
       --enable-pcntl \

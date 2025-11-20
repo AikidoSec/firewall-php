@@ -51,6 +51,7 @@ RUN ./configure \
       --with-config-file-path=/usr/local/lib \
       --with-config-file-scan-dir=/usr/local/etc/php/conf.d \
       --enable-zts \
+      --enable-maintainer-zts \
       --enable-mbstring \
       --enable-pcntl \
       --enable-intl \
@@ -59,9 +60,9 @@ RUN ./configure \
       --with-openssl \
       --with-zlib \
       --with-zip \
- && make -j"$(nproc)" \
- && make install \
- && strip /usr/local/bin/php || true
+&& make -j"$(nproc)" \
+&& make install \
+&& strip /usr/local/bin/php || true
 
 
 FROM build-deps AS dev
