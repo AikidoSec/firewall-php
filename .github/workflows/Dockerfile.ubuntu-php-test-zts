@@ -126,6 +126,9 @@ RUN php -v | grep -q "ZTS" || (echo "ERROR: ZTS not enabled!" && exit 1) && \
 
 ENV PATH="/usr/local/bin:${PATH}"
 
+RUN ln -sf /usr/local/bin/php /usr/bin/php && \
+    ln -sf /usr/local/sbin/php-fpm /usr/sbin/php-fpm || true
+
 # Configure MySQL socket path for mysqli (so "localhost" connections work)
 RUN mkdir -p /usr/local/etc/php/conf.d && \
     echo "mysqli.default_socket = /var/lib/mysql/mysql.sock" > /usr/local/etc/php/conf.d/mysql-socket.ini
