@@ -11,15 +11,15 @@ void PhpLifecycle::ModuleInit() {
 }
 
 void PhpLifecycle::RequestInit() {
-    action.Reset();
-    requestCache.Reset();
-    requestProcessor.RequestInit();
-    checkedAutoBlock = false;
-    checkedShouldBlockRequest = false;
+    AIKIDO_GLOBAL(action).Reset();
+    AIKIDO_GLOBAL(requestCache).Reset();
+    AIKIDO_GLOBAL(requestProcessor).RequestInit();
+    AIKIDO_GLOBAL(checkedAutoBlock) = false;
+    AIKIDO_GLOBAL(checkedShouldBlockRequest) = false;
 }
 
 void PhpLifecycle::RequestShutdown() {
-    requestProcessor.RequestShutdown();
+    AIKIDO_GLOBAL(requestProcessor).RequestShutdown();
 }
 
 void PhpLifecycle::ModuleShutdown() {
@@ -31,7 +31,7 @@ void PhpLifecycle::ModuleShutdown() {
         UnhookAll();
     } else {
         AIKIDO_LOG_INFO("Module shutdown NOT called on main PID. Uninitializing Aikido Request Processor...\n");
-        requestProcessor.Uninit();
+        AIKIDO_GLOBAL(requestProcessor).Uninit();
     }
 }
 
@@ -48,5 +48,3 @@ void PhpLifecycle::UnhookAll() {
     UnhookFileCompilation();
     UnhookAstProcess();
 }
-
-PhpLifecycle phpLifecycle;

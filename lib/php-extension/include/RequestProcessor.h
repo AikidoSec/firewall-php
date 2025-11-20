@@ -43,5 +43,3 @@ class RequestProcessor {
 
     ~RequestProcessor();
 };
-
-extern RequestProcessor requestProcessor;
