@@ -78,10 +78,10 @@ jobs:
         path: |
           ${{ github.workspace }}/build/aikido-request-processor.so
 
-  build_php_extension:
-    name: Build php${{ matrix.php_version }} extension${{ matrix.arch }}
+  build_php_extension_nts:
+    name: Build php${{ matrix.php_version }} extension NTS ${{ matrix.arch == '' && 'x86_64' || 'arm' }}
     runs-on: ubuntu-24.04${{ matrix.arch }}
-    container: ghcr.io/aikidosec/firewall-php-build-extension:${{ matrix.php_version }}-v1
+    container: ghcr.io/aikidosec/firewall-php-build-extension-nts:${{ matrix.php_version }}-v1
     strategy:
       matrix:
         php_version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4']
@@ -104,10 +104,8 @@ jobs:
 
     - name: Check PHP setup
       run: |
-        which php
-        php -v
-        php -i
-        php -m | grep -E 'curl|mysqli' || (echo "Required extensions missing" && php -m && exit 1)
+        php -v | grep -v "ZTS" > /dev/null || (echo "ERROR: PHP is ZTS, expected NTS!" && php -v && exit 1)
+
 
     - name: Build extension
       run: |
@@ -122,16 +120,69 @@ jobs:
     - name: Version Aikido extension
       run: |
         cd ./build/modules
-        mv aikido.so ${{ env.AIKIDO_ARTIFACT }}.so
+        mv aikido.so ${{ env.AIKIDO_ARTIFACT }}-nts.so
 
     - name: Archive build artifacts
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: ${{ env.AIKIDO_ARTIFACT }}-${{ env.ARCH }}
+        name: ${{ env.AIKIDO_ARTIFACT }}-nts-${{ env.ARCH }}
         if-no-files-found: error
         path: |
-          ${{ github.workspace }}/build/modules/${{ env.AIKIDO_ARTIFACT }}.so
+          ${{ github.workspace }}/build/modules/${{ env.AIKIDO_ARTIFACT }}-nts.so
+          ${{ github.workspace }}/tests/*.diff
+
+  build_php_extension_zts:
+    name: Build php${{ matrix.php_version }} extension ZTS ${{ matrix.arch == '' && 'x86_64' || 'arm' }}
+    runs-on: ubuntu-24.04${{ matrix.arch }}
+    container: ghcr.io/aikidosec/firewall-php-build-extension-zts:${{ matrix.php_version }}-v1
+    strategy:
+      matrix:
+        php_version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4']
+        arch: [ '', '-arm' ]
+      fail-fast: false
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Get Arch
+      run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
+
+    - name: Get Aikido version
+      run: |
+        AIKIDO_VERSION=$(grep '#define PHP_AIKIDO_VERSION' lib/php-extension/include/php_aikido.h | awk -F'"' '{print $2}')
+        echo $AIKIDO_VERSION
+        echo "AIKIDO_VERSION=$AIKIDO_VERSION" >> $GITHUB_ENV
+        echo "AIKIDO_ARTIFACT=aikido-extension-php-${{ matrix.php_version }}" >> $GITHUB_ENV
+
+    - name: Check PHP setup
+      run: |
+        php -v | grep -q "ZTS" || (echo "ERROR: PHP is not ZTS!" && php -v && exit 1)
+
+    - name: Build extension
+      run: |
+        rm -rf build
+        mkdir build
+        cd lib/php-extension
+        phpize
+        cd ../../build
+        CXX=g++ CXXFLAGS="-fPIC -g -O2 -I../lib/php-extension/include" LDFLAGS="-lstdc++" ../lib/php-extension/configure
+        make -j"$(nproc)"
+
+    - name: Version Aikido extension
+      run: |
+        cd ./build/modules
+        mv aikido.so ${{ env.AIKIDO_ARTIFACT }}-zts.so
+
+    - name: Archive build artifacts
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: ${{ env.AIKIDO_ARTIFACT }}-zts-${{ env.ARCH }}
+        if-no-files-found: error
+        path: |
+          ${{ github.workspace }}/build/modules/${{ env.AIKIDO_ARTIFACT }}-zts.so
           ${{ github.workspace }}/tests/*.diff
 
   build_rpm:
@@ -143,7 +194,7 @@ jobs:
       matrix:
         arch: ['', '-arm']
       fail-fast: false
-    needs: [ build_libs, build_php_extension ]
+    needs: [ build_libs, build_php_extension_nts, build_php_extension_zts ]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -165,11 +216,17 @@ jobs:
           echo "AIKIDO_LIBZEN=libzen_internals_${{ env.ARCH }}-unknown-linux-gnu.so" >> $GITHUB_ENV
           echo "AIKIDO_LIBZEN_VERSION=0.1.48" >> $GITHUB_ENV
 
-      - name: Download artifacts
+      - name: Download artifacts (NTS)
         uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4
         with:
           pattern: |
-            aikido-extension-php-*-${{ env.ARCH }}
+            aikido-extension-php-*-nts-${{ env.ARCH }}
+
+      - name: Download artifacts (ZTS)
+        uses: actions/download-artifact@v4
+        with:
+          pattern: |
+            aikido-extension-php-*-zts-${{ env.ARCH }}
 
       - name: Download artifacts
         uses: actions/download-artifact@v4
@@ -192,8 +249,20 @@ jobs:
           mv aikido-agent-${{ env.ARCH }}/aikido-agent package/rpm/opt/aikido/aikido-agent
           mv aikido-request-processor-${{ env.ARCH }}/aikido-request-processor.so package/rpm/opt/aikido/aikido-request-processor.so
           mv ${{ env.AIKIDO_LIBZEN }} package/rpm/opt/aikido/${{ env.AIKIDO_LIBZEN }}
-          ls -lR aikido-extension-php-*
-          mv aikido-extension-php-*/__w/firewall-php/firewall-php/build/modules/aikido-extension-php-* package/rpm/opt/aikido/
+          # Copy NTS extensions
+          for dir in aikido-extension-php-*-nts-*/; do
+            if [ -d "$dir" ]; then
+              find "$dir" -name "aikido-extension-php-*-nts.so" -exec mv {} package/rpm/opt/aikido/ \;
+            fi
+          done
+          # Copy ZTS extensions
+          for dir in aikido-extension-php-*-zts-*/; do
+            if [ -d "$dir" ]; then
+              find "$dir" -name "aikido-extension-php-*-zts.so" -exec mv {} package/rpm/opt/aikido/ \;
+            fi
+          done
+          echo "Extensions in package:"
+          ls -la package/rpm/opt/aikido/aikido-extension-php-*.so || true
           mv package/rpm/opt/aikido package/rpm/opt/aikido-${{ env.AIKIDO_VERSION }}
           chmod 777 package/rpm/opt/aikido-${{ env.AIKIDO_VERSION }}/*
           rpmdev-setuptree
@@ -302,7 +371,7 @@ jobs:
     name: CentOS php-${{ matrix.php_version }} ${{ matrix.server }}${{ matrix.arch }}
     runs-on: ubuntu-24.04${{ matrix.arch }}
     container:
-      image: ghcr.io/aikidosec/firewall-php-test-centos:${{ matrix.php_version }}-v1
+      image: ghcr.io/aikidosec/firewall-php-test-centos-nts:${{ matrix.php_version }}-v1
       options: --privileged
     needs: [ build_rpm ]
     strategy:
@@ -388,7 +457,7 @@ jobs:
     name: Ubuntu php-${{ matrix.php_version }} ${{ matrix.server }}${{ matrix.arch }}
     runs-on: ubuntu-24.04${{ matrix.arch }}
     container:
-      image: ghcr.io/aikidosec/firewall-php-test-ubuntu:${{ matrix.php_version }}-v1
+      image: ghcr.io/aikidosec/firewall-php-test-ubuntu-nts:${{ matrix.php_version }}-v1
       options: --privileged
     needs: [ build_deb ]
     strategy:

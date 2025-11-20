@@ -8,6 +8,13 @@ VERSION=$(grep '#define PHP_AIKIDO_VERSION' lib/php-extension/include/php_aikido
 AIKIDO_INTERNALS_REPO=https://api.github.com/repos/AikidoSec/zen-internals
 AIKIDO_INTERNALS_LIB=libzen_internals_$arch-unknown-linux-gnu.so
 
+# Detect if PHP is ZTS or NTS
+if php -v | grep -q "ZTS"; then
+    EXT_SUFFIX="-zts"
+else
+    EXT_SUFFIX="-nts"
+fi
+
 mkdir -p ~/rpmbuild/SOURCES/aikido-php-firewall-$VERSION
 
 cp -rf package/rpm/opt ~/rpmbuild/SOURCES/aikido-php-firewall-$VERSION/
@@ -16,7 +23,7 @@ cp -f package/rpm/aikido.spec ~/rpmbuild/SPECS/
 
 cp build/aikido-agent ~/rpmbuild/SOURCES/aikido-php-firewall-$VERSION/opt/aikido/aikido-agent
 cp build/aikido-request-processor.so ~/rpmbuild/SOURCES/aikido-php-firewall-$VERSION/opt/aikido/aikido-request-processor.so
-cp build/modules/aikido-extension-php-$PHP_VERSION.so ~/rpmbuild/SOURCES/aikido-php-firewall-$VERSION/opt/aikido/aikido-extension-php-$PHP_VERSION.so
+cp build/modules/aikido-extension-php-$PHP_VERSION$EXT_SUFFIX.so ~/rpmbuild/SOURCES/aikido-php-firewall-$VERSION/opt/aikido/aikido-extension-php-$PHP_VERSION$EXT_SUFFIX.so
 
 curl -L -o $AIKIDO_INTERNALS_LIB $(curl -s $AIKIDO_INTERNALS_REPO/releases/latest | jq -r ".assets[] | select(.name == \"$AIKIDO_INTERNALS_LIB\") | .browser_download_url")
 mv $AIKIDO_INTERNALS_LIB ~/rpmbuild/SOURCES/aikido-php-firewall-$VERSION/opt/aikido/$AIKIDO_INTERNALS_LIB

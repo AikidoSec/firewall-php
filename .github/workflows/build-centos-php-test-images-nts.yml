@@ -1,22 +1,23 @@
-name: Build Ubuntu PHP test images
+name: Build CentOS PHP test images (NTS)
 
 on:
   workflow_dispatch:
   push:
     paths:
-      - .github/workflows/Dockerfile.ubuntu-php-test
-      - .github/workflows/build-ubuntu-php-test-images.yml
+      - .github/workflows/Dockerfile.centos-php-test-nts
+      - .github/workflows/build-centos-php-test-images-nts.yml
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: aikidosec/firewall-php-test-ubuntu
+  IMAGE_NAME: aikidosec/firewall-php-test-centos-nts
   VERSION: v1
 
 jobs:
   build-amd64:
     runs-on: ubuntu-24.04
     strategy:
-      matrix: { php_version: ['7.2','7.3','7.4','8.0','8.1','8.2','8.3','8.4'] }
+      matrix:
+        php_version: ['7.4','8.0','8.1','8.2','8.3','8.4']
       fail-fast: false
     permissions: { contents: read, packages: write }
     steps:
@@ -27,10 +28,11 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/build-push-action@v6
+      - name: Build & push (amd64)
+        uses: docker/build-push-action@v6
         with:
           context: .
-          file: .github/workflows/Dockerfile.ubuntu-php-test
+          file: .github/workflows/Dockerfile.centos-php-test-nts
           platforms: linux/amd64
           push: true
           build-args: |
@@ -42,7 +44,8 @@ jobs:
   build-arm64:
     runs-on: ubuntu-24.04-arm
     strategy:
-      matrix: { php_version: ['7.2','7.3','7.4','8.0','8.1','8.2','8.3','8.4'] }
+      matrix:
+        php_version: ['7.4','8.0','8.1','8.2','8.3','8.4']
       fail-fast: false
     permissions: { contents: read, packages: write }
     steps:
@@ -53,10 +56,11 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/build-push-action@v6
+      - name: Build & push (arm64)
+        uses: docker/build-push-action@v6
         with:
           context: .
-          file: .github/workflows/Dockerfile.ubuntu-php-test
+          file: .github/workflows/Dockerfile.centos-php-test-nts
           platforms: linux/arm64
           push: true
           build-args: |
@@ -69,7 +73,8 @@ jobs:
     runs-on: ubuntu-24.04
     needs: [build-amd64, build-arm64]
     strategy:
-      matrix: { php_version: ['7.2','7.3','7.4','8.0','8.1','8.2','8.3','8.4'] }
+      matrix:
+        php_version: ['7.4','8.0','8.1','8.2','8.3','8.4']
       fail-fast: false
     permissions: { contents: read, packages: write }
     steps:

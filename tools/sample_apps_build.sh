@@ -6,8 +6,18 @@ export PATH="$PATH:$HOME/go/bin:$HOME/.local/bin"
 
 PHP_VERSION=$(php -v | grep -oP 'PHP \K\d+\.\d+' | head -n 1)
 AIKIDO_VERSION=$(grep '#define PHP_AIKIDO_VERSION' lib/php-extension/include/php_aikido.h | awk -F'"' '{print $2}')
-AIKIDO_EXTENSION=aikido-extension-php-$AIKIDO_VERSION.so 
-AIKIDO_EXTENSION_DEBUG=aikido-extension-php-$AIKIDO_VERSION.so.debug
+
+# Detect if PHP is ZTS or NTS
+if php -v | grep -q "ZTS"; then
+    EXT_SUFFIX="-zts"
+    echo "Building ZTS extension"
+else
+    EXT_SUFFIX="-nts"
+    echo "Building NTS extension"
+fi
+
+AIKIDO_EXTENSION=aikido-extension-php-$AIKIDO_VERSION$EXT_SUFFIX.so 
+AIKIDO_EXTENSION_DEBUG=aikido-extension-php-$AIKIDO_VERSION$EXT_SUFFIX.so.debug
 AIKIDO_INTERNALS_REPO=https://api.github.com/repos/AikidoSec/zen-internals
 AIKIDO_INTERNALS_LIB=libzen_internals_$arch-unknown-linux-gnu.so
 

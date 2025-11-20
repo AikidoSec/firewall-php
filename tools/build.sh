@@ -3,8 +3,18 @@ set -e
 export PATH="$PATH:$HOME/go/bin:$HOME/.local/bin"
 
 PHP_VERSION=$(php -v | grep -oP 'PHP \K\d+\.\d+' | head -n 1)
-AIKIDO_EXTENSION=aikido-extension-php-$PHP_VERSION.so 
-AIKIDO_EXTENSION_DEBUG=aikido-extension-php-$PHP_VERSION.so.debug
+
+# Detect if PHP is ZTS or NTS
+if php -v | grep -q "ZTS"; then
+    EXT_SUFFIX="-zts"
+    echo "Building ZTS extension"
+else
+    EXT_SUFFIX="-nts"
+    echo "Building NTS extension"
+fi
+
+AIKIDO_EXTENSION=aikido-extension-php-$PHP_VERSION$EXT_SUFFIX.so 
+AIKIDO_EXTENSION_DEBUG=aikido-extension-php-$PHP_VERSION$EXT_SUFFIX.so.debug
 
 rm -rf build
 mkdir build

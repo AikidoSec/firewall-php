@@ -82,10 +82,26 @@ for PHP_VERSION in "${PHP_VERSIONS[@]}"; do
     PHP_EXT_DIR=$($PHP_BIN -i | grep "^extension_dir" | awk '{print $3}')
     PHP_MOD_DIR=$($PHP_BIN -i | grep "Scan this dir for additional .ini files" | awk -F"=> " '{print $2}')
 
+    # Detect if PHP is ZTS or NTS
+    PHP_THREAD_SAFETY=$($PHP_BIN -i | grep "Thread Safety" | awk -F"=> " '{print $2}' | tr -d ' ')
+    if [ "$PHP_THREAD_SAFETY" = "enabled" ]; then
+        EXT_SUFFIX="-zts"
+        echo "PHP $PHP_VERSION is ZTS (Thread Safe)"
+    else
+        EXT_SUFFIX="-nts"
+        echo "PHP $PHP_VERSION is NTS (Non-Thread Safe)"
+    fi
+
     # Install Aikido PHP extension
     if [ -d "$PHP_EXT_DIR" ]; then
-        echo "Installing new Aikido extension in $PHP_EXT_DIR/aikido-%{version}.so..."
-        ln -sf /opt/aikido-%{version}/aikido-extension-php-$PHP_VERSION.so $PHP_EXT_DIR/aikido-%{version}.so
+        EXT_FILE="aikido-extension-php-$PHP_VERSION$EXT_SUFFIX.so"
+        if [ -f "/opt/aikido-%{version}/$EXT_FILE" ]; then
+            echo "Installing new Aikido extension in $PHP_EXT_DIR/aikido-%{version}.so..."
+            ln -sf /opt/aikido-%{version}/$EXT_FILE $PHP_EXT_DIR/aikido-%{version}.so
+        else
+            echo "Warning: Extension file /opt/aikido-%{version}/$EXT_FILE not found! Skipping..."
+            continue
+        fi
     else
         echo "No extension dir for PHP $PHP_VERSION! Skipping..."
         continue
