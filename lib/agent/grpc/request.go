@@ -201,12 +201,12 @@ func isRateLimitingThresholdExceeded(config *RateLimitingConfig, countsMap map[s
 
 // updateAttackWaveCountsAndDetect implements the attack wave detection logic:
 //  1. Validates the request is from a web scanner and has a valid IP address
-//  2. Increments the sliding window counter for this IP
+//  2. Increments the sliding window counter for this IP and collects request samples
 //  3. Applies throttling: if an event was recently sent for this IP (within minBetween window),
 //     returns early without checking threshold or sending another event
 //  4. Checks if the total count within the sliding window exceeds the threshold
-//  5. If threshold exceeded: records the event time on the queue, logs the detection, and sends event to cloud
-func updateAttackWaveCountsAndDetect(server *ServerData, isWebScanner bool, ip string, userId string, userAgent string) {
+//  5. If threshold exceeded: records the event time on the queue, logs the detection, and sends event with samples to cloud
+func updateAttackWaveCountsAndDetect(server *ServerData, isWebScanner bool, ip string, userId string, userAgent string, method string, url string) {
 	if !isWebScanner || ip == "" {
 		return
 	}
@@ -224,6 +224,11 @@ func updateAttackWaveCountsAndDetect(server *ServerData, isWebScanner bool, ip s
 		return
 	}
 
+	// Add this request as a sample
+	if queue != nil {
+		queue.AddSample(method, url)
+	}
+
 	// check threshold within window
 	if queue == nil || queue.Total < server.AttackWave.Threshold {
 		return // threshold not reached
@@ -239,7 +244,7 @@ func updateAttackWaveCountsAndDetect(server *ServerData, isWebScanner bool, ip s
 		Token:   server.AikidoConfig.Token,
 		Request: &protos.Request{IpAddress: ip, UserAgent: userAgent},
 		Attack:  &protos.Attack{Metadata: []*protos.Metadata{}, UserId: userId},
-	}, "detected_attack_wave")
+	}, "detected_attack_wave", queue.Samples)
 }
 
 func getRateLimitingValue(server *ServerData, method, route string) *RateLimitingValue {

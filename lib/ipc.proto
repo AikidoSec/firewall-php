@@ -71,10 +71,11 @@ message RequestMetadataShutdown {
   string userAgent = 8;
   string ip = 9;
   string rateLimitGroup = 10;
-  APISpec apiSpec = 11;
-  bool rateLimited = 12;
-  bool isWebScanner = 13;
-  bool shouldDiscoverRoute = 14;
+  string url = 11;
+  APISpec apiSpec = 12;
+  bool rateLimited = 13;
+  bool isWebScanner = 14;
+  bool shouldDiscoverRoute = 15;
 }
 
 message MiddlewareInstalledInfo {

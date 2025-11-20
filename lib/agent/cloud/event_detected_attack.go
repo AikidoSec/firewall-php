@@ -79,7 +79,7 @@ func ShouldSendAttackDetectedEvent(server *ServerData) bool {
 	return true
 }
 
-func SendAttackDetectedEvent(server *ServerData, req *protos.AttackDetected, attackType string) {
+func SendAttackDetectedEvent(server *ServerData, req *protos.AttackDetected, attackType string, samples []SuspiciousRequest) {
 	if !ShouldSendAttackDetectedEvent(server) {
 		return
 	}
@@ -89,6 +89,7 @@ func SendAttackDetectedEvent(server *ServerData, req *protos.AttackDetected, att
 		Request: GetRequestInfo(req.Request),
 		Attack:  GetAttackDetails(server, req.Attack),
 		Time:    utils.GetTime(),
+		Samples: samples,
 	}
 
 	response, err := SendCloudRequest(server, server.AikidoConfig.Endpoint, constants.EventsAPI, constants.EventsAPIMethod, detectedAttackEvent)

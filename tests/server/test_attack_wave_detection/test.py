@@ -22,13 +22,12 @@ paths = [
      "/etc/passwd"
 ]
 
-
 def get_random_path():
     return random.choice(paths)
 
 def run_test():
     for i in range(15):
-        _ = php_server_get(get_random_path(), headers={"X-Forwarded-For": "5.8.19.22"})
+        _ = php_server_get(paths[i % len(paths)], headers={"X-Forwarded-For": "5.8.19.22"})
 
     mock_server_wait_for_new_events(5)
     
@@ -45,7 +44,7 @@ def run_test():
     assert_events_length_is(events, 2) # no new event should be sent (same IP)
 
     for i in range(15):
-        _ = php_server_get(get_random_path(), headers={"X-Forwarded-For": "5.8.19.23"})
+        _ = php_server_get(paths[i % len(paths)], headers={"X-Forwarded-For": "5.8.19.23"})
     mock_server_wait_for_new_events(5)
     
     events = mock_server_get_events()

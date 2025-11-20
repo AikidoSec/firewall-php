@@ -14,5 +14,10 @@
     "agent": {
         "dryMode": false,
         "library": "firewall-php"
-    }
+    },
+    "samples": [
+        {
+            "method": "GET"
+        }
+    ]
 }

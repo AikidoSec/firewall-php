@@ -46,6 +46,7 @@ func OnPostRequest() string {
 		User:           context.GetUserId(),
 		UserAgent:      context.GetUserAgent(),
 		IP:             context.GetIp(),
+		Url:            context.GetUrl(),
 		RateLimitGroup: context.GetRateLimitGroup(),
 		APISpec:        api_discovery.GetApiInfo(server),
 		RateLimited:    context.IsEndpointRateLimited(),

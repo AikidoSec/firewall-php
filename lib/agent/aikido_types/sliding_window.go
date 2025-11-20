@@ -1,11 +1,18 @@
 package aikido_types
 
+// SuspiciousRequest represents a suspicious request sample collected during attack wave detection
+type SuspiciousRequest struct {
+	Method string `json:"method"`
+	URL    string `json:"url"`
+}
+
 // SlidingWindow represents a time-based sliding window counter.
 // It maintains a queue of counts per time bucket and a running total.
 type SlidingWindow struct {
-	Total    int        // Running total of all counts in the window
-	Queue    Queue[int] // Queue of counts per time bucket
-	LastSent int64      // Last time this sliding window triggered an event (used for attack wave detection)
+	Total    int                 // Running total of all counts in the window
+	Queue    Queue[int]          // Queue of counts per time bucket
+	LastSent int64               // Last time this sliding window triggered an event (used for attack wave detection)
+	Samples  []SuspiciousRequest // Sample requests collected for attack wave detection (max 10)
 }
 
 // NewSlidingWindow creates a new sliding window with the specified size.
@@ -40,6 +47,27 @@ func (sw *SlidingWindow) Increment() {
 	}
 	sw.Queue.IncrementLast()
 	sw.Total++
+}
+
+// AddSample adds a sample request to the sliding window for attack wave detection.
+// It maintains a maximum of 10 unique samples (based on method and URL).
+func (sw *SlidingWindow) AddSample(method, url string) {
+	const maxSamples = 10
+
+	// Check if this sample already exists
+	for _, sample := range sw.Samples {
+		if sample.Method == method && sample.URL == url {
+			return // Already exists, skip
+		}
+	}
+
+	// Add the sample if we haven't reached the limit
+	if len(sw.Samples) < maxSamples {
+		sw.Samples = append(sw.Samples, SuspiciousRequest{
+			Method: method,
+			URL:    url,
+		})
+	}
 }
 
 // IsEmpty returns true if the total count is zero.

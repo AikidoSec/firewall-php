@@ -281,3 +281,222 @@ func TestSlidingWindowIntegration(t *testing.T) {
 		assert.NotContains(t, windowMap, "endpoint3")
 	})
 }
+
+func TestAddSample(t *testing.T) {
+	t.Run("adds sample to empty sliding window", func(t *testing.T) {
+		sw := NewSlidingWindow()
+		sw.AddSample("GET", "/api/users")
+
+		assert.Equal(t, 1, len(sw.Samples))
+		assert.Equal(t, "GET", sw.Samples[0].Method)
+		assert.Equal(t, "/api/users", sw.Samples[0].URL)
+	})
+
+	t.Run("adds multiple different samples", func(t *testing.T) {
+		sw := NewSlidingWindow()
+		sw.AddSample("GET", "/api/users")
+		sw.AddSample("POST", "/api/login")
+		sw.AddSample("DELETE", "/api/users/123")
+
+		assert.Equal(t, 3, len(sw.Samples))
+		assert.Equal(t, "GET", sw.Samples[0].Method)
+		assert.Equal(t, "/api/users", sw.Samples[0].URL)
+		assert.Equal(t, "POST", sw.Samples[1].Method)
+		assert.Equal(t, "/api/login", sw.Samples[1].URL)
+		assert.Equal(t, "DELETE", sw.Samples[2].Method)
+		assert.Equal(t, "/api/users/123", sw.Samples[2].URL)
+	})
+
+	t.Run("prevents duplicate samples with same method and URL", func(t *testing.T) {
+		sw := NewSlidingWindow()
+		sw.AddSample("GET", "/api/users")
+		sw.AddSample("GET", "/api/users") // duplicate
+		sw.AddSample("GET", "/api/users") // duplicate
+
+		assert.Equal(t, 1, len(sw.Samples))
+		assert.Equal(t, "GET", sw.Samples[0].Method)
+		assert.Equal(t, "/api/users", sw.Samples[0].URL)
+	})
+
+	t.Run("allows same URL with different methods", func(t *testing.T) {
+		sw := NewSlidingWindow()
+		sw.AddSample("GET", "/api/users")
+		sw.AddSample("POST", "/api/users")
+		sw.AddSample("DELETE", "/api/users")
+
+		assert.Equal(t, 3, len(sw.Samples))
+		assert.Equal(t, "GET", sw.Samples[0].Method)
+		assert.Equal(t, "POST", sw.Samples[1].Method)
+		assert.Equal(t, "DELETE", sw.Samples[2].Method)
+	})
+
+	t.Run("allows same method with different URLs", func(t *testing.T) {
+		sw := NewSlidingWindow()
+		sw.AddSample("GET", "/api/users")
+		sw.AddSample("GET", "/api/posts")
+		sw.AddSample("GET", "/api/comments")
+
+		assert.Equal(t, 3, len(sw.Samples))
+		assert.Equal(t, "/api/users", sw.Samples[0].URL)
+		assert.Equal(t, "/api/posts", sw.Samples[1].URL)
+		assert.Equal(t, "/api/comments", sw.Samples[2].URL)
+	})
+
+	t.Run("enforces maximum of 10 samples", func(t *testing.T) {
+		sw := NewSlidingWindow()
+
+		// Add 12 unique samples
+		for i := 0; i < 12; i++ {
+			sw.AddSample("GET", "/api/endpoint"+string(rune('0'+i)))
+		}
+
+		assert.Equal(t, 10, len(sw.Samples))
+	})
+
+	t.Run("does not add 11th sample even if unique", func(t *testing.T) {
+		sw := NewSlidingWindow()
+
+		// Add exactly 10 samples
+		for i := 0; i < 10; i++ {
+			sw.AddSample("GET", "/api/endpoint"+string(rune('0'+i)))
+		}
+		assert.Equal(t, 10, len(sw.Samples))
+
+		// Try to add an 11th unique sample
+		sw.AddSample("POST", "/api/new-endpoint")
+		assert.Equal(t, 10, len(sw.Samples))
+
+		// Verify the 11th sample was not added
+		found := false
+		for _, sample := range sw.Samples {
+			if sample.Method == "POST" && sample.URL == "/api/new-endpoint" {
+				found = true
+				break
+			}
+		}
+		assert.False(t, found)
+	})
+
+	t.Run("duplicates do not count toward 10 sample limit", func(t *testing.T) {
+		sw := NewSlidingWindow()
+
+		// Add 5 unique samples
+		for i := 0; i < 5; i++ {
+			sw.AddSample("GET", "/api/endpoint"+string(rune('0'+i)))
+		}
+
+		// Try to add duplicates
+		sw.AddSample("GET", "/api/endpoint0") // duplicate
+		sw.AddSample("GET", "/api/endpoint1") // duplicate
+		sw.AddSample("GET", "/api/endpoint2") // duplicate
+
+		assert.Equal(t, 5, len(sw.Samples))
+
+		// Add 5 more unique samples to reach 10
+		for i := 5; i < 10; i++ {
+			sw.AddSample("GET", "/api/endpoint"+string(rune('0'+i)))
+		}
+		assert.Equal(t, 10, len(sw.Samples))
+
+		// Try to add more duplicates - should still be 10
+		sw.AddSample("GET", "/api/endpoint5")
+		sw.AddSample("GET", "/api/endpoint9")
+		assert.Equal(t, 10, len(sw.Samples))
+	})
+
+	t.Run("preserves samples during window operations", func(t *testing.T) {
+		sw := NewSlidingWindow()
+		sw.AddSample("GET", "/api/users")
+		sw.AddSample("POST", "/api/login")
+		sw.Increment()
+
+		// Advance the window
+		sw.Advance(5)
+
+		// Samples should still be present
+		assert.Equal(t, 2, len(sw.Samples))
+		assert.Equal(t, "GET", sw.Samples[0].Method)
+		assert.Equal(t, "/api/users", sw.Samples[0].URL)
+		assert.Equal(t, "POST", sw.Samples[1].Method)
+		assert.Equal(t, "/api/login", sw.Samples[1].URL)
+	})
+
+	t.Run("empty method and URL are valid samples", func(t *testing.T) {
+		sw := NewSlidingWindow()
+		sw.AddSample("", "")
+		sw.AddSample("GET", "")
+		sw.AddSample("", "/api/users")
+
+		assert.Equal(t, 3, len(sw.Samples))
+	})
+}
+
+func TestSlidingWindowSamplesIntegration(t *testing.T) {
+	t.Run("simulates attack wave detection with samples", func(t *testing.T) {
+		// Create a map simulating per-IP tracking
+		ipMap := map[string]*SlidingWindow{
+			"192.168.1.100": NewSlidingWindow(),
+		}
+
+		ip := "192.168.1.100"
+		sw := ipMap[ip]
+
+		// Simulate suspicious requests
+		requests := []struct {
+			method string
+			url    string
+		}{
+			{"GET", "/admin"},
+			{"GET", "/admin"}, // duplicate
+			{"POST", "/admin"},
+			{"GET", "/wp-admin"},
+			{"GET", "/.env"},
+			{"GET", "/config.php"},
+			{"POST", "/login"},
+			{"GET", "/admin"}, // duplicate
+		}
+
+		for _, req := range requests {
+			sw.Increment()
+			sw.AddSample(req.method, req.url)
+		}
+
+		// Should have 6 unique samples (2 duplicates removed)
+		assert.Equal(t, 6, len(sw.Samples))
+		assert.Equal(t, 8, sw.Total) // But total count should be 8
+
+		// Verify samples are unique
+		uniqueCheck := make(map[string]bool)
+		for _, sample := range sw.Samples {
+			key := sample.Method + ":" + sample.URL
+			assert.False(t, uniqueCheck[key], "Found duplicate sample: "+key)
+			uniqueCheck[key] = true
+		}
+	})
+
+	t.Run("samples persist across window advances until removal", func(t *testing.T) {
+		windowMap := map[string]*SlidingWindow{
+			"10.0.0.1": NewSlidingWindow(),
+		}
+
+		sw := windowMap["10.0.0.1"]
+		sw.AddSample("GET", "/api/v1/users")
+		sw.AddSample("POST", "/api/v1/login")
+		sw.Increment()
+		sw.Increment()
+
+		// Advance window multiple times
+		AdvanceSlidingWindowMap(windowMap, 3)
+		AdvanceSlidingWindowMap(windowMap, 3)
+
+		// Samples should still be there
+		assert.Contains(t, windowMap, "10.0.0.1")
+		assert.Equal(t, 2, len(windowMap["10.0.0.1"].Samples))
+
+		// Advance until window is empty
+		AdvanceSlidingWindowMap(windowMap, 3)
+
+		// Window should be removed when total reaches 0
+		assert.NotContains(t, windowMap, "10.0.0.1")
+	})
+}
