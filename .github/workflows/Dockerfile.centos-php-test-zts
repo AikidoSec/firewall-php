@@ -164,7 +164,10 @@ RUN mkdir -p /etc/php-fpm.d && \
         echo "pm.min_spare_servers = 1" >> /usr/local/etc/php-fpm.d/www.conf && \
         echo "pm.max_spare_servers = 3" >> /usr/local/etc/php-fpm.d/www.conf; \
     fi && \
-    php-fpm --test || true
+    php-fpm -t -y /usr/local/etc/php-fpm.conf && \
+    mkdir -p /etc/php-fpm.d && \
+    ln -sf /usr/local/etc/php-fpm.conf /etc/php-fpm.conf && \
+    ln -sf /usr/local/etc/php-fpm.d /etc/php-fpm.d
 
 # Configure MySQL socket path for mysqli (so "localhost" connections work)
 RUN mkdir -p /usr/local/etc/php/conf.d && \
