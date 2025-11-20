@@ -368,7 +368,7 @@ jobs:
             ${{ env.AIKIDO_ARTIFACT }}
 
   test_php_centos:
-    name: CentOS php-${{ matrix.php_version }} ${{ matrix.server }}${{ matrix.arch }}
+    name: CentOS NTS php-${{ matrix.php_version }} ${{ matrix.server }} ${{ matrix.arch == '' && 'x86_64' || 'arm' }}
     runs-on: ubuntu-24.04${{ matrix.arch }}
     container:
       image: ghcr.io/aikidosec/firewall-php-test-centos-nts:${{ matrix.php_version }}-v1
@@ -454,7 +454,7 @@ jobs:
           python3 run_server_tests.py ../tests/server ../tests/testlib --server=${{ matrix.server }} --max-runs=3
 
   test_php_ubuntu:
-    name: Ubuntu php-${{ matrix.php_version }} ${{ matrix.server }}${{ matrix.arch }}
+    name: Ubuntu NTS php-${{ matrix.php_version }} ${{ matrix.server }} ${{ matrix.arch == '' && 'x86_64' || 'arm' }}
     runs-on: ubuntu-24.04${{ matrix.arch }}
     container:
       image: ghcr.io/aikidosec/firewall-php-test-ubuntu-nts:${{ matrix.php_version }}-v1
@@ -519,7 +519,7 @@ jobs:
           python3 run_server_tests.py ../tests/server ../tests/testlib --server=${{ matrix.server }} --max-runs=3
 
   test_php_ubuntu_zts:
-    name: Ubuntu ZTS php-${{ matrix.php_version }} ${{ matrix.server }}${{ matrix.arch }}
+    name: Ubuntu ZTS php-${{ matrix.php_version }} ${{ matrix.server }} ${{ matrix.arch == '' && 'x86_64' || 'arm' }}
     runs-on: ubuntu-24.04${{ matrix.arch }}
     container:
       image: ghcr.io/aikidosec/firewall-php-test-ubuntu-zts:${{ matrix.php_version }}-v1
@@ -587,7 +587,7 @@ jobs:
           python3 run_server_tests.py ../tests/server ../tests/testlib --server=${{ matrix.server }} --max-runs=3
 
   test_php_centos_zts:
-    name: CentOS ZTS php-${{ matrix.php_version }} ${{ matrix.server }}${{ matrix.arch }}
+    name: CentOS ZTS php-${{ matrix.php_version }} ${{ matrix.server }} ${{ matrix.arch == '' && 'x86_64' || 'arm' }}
     runs-on: ubuntu-24.04${{ matrix.arch }}
     container:
       image: ghcr.io/aikidosec/firewall-php-test-centos-zts:${{ matrix.php_version }}-v1
