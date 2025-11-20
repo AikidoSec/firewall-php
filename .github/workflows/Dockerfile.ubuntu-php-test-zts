@@ -41,6 +41,21 @@ RUN git clone --depth 1 --branch "${PHP_SRC_REF}" https://github.com/php/php-src
 WORKDIR /usr/src/php-src
 RUN ./buildconf --force
 
+# Patch openssl.c for OpenSSL compatibility
+RUN if [ -f ext/openssl/openssl.c ] && grep -q 'REGISTER_LONG_CONSTANT("OPENSSL_SSLV23_PADDING"' ext/openssl/openssl.c; then \
+    awk '/REGISTER_LONG_CONSTANT\("OPENSSL_SSLV23_PADDING"/ { \
+        indent = $0; \
+        gsub(/[^[:space:]].*/, "", indent); \
+        print indent "#ifdef RSA_SSLV23_PADDING"; \
+        gsub(/^[[:space:]]*/, indent "    "); \
+        print; \
+        print indent "#endif"; \
+        next \
+    } \
+    { print }' ext/openssl/openssl.c > ext/openssl/openssl.c.new && \
+    mv ext/openssl/openssl.c.new ext/openssl/openssl.c; \
+    fi || true
+
 # Build PHP with ZTS enabled
 RUN ./configure \
       --prefix=/usr/local \
