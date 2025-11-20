@@ -135,6 +135,7 @@ RUN PHP_VER=$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;') && \
     mkdir -p /run/php-fpm && \
     mkdir -p /var/run && \
     mkdir -p /var/log && \
+    mkdir -p /usr/local/etc/php-fpm.d && \
     if [ ! -f /usr/local/etc/php-fpm.conf ]; then \
         echo "[global]" > /usr/local/etc/php-fpm.conf && \
         echo "pid = /run/php-fpm/php-fpm.pid" >> /usr/local/etc/php-fpm.conf && \
@@ -143,17 +144,18 @@ RUN PHP_VER=$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;') && \
     fi && \
     if [ ! -f /usr/local/etc/php-fpm.d/www.conf ]; then \
         echo "[www]" > /usr/local/etc/php-fpm.d/www.conf && \
-        echo "user = nobody" >> /usr/local/etc/php-fpm.d/www.conf && \
-        echo "group = nobody" >> /usr/local/etc/php-fpm.d/www.conf && \
+        echo "user = root" >> /usr/local/etc/php-fpm.d/www.conf && \
+        echo "group = root" >> /usr/local/etc/php-fpm.d/www.conf && \
         echo "listen = 127.0.0.1:9000" >> /usr/local/etc/php-fpm.d/www.conf && \
-        echo "listen.owner = nobody" >> /usr/local/etc/php-fpm.d/www.conf && \
-        echo "listen.group = nobody" >> /usr/local/etc/php-fpm.d/www.conf && \
+        echo "listen.owner = root" >> /usr/local/etc/php-fpm.d/www.conf && \
+        echo "listen.group = root" >> /usr/local/etc/php-fpm.d/www.conf && \
         echo "pm = dynamic" >> /usr/local/etc/php-fpm.d/www.conf && \
         echo "pm.max_children = 5" >> /usr/local/etc/php-fpm.d/www.conf && \
         echo "pm.start_servers = 2" >> /usr/local/etc/php-fpm.d/www.conf && \
         echo "pm.min_spare_servers = 1" >> /usr/local/etc/php-fpm.d/www.conf && \
         echo "pm.max_spare_servers = 3" >> /usr/local/etc/php-fpm.d/www.conf; \
-    fi
+    fi && \
+    php-fpm --test || true
 
 # Configure MySQL socket path for mysqli (so "localhost" connections work)
 RUN mkdir -p /usr/local/etc/php/conf.d && \
