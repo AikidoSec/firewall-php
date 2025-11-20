@@ -11,7 +11,7 @@ on:
 
 jobs:
   build_libs:
-    name: Build Go libs${{ matrix.arch }}
+    name: Build Go libs ${{ matrix.arch == '' && 'x86_64' || 'arm' }}
     runs-on: ubuntu-24.04${{ matrix.arch }}
     container:
       image: ghcr.io/aikidosec/firewall-php-build-libs:v1
@@ -79,7 +79,7 @@ jobs:
           ${{ github.workspace }}/build/aikido-request-processor.so
 
   build_php_extension_nts:
-    name: Build php${{ matrix.php_version }} extension NTS ${{ matrix.arch == '' && 'x86_64' || 'arm' }}
+    name: Build php ${{ matrix.php_version }} extension NTS ${{ matrix.arch == '' && 'x86_64' || 'arm' }}
     runs-on: ubuntu-24.04${{ matrix.arch }}
     container: ghcr.io/aikidosec/firewall-php-build-extension-nts:${{ matrix.php_version }}-v1
     strategy:
@@ -133,7 +133,7 @@ jobs:
           ${{ github.workspace }}/tests/*.diff
 
   build_php_extension_zts:
-    name: Build php${{ matrix.php_version }} extension ZTS ${{ matrix.arch == '' && 'x86_64' || 'arm' }}
+    name: Build php ${{ matrix.php_version }} extension ZTS ${{ matrix.arch == '' && 'x86_64' || 'arm' }}
     runs-on: ubuntu-24.04${{ matrix.arch }}
     container: ghcr.io/aikidosec/firewall-php-build-extension-zts:${{ matrix.php_version }}-v1
     strategy:
@@ -186,7 +186,7 @@ jobs:
           ${{ github.workspace }}/tests/*.diff
 
   build_rpm:
-    name: Build rpm${{ matrix.arch }}
+    name: Build rpm ${{ matrix.arch == '' && 'x86_64' || 'arm' }}
     runs-on: ubuntu-24.04${{ matrix.arch }}
     container:
       image: quay.io/centos/centos:stream9
@@ -299,7 +299,7 @@ jobs:
             ~/rpmbuild/RPMS/${{ env.ARCH }}/${{ env.AIKIDO_ARTIFACT_RELEASE }}
 
   build_deb:
-    name: Build deb${{ matrix.arch }}
+    name: Build deb ${{ matrix.arch == '' && 'x86_64' || 'arm' }}
     runs-on: ubuntu-24.04${{ matrix.arch }}
     container:
       image: ubuntu:22.04
