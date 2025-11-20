@@ -133,6 +133,10 @@ RUN php -v | grep -q "ZTS" || (echo "ERROR: ZTS not enabled!" && exit 1) && \
 
 ENV PATH="/usr/local/bin:${PATH}"
 
+# Configure MySQL socket path for mysqli (so "localhost" connections work)
+RUN mkdir -p /usr/local/etc/php/conf.d && \
+    echo "mysqli.default_socket = /var/lib/mysql/mysql.sock" > /usr/local/etc/php/conf.d/mysql-socket.ini
+
 # Python deps used by test harness
 RUN python3 -m pip install --no-cache-dir --upgrade pip && \
     python3 -m pip install --no-cache-dir flask requests psutil

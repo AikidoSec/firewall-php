@@ -123,6 +123,10 @@ RUN php -v | grep -q "ZTS" || (echo "ERROR: ZTS not enabled!" && exit 1) && \
 
 ENV PATH="/usr/local/bin:${PATH}"
 
+# Configure MySQL socket path for mysqli (so "localhost" connections work)
+RUN mkdir -p /usr/local/etc/php/conf.d && \
+    echo "mysqli.default_socket = /var/lib/mysql/mysql.sock" > /usr/local/etc/php/conf.d/mysql-socket.ini
+
 # Install web servers and database (without PHP packages)
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
