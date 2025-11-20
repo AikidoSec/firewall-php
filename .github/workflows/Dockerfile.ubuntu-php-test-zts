@@ -129,6 +129,11 @@ ENV PATH="/usr/local/bin:${PATH}"
 RUN ln -sf /usr/local/bin/php /usr/bin/php && \
     ln -sf /usr/local/sbin/php-fpm /usr/sbin/php-fpm || true
 
+RUN PHP_VER=$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;') && \
+    mkdir -p /etc/php && \
+    mkdir -p /etc/php/${PHP_VER}/fpm/pool.d && \
+    mkdir -p /run/php-fpm
+
 # Configure MySQL socket path for mysqli (so "localhost" connections work)
 RUN mkdir -p /usr/local/etc/php/conf.d && \
     echo "mysqli.default_socket = /var/lib/mysql/mysql.sock" > /usr/local/etc/php/conf.d/mysql-socket.ini
