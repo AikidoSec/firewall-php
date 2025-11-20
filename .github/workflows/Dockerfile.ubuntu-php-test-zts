@@ -39,6 +39,8 @@ ARG PHP_SRC_REF
 WORKDIR /usr/src
 RUN git clone --depth 1 --branch "${PHP_SRC_REF}" https://github.com/php/php-src.git
 WORKDIR /usr/src/php-src
+
+RUN sed -i 's/\[\([0-9]\+\.[0-9]\+\.[0-9]\+\)-dev\]/[\1]/' configure.ac
 RUN ./buildconf --force
 
 # Patch openssl.c for OpenSSL compatibility
@@ -66,6 +68,7 @@ RUN ./configure \
       --enable-fpm \
       --enable-mbstring \
       --enable-pcntl \
+      --with-extra-version="" \
       --with-curl \
       --with-mysqli \
       --with-openssl \
@@ -179,6 +182,7 @@ RUN mkdir -p /usr/lib/cgi-bin && \
 
 WORKDIR /work
 CMD ["bash"]
+
 
 
 

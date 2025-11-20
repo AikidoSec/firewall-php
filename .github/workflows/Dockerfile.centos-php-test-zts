@@ -49,6 +49,8 @@ ARG PHP_SRC_REF
 WORKDIR /usr/src
 RUN git clone --depth 1 --branch "${PHP_SRC_REF}" https://github.com/php/php-src.git
 WORKDIR /usr/src/php-src
+
+RUN sed -i 's/\[\([0-9]\+\.[0-9]\+\.[0-9]\+\)-dev\]/[\1]/' configure.ac
 RUN ./buildconf --force
 
 # Patch openssl.c for OpenSSL compatibility (RSA_SSLV23_PADDING may not be available in newer OpenSSL)
@@ -76,6 +78,7 @@ RUN ./configure \
       --enable-fpm \
       --enable-mbstring \
       --enable-pcntl \
+      --with-extra-version="" \
       --with-curl \
       --with-mysqli \
       --with-openssl \
@@ -144,6 +147,7 @@ RUN python3 -m pip install --no-cache-dir --upgrade pip && \
 # Quality-of-life
 WORKDIR /work
 CMD ["bash"]
+
 
 
 
