@@ -16,7 +16,7 @@ PROCESS_TEST = 1
 PRE_TESTS = 2
 START_SERVER = 3
 UNINIT = 4
-    
+
 servers = {
     "php-built-in": (
         None,
@@ -25,18 +25,18 @@ servers = {
         php_built_in_start_server,
         None
     ),
-    "apache-mod-php": ( 
-        apache_mod_php_init, 
-        apache_mod_php_process_test, 
-        apache_mod_php_pre_tests, 
-        apache_mod_php_start_server, 
+    "apache-mod-php": (
+        apache_mod_php_init,
+        apache_mod_php_process_test,
+        apache_mod_php_pre_tests,
+        apache_mod_php_start_server,
         apache_mod_php_uninit
     ),
-    "nginx-php-fpm": ( 
-        nginx_php_fpm_init, 
-        nginx_php_fpm_process_test, 
-        nginx_php_fpm_pre_tests, 
-        nginx_php_fpm_start_server, 
+    "nginx-php-fpm": (
+        nginx_php_fpm_init,
+        nginx_php_fpm_process_test,
+        nginx_php_fpm_pre_tests,
+        nginx_php_fpm_start_server,
         nginx_php_fpm_uninit
     ),
 }
@@ -55,7 +55,7 @@ def is_port_in_active_use(port):
 def generate_unique_port():
     with lock:
         while True:
-            port = random.randint(1024, 65535)
+            port = random.randint(1024, 9999)
             if port not in used_ports and not is_port_in_active_use(port):
                 used_ports.add(port)
                 return port
@@ -67,15 +67,14 @@ def load_env_from_json(file_path):
     with open(file_path) as f:
         env_vars = json.load(f)
         return env_vars
-    
+
 def print_test_results(s, tests):
     if not len(tests):
         return
-    
+
     print(s)
     for t in tests:
         print(f"\t- {t}")
-
 
 def handle_test_scenario(data, root_tests_dir, test_lib_dir, server, benchmark, valgrind, debug):
     test_name = data["test_name"]
@@ -88,7 +87,7 @@ def handle_test_scenario(data, root_tests_dir, test_lib_dir, server, benchmark, 
         time.sleep(5)
 
         print(f"Starting {server} server on port {server_port} for {test_name}...")
-        
+
         server_start = servers[server][START_SERVER]
         server_process = server_start(data, test_lib_dir, valgrind)
 
@@ -102,12 +101,12 @@ def handle_test_scenario(data, root_tests_dir, test_lib_dir, server, benchmark, 
             test_script_cwd = root_tests_dir
         else:
             print(f"Running test.py for {test_name}...")
-            
-        subprocess.run(["python3", test_script_name, str(server_port), str(mock_port), test_name], 
+
+        subprocess.run(["python3", test_script_name, str(server_port), str(mock_port), test_name],
                        env=dict(os.environ, PYTHONPATH=f"{test_lib_dir}:$PYTHONPATH"),
                        cwd=test_script_cwd,
                        check=True, timeout=600, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        
+
         passed_tests.append(test_name)
 
     except subprocess.CalledProcessError as e:
@@ -117,12 +116,17 @@ def handle_test_scenario(data, root_tests_dir, test_lib_dir, server, benchmark, 
         print(f"Test stdout: {e.stdout.decode()}")
         print(f"Test stderr: {e.stderr.decode()}")
         failed_tests.append(test_name)
-        
+
     except subprocess.TimeoutExpired:
         print(f"Error in testing scenario {test_name}:")
         print(f"Execution timed out.")
         failed_tests.append(test_name)
-        
+
+    except Exception as e:
+        print(f"Error in testing scenario {test_name}:")
+        print(f"Generic exception: {e}")
+        failed_tests.append(test_name)
+
     finally:
         if server_process:
             server_process.terminate()
@@ -134,17 +138,11 @@ def handle_test_scenario(data, root_tests_dir, test_lib_dir, server, benchmark, 
             mock_aikido_core.wait()
             print(f"Mock server on port {mock_port} stopped.")
 
-
-def main(root_tests_dir, test_lib_dir, specific_test=None, server="php-built-in", benchmark=False, valgrind=False, debug=False):    
-    if specific_test:
-        test_dirs = [os.path.join(root_tests_dir, specific_test)]
-    else:
-        test_dirs = [f.path for f in os.scandir(root_tests_dir) if f.is_dir()]
-       
-    server_init = servers[server][INIT] 
+def main(root_tests_dir, test_lib_dir, test_dirs, server="php-built-in", benchmark=False, valgrind=False, debug=False):
+    server_init = servers[server][INIT]
     if server_init is not None:
         server_init(root_tests_dir)
-        
+
     tests_data = []
     for test_dir in test_dirs:
         mock_port = generate_unique_port()
@@ -167,15 +165,15 @@ def main(root_tests_dir, test_lib_dir, specific_test=None, server="php-built-in"
         env.update(load_env_from_json(test_data["env_path"]))
         env = {k: v for k, v in env.items() if v != ""}
         test_data["env"] = env
-        
+
         server_process_test = servers[server][PROCESS_TEST]
         if server_process_test is not None:
             test_data = server_process_test(test_data)
         tests_data.append(test_data)
-            
-    if servers[server][2] is not None:
-        test_data = servers[server][2]()
-            
+
+    if servers[server][PRE_TESTS] is not None:
+        test_data = servers[server][PRE_TESTS]()
+
     threads = []
     for test_data in tests_data:
         args = (test_data, root_tests_dir, test_lib_dir, server, benchmark, valgrind, debug)
@@ -186,26 +184,22 @@ def main(root_tests_dir, test_lib_dir, specific_test=None, server="php-built-in"
 
     for thread in threads:
         thread.join()
-        
+
     server_uninit = servers[server][UNINIT]
     if server_uninit is not None:
         server_uninit()
-            
-    print_test_results("Passed tests:", passed_tests)
-    print_test_results("Failed tests:", failed_tests)
-    assert failed_tests == [], f"Found failed tests: {failed_tests}"
-    print("All tests passed!")
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Script for running PHP server tests with Aikido Firewall installed.")
     parser.add_argument("root_folder_path", type=str, help="Path to the root folder of the tests to be ran.")
     parser.add_argument("test_lib_dir", type=str, help="Directory for the test libraries.")
-    parser.add_argument("--test", type=str, default=None, help="Run a single test from the root folder.")
+    parser.add_argument("--test", type=str, action='append', default=None, help="Run specific tests from the root folder (can be specified multiple times).")
     parser.add_argument("--benchmark", action="store_true", help="Enable benchmarking.")
     parser.add_argument("--valgrind", action="store_true", help="Enable valgrind.")
     parser.add_argument("--debug", action="store_true", help="Enable debugging logs.")
-    parser.add_argument("--server", type=str, choices=["php-built-in", "apache-mod-php", "nginx-php-fpm"], default="php-built-in", help="Enable nginx & php-fpm testing.")
+    parser.add_argument("--server", type=str, choices=["php-built-in", "apache-mod-php", "nginx-php-fpm"], default="php-built-in", help="Select the type of server testing.")
+    parser.add_argument("--max-tests", type=int, default=0, help="Maximum number of tests to execute.")
+    parser.add_argument("--max-runs", type=int, default=1, help="Maximum number of test runs.")
 
     # Parse arguments
     args = parser.parse_args()
@@ -213,4 +207,33 @@ if __name__ == "__main__":
     # Extract values from parsed arguments
     root_folder = os.path.abspath(args.root_folder_path)
     test_lib_dir = os.path.abspath(args.test_lib_dir)
-    main(root_folder, test_lib_dir, args.test, args.server, args.benchmark, args.valgrind, args.debug)
+
+    test_dirs = []
+    if args.test:
+        test_dirs = [os.path.join(root_folder, t) for t in args.test]
+    else:
+        test_dirs = [f.path for f in os.scandir(root_folder) if f.is_dir()]
+
+    i = 1
+    while i <= args.max_runs:
+        random.shuffle(test_dirs)
+        if args.max_tests != 0:
+            test_dirs = test_dirs[:args.max_tests]
+
+        print(f"Starting test run number {i} with {len(test_dirs)} tests...")
+        print(f"Tests: {[os.path.basename(os.path.normpath(t)) for t in test_dirs]}")
+
+        failed_tests = []
+        
+        main(root_folder, test_lib_dir, test_dirs, args.server, args.benchmark, args.valgrind, args.debug)
+
+        if len(failed_tests) == 0:
+            break
+
+        test_dirs = [os.path.join(root_folder, t) for t in failed_tests]
+        i += 1
+
+    print_test_results("Passed tests:", passed_tests)
+    print_test_results("Failed tests:", failed_tests)
+    assert failed_tests == [], f"Found failed tests: {failed_tests}"
+    print("All tests passed!")

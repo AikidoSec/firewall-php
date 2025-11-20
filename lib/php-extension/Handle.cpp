@@ -37,7 +37,6 @@ ZEND_NAMED_FUNCTION(aikido_generic_handler) {
     bool caughtException = false;
 
     eventCache.Reset();
-    eventCache.functionName = ZSTR_VAL(execute_data->func->common.function_name);
 
     try {
         zend_execute_data* exec_data = EG(current_execute_data);
@@ -80,6 +79,15 @@ ZEND_NAMED_FUNCTION(aikido_generic_handler) {
             return;
         }
 
+        if (AIKIDO_GLOBAL(disable) == true) {
+            if (original_handler) {
+                original_handler(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+            }
+            AIKIDO_LOG_INFO("Aikido generic handler finished earlier because AIKIDO_DISABLE is set to 1!\n");
+            return;
+        }
+
+        eventCache.functionName = scope_name;
         sink = scope_name;
 
         AIKIDO_LOG_DEBUG("Calling handler for \"%s\"!\n", scope_name.c_str());

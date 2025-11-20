@@ -10,7 +10,6 @@ import (
 	"main/utils"
 	"slices"
 	"strings"
-	"time"
 )
 
 func storeTotalStats(server *ServerData, rateLimited bool) {
@@ -212,7 +211,7 @@ func updateAttackWaveCountsAndDetect(server *ServerData, isWebScanner bool, ip s
 		return
 	}
 
-	now := time.Now()
+	now := utils.GetTime()
 
 	server.AttackWaveMutex.Lock()
 	defer server.AttackWaveMutex.Unlock()
@@ -221,7 +220,7 @@ func updateAttackWaveCountsAndDetect(server *ServerData, isWebScanner bool, ip s
 	queue := incrementSlidingWindowEntry(server.AttackWave.IpQueues, ip)
 
 	// skip if the last event for this ip was already sent within the min between time
-	if queue != nil && !queue.LastSent.IsZero() && now.Sub(queue.LastSent) < server.AttackWave.MinBetween {
+	if queue != nil && queue.LastSent > 0 && now-queue.LastSent < server.AttackWave.MinBetween {
 		return
 	}
 
