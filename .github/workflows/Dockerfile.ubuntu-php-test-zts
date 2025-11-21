@@ -78,49 +78,6 @@ RUN ./configure \
 && make install \
 && strip /usr/local/bin/php /usr/local/sbin/php-fpm || true
 
-# Install PHP-FPM configuration files
-RUN mkdir -p /usr/local/etc/php-fpm.d && \
-    if [ -f sapi/fpm/php-fpm.conf ]; then \
-        cp sapi/fpm/php-fpm.conf /usr/local/etc/php-fpm.conf.default || \
-        cp sapi/fpm/php-fpm.conf.default /usr/local/etc/php-fpm.conf.default || true; \
-    fi && \
-    if [ -f sapi/fpm/www.conf ]; then \
-        cp sapi/fpm/www.conf /usr/local/etc/php-fpm.d/www.conf.default || \
-        cp sapi/fpm/www.conf.default /usr/local/etc/php-fpm.d/www.conf.default || true; \
-    fi && \
-    if [ ! -f /usr/local/etc/php-fpm.conf ]; then \
-        if [ -f /usr/local/etc/php-fpm.conf.default ]; then \
-            cp /usr/local/etc/php-fpm.conf.default /usr/local/etc/php-fpm.conf; \
-            # Ensure daemonize is set for PHP 8.2+
-            if ! grep -q "^daemonize" /usr/local/etc/php-fpm.conf; then \
-                sed -i '/^\[global\]/a daemonize = no' /usr/local/etc/php-fpm.conf; \
-            fi; \
-        else \
-            echo "[global]" > /usr/local/etc/php-fpm.conf && \
-            echo "pid = /var/run/php-fpm.pid" >> /usr/local/etc/php-fpm.conf && \
-            echo "error_log = /var/log/php-fpm.log" >> /usr/local/etc/php-fpm.conf && \
-            echo "daemonize = no" >> /usr/local/etc/php-fpm.conf && \
-            echo "include=/usr/local/etc/php-fpm.d/*.conf" >> /usr/local/etc/php-fpm.conf; \
-        fi; \
-    fi && \
-    if [ ! -f /usr/local/etc/php-fpm.d/www.conf ]; then \
-        if [ -f /usr/local/etc/php-fpm.d/www.conf.default ]; then \
-            cp /usr/local/etc/php-fpm.d/www.conf.default /usr/local/etc/php-fpm.d/www.conf; \
-        else \
-            echo "[www]" > /usr/local/etc/php-fpm.d/www.conf && \
-            echo "user = nobody" >> /usr/local/etc/php-fpm.d/www.conf && \
-            echo "group = nobody" >> /usr/local/etc/php-fpm.d/www.conf && \
-            echo "listen = 127.0.0.1:9000" >> /usr/local/etc/php-fpm.d/www.conf && \
-            echo "listen.owner = nobody" >> /usr/local/etc/php-fpm.d/www.conf && \
-            echo "listen.group = nobody" >> /usr/local/etc/php-fpm.d/www.conf && \
-            echo "pm = dynamic" >> /usr/local/etc/php-fpm.d/www.conf && \
-            echo "pm.max_children = 5" >> /usr/local/etc/php-fpm.d/www.conf && \
-            echo "pm.start_servers = 2" >> /usr/local/etc/php-fpm.d/www.conf && \
-            echo "pm.min_spare_servers = 1" >> /usr/local/etc/php-fpm.d/www.conf && \
-            echo "pm.max_spare_servers = 3" >> /usr/local/etc/php-fpm.d/www.conf; \
-        fi; \
-    fi
-
 # Final image with PHP and test infrastructure
 FROM base AS final
 COPY --from=php-build /usr/local /usr/local
@@ -135,17 +92,20 @@ RUN ln -sf /usr/local/bin/php /usr/bin/php && \
     ln -sf /usr/local/sbin/php-fpm /usr/sbin/php-fpm || true
 
 RUN PHP_VER=$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;') && \
-    mkdir -p /etc/php && \
+    mkdir -p /etc/php/${PHP_VER}/fpm && \
     mkdir -p /etc/php/${PHP_VER}/fpm/pool.d && \
+    mkdir -p /run/php && \
     mkdir -p /run/php-fpm && \
     mkdir -p /var/run && \
     mkdir -p /var/log && \
     mkdir -p /usr/local/etc/php-fpm.d && \
-    # Always create a clean, minimal config file (overwrite any from build stage) \
-    # Note: daemonize = yes for test environment so subprocess.run() doesn't hang \
+    mkdir -p /usr/local/etc/php/conf.d && \
+
+    ln -sf /usr/local/etc/php/conf.d /etc/php/${PHP_VER}/fpm/conf.d || true && \
+
     echo "[global]" > /usr/local/etc/php-fpm.conf && \
     echo "pid = /run/php-fpm/php-fpm.pid" >> /usr/local/etc/php-fpm.conf && \
-    echo "error_log = /var/log/php-fpm.log" >> /usr/local/etc/php-fpm.conf && \
+    echo "error_log = /var/log/php${PHP_VER}-fpm.log" >> /usr/local/etc/php-fpm.conf && \
     echo "daemonize = yes" >> /usr/local/etc/php-fpm.conf && \
     echo "include=/usr/local/etc/php-fpm.d/*.conf" >> /usr/local/etc/php-fpm.conf && \
     echo "include=/etc/php/${PHP_VER}/fpm/pool.d/*.conf" >> /usr/local/etc/php-fpm.conf && \
@@ -161,10 +121,18 @@ RUN PHP_VER=$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;') && \
     echo "pm.start_servers = 2" >> /usr/local/etc/php-fpm.d/www.conf && \
     echo "pm.min_spare_servers = 1" >> /usr/local/etc/php-fpm.d/www.conf && \
     echo "pm.max_spare_servers = 3" >> /usr/local/etc/php-fpm.d/www.conf && \
-    # Test the configuration \
-    php-fpm -t -y /usr/local/etc/php-fpm.conf 2>&1 || (PHP_MAJOR=$(php -r 'echo PHP_MAJOR_VERSION;') && PHP_MINOR=$(php -r 'echo PHP_MINOR_VERSION;') && echo "PHP-FPM config test failed for PHP ${PHP_MAJOR}.${PHP_MINOR}" && echo "Config file contents:" && cat /usr/local/etc/php-fpm.conf && echo "Pool config:" && cat /usr/local/etc/php-fpm.d/www.conf && exit 1) && \
-    mkdir -p /etc/php-fpm.d && \
-    ln -sf /usr/local/etc/php-fpm.conf /etc/php-fpm.conf
+
+    php-fpm -t -y /usr/local/etc/php-fpm.conf 2>&1 | grep -v "Nothing matches the include pattern" || true && \
+    php-fpm -t -y /usr/local/etc/php-fpm.conf >/dev/null 2>&1 || \
+    (PHP_MAJOR=$(php -r 'echo PHP_MAJOR_VERSION;') && \
+     PHP_MINOR=$(php -r 'echo PHP_MINOR_VERSION;') && \
+     echo "PHP-FPM config test failed for PHP ${PHP_MAJOR}.${PHP_MINOR}" && \
+     echo "Config file contents:" && cat /usr/local/etc/php-fpm.conf && \
+     echo "Pool config:" && cat /usr/local/etc/php-fpm.d/www.conf && \
+     exit 1) && \
+
+    ln -sf /usr/local/etc/php-fpm.conf /etc/php/${PHP_VER}/fpm/php-fpm.conf && \
+    ln -sf /usr/local/etc/php-fpm.d/www.conf /etc/php/${PHP_VER}/fpm/pool.d/www.conf || true
 
 # Configure MySQL socket path for mysqli (so "localhost" connections work)
 RUN mkdir -p /usr/local/etc/php/conf.d && \
