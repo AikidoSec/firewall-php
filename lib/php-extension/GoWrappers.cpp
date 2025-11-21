@@ -1,11 +1,13 @@
 #include "Includes.h"
 
 GoString GoCreateString(const std::string& s) {
-    return GoString{s.c_str(), s.length()};
+    return GoString{ s.c_str(), static_cast<ptrdiff_t>(s.size()) };
 }
 
 GoSlice GoCreateSlice(const std::vector<int64_t>& v) {
-    return GoSlice{ (void*)v.data(), v.size(), v.capacity() };
+    return GoSlice{ static_cast<void*>(const_cast<int64_t*>(v.data())),
+                    static_cast<GoInt>(v.size()),
+                    static_cast<GoInt>(v.capacity()) };
 }
 /*
     Callback wrapper called by the RequestProcessor (GO) whenever it needs data from PHP (C++ extension).
@@ -13,6 +15,10 @@ GoSlice GoCreateSlice(const std::vector<int64_t>& v) {
 char* GoContextCallback(int callbackId) {
     std::string ctx;
     std::string ret;
+
+    auto& server = AIKIDO_GLOBAL(server);
+    const auto& requestCache = AIKIDO_GLOBAL(requestCache);
+    const auto& eventCache = AIKIDO_GLOBAL(eventCache);
 
     try {
         switch (callbackId) {

@@ -8,8 +8,6 @@ import (
 var EnvironmentConfig EnvironmentConfigData
 var Servers = make(map[string]*ServerData)
 var ServersMutex sync.RWMutex
-var CurrentToken string = ""
-var CurrentServer *ServerData = nil
 
 func NewServerData() *ServerData {
 	return &ServerData{
@@ -20,10 +18,6 @@ func NewServerData() *ServerData {
 		CloudConfigMutex:    sync.Mutex{},
 		MiddlewareInstalled: false,
 	}
-}
-
-func GetCurrentServer() *ServerData {
-	return CurrentServer
 }
 
 func GetServer(token string) *ServerData {

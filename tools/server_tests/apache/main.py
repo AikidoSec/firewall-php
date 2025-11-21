@@ -148,7 +148,7 @@ def toggle_config_line(file_path, line_to_check, comment_ch, enable=False):
     commented_line_pattern = r"\s*" + re.escape(line_to_check.strip()) + r".*"
 
     if enable:
-        commented_line_pattern = "\s*" + comment_ch + commented_line_pattern
+        commented_line_pattern = r"\s*" + comment_ch + commented_line_pattern
 
     # Initialize a flag to track changes
     changes_made = False

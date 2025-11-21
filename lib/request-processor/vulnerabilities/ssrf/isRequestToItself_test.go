@@ -3,21 +3,19 @@ package ssrf
 import (
 	"main/aikido_types"
 	"main/context"
-	"main/globals"
 	"testing"
 )
 
 func setupTestContext(serverURL string, trustProxy bool) func() {
 	// Setup a mock server with trust proxy setting
-	server := &aikido_types.ServerData{
+	testServer := &aikido_types.ServerData{
 		AikidoConfig: aikido_types.AikidoConfigData{
 			TrustProxy: trustProxy,
 		},
 	}
 
 	// Store original server and restore it later
-	originalServer := globals.GetCurrentServer()
-	globals.CurrentServer = server
+	context.SetTestServer(testServer)
 
 	// Use the proper test context loader
 	context.LoadForUnitTests(map[string]string{
@@ -27,7 +25,7 @@ func setupTestContext(serverURL string, trustProxy bool) func() {
 	// Return cleanup function
 	return func() {
 		context.UnloadForUnitTests()
-		globals.CurrentServer = originalServer
+		context.SetTestServer(nil)
 	}
 }
 

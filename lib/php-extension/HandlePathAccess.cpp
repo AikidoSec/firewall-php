@@ -27,6 +27,7 @@ void helper_handle_pre_file_path_access(char *filename, EVENT_ID &eventId) {
     filenameString = get_resource_or_original_from_php_filter(filenameString);
 
     // if filename starts with http:// or https://, it's a URL so we treat it as an outgoing request
+    auto& eventCache = AIKIDO_GLOBAL(eventCache);
     if (StartsWith(filenameString, "http://", false) ||
         StartsWith(filenameString, "https://", false)) {
         eventId = EVENT_PRE_OUTGOING_REQUEST;
@@ -39,13 +40,14 @@ void helper_handle_pre_file_path_access(char *filename, EVENT_ID &eventId) {
 
 /* Helper for handle post file path access */
 void helper_handle_post_file_path_access(EVENT_ID &eventId) {
+    auto& eventCache = AIKIDO_GLOBAL(eventCache);
     if (!eventCache.outgoingRequestUrl.empty()) {
         // If the pre handler for path access determined this was actually an URL,
         // we need to notify that the request finished.
         eventId = EVENT_POST_OUTGOING_REQUEST;
 
         // As we cannot extract the effective URL for these fopen wrappers,
-        // we will just assume it's the same as the initial URL.
+        // we will assume it's the same as the initial URL.
         eventCache.outgoingRequestEffectiveUrl = eventCache.outgoingRequestUrl;
     }
 }
@@ -92,7 +94,7 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_file_path_access_2) {
 
     helper_handle_pre_file_path_access(ZSTR_VAL(filename), eventId);
     if (filename2) {
-        eventCache.filename2 = ZSTR_VAL(filename2);
+        AIKIDO_GLOBAL(eventCache).filename2 = ZSTR_VAL(filename2);
     }
 }
 

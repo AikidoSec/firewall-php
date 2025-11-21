@@ -5,9 +5,11 @@ import "C"
 import (
 	"encoding/json"
 	"fmt"
+	. "main/aikido_types"
 )
 
 var TestContext map[string]string
+var TestServer *ServerData // Test server for unit tests
 
 func UnitTestsCallback(context_id int) string {
 	switch context_id {
@@ -47,6 +49,16 @@ func LoadForUnitTests(context map[string]string) {
 func UnloadForUnitTests() {
 	Context = RequestContextData{}
 	EventContext = EventContextData{}
+	TestServer = nil
+}
+
+func SetTestServer(server *ServerData) {
+	TestServer = server
+}
+
+// GetTestServer returns the current test server, or nil if not set
+func GetTestServer() *ServerData {
+	return TestServer
 }
 
 func GetJsonString(m map[string]interface{}) string {

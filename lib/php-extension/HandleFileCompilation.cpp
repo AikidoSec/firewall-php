@@ -1,6 +1,7 @@
 #include "Includes.h"
 
 zend_op_array* handle_file_compilation(zend_file_handle* file_handle, int type) {
+    auto& eventCache = AIKIDO_GLOBAL(eventCache);
     eventCache.Reset();
     switch (type) {
         case ZEND_INCLUDE:

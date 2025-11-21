@@ -3,11 +3,12 @@ package main
 import (
 	"main/attack"
 	"main/context"
+	"main/instance"
 	"main/log"
 	path_traversal "main/vulnerabilities/path-traversal"
 )
 
-func OnPrePathAccessed() string {
+func OnPrePathAccessed(inst *instance.RequestProcessorInstance) string {
 	filename := context.GetFilename()
 	filename2 := context.GetFilename2()
 	operation := context.GetFunctionName()

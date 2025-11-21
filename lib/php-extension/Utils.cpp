@@ -33,6 +33,9 @@ std::string GetDateTime() {
     return time_str;
 }
 
+uint64_t GetThreadID() {
+    return (uint64_t)pthread_self();
+}
 const char* GetEventName(EVENT_ID event) {
     switch (event) {
         case EVENT_PRE_REQUEST:
@@ -103,12 +106,14 @@ std::string GetSqlDialectFromPdo(zval *pdo_object) {
     }
 
     zval retval;
+    std::string result = "unknown";
     if (CallPhpFunctionWithOneParam("getAttribute", PDO_ATTR_DRIVER_NAME, &retval, pdo_object)) {
         if (Z_TYPE(retval) == IS_STRING) {
-            return Z_STRVAL(retval);
+            result = Z_STRVAL(retval);
         }
     }
-    return "unknown";
+    zval_ptr_dtor(&retval);
+    return result;
 }
 
 bool StartsWith(const std::string& str, const std::string& prefix, bool caseSensitive) {
@@ -127,9 +132,9 @@ json CallPhpFunctionParseUrl(const std::string& url) {
     }
 
     zval retval;
+    json result_json;
     if (CallPhpFunctionWithOneParam("parse_url", url, &retval)) {
         if (Z_TYPE(retval) == IS_ARRAY) {
-            json result_json;
             zval* host = zend_hash_str_find(Z_ARRVAL(retval), "host", sizeof("host") - 1);
             if (host && Z_TYPE_P(host) == IS_STRING) {
                 result_json["host"] = Z_STRVAL_P(host);
@@ -152,10 +157,10 @@ json CallPhpFunctionParseUrl(const std::string& url) {
                     }
                 }
             }
-            return result_json;
         }
     }
-    return json();
+    zval_ptr_dtor(&retval);
+    return result_json;
 }
 
 std::string AnonymizeToken(const std::string& str) {
