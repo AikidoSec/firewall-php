@@ -206,9 +206,9 @@ func isRateLimitingThresholdExceeded(config *RateLimitingConfig, countsMap map[s
 //     returns early without checking threshold or sending another event
 //  4. Checks if the total count within the sliding window exceeds the threshold
 //  5. If threshold exceeded: records the event time on the queue, logs the detection, and sends event to cloud
-func updateAttackWaveCountsAndDetect(server *ServerData, isWebScanner bool, ip string, userId string, userAgent string) {
+func updateAttackWaveCountsAndDetect(server *ServerData, isWebScanner bool, ip string, userId string, userAgent string) bool {
 	if !isWebScanner || ip == "" {
-		return
+		return false
 	}
 
 	now := utils.GetTime()
@@ -221,12 +221,12 @@ func updateAttackWaveCountsAndDetect(server *ServerData, isWebScanner bool, ip s
 
 	// apply throttling: skip if an event for this IP was recently sent (within MinBetween window)
 	if lastSentTime, exists := server.AttackWave.LastSent[ip]; exists && now-lastSentTime < server.AttackWave.MinBetween {
-		return
+		return false
 	}
 
 	// check threshold within window
 	if queue == nil || queue.Total < server.AttackWave.Threshold {
-		return // threshold not reached
+		return false // threshold not reached
 	}
 
 	// threshold reached -> record event and send to cloud
@@ -240,6 +240,7 @@ func updateAttackWaveCountsAndDetect(server *ServerData, isWebScanner bool, ip s
 		Request: &protos.Request{IpAddress: ip, UserAgent: userAgent},
 		Attack:  &protos.Attack{Metadata: []*protos.Metadata{}, UserId: userId},
 	}, "detected_attack_wave")
+	return true
 }
 
 func getRateLimitingValue(server *ServerData, method, route string) *RateLimitingValue {
