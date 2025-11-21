@@ -148,6 +148,10 @@ RUN PHP_VER=$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;') && \
         echo "daemonize = no" >> /usr/local/etc/php-fpm.conf && \
         echo "include=/usr/local/etc/php-fpm.d/*.conf" >> /usr/local/etc/php-fpm.conf; \
     fi && \
+    # Ensure daemonize is set (required for PHP 8.2+) even if config exists from build stage \
+    if ! grep -q "^daemonize" /usr/local/etc/php-fpm.conf; then \
+        sed -i '/^\[global\]/a daemonize = no' /usr/local/etc/php-fpm.conf; \
+    fi && \
     if [ ! -f /usr/local/etc/php-fpm.d/www.conf ]; then \
         echo "[www]" > /usr/local/etc/php-fpm.d/www.conf && \
         echo "user = root" >> /usr/local/etc/php-fpm.d/www.conf && \
@@ -161,13 +165,8 @@ RUN PHP_VER=$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;') && \
         echo "pm.min_spare_servers = 1" >> /usr/local/etc/php-fpm.d/www.conf && \
         echo "pm.max_spare_servers = 3" >> /usr/local/etc/php-fpm.d/www.conf; \
     fi && \
-    PHP_MAJOR=$(php -r 'echo PHP_MAJOR_VERSION;') && \
-    PHP_MINOR=$(php -r 'echo PHP_MINOR_VERSION;') && \
-    if [ "$PHP_MAJOR" -ge 8 ] && [ "$PHP_MINOR" -ge 2 ]; then \
-        php-fpm -t -y /usr/local/etc/php-fpm.conf || (echo "PHP-FPM config test failed for PHP ${PHP_MAJOR}.${PHP_MINOR}" && cat /usr/local/etc/php-fpm.conf && exit 1); \
-    else \
-        php-fpm -t -y /usr/local/etc/php-fpm.conf; \
-    fi && \
+    # Test the configuration \
+    php-fpm -t -y /usr/local/etc/php-fpm.conf 2>&1 || (PHP_MAJOR=$(php -r 'echo PHP_MAJOR_VERSION;') && PHP_MINOR=$(php -r 'echo PHP_MINOR_VERSION;') && echo "PHP-FPM config test failed for PHP ${PHP_MAJOR}.${PHP_MINOR}" && echo "Config file contents:" && cat /usr/local/etc/php-fpm.conf && echo "Pool config:" && cat /usr/local/etc/php-fpm.d/www.conf && exit 1) && \
     mkdir -p /etc/php-fpm.d && \
     ln -sf /usr/local/etc/php-fpm.conf /etc/php-fpm.conf
 
