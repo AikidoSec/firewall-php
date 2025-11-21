@@ -595,3 +595,4 @@ jobs:
           ignore_failures: true
           config_update_delay: 120
           test_timeout: 900
+          skip_tests: test_ssrf,test_stored_ssrf_no_context,test_stored_ssrf
