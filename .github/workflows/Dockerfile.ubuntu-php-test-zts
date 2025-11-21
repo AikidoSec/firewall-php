@@ -142,10 +142,11 @@ RUN PHP_VER=$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;') && \
     mkdir -p /var/log && \
     mkdir -p /usr/local/etc/php-fpm.d && \
     # Always create a clean, minimal config file (overwrite any from build stage) \
+    # Note: daemonize = yes for test environment so subprocess.run() doesn't hang \
     echo "[global]" > /usr/local/etc/php-fpm.conf && \
     echo "pid = /run/php-fpm/php-fpm.pid" >> /usr/local/etc/php-fpm.conf && \
     echo "error_log = /var/log/php-fpm.log" >> /usr/local/etc/php-fpm.conf && \
-    echo "daemonize = no" >> /usr/local/etc/php-fpm.conf && \
+    echo "daemonize = yes" >> /usr/local/etc/php-fpm.conf && \
     echo "include=/usr/local/etc/php-fpm.d/*.conf" >> /usr/local/etc/php-fpm.conf && \
     # Always create a clean pool config (overwrite any from build stage) \
     echo "[www]" > /usr/local/etc/php-fpm.d/www.conf && \

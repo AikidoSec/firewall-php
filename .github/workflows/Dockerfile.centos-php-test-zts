@@ -150,13 +150,12 @@ RUN mkdir -p /etc/php-fpm.d && \
     mkdir -p /var/log && \
     mkdir -p /etc/httpd || true && \
     mkdir -p /usr/local/etc/php-fpm.d && \
-    # Always create a clean, minimal config file (overwrite any from build stage) \
+
     echo "[global]" > /usr/local/etc/php-fpm.conf && \
     echo "pid = /run/php-fpm/php-fpm.pid" >> /usr/local/etc/php-fpm.conf && \
     echo "error_log = /var/log/php-fpm.log" >> /usr/local/etc/php-fpm.conf && \
-    echo "daemonize = no" >> /usr/local/etc/php-fpm.conf && \
+    echo "daemonize = yes" >> /usr/local/etc/php-fpm.conf && \
     echo "include=/usr/local/etc/php-fpm.d/*.conf" >> /usr/local/etc/php-fpm.conf && \
-    # Always create a clean pool config (overwrite any from build stage) \
     echo "[www]" > /usr/local/etc/php-fpm.d/www.conf && \
     echo "user = root" >> /usr/local/etc/php-fpm.d/www.conf && \
     echo "group = root" >> /usr/local/etc/php-fpm.d/www.conf && \
@@ -168,8 +167,7 @@ RUN mkdir -p /etc/php-fpm.d && \
     echo "pm.start_servers = 2" >> /usr/local/etc/php-fpm.d/www.conf && \
     echo "pm.min_spare_servers = 1" >> /usr/local/etc/php-fpm.d/www.conf && \
     echo "pm.max_spare_servers = 3" >> /usr/local/etc/php-fpm.d/www.conf && \
-    # Test the configuration \
-    php-fpm -t -y /usr/local/etc/php-fpm.conf 2>&1 || (PHP_MAJOR=$(php -r 'echo PHP_MAJOR_VERSION;') && PHP_MINOR=$(php -r 'echo PHP_MINOR_VERSION;') && echo "PHP-FPM config test failed for PHP ${PHP_MAJOR}.${PHP_MINOR}" && echo "Config file contents:" && cat /usr/local/etc/php-fpm.conf && echo "Pool config:" && cat /usr/local/etc/php-fpm.d/www.conf && exit 1) && \
+    # Test the configuration \    php-fpm -t -y /usr/local/etc/php-fpm.conf 2>&1 || (PHP_MAJOR=$(php -r 'echo PHP_MAJOR_VERSION;') && PHP_MINOR=$(php -r 'echo PHP_MINOR_VERSION;') && echo "PHP-FPM config test failed for PHP ${PHP_MAJOR}.${PHP_MINOR}" && echo "Config file contents:" && cat /usr/local/etc/php-fpm.conf && echo "Pool config:" && cat /usr/local/etc/php-fpm.d/www.conf && exit 1) && \
     mkdir -p /etc/php-fpm.d && \
     ln -sf /usr/local/etc/php-fpm.conf /etc/php-fpm.conf
 
