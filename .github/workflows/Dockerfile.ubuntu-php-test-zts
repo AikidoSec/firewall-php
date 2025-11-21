@@ -141,30 +141,24 @@ RUN PHP_VER=$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;') && \
     mkdir -p /var/run && \
     mkdir -p /var/log && \
     mkdir -p /usr/local/etc/php-fpm.d && \
-    if [ ! -f /usr/local/etc/php-fpm.conf ]; then \
-        echo "[global]" > /usr/local/etc/php-fpm.conf && \
-        echo "pid = /run/php-fpm/php-fpm.pid" >> /usr/local/etc/php-fpm.conf && \
-        echo "error_log = /var/log/php-fpm.log" >> /usr/local/etc/php-fpm.conf && \
-        echo "daemonize = no" >> /usr/local/etc/php-fpm.conf && \
-        echo "include=/usr/local/etc/php-fpm.d/*.conf" >> /usr/local/etc/php-fpm.conf; \
-    fi && \
-    # Ensure daemonize is set (required for PHP 8.2+) even if config exists from build stage \
-    if ! grep -q "^daemonize" /usr/local/etc/php-fpm.conf; then \
-        sed -i '/^\[global\]/a daemonize = no' /usr/local/etc/php-fpm.conf; \
-    fi && \
-    if [ ! -f /usr/local/etc/php-fpm.d/www.conf ]; then \
-        echo "[www]" > /usr/local/etc/php-fpm.d/www.conf && \
-        echo "user = root" >> /usr/local/etc/php-fpm.d/www.conf && \
-        echo "group = root" >> /usr/local/etc/php-fpm.d/www.conf && \
-        echo "listen = 127.0.0.1:9000" >> /usr/local/etc/php-fpm.d/www.conf && \
-        echo "listen.owner = root" >> /usr/local/etc/php-fpm.d/www.conf && \
-        echo "listen.group = root" >> /usr/local/etc/php-fpm.d/www.conf && \
-        echo "pm = dynamic" >> /usr/local/etc/php-fpm.d/www.conf && \
-        echo "pm.max_children = 5" >> /usr/local/etc/php-fpm.d/www.conf && \
-        echo "pm.start_servers = 2" >> /usr/local/etc/php-fpm.d/www.conf && \
-        echo "pm.min_spare_servers = 1" >> /usr/local/etc/php-fpm.d/www.conf && \
-        echo "pm.max_spare_servers = 3" >> /usr/local/etc/php-fpm.d/www.conf; \
-    fi && \
+    # Always create a clean, minimal config file (overwrite any from build stage) \
+    echo "[global]" > /usr/local/etc/php-fpm.conf && \
+    echo "pid = /run/php-fpm/php-fpm.pid" >> /usr/local/etc/php-fpm.conf && \
+    echo "error_log = /var/log/php-fpm.log" >> /usr/local/etc/php-fpm.conf && \
+    echo "daemonize = no" >> /usr/local/etc/php-fpm.conf && \
+    echo "include=/usr/local/etc/php-fpm.d/*.conf" >> /usr/local/etc/php-fpm.conf && \
+    # Always create a clean pool config (overwrite any from build stage) \
+    echo "[www]" > /usr/local/etc/php-fpm.d/www.conf && \
+    echo "user = root" >> /usr/local/etc/php-fpm.d/www.conf && \
+    echo "group = root" >> /usr/local/etc/php-fpm.d/www.conf && \
+    echo "listen = 127.0.0.1:9000" >> /usr/local/etc/php-fpm.d/www.conf && \
+    echo "listen.owner = root" >> /usr/local/etc/php-fpm.d/www.conf && \
+    echo "listen.group = root" >> /usr/local/etc/php-fpm.d/www.conf && \
+    echo "pm = dynamic" >> /usr/local/etc/php-fpm.d/www.conf && \
+    echo "pm.max_children = 5" >> /usr/local/etc/php-fpm.d/www.conf && \
+    echo "pm.start_servers = 2" >> /usr/local/etc/php-fpm.d/www.conf && \
+    echo "pm.min_spare_servers = 1" >> /usr/local/etc/php-fpm.d/www.conf && \
+    echo "pm.max_spare_servers = 3" >> /usr/local/etc/php-fpm.d/www.conf && \
     # Test the configuration \
     php-fpm -t -y /usr/local/etc/php-fpm.conf 2>&1 || (PHP_MAJOR=$(php -r 'echo PHP_MAJOR_VERSION;') && PHP_MINOR=$(php -r 'echo PHP_MINOR_VERSION;') && echo "PHP-FPM config test failed for PHP ${PHP_MAJOR}.${PHP_MINOR}" && echo "Config file contents:" && cat /usr/local/etc/php-fpm.conf && echo "Pool config:" && cat /usr/local/etc/php-fpm.d/www.conf && exit 1) && \
     mkdir -p /etc/php-fpm.d && \
