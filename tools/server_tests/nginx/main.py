@@ -182,6 +182,12 @@ def nginx_php_fpm_process_test(test_data):
     nginx_create_conf_file(test_data["test_name"], test_data["test_dir"], test_data["server_port"])
 
     test_data["fpm_config"] = php_fpm_create_conf_file(test_data["test_dir"], test_data["test_name"], "root", test_data["env"])
+    # Reload PHP-FPM to pick up the new pool config
+    result = subprocess.run(['pgrep', '-f', 'php-fpm'], capture_output=True, text=True)
+    if result.stdout.strip():
+        php_fpm_pid = result.stdout.strip().split('\n')[0]
+        subprocess.run(['kill', '-USR2', php_fpm_pid], check=False)  # Reload config
+        time.sleep(0.5)  # Give it time to reload
     return test_data
 
 
@@ -195,9 +201,17 @@ def nginx_php_fpm_pre_tests():
     create_folder(f'{log_dir}/php-fpm')
     modify_nginx_conf(nginx_global_conf)
     subprocess.run(['nginx'], check=True)
-    subprocess.run([php_fpm_bin, '--allow-to-run-as-root'], check=True)
+    # Start PHP-FPM in background and verify it's running
+    # Use /etc/php-fpm.conf if it exists (symlink to /usr/local/etc/php-fpm.conf), otherwise use /usr/local/etc/php-fpm.conf
+    php_fpm_config = "/etc/php-fpm.conf" if os.path.exists("/etc/php-fpm.conf") else "/usr/local/etc/php-fpm.conf"
+    subprocess.run([php_fpm_bin, '--allow-to-run-as-root', '-y', php_fpm_config], check=True)
+    time.sleep(2)
+    # Verify PHP-FPM is actually running
+    result = subprocess.run(['pgrep', '-f', 'php-fpm'], capture_output=True, text=True)
+    if not result.stdout.strip():
+        raise RuntimeError("PHP-FPM failed to start!")
     print("nginx and php-fpm servers restarted!")
-    time.sleep(5)
+    time.sleep(3)
 
 
 def nginx_php_fpm_start_server(test_data, test_lib_dir, valgrind):
