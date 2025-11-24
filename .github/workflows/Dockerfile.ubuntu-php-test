@@ -36,7 +36,7 @@ RUN set -eux; \
     if [ "$(printf '%s\n' "${PHP_VERSION}" "8.5" | sort -V | head -n1)" != "8.5" ]; then \
       PACKAGES="${PACKAGES} ${PHP_PKG}-opcache"; \
     fi; \
-    apt-get install -y --no-install-recommends ${PACKAGES} \
+    apt-get install -y ${PACKAGES} \
     # Apache: switch to prefork for mod_php scenario and enable rewrite
     a2dismod mpm_event || true; \
     a2dismod mpm_worker || true; \
