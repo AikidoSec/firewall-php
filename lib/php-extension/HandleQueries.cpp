@@ -70,13 +70,13 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_pdostatement_execute) {
     eventCache.sqlQuery = PHP_GET_CHAR_PTR(stmt->query_string);    
 
 #if PHP_VERSION_ID >= 80500
-    if (!stmt->database_object_handle || !*stmt->database_object_handle) {
+    if (!stmt->database_object_handle) {
         eventCache.sqlDialect = "unknown";
         return;
     }
-    eventCache.sqlDialect = GetSqlDialectFromPdo(*stmt->database_object_handle);
-#else
     eventCache.sqlDialect = GetSqlDialectFromPdo(stmt->database_object_handle);
+#else
+    eventCache.sqlDialect = GetSqlDialectFromPdo(&stmt->database_object_handle);
 #endif
 }
 
