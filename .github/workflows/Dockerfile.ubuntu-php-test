@@ -27,23 +27,19 @@ RUN apt-get update
 
 RUN set -eux; \
     PHP_PKG="php${PHP_VERSION}"; \
-    apt-get install -y --fix-missing --no-install-recommends \
+    apt-get install -y --no-install-recommends \
       nginx \
       apache2 \
       mariadb-server \
       ${PHP_PKG} ${PHP_PKG}-cli ${PHP_PKG}-common ${PHP_PKG}-fpm \
       ${PHP_PKG}-curl ${PHP_PKG}-sqlite3 ${PHP_PKG}-mysql \
-      ${PHP_PKG}-mbstring ${PHP_PKG}-xml ${PHP_PKG}-zip \
+      ${PHP_PKG}-mbstring ${PHP_PKG}-xml ${PHP_PKG}-zip ${PHP_PKG}-opcache \
       libapache2-mod-php${PHP_VERSION} \
     ; \
     # Apache: switch to prefork for mod_php scenario and enable rewrite
     a2dismod mpm_event || true; \
     a2dismod mpm_worker || true; \
     a2enmod mpm_prefork rewrite || true
-
-RUN if [ "$(printf '%s\n' "${PHP_VERSION}" "8.5" | sort -V | head -n1)" != "8.5" ]; then \
-      apt-get install -y --fix-missing --no-install-recommends php${PHP_VERSION}-opcache; \
-    fi
 
 # ---- Python toolchain used by tests ----
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
