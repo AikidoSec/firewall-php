@@ -206,7 +206,7 @@ func isRateLimitingThresholdExceeded(config *RateLimitingConfig, countsMap map[s
 //     returns early without checking threshold or sending another event
 //  4. Checks if the total count within the sliding window exceeds the threshold
 //  5. If threshold exceeded: records the event time on the queue, logs the detection, and sends event with samples to cloud
-func updateAttackWaveCountsAndDetect(server *ServerData, isWebScanner bool, ip string, userId string, userAgent string, method string, url string) {
+func updateAttackWaveCountsAndDetect(server *ServerData, isWebScanner bool, ip string, userId string, userAgent string, method string, url string) bool {
 	if !isWebScanner || ip == "" {
 		return false
 	}
@@ -245,6 +245,8 @@ func updateAttackWaveCountsAndDetect(server *ServerData, isWebScanner bool, ip s
 		Request: &protos.Request{IpAddress: ip, UserAgent: userAgent},
 		Attack:  &protos.Attack{Metadata: []*protos.Metadata{}, UserId: userId},
 	}, "detected_attack_wave", queue.Samples)
+
+	return true
 }
 
 func getRateLimitingValue(server *ServerData, method, route string) *RateLimitingValue {
