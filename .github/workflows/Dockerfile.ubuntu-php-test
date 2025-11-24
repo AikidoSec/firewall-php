@@ -42,7 +42,7 @@ RUN set -eux; \
     a2dismod mpm_worker || true; \
     a2enmod mpm_prefork rewrite || true
 
-RUN apt-get install -y mariadb-server mariadb-client
+RUN apt-get update && apt-get install -y mariadb-server mariadb-client
 
 # ---- Python toolchain used by tests ----
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
