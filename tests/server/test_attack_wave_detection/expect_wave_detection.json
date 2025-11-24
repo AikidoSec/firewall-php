@@ -5,7 +5,13 @@
         "ipAddress": "5.8.19.22"
     },
     "attack": {
-        "metadata": {},
+        "metadata": {
+            "samples": [
+                {
+                    "method": "GET"
+                }
+            ]
+        },
         "user": {
             "id": "12345",
             "name": "Tudor"
@@ -15,9 +21,5 @@
         "dryMode": false,
         "library": "firewall-php"
     },
-    "samples": [
-        {
-            "method": "GET"
-        }
-    ]
+    "time": 1763985362761
 }

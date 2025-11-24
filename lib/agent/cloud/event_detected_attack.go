@@ -17,11 +17,18 @@ func GetHeaders(protoHeaders []*protos.Header) map[string][]string {
 	return headers
 }
 
-func GetMetadata(protoMetadata []*protos.Metadata) map[string]string {
-	metas := map[string]string{}
+func GetMetadata(protoMetadata []*protos.Metadata) map[string]interface{} {
+	metas := map[string]interface{}{}
 
 	for _, meta := range protoMetadata {
-		metas[meta.Key] = meta.Value
+		switch v := meta.ValueType.(type) {
+		case *protos.Metadata_Value:
+			metas[meta.Key] = v.Value
+		case *protos.Metadata_SamplesValue:
+			if v.SamplesValue != nil {
+				metas[meta.Key] = v.SamplesValue.Samples
+			}
+		}
 	}
 	return metas
 }
@@ -79,7 +86,7 @@ func ShouldSendAttackDetectedEvent(server *ServerData) bool {
 	return true
 }
 
-func SendAttackDetectedEvent(server *ServerData, req *protos.AttackDetected, attackType string, samples []SuspiciousRequest) {
+func SendAttackDetectedEvent(server *ServerData, req *protos.AttackDetected, attackType string) {
 	if !ShouldSendAttackDetectedEvent(server) {
 		return
 	}
@@ -89,7 +96,6 @@ func SendAttackDetectedEvent(server *ServerData, req *protos.AttackDetected, att
 		Request: GetRequestInfo(req.Request),
 		Attack:  GetAttackDetails(server, req.Attack),
 		Time:    utils.GetTime(),
-		Samples: samples,
 	}
 
 	response, err := SendCloudRequest(server, server.AikidoConfig.Endpoint, constants.EventsAPI, constants.EventsAPIMethod, detectedAttackEvent)

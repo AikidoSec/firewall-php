@@ -226,7 +226,7 @@ func updateAttackWaveCountsAndDetect(server *ServerData, isWebScanner bool, ip s
 
 	// Add this request as a sample
 	if queue != nil {
-		queue.AddSample(method, url)
+		queue.AddSample(method, url, server.AttackWave.MaxSamplesPerIP)
 	}
 
 	// check threshold within window
@@ -239,13 +239,23 @@ func updateAttackWaveCountsAndDetect(server *ServerData, isWebScanner bool, ip s
 	if server.Logger != nil {
 		log.Infof(server.Logger, "Attack wave detected from IP: %s", ip)
 	}
+
 	// report event to cloud
 	cloud.SendAttackDetectedEvent(server, &protos.AttackDetected{
 		Token:   server.AikidoConfig.Token,
 		Request: &protos.Request{IpAddress: ip, UserAgent: userAgent},
-		Attack:  &protos.Attack{Metadata: []*protos.Metadata{}, UserId: userId},
-	}, "detected_attack_wave", queue.Samples)
-
+		Attack: &protos.Attack{
+			Metadata: []*protos.Metadata{{
+				Key: "samples",
+				ValueType: &protos.Metadata_SamplesValue{
+					SamplesValue: &protos.SuspiciousRequests{
+						Samples: queue.Samples,
+					},
+				},
+			}},
+			UserId: userId,
+		},
+	}, "detected_attack_wave")
 	return true
 }
 

@@ -1,17 +1,18 @@
 package aikido_types
 
-// SuspiciousRequest represents a suspicious request sample collected during attack wave detection
-type SuspiciousRequest struct {
-	Method string `json:"method"`
-	URL    string `json:"url"`
-}
+import (
+	"main/ipc/protos"
+)
+
+// SuspiciousRequest is a type alias for *protos.SuspiciousRequest
+type SuspiciousRequest = *protos.SuspiciousRequest
 
 // SlidingWindow represents a time-based sliding window counter.
 // It maintains a queue of counts per time bucket and a running total.
 type SlidingWindow struct {
-	Total int        // Running total of all counts in the window
-	Queue Queue[int] // Queue of counts per time bucket
-  Samples  []SuspiciousRequest // Sample requests collected for attack wave detection (max 10)
+	Total   int                 // Running total of all counts in the window
+	Queue   Queue[int]          // Queue of counts per time bucket
+	Samples []SuspiciousRequest // Sample requests collected for attack wave detection (max MaxSamplesPerIP)
 }
 
 // NewSlidingWindow creates a new sliding window with the specified size.
@@ -48,22 +49,20 @@ func (sw *SlidingWindow) Increment() {
 }
 
 // AddSample adds a sample request to the sliding window for attack wave detection.
-// It maintains a maximum of 10 unique samples (based on method and URL).
-func (sw *SlidingWindow) AddSample(method, url string) {
-	const maxSamples = 10
-
+// It maintains a maximum of MaxSamplesPerIP unique samples (based on method and URL).
+func (sw *SlidingWindow) AddSample(method, url string, maxSamplesPerIP int) {
 	// Check if this sample already exists
 	for _, sample := range sw.Samples {
-		if sample.Method == method && sample.URL == url {
+		if sample.Method == method && sample.Url == url {
 			return // Already exists, skip
 		}
 	}
 
 	// Add the sample if we haven't reached the limit
-	if len(sw.Samples) < maxSamples {
-		sw.Samples = append(sw.Samples, SuspiciousRequest{
+	if len(sw.Samples) < maxSamplesPerIP {
+		sw.Samples = append(sw.Samples, &protos.SuspiciousRequest{
 			Method: method,
-			URL:    url,
+			Url:    url,
 		})
 	}
 }

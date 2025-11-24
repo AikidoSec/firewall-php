@@ -123,16 +123,16 @@ type RequestInfo struct {
 }
 
 type AttackDetails struct {
-	Kind      string            `json:"kind"`
-	Operation string            `json:"operation"`
-	Module    string            `json:"module"`
-	Blocked   bool              `json:"blocked"`
-	Source    string            `json:"source"`
-	Path      string            `json:"path"`
-	Stack     string            `json:"stack"`
-	Payload   string            `json:"payload"`
-	Metadata  map[string]string `json:"metadata"`
-	User      *User             `json:"user"`
+	Kind      string                 `json:"kind"`
+	Operation string                 `json:"operation"`
+	Module    string                 `json:"module"`
+	Blocked   bool                   `json:"blocked"`
+	Source    string                 `json:"source"`
+	Path      string                 `json:"path"`
+	Stack     string                 `json:"stack"`
+	Payload   string                 `json:"payload"`
+	Metadata  map[string]interface{} `json:"metadata"`
+	User      *User                  `json:"user"`
 }
 
 type DetectedAttack struct {

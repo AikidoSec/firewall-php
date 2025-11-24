@@ -119,7 +119,7 @@ func (s *GrpcServer) OnAttackDetected(ctx context.Context, req *protos.AttackDet
 	if server == nil {
 		return &emptypb.Empty{}, nil
 	}
-	cloud.SendAttackDetectedEvent(server, req, "detected_attack", []SuspiciousRequest{})
+	cloud.SendAttackDetectedEvent(server, req, "detected_attack")
 	storeAttackStats(server, req)
 	return &emptypb.Empty{}, nil
 }
