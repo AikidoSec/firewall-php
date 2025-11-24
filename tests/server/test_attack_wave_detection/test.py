@@ -35,6 +35,8 @@ def run_test():
     assert_events_length_is(events, 2)
     assert_started_event_is_valid(events[0])
     assert_event_contains_subset_file(events[1], "expect_wave_detection.json")
+    # len of samples should be len of paths
+    assert len(events[1]["attack"]["metadata"]["samples"]) == len(paths)
 
     time.sleep(70)
 
