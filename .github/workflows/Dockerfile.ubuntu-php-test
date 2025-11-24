@@ -93,7 +93,7 @@ RUN printf '%s\n' '#!/usr/bin/env bash' \
       'if ! a2query -m "php${ver}" >/dev/null 2>&1; then' \
       '  apt-get update && apt-get install -y --no-install-recommends "libapache2-mod-php${ver}"' \
       'fi' \
-      'for m in php5 php7 php7.0 php7.1 php7.2 php7.3 php7.4 php8 php8.0 php8.1 php8.2 php8.3 php8.4; do' \
+      'for m in php5 php7 php7.0 php7.1 php7.2 php7.3 php7.4 php8 php8.0 php8.1 php8.2 php8.3 php8.4 php8.5; do' \
       '  a2query -m "$m" >/dev/null 2>&1 && a2dismod "$m" >/dev/null 2>&1 || true' \
       'done' \
       'a2enmod "php${ver}"' \
