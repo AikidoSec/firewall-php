@@ -31,3 +31,5 @@ bool FileExists(const std::string& filePath);
 bool RemoveFile(const std::string& filePath);
 
 std::string GetStackTrace();
+
+static inline zend_class_entry* GetFirewallDefaultExceptionCe();

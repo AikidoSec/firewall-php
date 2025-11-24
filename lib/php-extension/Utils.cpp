@@ -207,3 +207,13 @@ std::string GetStackTrace() {
     return "";
 #endif
 }
+
+zend_class_entry* GetFirewallDefaultExceptionCe() {
+#if PHP_VERSION_ID >= 80500
+    // PHP 8.5+: zend_exception_get_default() removed
+    return zend_ce_exception;
+#else
+    // PHP < 8.5
+    return zend_exception_get_default();
+#endif
+}
