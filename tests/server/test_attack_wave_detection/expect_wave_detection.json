@@ -20,6 +20,5 @@
     "agent": {
         "dryMode": false,
         "library": "firewall-php"
-    },
-    "time": 1763985362761
+    }
 }

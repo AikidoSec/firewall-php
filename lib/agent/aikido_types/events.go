@@ -136,10 +136,9 @@ type AttackDetails struct {
 }
 
 type DetectedAttack struct {
-	Type    string              `json:"type"`
-	Request RequestInfo         `json:"request"`
-	Attack  AttackDetails       `json:"attack"`
-	Agent   AgentInfo           `json:"agent"`
-	Time    int64               `json:"time"`
-	Samples []SuspiciousRequest `json:"samples,omitempty"`
+	Type    string        `json:"type"`
+	Request RequestInfo   `json:"request"`
+	Attack  AttackDetails `json:"attack"`
+	Agent   AgentInfo     `json:"agent"`
+	Time    int64         `json:"time"`
 }
