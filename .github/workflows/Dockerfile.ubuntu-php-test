@@ -27,7 +27,7 @@ RUN apt-get update
 
 RUN set -eux; \
     PHP_PKG="php${PHP_VERSION}"; \
-    apt-get install -y --no-install-recommends \
+    apt-get install -y --fix-missing --no-install-recommends \
       nginx \
       apache2 \
       mariadb-server \
@@ -42,7 +42,7 @@ RUN set -eux; \
     a2enmod mpm_prefork rewrite || true
 
 RUN if [ "$(printf '%s\n' "${PHP_VERSION}" "8.5" | sort -V | head -n1)" != "8.5" ]; then \
-      apt-get install -y --no-install-recommends php${PHP_VERSION}-opcache; \
+      apt-get install -y --fix-missing --no-install-recommends php${PHP_VERSION}-opcache; \
     fi
 
 # ---- Python toolchain used by tests ----
