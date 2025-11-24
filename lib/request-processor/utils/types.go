@@ -10,6 +10,7 @@ const (
 	Shell_injection Kind = "shell_injection"
 	Path_traversal  Kind = "path_traversal"
 	Ssrf            Kind = "ssrf"
+	BlockedDomain   Kind = "blocked_domain"
 )
 
 func GetDisplayNameForAttackKind(kind Kind) string {
@@ -24,6 +25,8 @@ func GetDisplayNameForAttackKind(kind Kind) string {
 		return "a path traversal attack"
 	case Ssrf:
 		return "a server-side request forgery"
+	case BlockedDomain:
+		return "a blocked outbound connection"
 	default:
 		return "unknown attack type"
 	}

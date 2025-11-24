@@ -1,0 +1,26 @@
+{
+    "success": true,
+    "serviceId": 1,
+    "heartbeatIntervalInMS": 600000,
+    "endpoints": [],
+    "blockedUserIds": [],
+    "allowedIPAddresses": [],
+    "receivedAnyStats": true,
+    "block": true,
+    "blockNewOutgoingRequests": true,
+    "domains": [
+        {
+            "hostname": "safe.example.com",
+            "mode": "allow"
+        },
+        {
+            "hostname": "evil.example.com",
+            "mode": "block"
+        },
+        {
+            "hostname": "allowed-site.com",
+            "mode": "allow"
+        }
+    ]
+}
+
