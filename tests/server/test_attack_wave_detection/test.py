@@ -36,7 +36,21 @@ def run_test():
     assert_started_event_is_valid(events[0])
     assert_event_contains_subset_file(events[1], "expect_wave_detection.json")
     # len of samples should be len of paths
-    assert len(events[1]["attack"]["metadata"]["samples"]) == len(paths)
+    samples = events[1]["attack"]["metadata"]["samples"]
+    assert len(samples) == len(paths), f"Expected {len(paths)} samples, got {len(samples)}"
+   
+   # check that each path is in the samples
+    for i in range(len(paths)):
+        assert samples[i]["method"] == "GET"
+        found = False
+        encoded_path = paths[i].replace(" ", "%20")
+        url = f"http://localhost:{get_php_port()}{encoded_path}"
+        for sample in samples:
+            if sample["url"] == url:
+                found = True
+                break
+        assert found == True, f"Url {url} not found in samples {json.dumps(samples)}"
+
 
     time.sleep(70)
 
