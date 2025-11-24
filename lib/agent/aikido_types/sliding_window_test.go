@@ -2,7 +2,6 @@ package aikido_types
 
 import (
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -13,7 +12,6 @@ func TestNewSlidingWindow(t *testing.T) {
 		assert.NotNil(t, sw)
 		assert.Equal(t, 0, sw.Total)
 		assert.Equal(t, 1, sw.Queue.Length())
-		assert.Equal(t, int64(0), sw.LastSent)
 	})
 
 	t.Run("first bucket is initialized to zero", func(t *testing.T) {
@@ -41,8 +39,7 @@ func TestSlidingWindowIncrement(t *testing.T) {
 
 	t.Run("handles empty queue by creating a bucket", func(t *testing.T) {
 		sw := &SlidingWindow{
-			Queue:    NewQueue[int](0),
-			LastSent: 0,
+			Queue: NewQueue[int](0),
 		}
 		sw.Increment()
 		assert.Equal(t, 1, sw.Total)
@@ -199,18 +196,6 @@ func TestAdvanceSlidingWindowMap(t *testing.T) {
 		assert.Equal(t, 0, len(windowMap))
 	})
 
-	t.Run("preserves LastSent timestamp", func(t *testing.T) {
-		now := time.Now().UnixMilli()
-		windowMap := map[string]*SlidingWindow{
-			"key1": NewSlidingWindow(),
-		}
-		windowMap["key1"].LastSent = now
-		windowMap["key1"].Increment()
-
-		AdvanceSlidingWindowMap(windowMap, 5)
-
-		assert.Equal(t, now, windowMap["key1"].LastSent)
-	})
 }
 
 func TestSlidingWindowIntegration(t *testing.T) {

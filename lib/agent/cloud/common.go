@@ -54,69 +54,85 @@ func UpdateRateLimitingConfig(server *ServerData) {
 	server.RateLimitingMutex.Lock()
 	defer server.RateLimitingMutex.Unlock()
 
-	UpdatedEndpoints := map[RateLimitingKey]bool{}
+	newMap := make(map[RateLimitingKey]*RateLimitingValue)
+	newWildcardMap := make(map[RateLimitingKey]*RateLimitingWildcardValue)
 
 	for _, newEndpointConfig := range server.CloudConfig.Endpoints {
-		k := RateLimitingKey{Method: newEndpointConfig.Method, Route: newEndpointConfig.Route}
-		UpdatedEndpoints[k] = true
-
-		rateLimitingData, exists := server.RateLimitingMap[k]
-		if exists {
-			if rateLimitingData.Config.MaxRequests == newEndpointConfig.RateLimiting.MaxRequests &&
-				rateLimitingData.Config.WindowSizeInMinutes == newEndpointConfig.RateLimiting.WindowSizeInMS*constants.MinRateLimitingIntervalInMs {
-				log.Debugf(server.Logger, "New rate limiting endpoint config is the same: %v", newEndpointConfig)
-				continue
-			}
-
-			log.Infof(server.Logger, "Rate limiting endpoint config has changed: %v", newEndpointConfig)
-			delete(server.RateLimitingMap, k)
-			delete(server.RateLimitingWildcardMap, k)
-		}
-
+		// Skip disabled endpoints
 		if !newEndpointConfig.RateLimiting.Enabled {
 			log.Infof(server.Logger, "Got new rate limiting endpoint config, but is disabled: %v", newEndpointConfig)
 			continue
 		}
 
+		// Validate window size
 		if newEndpointConfig.RateLimiting.WindowSizeInMS < constants.MinRateLimitingIntervalInMs ||
 			newEndpointConfig.RateLimiting.WindowSizeInMS > constants.MaxRateLimitingIntervalInMs {
 			log.Warnf(server.Logger, "Got new rate limiting endpoint config, but WindowSizeInMS is invalid: %v", newEndpointConfig)
 			continue
 		}
 
-		log.Infof(server.Logger, "Got new rate limiting endpoint config and storing to map: %v", newEndpointConfig)
+		k := RateLimitingKey{Method: newEndpointConfig.Method, Route: newEndpointConfig.Route}
+		newConfig := RateLimitingConfig{
+			MaxRequests:         newEndpointConfig.RateLimiting.MaxRequests,
+			WindowSizeInMinutes: newEndpointConfig.RateLimiting.WindowSizeInMS / constants.MinRateLimitingIntervalInMs,
+		}
+
+		// Check if we can preserve existing data
+		if existingData, exists := server.RateLimitingMap[k]; exists {
+			if existingData.Config.MaxRequests == newConfig.MaxRequests &&
+				existingData.Config.WindowSizeInMinutes == newConfig.WindowSizeInMinutes {
+				// Config unchanged, preserve data
+				log.Debugf(server.Logger, "New rate limiting endpoint config is the same: %v", newEndpointConfig)
+				newMap[k] = existingData
+				// Also preserve wildcard if it exists
+				if wildcardData, wildcardExists := server.RateLimitingWildcardMap[k]; wildcardExists {
+					newWildcardMap[k] = wildcardData
+				}
+				continue
+			}
+			log.Infof(server.Logger, "Rate limiting endpoint config has changed: %v", newEndpointConfig)
+		} else {
+			log.Infof(server.Logger, "Got new rate limiting endpoint config and storing to map: %v", newEndpointConfig)
+		}
+
+		// Create new entry
 		rateLimitingValue := &RateLimitingValue{
-			Method: k.Method,
-			Route:  k.Route,
-			Config: RateLimitingConfig{
-				MaxRequests:         newEndpointConfig.RateLimiting.MaxRequests,
-				WindowSizeInMinutes: newEndpointConfig.RateLimiting.WindowSizeInMS / constants.MinRateLimitingIntervalInMs},
+			Method:               k.Method,
+			Route:                k.Route,
+			Config:               newConfig,
 			UserCounts:           make(map[string]*SlidingWindow),
 			IpCounts:             make(map[string]*SlidingWindow),
 			RateLimitGroupCounts: make(map[string]*SlidingWindow),
 		}
 
+		// Handle wildcard routes
 		if isWildcardEndpoint(k.Route) {
 			routeRegex, err := regexp.Compile(strings.ReplaceAll(k.Route, "*", "(.*)") + "/?")
 			if err != nil {
 				log.Warnf(server.Logger, "Route regex is not compiling: %s", k.Route)
 			} else {
 				log.Infof(server.Logger, "Stored wildcard rate limiting config for: %v", k)
-				server.RateLimitingWildcardMap[k] = &RateLimitingWildcardValue{RouteRegex: routeRegex, RateLimitingValue: rateLimitingValue}
+				newWildcardMap[k] = &RateLimitingWildcardValue{
+					RouteRegex:        routeRegex,
+					RateLimitingValue: rateLimitingValue,
+				}
 			}
 		}
+
 		log.Infof(server.Logger, "Stored normal rate limiting config for: %v", k)
-		server.RateLimitingMap[k] = rateLimitingValue
+		newMap[k] = rateLimitingValue
 	}
 
+	// Log removed endpoints
 	for k := range server.RateLimitingMap {
-		_, exists := UpdatedEndpoints[k]
-		if !exists {
+		if _, exists := newMap[k]; !exists {
 			log.Infof(server.Logger, "Removed rate limiting entry as it is no longer part of the config: %v", k)
-			delete(server.RateLimitingMap, k)
-			delete(server.RateLimitingWildcardMap, k)
 		}
 	}
+
+	// Replace both maps atomically
+	server.RateLimitingMap = newMap
+	server.RateLimitingWildcardMap = newWildcardMap
 }
 
 func ApplyCloudConfig(server *ServerData) {

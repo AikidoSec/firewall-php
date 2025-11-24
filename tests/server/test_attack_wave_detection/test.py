@@ -36,6 +36,8 @@ def run_test():
     assert_started_event_is_valid(events[0])
     assert_event_contains_subset_file(events[1], "expect_wave_detection.json")
 
+    time.sleep(70)
+
     for i in range(15):
         _ = php_server_get(get_random_path(), headers={"X-Forwarded-For": "5.8.19.22"})
     mock_server_wait_for_new_events(5)

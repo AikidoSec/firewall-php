@@ -10,6 +10,13 @@ func AdvanceAttackWaveQueues(server *ServerData) {
 	defer server.AttackWaveMutex.Unlock()
 
 	AdvanceSlidingWindowMap(server.AttackWave.IpQueues, server.AttackWave.WindowSize)
+	// remove entries from LastSent map if the time since the last event is greater than the MinBetween window
+	now := utils.GetTime()
+	for ip, lastSentTime := range server.AttackWave.LastSent {
+		if now-lastSentTime > server.AttackWave.MinBetween {
+			delete(server.AttackWave.LastSent, ip)
+		}
+	}
 }
 
 func Init(server *ServerData) {

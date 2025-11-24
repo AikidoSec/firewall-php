@@ -208,7 +208,7 @@ func isRateLimitingThresholdExceeded(config *RateLimitingConfig, countsMap map[s
 //  5. If threshold exceeded: records the event time on the queue, logs the detection, and sends event with samples to cloud
 func updateAttackWaveCountsAndDetect(server *ServerData, isWebScanner bool, ip string, userId string, userAgent string, method string, url string) {
 	if !isWebScanner || ip == "" {
-		return
+		return false
 	}
 
 	now := utils.GetTime()
@@ -219,9 +219,9 @@ func updateAttackWaveCountsAndDetect(server *ServerData, isWebScanner bool, ip s
 	// increment for this request
 	queue := incrementSlidingWindowEntry(server.AttackWave.IpQueues, ip)
 
-	// skip if the last event for this ip was already sent within the min between time
-	if queue != nil && queue.LastSent > 0 && now-queue.LastSent < server.AttackWave.MinBetween {
-		return
+	// apply throttling: skip if an event for this IP was recently sent (within MinBetween window)
+	if lastSentTime, exists := server.AttackWave.LastSent[ip]; exists && now-lastSentTime < server.AttackWave.MinBetween {
+		return false
 	}
 
 	// Add this request as a sample
@@ -231,11 +231,11 @@ func updateAttackWaveCountsAndDetect(server *ServerData, isWebScanner bool, ip s
 
 	// check threshold within window
 	if queue == nil || queue.Total < server.AttackWave.Threshold {
-		return // threshold not reached
+		return false // threshold not reached
 	}
 
 	// threshold reached -> record event and send to cloud
-	queue.LastSent = now
+	server.AttackWave.LastSent[ip] = now
 	if server.Logger != nil {
 		log.Infof(server.Logger, "Attack wave detected from IP: %s", ip)
 	}
