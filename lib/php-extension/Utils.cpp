@@ -111,6 +111,18 @@ std::string GetSqlDialectFromPdo(zval *pdo_object) {
     return "unknown";
 }
 
+#if PHP_VERSION_ID >= 80500
+std::string GetSqlDialectFromPdo(zend_object *pdo_object) {
+    if (!pdo_object) {
+        return "unknown";
+    }
+
+    zval pdo_object_zval;
+    ZVAL_OBJ(&pdo_object_zval, pdo_object);
+    return GetSqlDialectFromPdo(&pdo_object_zval);
+}
+#endif
+
 bool StartsWith(const std::string& str, const std::string& prefix, bool caseSensitive) {
     std::string strToCompare = str;
     std::string prefixToCompare = prefix;
