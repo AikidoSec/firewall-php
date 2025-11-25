@@ -165,19 +165,7 @@ message Request {
 
 message Metadata {
   string key = 1;
-  oneof value_type {
-    string value = 2;
-    SuspiciousRequests samples_value = 3;
-  }
-}
-
-message SuspiciousRequest {
-  string method = 1;
-  string url = 2;
-}
-
-message SuspiciousRequests {
-  repeated SuspiciousRequest samples = 1;
+  string value = 2;
 }
 
 message Attack {

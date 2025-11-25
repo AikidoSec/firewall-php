@@ -245,13 +245,10 @@ func updateAttackWaveCountsAndDetect(server *ServerData, isWebScanner bool, ip s
 		Token:   server.AikidoConfig.Token,
 		Request: &protos.Request{IpAddress: ip, UserAgent: userAgent},
 		Attack: &protos.Attack{
+
 			Metadata: []*protos.Metadata{{
-				Key: "samples",
-				ValueType: &protos.Metadata_SamplesValue{
-					SamplesValue: &protos.SuspiciousRequests{
-						Samples: queue.Samples,
-					},
-				},
+				Key:   "samples",
+				Value: utils.JsonMarshal(queue.Samples),
 			}},
 			UserId: userId,
 		},

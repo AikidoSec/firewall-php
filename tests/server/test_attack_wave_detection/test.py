@@ -35,8 +35,12 @@ def run_test():
     assert_events_length_is(events, 2)
     assert_started_event_is_valid(events[0])
     assert_event_contains_subset_file(events[1], "expect_wave_detection.json")
+    assert "samples" in events[1]["attack"]["metadata"], "Samples not found in metadata"
+    assert isinstance(events[1]["attack"]["metadata"]["samples"], str), "Samples is not a string"
+    
     # len of samples should be len of paths
     samples = events[1]["attack"]["metadata"]["samples"]
+    samples = json.loads(samples)
     assert len(samples) == len(paths), f"Expected {len(paths)} samples, got {len(samples)}"
    
    # check that each path is in the samples

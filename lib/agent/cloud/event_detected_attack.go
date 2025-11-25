@@ -17,18 +17,11 @@ func GetHeaders(protoHeaders []*protos.Header) map[string][]string {
 	return headers
 }
 
-func GetMetadata(protoMetadata []*protos.Metadata) map[string]interface{} {
-	metas := map[string]interface{}{}
+func GetMetadata(protoMetadata []*protos.Metadata) map[string]string {
+	metas := map[string]string{}
 
 	for _, meta := range protoMetadata {
-		switch v := meta.ValueType.(type) {
-		case *protos.Metadata_Value:
-			metas[meta.Key] = v.Value
-		case *protos.Metadata_SamplesValue:
-			if v.SamplesValue != nil {
-				metas[meta.Key] = v.SamplesValue.Samples
-			}
-		}
+		metas[meta.Key] = meta.Value
 	}
 	return metas
 }

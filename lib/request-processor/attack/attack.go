@@ -15,7 +15,7 @@ import (
 func GetMetadataProto(metadata map[string]string) []*protos.Metadata {
 	var metadataProto []*protos.Metadata
 	for key, value := range metadata {
-		metadataProto = append(metadataProto, &protos.Metadata{Key: key, ValueType: &protos.Metadata_Value{Value: value}})
+		metadataProto = append(metadataProto, &protos.Metadata{Key: key, Value: value})
 	}
 	return metadataProto
 }

@@ -6,11 +6,6 @@
     },
     "attack": {
         "metadata": {
-            "samples": [
-                {
-                    "method": "GET"
-                }
-            ]
         },
         "user": {
             "id": "12345",
