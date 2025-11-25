@@ -116,6 +116,18 @@ std::string GetSqlDialectFromPdo(zval *pdo_object) {
     return result;
 }
 
+#if PHP_VERSION_ID >= 80500
+std::string GetSqlDialectFromPdo(zend_object *pdo_object) {
+    if (!pdo_object) {
+        return "unknown";
+    }
+
+    zval pdo_object_zval;
+    ZVAL_OBJ(&pdo_object_zval, pdo_object);
+    return GetSqlDialectFromPdo(&pdo_object_zval);
+}
+#endif
+
 bool StartsWith(const std::string& str, const std::string& prefix, bool caseSensitive) {
     std::string strToCompare = str;
     std::string prefixToCompare = prefix;
@@ -210,5 +222,15 @@ std::string GetStackTrace() {
     return result;
 #else
     return "";
+#endif
+}
+
+zend_class_entry* GetFirewallDefaultExceptionCe() {
+#if PHP_VERSION_ID >= 80500
+    // PHP 8.5+: zend_exception_get_default() removed
+    return zend_ce_exception;
+#else
+    // PHP < 8.5
+    return zend_exception_get_default();
 #endif
 }

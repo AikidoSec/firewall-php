@@ -30,7 +30,7 @@ Zen for PHP comes as a single package that needs to be installed on the system t
 
 Prerequisites:
 * Ensure you have sudo privileges on your system.
-* Check that you have a supported PHP version installed (PHP version >= 7.2 and tested up to 8.4).
+* Check that you have a supported PHP version installed (PHP version >= 7.2 and tested up to 8.5).
 * Make sure to use the appropriate commands for your system or cloud provider.
 
 ### Manual install
@@ -39,25 +39,25 @@ Prerequisites:
 
 ##### x86_64
 ```
-rpm -Uvh --oldpackage https://github.com/AikidoSec/firewall-php/releases/download/v1.4.6/aikido-php-firewall.x86_64.rpm
+rpm -Uvh --oldpackage https://github.com/AikidoSec/firewall-php/releases/download/v1.4.8/aikido-php-firewall.x86_64.rpm
 ```
 
 ##### arm64 / aarch64
 ```
-rpm -Uvh --oldpackage https://github.com/AikidoSec/firewall-php/releases/download/v1.4.6/aikido-php-firewall.aarch64.rpm
+rpm -Uvh --oldpackage https://github.com/AikidoSec/firewall-php/releases/download/v1.4.8/aikido-php-firewall.aarch64.rpm
 ```
 
 #### For Debian-based Systems (Debian, Ubuntu)
 
 ##### x86_64
 ```
-curl -L -O https://github.com/AikidoSec/firewall-php/releases/download/v1.4.6/aikido-php-firewall.x86_64.deb
+curl -L -O https://github.com/AikidoSec/firewall-php/releases/download/v1.4.8/aikido-php-firewall.x86_64.deb
 dpkg -i -E ./aikido-php-firewall.x86_64.deb
 ```
 
 ##### arm64 / aarch64
 ```
-curl -L -O https://github.com/AikidoSec/firewall-php/releases/download/v1.4.6/aikido-php-firewall.aarch64.deb
+curl -L -O https://github.com/AikidoSec/firewall-php/releases/download/v1.4.8/aikido-php-firewall.aarch64.deb
 dpkg -i -E ./aikido-php-firewall.aarch64.deb
 ```
 
@@ -88,7 +88,7 @@ You can run on Debian 10, by doing this setup before install: [Debian10 setup](.
 ## Supported libraries and frameworks
 
 ### PHP versions
-Zen for PHP supports the following PHP versions: 7.2, 7.3, 7.4, 8.0, 8.1, 8.2, 8.3, 8.4.
+Zen for PHP supports the following PHP versions: 7.2, 7.3, 7.4, 8.0, 8.1, 8.2, 8.3, 8.4, 8.5.
 
 ### Web frameworks
 

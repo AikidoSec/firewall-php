@@ -84,7 +84,7 @@ jobs:
     container: ghcr.io/aikidosec/firewall-php-build-extension-nts:${{ matrix.php_version }}-v1
     strategy:
       matrix:
-        php_version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4']
+        php_version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4', '8.5']
         arch: [ '', '-arm' ]
       fail-fast: false
 
@@ -376,7 +376,7 @@ jobs:
     needs: [ build_rpm ]
     strategy:
       matrix:
-        php_version: ['7.4', '8.0', '8.1', '8.2', '8.3', '8.4']
+        php_version: ['7.4', '8.0', '8.1', '8.2', '8.3', '8.4', '8.5']
         server: ['nginx-php-fpm', 'apache-mod-php', 'php-built-in']
         arch: ['', '-arm']
       fail-fast: false
@@ -463,7 +463,7 @@ jobs:
     strategy:
       matrix:
         arch: ['', '-arm']
-        php_version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4']
+        php_version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4', '8.5']
         server: ['nginx-php-fpm', 'apache-mod-php', 'php-built-in']
       fail-fast: false
     steps:
@@ -782,3 +782,42 @@ jobs:
           sleep_before_test: 20
           max_parallel_tests: 7
           test_type: control
+
+  test_php_qa_action:
+    permissions: { contents: read }
+    name: Tests (zen-demo-php)
+    runs-on: ubuntu-latest
+    needs: [ build_deb ]
+    steps:
+
+      - name: Checkout zen-demo-php
+        uses: actions/checkout@v4
+        with:
+          repository: Aikido-demo-apps/zen-demo-php
+          path: zen-demo-php
+          ref: dev-testing
+          submodules: recursive
+
+      - name: Get Arch
+        run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: aikido-php-firewall.${{ env.ARCH }}.deb
+          path: ./zen-demo-php
+
+      - name: Overwrite aikido.sh install script
+        run: |
+          echo "dpkg -i -E \"/var/www/html/aikido-php-firewall.\$(uname -i).deb\"" > ./zen-demo-php/.fly/scripts/aikido.sh
+        
+      - name: Run Firewall QA Tests
+        uses: AikidoSec/firewall-tester-action@v1.0.1
+        with:
+          dockerfile_path: ./zen-demo-php/Dockerfile
+          extra_args: '--env-file=./zen-demo-php/.env.example -e APP_KEY=base64:W2v6u6VR4lURkxuMT9xZ6pdhXSt5rxsmWTbd1HGqlIM='
+          sleep_before_test: 30
+          max_parallel_tests: 7
+          config_update_delay: 120
+          test_timeout: 900
+          skip_tests: test_ssrf,test_stored_ssrf_no_context,test_stored_ssrf

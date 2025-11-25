@@ -1,20 +1,16 @@
 package aikido_types
 
-import "time"
-
 // SlidingWindow represents a time-based sliding window counter.
 // It maintains a queue of counts per time bucket and a running total.
 type SlidingWindow struct {
-	Total    int        // Running total of all counts in the window
-	Queue    Queue[int] // Queue of counts per time bucket
-	LastSent time.Time  // Last time this sliding window triggered an event (used for attack wave detection)
+	Total int        // Running total of all counts in the window
+	Queue Queue[int] // Queue of counts per time bucket
 }
 
 // NewSlidingWindow creates a new sliding window with the specified size.
 func NewSlidingWindow() *SlidingWindow {
 	sw := &SlidingWindow{
-		Queue:    NewQueue[int](0), // no max size, we handle it manually
-		LastSent: time.Time{},      // not sent yet
+		Queue: NewQueue[int](0), // no max size, we handle it manually
 	}
 	// Ensure there is a current bucket
 	sw.Queue.Push(0)

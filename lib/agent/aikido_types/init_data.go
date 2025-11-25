@@ -84,9 +84,11 @@ type AttackWaveState struct {
 	// In what time frame must these requests occur
 	WindowSize int // in minutes
 	// Minimum time before reporting a new event for the same ip
-	MinBetween time.Duration
+	MinBetween int64
 	// Queue of IP addresses to their sliding window queues
 	IpQueues map[string]*SlidingWindow
+	// Map of IP addresses to the last time an event was sent for that IP
+	LastSent map[string]int64
 }
 
 type ListsConfigData struct {
@@ -236,10 +238,11 @@ func NewServerData() *ServerData {
 		Packages:                make(map[string]Package),
 		PollingData:             NewServerDataPolling(),
 		AttackWave: AttackWaveState{
-			Threshold:  15,               // Default: 15 requests
-			WindowSize: 1,                // Default: 1 minute
-			MinBetween: 20 * time.Minute, // Default: 20 minutes
+			Threshold:  15,             // Default: 15 requests
+			WindowSize: 1,              // Default: 1 minute
+			MinBetween: 20 * 60 * 1000, // Default: 20 minutes
 			IpQueues:   make(map[string]*SlidingWindow),
+			LastSent:   make(map[string]int64),
 		},
 	}
 }

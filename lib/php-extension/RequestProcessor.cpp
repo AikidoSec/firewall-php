@@ -223,10 +223,11 @@ bool RequestProcessor::RequestInit() {
         this->LoadConfigFromEnvironment();
     } else {
         // Server APIs that are not apache-mod-php (like php-fpm, cli-server, ...) 
-        //  can only serve one site per process, so the config should be loaded only once.
-        // After that, subsequent requests cannot change the config so we do not need to reload it.
-        if (this->numberOfRequests == 0) {
-            AIKIDO_LOG_INFO("Loading Aikido config one time for non-apache-mod-php SAPI: %s...\n", sapiName.c_str());
+        //  can only serve one site per process, so the config should be loaded at the first request.
+        // If the token is not set at the first request, we try to reload it until we get a valid token.
+        // The user can update .env file via zero downtime deployments after the PHP server is started.
+        if (AIKIDO_GLOBAL(token) == "") {
+            AIKIDO_LOG_INFO("Loading Aikido config until we get a valid token for SAPI: %s...\n", AIKIDO_GLOBAL(sapi_name).c_str());
             this->LoadConfigFromEnvironment();
         }
     }

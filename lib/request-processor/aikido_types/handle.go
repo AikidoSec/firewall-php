@@ -22,4 +22,5 @@ type RequestShutdownParams struct {
 	QueryParsed         map[string]interface{}
 	IsWebScanner        bool
 	ShouldDiscoverRoute bool
+	IsIpBypassed        bool
 }

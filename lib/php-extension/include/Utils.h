@@ -21,6 +21,9 @@ std::string NormalizeAndDumpJson(const json& jsonStr);
 std::string ArrayToJson(zval* array);
 
 std::string GetSqlDialectFromPdo(zval *pdo_object);
+#if PHP_VERSION_ID >= 80500
+std::string GetSqlDialectFromPdo(zend_object *pdo_object);
+#endif
 
 bool StartsWith(const std::string& str, const std::string& prefix, bool caseSensitive = true);
 
@@ -33,3 +36,5 @@ bool FileExists(const std::string& filePath);
 bool RemoveFile(const std::string& filePath);
 
 std::string GetStackTrace();
+
+zend_class_entry* GetFirewallDefaultExceptionCe();

@@ -19,6 +19,9 @@ RUN dnf --assumeyes module reset php
 RUN dnf --assumeyes --nogpgcheck module install php:remi-${PHP_VERSION}
 RUN dnf --assumeyes install php-pdo
 RUN dnf --assumeyes install php-mysqlnd
+RUN if [ "$(printf '%s\n' "${PHP_VERSION}" "8.5" | sort -V | head -n1)" != "8.5" ]; then \
+      dnf --assumeyes install php-opcache || true; \
+    fi
 RUN yum install -y mod_php nginx php-fpm procps-ng mysql-server
 
 
