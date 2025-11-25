@@ -10,7 +10,7 @@ type SuspiciousRequest struct {
 type SlidingWindow struct {
 	Total   int                 // Running total of all counts in the window
 	Queue   Queue[int]          // Queue of counts per time bucket
-	Samples []SuspiciousRequest `json:"samples"` // Sample requests collected for attack wave detection (max MaxSamplesPerIP)
+	Samples []SuspiciousRequest // Sample requests collected for attack wave detection (max MaxSamplesPerIP)
 }
 
 // NewSlidingWindow creates a new sliding window with the specified size.
