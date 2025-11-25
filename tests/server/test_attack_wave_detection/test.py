@@ -43,7 +43,7 @@ def run_test():
     samples = json.loads(samples)
     assert len(samples) == len(paths), f"Expected {len(paths)} samples, got {len(samples)}"
    
-   # check that each path is in the samples
+   # check that all paths are in the samples
     for i in range(len(paths)):
         assert samples[i]["method"] == "GET"
         found = False
@@ -66,7 +66,7 @@ def run_test():
     assert_events_length_is(events, 2) # no new event should be sent (same IP)
 
     for i in range(15):
-        _ = php_server_get(paths[i % len(paths)], headers={"X-Forwarded-For": "5.8.19.23"})
+        _ = php_server_get(get_random_path(), headers={"X-Forwarded-For": "5.8.19.23"})
     mock_server_wait_for_new_events(5)
     
     events = mock_server_get_events()
