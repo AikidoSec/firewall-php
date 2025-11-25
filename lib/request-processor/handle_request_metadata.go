@@ -40,7 +40,6 @@ func OnPostRequest() string {
 	if server == nil {
 		return ""
 	}
-	isIpBypassed := context.IsIpBypassed()
 
 	go OnRequestShutdownReporting(RequestShutdownParams{
 		Server:         server,
@@ -55,8 +54,7 @@ func OnPostRequest() string {
 		APISpec:        api_discovery.GetApiInfo(server),
 		RateLimited:    context.IsEndpointRateLimited(),
 		QueryParsed:    context.GetQueryParsed(),
-		IsWebScanner:   false,
-		IsIpBypassed:   isIpBypassed,
+		IsIpBypassed:   context.IsIpBypassed(),
 	})
 	context.Clear()
 	return ""
