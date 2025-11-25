@@ -22,7 +22,10 @@ func OnRequestShutdownReporting(params RequestShutdownParams) {
 	}
 
 	log.Info("[RSHUTDOWN] Got request metadata: ", params.Method, " ", params.Route, " ", params.StatusCode)
-	params.IsWebScanner = webscanner.IsWebScanner(params.Method, params.Route, params.QueryParsed)
+	// Only detect web scanner activity for non-bypassed IPs
+	if !params.IsIpBypassed {
+		params.IsWebScanner = webscanner.IsWebScanner(params.Method, params.Route, params.QueryParsed)
+	}
 	params.ShouldDiscoverRoute = utils.ShouldDiscoverRoute(params.StatusCode, params.Route, params.Method)
 	if !params.RateLimited && !params.ShouldDiscoverRoute && !params.IsWebScanner {
 		return
@@ -37,6 +40,7 @@ func OnPostRequest() string {
 	if server == nil {
 		return ""
 	}
+
 	go OnRequestShutdownReporting(RequestShutdownParams{
 		Server:         server,
 		Method:         context.GetMethod(),
@@ -50,6 +54,7 @@ func OnPostRequest() string {
 		APISpec:        api_discovery.GetApiInfo(server),
 		RateLimited:    context.IsEndpointRateLimited(),
 		QueryParsed:    context.GetQueryParsed(),
+		IsIpBypassed:   context.IsIpBypassed(),
 	})
 	context.Clear()
 	return ""

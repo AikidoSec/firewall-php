@@ -61,6 +61,13 @@ def run_test():
     events = mock_server_get_events()
     assert_events_length_is(events, 3) # no new event should be sent (same IP)
 
+    # don't report attack wave detection for bypassed IPs
+    for i in range(15):
+        _ = php_server_get(get_random_path(), headers={"X-Forwarded-For": "5.8.19.24"})
+    mock_server_wait_for_new_events(5)
+    
+    events = mock_server_get_events()
+    assert_events_length_is(events, 3) # no new event should be sent (IP is bypassed)
 
 
 if __name__ == "__main__":
