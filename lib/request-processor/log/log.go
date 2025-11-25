@@ -6,6 +6,7 @@ import (
 	"log"
 	"main/globals"
 	"os"
+	"sync"
 	"time"
 )
 
@@ -23,6 +24,7 @@ var (
 	Logger          = log.New(os.Stdout, "", 0)
 	cliLogging      = true
 	logFilePath     = ""
+	logMutex        sync.RWMutex
 )
 var LogFile *os.File
 
@@ -46,13 +48,21 @@ func (f *AikidoFormatter) Format(level LogLevel, message string) string {
 	if len(message) > 1024 {
 		message = message[:1024] + "... [truncated]"
 	}
-	if cliLogging {
+
+	logMutex.RLock()
+	isCliLogging := cliLogging
+	logMutex.RUnlock()
+
+	if isCliLogging {
 		return fmt.Sprintf("[AIKIDO][%s] %s\n", levelStr, message)
 	}
 	return fmt.Sprintf("[AIKIDO][%s][%s] %s\n", levelStr, time.Now().Format("15:04:05"), message)
 }
 
 func initLogFile() {
+	logMutex.Lock()
+	defer logMutex.Unlock()
+
 	if cliLogging {
 		return
 	}
@@ -68,7 +78,11 @@ func initLogFile() {
 }
 
 func logMessage(level LogLevel, args ...interface{}) {
-	if level >= currentLogLevel {
+	logMutex.RLock()
+	lvl := currentLogLevel
+	logMutex.RUnlock()
+
+	if level >= lvl {
 		initLogFile()
 		formatter := &AikidoFormatter{}
 		message := fmt.Sprint(args...)
@@ -78,7 +92,11 @@ func logMessage(level LogLevel, args ...interface{}) {
 }
 
 func logMessagef(level LogLevel, format string, args ...interface{}) {
-	if level >= currentLogLevel {
+	logMutex.RLock()
+	lvl := currentLogLevel
+	logMutex.RUnlock()
+
+	if level >= lvl {
 		initLogFile()
 		formatter := &AikidoFormatter{}
 		message := fmt.Sprintf(format, args...)
@@ -117,27 +135,37 @@ func Warnf(format string, args ...interface{}) {
 
 func Errorf(format string, args ...interface{}) {
 	logMessagef(ErrorLevel, format, args...)
-
 }
 
+// SetLogLevel changes the current log level (thread-safe)
 func SetLogLevel(level string) error {
+	var newLevel LogLevel
+
 	switch level {
 	case "DEBUG":
-		currentLogLevel = DebugLevel
+		newLevel = DebugLevel
 	case "INFO":
-		currentLogLevel = InfoLevel
+		newLevel = InfoLevel
 	case "WARN":
-		currentLogLevel = WarnLevel
+		newLevel = WarnLevel
 	case "ERROR":
-		currentLogLevel = ErrorLevel
+		newLevel = ErrorLevel
 	default:
 		return errors.New("invalid log level")
 	}
+
+	logMutex.Lock()
+	defer logMutex.Unlock()
+	currentLogLevel = newLevel
 	return nil
 }
 
 func Init(diskLogs bool) {
+	logMutex.Lock()
+	defer logMutex.Unlock()
+
 	if !diskLogs {
+		cliLogging = true
 		return
 	}
 	cliLogging = false
@@ -147,7 +175,11 @@ func Init(diskLogs bool) {
 }
 
 func Uninit() {
+	logMutex.Lock()
+	defer logMutex.Unlock()
+
 	if LogFile != nil {
 		LogFile.Close()
+		LogFile = nil
 	}
 }

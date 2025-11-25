@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"html"
 	"main/context"
-	"main/globals"
 	"main/grpc"
+	"main/instance"
 	"main/log"
 	"main/utils"
 	"time"
@@ -29,10 +29,10 @@ func GetAction(actionHandling, actionType, trigger, description, data string, re
 	return string(actionJson)
 }
 
-func OnGetBlockingStatus() string {
+func OnGetBlockingStatus(inst *instance.RequestProcessorInstance) string {
 	log.Debugf("OnGetBlockingStatus called!")
 
-	server := globals.GetCurrentServer()
+	server := inst.GetCurrentServer()
 	if server == nil {
 		return ""
 	}
@@ -47,7 +47,7 @@ func OnGetBlockingStatus() string {
 		return GetAction("store", "blocked", "user", "user blocked from config", userId, 403)
 	}
 
-	autoBlockingStatus := OnGetAutoBlockingStatus()
+	autoBlockingStatus := OnGetAutoBlockingStatus(inst)
 
 	if context.IsIpBypassed() {
 		return ""
@@ -75,10 +75,10 @@ func OnGetBlockingStatus() string {
 	return autoBlockingStatus
 }
 
-func OnGetAutoBlockingStatus() string {
+func OnGetAutoBlockingStatus(inst *instance.RequestProcessorInstance) string {
 	log.Debugf("OnGetAutoBlockingStatus called!")
 
-	server := globals.GetCurrentServer()
+	server := inst.GetCurrentServer()
 	if server == nil {
 		return ""
 	}

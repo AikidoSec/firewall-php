@@ -33,7 +33,7 @@ def get_user_of_process(process_name):
         except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
             pass
 
-nginx_conf_template = """
+nginx_conf_template = r"""
 server {{
     listen {port};
     server_name {name};

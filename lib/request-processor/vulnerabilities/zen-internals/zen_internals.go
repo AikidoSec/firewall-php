@@ -25,15 +25,27 @@ import (
 	"main/globals"
 	"main/log"
 	"main/utils"
+	"sync"
 	"unsafe"
 )
 
-var (
+type ZenInternalsLibrary struct {
 	handle             unsafe.Pointer
 	detectSqlInjection C.detect_sql_injection_func
-)
+	mu                 sync.RWMutex
+	initialized        bool
+}
+
+var zenLib = &ZenInternalsLibrary{}
 
 func Init() bool {
+	zenLib.mu.Lock()
+	defer zenLib.mu.Unlock()
+
+	if zenLib.initialized {
+		return true
+	}
+
 	zenInternalsLibPath := C.CString(fmt.Sprintf("/opt/aikido-%s/libzen_internals_%s-unknown-linux-gnu.so", globals.Version, utils.GetArch()))
 	defer C.free(unsafe.Pointer(zenInternalsLibPath))
 
@@ -49,26 +61,42 @@ func Init() bool {
 	vDetectSqlInjection := C.dlsym(handle, detectSqlInjectionFnName)
 	if vDetectSqlInjection == nil {
 		log.Error("Failed to load detect_sql_injection function from zen-internals library!")
+		C.dlclose(handle)
 		return false
 	}
 
-	detectSqlInjection = (C.detect_sql_injection_func)(vDetectSqlInjection)
+	zenLib.handle = handle
+	zenLib.detectSqlInjection = (C.detect_sql_injection_func)(vDetectSqlInjection)
+	zenLib.initialized = true
 	log.Debugf("Loaded zen-internals library!")
 	return true
 }
 
 func Uninit() {
-	detectSqlInjection = nil
+	zenLib.mu.Lock()
+	defer zenLib.mu.Unlock()
 
-	if handle != nil {
-		C.dlclose(handle)
-		handle = nil
+	if !zenLib.initialized {
+		return
 	}
+
+	zenLib.detectSqlInjection = nil
+
+	if zenLib.handle != nil {
+		C.dlclose(zenLib.handle)
+		zenLib.handle = nil
+	}
+
+	zenLib.initialized = false
 }
 
 // DetectSQLInjection performs SQL injection detection using the loaded library
 func DetectSQLInjection(query string, user_input string, dialect int) int {
-	if detectSqlInjection == nil {
+	zenLib.mu.RLock()
+	detectFn := zenLib.detectSqlInjection
+	zenLib.mu.RUnlock()
+
+	if detectFn == nil {
 		return 0
 	}
 
@@ -81,7 +109,7 @@ func DetectSQLInjection(query string, user_input string, dialect int) int {
 	queryLen := C.size_t(len(query))
 	userInputLen := C.size_t(len(user_input))
 
-	result := int(C.call_detect_sql_injection(detectSqlInjection,
+	result := int(C.call_detect_sql_injection(detectFn,
 		cQuery, queryLen,
 		cUserInput, userInputLen,
 		C.int(dialect)))

@@ -4,14 +4,14 @@ import (
 	. "main/aikido_types"
 	"main/api_discovery"
 	"main/context"
-	"main/globals"
 	"main/grpc"
+	"main/instance"
 	"main/log"
 	"main/utils"
 	webscanner "main/vulnerabilities/web-scanner"
 )
 
-func OnPreRequest() string {
+func OnPreRequest(inst *instance.RequestProcessorInstance) string {
 	context.Clear()
 	return ""
 }
@@ -35,13 +35,13 @@ func OnRequestShutdownReporting(params RequestShutdownParams) {
 	grpc.OnRequestShutdown(params)
 }
 
-func OnPostRequest() string {
-	server := globals.GetCurrentServer()
+func OnPostRequest(inst *instance.RequestProcessorInstance) string {
+	server := inst.GetCurrentServer()
 	if server == nil {
 		return ""
 	}
 
-	go OnRequestShutdownReporting(RequestShutdownParams{
+	params := RequestShutdownParams{
 		Server:         server,
 		Method:         context.GetMethod(),
 		Route:          context.GetRoute(),
@@ -51,11 +51,17 @@ func OnPostRequest() string {
 		UserAgent:      context.GetUserAgent(),
 		IP:             context.GetIp(),
 		RateLimitGroup: context.GetRateLimitGroup(),
-		APISpec:        api_discovery.GetApiInfo(server),
 		RateLimited:    context.IsEndpointRateLimited(),
 		QueryParsed:    context.GetQueryParsed(),
 		IsIpBypassed:   context.IsIpBypassed(),
-	})
+		APISpec:        api_discovery.GetApiInfo(server), // Also needs context, must be called before Clear()
+	}
+
 	context.Clear()
+
+	go func() {
+		OnRequestShutdownReporting(params)
+	}()
+
 	return ""
 }

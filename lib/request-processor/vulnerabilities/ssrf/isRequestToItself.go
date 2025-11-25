@@ -2,7 +2,6 @@ package ssrf
 
 import (
 	"main/context"
-	"main/globals"
 	"main/helpers"
 	"net/url"
 )
@@ -13,9 +12,9 @@ import (
 // This prevents false positives when a server makes requests to itself via different protocols.
 func IsRequestToItself(outboundHostname string, outboundPort uint32) bool {
 	// Check if trust proxy is enabled
-	// If not enabled, we don't consider requests to itself as safe
-	server := globals.GetCurrentServer()
-	if server == nil || !server.AikidoConfig.TrustProxy {
+	// If not enabled, we don't consider requests to iteself as safe
+	server := context.GetCurrentServer()
+	if server != nil && !server.AikidoConfig.TrustProxy {
 		return false
 	}
 
