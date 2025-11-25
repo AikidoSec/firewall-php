@@ -33,13 +33,17 @@ RUN set -eux; \
       mariadb-server \
       ${PHP_PKG} ${PHP_PKG}-cli ${PHP_PKG}-common ${PHP_PKG}-fpm \
       ${PHP_PKG}-curl ${PHP_PKG}-sqlite3 ${PHP_PKG}-mysql \
-      ${PHP_PKG}-mbstring ${PHP_PKG}-xml ${PHP_PKG}-zip ${PHP_PKG}-opcache \
+      ${PHP_PKG}-mbstring ${PHP_PKG}-xml ${PHP_PKG}-zip \
       libapache2-mod-php${PHP_VERSION} \
     ; \
     # Apache: switch to prefork for mod_php scenario and enable rewrite
     a2dismod mpm_event || true; \
     a2dismod mpm_worker || true; \
     a2enmod mpm_prefork rewrite || true
+
+RUN if [ "$(printf '%s\n' "${PHP_VERSION}" "8.5" | sort -V | head -n1)" != "8.5" ]; then \
+      apt-get install -y --no-install-recommends php${PHP_VERSION}-opcache; \
+    fi
 
 # ---- Python toolchain used by tests ----
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
@@ -93,7 +97,7 @@ RUN printf '%s\n' '#!/usr/bin/env bash' \
       'if ! a2query -m "php${ver}" >/dev/null 2>&1; then' \
       '  apt-get update && apt-get install -y --no-install-recommends "libapache2-mod-php${ver}"' \
       'fi' \
-      'for m in php5 php7 php7.0 php7.1 php7.2 php7.3 php7.4 php8 php8.0 php8.1 php8.2 php8.3 php8.4; do' \
+      'for m in php5 php7 php7.0 php7.1 php7.2 php7.3 php7.4 php8 php8.0 php8.1 php8.2 php8.3 php8.4 php8.5; do' \
       '  a2query -m "$m" >/dev/null 2>&1 && a2dismod "$m" >/dev/null 2>&1 || true' \
       'done' \
       'a2enmod "php${ver}"' \

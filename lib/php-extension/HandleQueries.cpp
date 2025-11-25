@@ -69,8 +69,15 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_pdostatement_execute) {
     eventCache.moduleName = "PDOStatement"; 
     eventCache.sqlQuery = PHP_GET_CHAR_PTR(stmt->query_string);    
 
-    zval *pdo_object = &stmt->database_object_handle;
-    eventCache.sqlDialect = GetSqlDialectFromPdo(pdo_object);
+#if PHP_VERSION_ID >= 80500
+    if (!stmt->database_object_handle) {
+        eventCache.sqlDialect = "unknown";
+        return;
+    }
+    eventCache.sqlDialect = GetSqlDialectFromPdo(stmt->database_object_handle);
+#else
+    eventCache.sqlDialect = GetSqlDialectFromPdo(&stmt->database_object_handle);
+#endif
 }
 
 zend_class_entry* helper_load_mysqli_link_class_entry() {
