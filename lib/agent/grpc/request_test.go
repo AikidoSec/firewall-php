@@ -37,7 +37,7 @@ func TestAttackWaveThrottling(t *testing.T) {
 		server.AttackWave.IpQueues[ip] = sw
 
 		// Should return false (throttled) because last event was only 30 seconds ago (< 60s MinBetween)
-		assert.False(t, updateAttackWaveCountsAndDetect(server, true, ip, "", ""))
+		assert.False(t, updateAttackWaveCountsAndDetect(server, true, ip, "", "", "", ""))
 	})
 
 	t.Run("returns true and populates LastSent map when IP reaches threshold for first time", func(t *testing.T) {
@@ -66,7 +66,7 @@ func TestAttackWaveThrottling(t *testing.T) {
 		assert.False(t, exists, "IP should not be in LastSent map before threshold is reached")
 
 		// Should return true (event sent) because this is the first time reaching threshold
-		assert.True(t, updateAttackWaveCountsAndDetect(server, true, ip, "", ""))
+		assert.True(t, updateAttackWaveCountsAndDetect(server, true, ip, "", "", "", ""))
 
 		// Verify LastSent map was populated
 		assert.True(t, server.AttackWave.LastSent[ip] > 0, "LastSent should be set after event is sent")

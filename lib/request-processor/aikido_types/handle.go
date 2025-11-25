@@ -18,6 +18,7 @@ type RequestShutdownParams struct {
 	User                string
 	UserAgent           string
 	IP                  string
+	Url                 string
 	RateLimitGroup      string
 	APISpec             *protos.APISpec
 	RateLimited         bool

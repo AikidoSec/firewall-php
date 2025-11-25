@@ -146,6 +146,7 @@ func OnRequestShutdown(params RequestShutdownParams) {
 		User:                params.User,
 		UserAgent:           params.UserAgent,
 		Ip:                  params.IP,
+		Url:                 params.Url,
 		RateLimitGroup:      params.RateLimitGroup,
 		ApiSpec:             params.APISpec,
 		RateLimited:         params.RateLimited,

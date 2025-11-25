@@ -22,13 +22,12 @@ paths = [
      "/etc/passwd"
 ]
 
-
 def get_random_path():
     return random.choice(paths)
 
 def run_test():
     for i in range(15):
-        _ = php_server_get(get_random_path(), headers={"X-Forwarded-For": "5.8.19.22"})
+        _ = php_server_get(paths[i % len(paths)], headers={"X-Forwarded-For": "5.8.19.22"})
 
     mock_server_wait_for_new_events(5)
     
@@ -36,6 +35,26 @@ def run_test():
     assert_events_length_is(events, 2)
     assert_started_event_is_valid(events[0])
     assert_event_contains_subset_file(events[1], "expect_wave_detection.json")
+    assert "samples" in events[1]["attack"]["metadata"], "Samples not found in metadata"
+    assert isinstance(events[1]["attack"]["metadata"]["samples"], str), "Samples is not a string"
+    
+    # len of samples should be len of paths
+    samples = events[1]["attack"]["metadata"]["samples"]
+    samples = json.loads(samples)
+    assert len(samples) == len(paths), f"Expected {len(paths)} samples, got {len(samples)}"
+   
+   # check that all paths are in the samples
+    for i in range(len(paths)):
+        assert samples[i]["method"] == "GET"
+        found = False
+        encoded_path = paths[i].replace(" ", "%20")
+        url = f"http://localhost:{get_php_port()}{encoded_path}"
+        for sample in samples:
+            if sample["url"] == url:
+                found = True
+                break
+        assert found == True, f"Url {url} not found in samples {json.dumps(samples)}"
+
 
     time.sleep(70)
 
