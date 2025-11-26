@@ -68,15 +68,11 @@ func BuildRouteFromURL(url string) string {
 
 	route := strings.Join(replaceURLSegments(path), "/")
 
-	if route == "/" {
+	if route == "/" || route == "" {
 		return "/"
 	}
 
-	if strings.HasSuffix(route, "/") {
-		return route[:len(route)-1]
-	}
-
-	return route
+	return strings.TrimRight(route, "/")
 }
 
 func tryParseURLPath(rawURL string) string {
@@ -89,10 +85,14 @@ func tryParseURLPath(rawURL string) string {
 
 func replaceURLSegments(path string) []string {
 	segments := strings.Split(path, "/")
+	newSegments := make([]string, 0, len(segments))
 	for i, segment := range segments {
-		segments[i] = replaceURLSegmentWithParam(segment)
+		if segment == "" && i != 0 {
+			continue
+		}
+		newSegments = append(newSegments, replaceURLSegmentWithParam(segment))
 	}
-	return segments
+	return newSegments
 }
 
 func replaceURLSegmentWithParam(segment string) string {

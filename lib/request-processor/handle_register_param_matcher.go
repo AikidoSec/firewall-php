@@ -13,8 +13,6 @@ func OnRegisterParamMatcherEvent() string {
 	if param == "" || regex == "" {
 		return ""
 	}
-	log.Infof("Got param matcher name: %s", param)
-	log.Infof("Got param matcher regex: %s", regex)
 
 	server := globals.GetCurrentServer()
 	if server == nil {

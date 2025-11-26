@@ -28,7 +28,10 @@ ZEND_FUNCTION(register_param_matcher) {
     try {
         std::string outputEvent;
         requestProcessor.SendEvent(EVENT_REGISTER_PARAM_MATCHER, outputEvent);
-        action.Execute(outputEvent);
+        if (action.Execute(outputEvent) == MESSAGE) {
+            RETURN_BOOL(false);
+        }
+
     } catch (const std::exception& e) {
         AIKIDO_LOG_ERROR("Exception encountered in processing register param matcher event: %s\n", e.what());
     }

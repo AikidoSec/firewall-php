@@ -2,6 +2,7 @@ package globals
 
 import (
 	. "main/aikido_types"
+	"regexp"
 	"sync"
 )
 
@@ -19,6 +20,7 @@ func NewServerData() *ServerData {
 		},
 		CloudConfigMutex:    sync.Mutex{},
 		MiddlewareInstalled: false,
+		ParamMatchers:       make(map[string]*regexp.Regexp),
 	}
 }
 

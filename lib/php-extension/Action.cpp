@@ -40,7 +40,7 @@ ACTION_STATUS Action::executeStore(json &event) {
 ACTION_STATUS Action::executeMessage(json &event) {
     std::string message = event["message"];
     php_printf("%s\n", message.c_str());
-    return CONTINUE;
+    return MESSAGE;
 }
 
 ACTION_STATUS Action::Execute(std::string &event) {

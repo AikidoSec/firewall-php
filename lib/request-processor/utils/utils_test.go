@@ -361,6 +361,73 @@ func TestBuildRouteFromURL_EdgeCases(t *testing.T) {
 	}
 }
 
+func TestBuildRouteFromURL_WithParamMatchers(t *testing.T) {
+	originalServer := globals.GetCurrentServer()
+	defer func() {
+		globals.CurrentServer = originalServer
+	}()
+
+	mustCompileCustomPattern := func(pattern string) *regexp.Regexp {
+		re, err := CompileCustomPattern(pattern)
+		if err != nil {
+			t.Fatalf("CompileCustomPattern(%q) returned error: %v", pattern, err)
+		}
+		if re == nil {
+			t.Fatalf("CompileCustomPattern(%q) returned nil regexp", pattern)
+		}
+		return re
+	}
+
+	server := globals.NewServerData()
+	server.ParamMatchers = map[string]*regexp.Regexp{
+		// use only supported {digits} and {alpha} placeholders
+		"tenant": mustCompileCustomPattern("aikido-{digits}"),
+		"slug":   mustCompileCustomPattern("aikido-{alpha}-{digits}-{alpha}"),
+	}
+	globals.CurrentServer = server
+
+	tests := []struct {
+		name     string
+		url      string
+		expected string
+	}{
+		{
+			name:     "tenant matcher overrides default number pattern",
+			url:      "/posts/aikido-123",
+			expected: "/posts/:tenant",
+		},
+		{
+			name:     "tenant matcher overrides default number with full URL",
+			url:      "http://localhost/posts/aikido-456",
+			expected: "/posts/:tenant",
+		},
+		{
+			name:     "custom slug matcher on complex segment",
+			url:      "/posts/aikido-foo-123-bar",
+			expected: "/posts/:slug",
+		},
+		{
+			name:     "multiple custom params in route",
+			url:      "/blog/aikido-123/aikido-foo-123-bar",
+			expected: "/blog/:tenant/:slug",
+		},
+		{
+			name:     "no matcher for segment falls back to default behavior",
+			url:      "/posts/2023-05-01",
+			expected: "/posts/:date",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := BuildRouteFromURL(tt.url)
+			if result != tt.expected {
+				t.Errorf("BuildRouteFromURL(%q) = %q, want %q", tt.url, result, tt.expected)
+			}
+		})
+	}
+}
+
 func TestCompileCustomPattern(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -368,112 +435,109 @@ func TestCompileCustomPattern(t *testing.T) {
 		shouldBe    *regexp.Regexp
 		testStr     string
 		shouldMatch bool
+		wantErr     bool
 	}{
 		{
-			name:     "pattern without braces returns nil",
+			name:     "pattern without braces returns error",
 			pattern:  "simple-pattern",
 			shouldBe: nil,
+			wantErr:  true,
 		},
 		{
-			name:     "pattern with only opening brace returns nil",
+			name:     "pattern with only opening brace returns error",
 			pattern:  "pattern{",
 			shouldBe: nil,
+			wantErr:  true,
 		},
 		{
-			name:     "pattern with only closing brace returns nil",
+			name:     "pattern with only closing brace returns error",
 			pattern:  "pattern}",
 			shouldBe: nil,
+			wantErr:  true,
 		},
 		{
 			name:        "pattern with {digits} placeholder",
-			pattern:     "user/{digits}",
-			shouldBe:    regexp.MustCompile(`^user/\d+$`),
-			testStr:     "user/123",
+			pattern:     "user-{digits}",
+			shouldBe:    regexp.MustCompile(`^user-\d+$`),
+			testStr:     "user-123",
 			shouldMatch: true,
+			wantErr:     false,
 		},
 		{
 			name:        "pattern with {alpha} placeholder",
-			pattern:     "user/{alpha}",
-			shouldBe:    regexp.MustCompile(`^user/[a-zA-Z]+$`),
-			testStr:     "user/john",
+			pattern:     "user-{alpha}",
+			shouldBe:    regexp.MustCompile(`^user-[a-zA-Z]+$`),
+			testStr:     "user-john",
 			shouldMatch: true,
+			wantErr:     false,
 		},
 		{
 			name:        "pattern with multiple {digits} placeholders",
-			pattern:     "posts/{digits}/comments/{digits}",
-			shouldBe:    regexp.MustCompile(`^posts/\d+/comments/\d+$`),
-			testStr:     "posts/123/comments/456",
+			pattern:     "posts-{digits}-comments-{digits}",
+			shouldBe:    regexp.MustCompile(`^posts-\d+-comments-\d+$`),
+			testStr:     "posts-123-comments-456",
 			shouldMatch: true,
+			wantErr:     false,
 		},
 		{
 			name:        "pattern with mixed placeholders",
-			pattern:     "users/{alpha}/posts/{digits}",
-			shouldBe:    regexp.MustCompile(`^users/[a-zA-Z]+/posts/\d+$`),
-			testStr:     "users/john/posts/123",
+			pattern:     "users-{alpha}-posts-{digits}",
+			shouldBe:    regexp.MustCompile(`^users-[a-zA-Z]+-posts-\d+$`),
+			testStr:     "users-john-posts-123",
 			shouldMatch: true,
+			wantErr:     false,
 		},
 		{
-			name:        "pattern with unsupported placeholder",
-			pattern:     "user/{unsupported}",
-			shouldBe:    regexp.MustCompile(`^user/\{unsupported\}$`),
-			testStr:     "user/{unsupported}",
+			name:        "pattern with unsupported placeholder is treated literally",
+			pattern:     "user-{unsupported}",
+			shouldBe:    regexp.MustCompile(`^user-\{unsupported\}$`),
+			testStr:     "user-{unsupported}",
 			shouldMatch: true,
+			wantErr:     false,
 		},
 		{
-			name:        "pattern starting with placeholder",
-			pattern:     "{digits}/posts",
-			shouldBe:    regexp.MustCompile(`^\d+/posts$`),
-			testStr:     "123/posts",
-			shouldMatch: true,
+			name:     "pattern containing slash returns error",
+			pattern:  "api/v1/{digits}",
+			shouldBe: nil,
+			wantErr:  true,
 		},
 		{
-			name:        "pattern ending with placeholder",
-			pattern:     "posts/{digits}",
-			shouldBe:    regexp.MustCompile(`^posts/\d+$`),
-			testStr:     "posts/123",
-			shouldMatch: true,
+			name:     "pattern containing slash and placeholder returns error",
+			pattern:  "path/to/{digits}",
+			shouldBe: nil,
+			wantErr:  true,
 		},
 		{
-			name:        "pattern with special characters",
-			pattern:     "api/v1/users/{digits}",
-			shouldBe:    regexp.MustCompile(`^api/v1/users/\d+$`),
-			testStr:     "api/v1/users/123",
+			name:        "pattern with multiple unsupported placeholders literal",
+			pattern:     "user-{unsupported1}-posts-{unsupported2}",
+			shouldBe:    regexp.MustCompile(`^user-\{unsupported1\}-posts-\{unsupported2\}$`),
+			testStr:     "user-{unsupported1}-posts-{unsupported2}",
 			shouldMatch: true,
-		},
-		{
-			name:        "pattern with regex special characters",
-			pattern:     "path/to/{digits}",
-			shouldBe:    regexp.MustCompile(`^path/to/\d+$`),
-			testStr:     "path/to/123",
-			shouldMatch: true,
-		},
-		{
-			name:        "pattern with multiple unsupported placeholders",
-			pattern:     "user/{unsupported1}/posts/{unsupported2}",
-			shouldBe:    regexp.MustCompile(`^user/\{unsupported1\}/posts/\{unsupported2\}$`),
-			testStr:     "user/{unsupported1}/posts/{unsupported2}",
-			shouldMatch: true,
+			wantErr:     false,
 		},
 		{
 			name:        "pattern with {digits} should not match non-digits",
-			pattern:     "user/{digits}",
-			shouldBe:    regexp.MustCompile(`^user/\d+$`),
-			testStr:     "user/abc",
+			pattern:     "user-{digits}",
+			shouldBe:    regexp.MustCompile(`^user-\d+$`),
+			testStr:     "user-abc",
 			shouldMatch: false,
+			wantErr:     false,
 		},
 		{
 			name:        "pattern with {alpha} should not match digits",
-			pattern:     "user/{alpha}",
-			shouldBe:    regexp.MustCompile(`^user/[a-zA-Z]+$`),
-			testStr:     "user/123",
+			pattern:     "user-{alpha}",
+			shouldBe:    regexp.MustCompile(`^user-[a-zA-Z]+$`),
+			testStr:     "user-123",
 			shouldMatch: false,
+			wantErr:     false,
 		},
 		{
-			name:        "empty pattern with braces",
+			name:        "empty pattern with braces is treated literally",
 			pattern:     "{}",
 			shouldBe:    regexp.MustCompile(`^\{\}$`),
 			testStr:     "{}",
 			shouldMatch: true,
+			wantErr:     false,
 		},
 		{
 			name:        "pattern with consecutive placeholders",
@@ -481,12 +545,28 @@ func TestCompileCustomPattern(t *testing.T) {
 			shouldBe:    regexp.MustCompile(`^\d+[a-zA-Z]+$`),
 			testStr:     "123abc",
 			shouldMatch: true,
+			wantErr:     false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, _ := CompileCustomPattern(tt.pattern)
+			result, err := CompileCustomPattern(tt.pattern)
+
+			if tt.wantErr {
+				if err == nil {
+					t.Errorf("CompileCustomPattern(%q) expected error, got nil", tt.pattern)
+				}
+				if tt.shouldBe != nil && result != nil {
+					t.Errorf("CompileCustomPattern(%q) expected nil regexp on error, got %v", tt.pattern, result)
+				}
+				return
+			}
+
+			if err != nil {
+				t.Errorf("CompileCustomPattern(%q) unexpected error: %v", tt.pattern, err)
+				return
+			}
 
 			if tt.shouldBe == nil {
 				if result != nil {
