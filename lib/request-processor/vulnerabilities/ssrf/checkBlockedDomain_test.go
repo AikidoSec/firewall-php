@@ -36,7 +36,7 @@ func setupTestServerForBlockedDomains(blockNewOutgoingRequests bool, outboundDom
 	}
 }
 
-func TestCheckBlockedDomain_ExplicitlyBlockedDomain(t *testing.T) {
+func TestIsBlockOutboundConnection_ExplicitlyBlockedDomain(t *testing.T) {
 	// Test that explicitly blocked domains are always blocked
 	outboundDomains := map[string]string{
 		"evil.com": "block",
@@ -44,7 +44,7 @@ func TestCheckBlockedDomain_ExplicitlyBlockedDomain(t *testing.T) {
 	cleanup := setupTestServerForBlockedDomains(false, outboundDomains, nil, "")
 	defer cleanup()
 
-	isBlocked := CheckBlockedDomain("evil.com")
+	isBlocked := IsBlockOutboundConnection("evil.com")
 
 	if !isBlocked {
 		t.Error("Expected blocked domain to be blocked, but it was allowed")
@@ -52,7 +52,7 @@ func TestCheckBlockedDomain_ExplicitlyBlockedDomain(t *testing.T) {
 
 }
 
-func TestCheckBlockedDomain_ExplicitlyBlockedDomainRegardlessOfFlag(t *testing.T) {
+func TestIsBlockOutboundConnection_ExplicitlyBlockedDomainRegardlessOfFlag(t *testing.T) {
 	// Test that explicitly blocked domains are blocked even when blockNewOutgoingRequests is false
 	outboundDomains := map[string]string{
 		"evil.com": "block",
@@ -61,14 +61,14 @@ func TestCheckBlockedDomain_ExplicitlyBlockedDomainRegardlessOfFlag(t *testing.T
 	cleanup := setupTestServerForBlockedDomains(false, outboundDomains, nil, "")
 	defer cleanup()
 
-	isBlocked := CheckBlockedDomain("evil.com")
+	isBlocked := IsBlockOutboundConnection("evil.com")
 
 	if !isBlocked {
 		t.Error("Expected blocked domain to be blocked regardless of blockNewOutgoingRequests flag")
 	}
 }
 
-func TestCheckBlockedDomain_AllowedDomainWithBlockNewEnabled(t *testing.T) {
+func TestIsBlockOutboundConnection_AllowedDomainWithBlockNewEnabled(t *testing.T) {
 	// Test that allowed domains are allowed when blockNewOutgoingRequests is true
 	outboundDomains := map[string]string{
 		"safe.com": "allow",
@@ -76,14 +76,14 @@ func TestCheckBlockedDomain_AllowedDomainWithBlockNewEnabled(t *testing.T) {
 	cleanup := setupTestServerForBlockedDomains(true, outboundDomains, nil, "")
 	defer cleanup()
 
-	isBlocked := CheckBlockedDomain("safe.com")
+	isBlocked := IsBlockOutboundConnection("safe.com")
 
 	if isBlocked {
 		t.Error("Expected allowed domain to be allowed when blockNewOutgoingRequests is true")
 	}
 }
 
-func TestCheckBlockedDomain_NewDomainBlockedWhenFlagEnabled(t *testing.T) {
+func TestIsBlockOutboundConnection_NewDomainBlockedWhenFlagEnabled(t *testing.T) {
 	// Test that new domains are blocked when blockNewOutgoingRequests is true
 	outboundDomains := map[string]string{
 		"safe.com": "allow",
@@ -91,7 +91,7 @@ func TestCheckBlockedDomain_NewDomainBlockedWhenFlagEnabled(t *testing.T) {
 	cleanup := setupTestServerForBlockedDomains(true, outboundDomains, nil, "")
 	defer cleanup()
 
-	isBlocked := CheckBlockedDomain("unknown.com")
+	isBlocked := IsBlockOutboundConnection("unknown.com")
 
 	if !isBlocked {
 		t.Error("Expected unknown domain to be blocked when blockNewOutgoingRequests is true")
@@ -99,7 +99,7 @@ func TestCheckBlockedDomain_NewDomainBlockedWhenFlagEnabled(t *testing.T) {
 
 }
 
-func TestCheckBlockedDomain_NewDomainAllowedWhenFlagDisabled(t *testing.T) {
+func TestIsBlockOutboundConnection_NewDomainAllowedWhenFlagDisabled(t *testing.T) {
 	// Test that new domains are allowed when blockNewOutgoingRequests is false
 	outboundDomains := map[string]string{
 		"safe.com": "allow",
@@ -107,14 +107,14 @@ func TestCheckBlockedDomain_NewDomainAllowedWhenFlagDisabled(t *testing.T) {
 	cleanup := setupTestServerForBlockedDomains(false, outboundDomains, nil, "")
 	defer cleanup()
 
-	isBlocked := CheckBlockedDomain("unknown.com")
+	isBlocked := IsBlockOutboundConnection("unknown.com")
 
 	if isBlocked {
 		t.Error("Expected unknown domain to be allowed when blockNewOutgoingRequests is false")
 	}
 }
 
-func TestCheckBlockedDomain_CaseInsensitiveHostname(t *testing.T) {
+func TestIsBlockOutboundConnection_CaseInsensitiveHostname(t *testing.T) {
 	// Test that hostname matching is case-insensitive
 	outboundDomains := map[string]string{
 		"evil.com": "block",
@@ -123,21 +123,21 @@ func TestCheckBlockedDomain_CaseInsensitiveHostname(t *testing.T) {
 	defer cleanup()
 
 	// Test with uppercase hostname
-	isBlocked := CheckBlockedDomain("EVIL.COM")
+	isBlocked := IsBlockOutboundConnection("EVIL.COM")
 
 	if !isBlocked {
 		t.Error("Expected uppercase hostname to be blocked (case-insensitive matching)")
 	}
 
 	// Test with mixed case
-	isBlocked = CheckBlockedDomain("Evil.Com")
+	isBlocked = IsBlockOutboundConnection("Evil.Com")
 
 	if !isBlocked {
 		t.Error("Expected mixed case hostname to be blocked (case-insensitive matching)")
 	}
 }
 
-func TestCheckBlockedDomain_NoServerReturnsNil(t *testing.T) {
+func TestIsBlockOutboundConnection_NoServerReturnsNil(t *testing.T) {
 	// Test that function returns nil when there's no server
 	originalServer := globals.GetCurrentServer()
 	globals.CurrentServer = nil
@@ -145,33 +145,33 @@ func TestCheckBlockedDomain_NoServerReturnsNil(t *testing.T) {
 		globals.CurrentServer = originalServer
 	}()
 
-	isBlocked := CheckBlockedDomain("evil.com")
+	isBlocked := IsBlockOutboundConnection("evil.com")
 
 	if isBlocked {
 		t.Error("Expected nil isBlocked when there's no server")
 	}
 }
 
-func TestCheckBlockedDomain_EmptyDomainsListWithBlockNewEnabled(t *testing.T) {
+func TestIsBlockOutboundConnection_EmptyDomainsListWithBlockNewEnabled(t *testing.T) {
 	// Test that all domains are blocked when the list is empty and blockNewOutgoingRequests is true
 	outboundDomains := map[string]string{}
 	cleanup := setupTestServerForBlockedDomains(true, outboundDomains, nil, "")
 	defer cleanup()
 
-	isBlocked := CheckBlockedDomain("example.com")
+	isBlocked := IsBlockOutboundConnection("example.com")
 
 	if !isBlocked {
 		t.Error("Expected domain to be blocked when domains list is empty and blockNewOutgoingRequests is true")
 	}
 }
 
-func TestCheckBlockedDomain_EmptyDomainsListWithBlockNewDisabled(t *testing.T) {
+func TestIsBlockOutboundConnection_EmptyDomainsListWithBlockNewDisabled(t *testing.T) {
 	// Test that all domains are allowed when the list is empty and blockNewOutgoingRequests is false
 	outboundDomains := map[string]string{}
 	cleanup := setupTestServerForBlockedDomains(false, outboundDomains, nil, "")
 	defer cleanup()
 
-	isBlocked := CheckBlockedDomain("example.com")
+	isBlocked := IsBlockOutboundConnection("example.com")
 
 	if isBlocked {
 		t.Error("Expected domain to be allowed when domains list is empty and blockNewOutgoingRequests is false")

@@ -6,9 +6,9 @@ import (
 	"strings"
 )
 
-// CheckBlockedDomain checks if an outbound request to a hostname should be blocked
+// IsBlockOutboundConnection checks if an outbound request to a hostname should be blocked
 // based on the cloud configuration for blocked/allowed domains
-func CheckBlockedDomain(hostname string) bool {
+func IsBlockOutboundConnection(hostname string) bool {
 	server := globals.GetCurrentServer()
 	if server == nil {
 		return false
