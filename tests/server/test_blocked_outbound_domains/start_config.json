@@ -2,7 +2,20 @@
     "success": true,
     "serviceId": 1,
     "heartbeatIntervalInMS": 600000,
-    "endpoints": [],
+    "endpoints": [
+        {
+            "method": "POST",
+            "route": "/testDetection2",
+            "forceProtectionOff": true,
+            "graphql": null,
+            "allowedIPAddresses": [],
+            "rateLimiting": {
+                "enabled": false,
+                "maxRequests": 100,
+                "windowSizeInMS": 60000
+            }
+        }
+    ],
     "blockedUserIds": [],
     "allowedIPAddresses": ["1.2.3.4"],
     "receivedAnyStats": true,

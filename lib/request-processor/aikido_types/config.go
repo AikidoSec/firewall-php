@@ -55,11 +55,6 @@ type IpList struct {
 	IpSet       netipx.IPSet
 }
 
-type OutboundDomain struct {
-	Hostname string
-	Mode     string
-}
-
 type CloudConfigData struct {
 	ConfigUpdatedAt          int64
 	Endpoints                map[EndpointKey]EndpointData
