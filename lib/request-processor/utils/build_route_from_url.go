@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"errors"
+	"main/globals"
 	"net"
 	"net/url"
 	"regexp"
@@ -17,6 +19,46 @@ var (
 	HASH         = regexp.MustCompile(`^(?:[a-fA-F0-9]{32}|[a-fA-F0-9]{40}|[a-fA-F0-9]{64}|[a-fA-F0-9]{128})$`)
 	HASH_LENGTHS = []int{32, 40, 64, 128}
 )
+
+func CompileCustomPattern(pattern string) (*regexp.Regexp, error) {
+	if !strings.Contains(pattern, "{") || !strings.Contains(pattern, "}") {
+		return nil, errors.New("pattern should contain { or }")
+	}
+
+	if strings.Contains(pattern, "/") {
+		return nil, errors.New("pattern should not contain slashes")
+	}
+
+	supported := map[string]string{
+		"{digits}": `\d+`,
+		"{alpha}":  "[a-zA-Z]+",
+	}
+
+	placeholderRegex := regexp.MustCompile(`(\{[a-zA-Z]+})`)
+	parts := placeholderRegex.Split(pattern, -1)
+	matches := placeholderRegex.FindAllString(pattern, -1)
+
+	var regexParts []string
+	for i, part := range parts {
+		if part != "" {
+			regexParts = append(regexParts, regexp.QuoteMeta(part))
+		}
+		if i < len(matches) {
+			if replacement, ok := supported[matches[i]]; ok {
+				regexParts = append(regexParts, replacement)
+			} else {
+				regexParts = append(regexParts, regexp.QuoteMeta(matches[i]))
+			}
+		}
+	}
+
+	compiled, err := regexp.Compile("^" + strings.Join(regexParts, "") + "$")
+	if err != nil {
+		return nil, err
+	}
+
+	return compiled, nil
+}
 
 func BuildRouteFromURL(url string) string {
 	path := tryParseURLPath(url)
@@ -54,6 +96,16 @@ func replaceURLSegments(path string) []string {
 }
 
 func replaceURLSegmentWithParam(segment string) string {
+	server := globals.GetCurrentServer()
+	if server != nil {
+		paramMatchers := server.ParamMatchers
+		for param, regex := range paramMatchers {
+			if regex.MatchString(segment) {
+				return ":" + param
+			}
+		}
+	}
+
 	if NUMBER.MatchString(segment) {
 		return ":number"
 	}

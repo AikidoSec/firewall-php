@@ -238,6 +238,284 @@ func TestBuildRouteFromURL(t *testing.T) {
 	}
 }
 
+func TestBuildRouteFromURL_EdgeCases(t *testing.T) {
+	tests := []struct {
+		name     string
+		url      string
+		expected string
+	}{
+		{
+			name:     "invalid URL format",
+			url:      "://invalid",
+			expected: "",
+		},
+		{
+			name:     "URL with query parameters",
+			url:      "http://localhost/posts/123?page=1&limit=10",
+			expected: "/posts/:number",
+		},
+		{
+			name:     "URL with fragment",
+			url:      "http://localhost/posts/123#section",
+			expected: "/posts/:number",
+		},
+		{
+			name:     "URL with port",
+			url:      "http://localhost:8080/posts/123",
+			expected: "/posts/:number",
+		},
+		{
+			name:     "URL with user info",
+			url:      "http://user:pass@localhost/posts/123",
+			expected: "/posts/:number",
+		},
+		{
+			name:     "multiple trailing slashes",
+			url:      "/posts/123///",
+			expected: "/posts/:number",
+		},
+		{
+			name:     "empty segments",
+			url:      "http://localhost//posts//123",
+			expected: "/posts/:number",
+		},
+		{
+			name:     "IPv6 with brackets in path",
+			url:      "/block/[2001:db8::1]",
+			expected: "/block/[2001:db8::1]",
+		},
+		{
+			name:     "mixed parameter types",
+			url:      "/api/v1/users/123/posts/d9428888-122b-11e1-b85c-61cd3cbb3210/comments/456",
+			expected: "/api/v1/users/:number/posts/:uuid/comments/:number",
+		},
+		{
+			name:     "date in different format",
+			url:      "/posts/12-31-2023",
+			expected: "/posts/:date",
+		},
+		{
+			name:     "email with subdomain",
+			url:      "/users/user.name+tag@subdomain.example.com",
+			expected: "/users/:email",
+		},
+		{
+			name:     "hash with wrong length",
+			url:      "/files/abc123",
+			expected: "/files/abc123",
+		},
+		{
+			name:     "objectId with wrong length",
+			url:      "/posts/66ec29159d00113616fc718",
+			expected: "/posts/66ec29159d00113616fc718",
+		},
+		{
+			name:     "ULID with wrong length",
+			url:      "/posts/01ARZ3NDEKTSV4RRFFQ69G5",
+			expected: "/posts/01ARZ3NDEKTSV4RRFFQ69G5",
+		},
+		{
+			name:     "UUID with wrong length",
+			url:      "/posts/d9428888-122b-11e1-b85c-61cd3cbb321",
+			expected: "/posts/d9428888-122b-11e1-b85c-61cd3cbb321",
+		},
+		{
+			name:     "private IPv4",
+			url:      "/block/192.168.1.1",
+			expected: "/block/:ip",
+		},
+		{
+			name:     "private IPv6",
+			url:      "/block/::1",
+			expected: "/block/:ip",
+		},
+		{
+			name:     "number zero",
+			url:      "/posts/0",
+			expected: "/posts/:number",
+		},
+		{
+			name:     "very large number",
+			url:      "/posts/999999999999999999999",
+			expected: "/posts/:number",
+		},
+		{
+			name:     "special UUID cases",
+			url:      "/posts/ffffffff-ffff-ffff-ffff-ffffffffffff",
+			expected: "/posts/:uuid",
+		},
+		{
+			name:     "invalid UUID format",
+			url:      "/posts/00000000-0000-1000-6000-000000000000",
+			expected: "/posts/00000000-0000-1000-6000-000000000000",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := BuildRouteFromURL(tt.url)
+			if result != tt.expected {
+				t.Errorf("BuildRouteFromURL(%q) = %q, want %q", tt.url, result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestCompileCustomPattern(t *testing.T) {
+	tests := []struct {
+		name        string
+		pattern     string
+		shouldBe    *regexp.Regexp
+		testStr     string
+		shouldMatch bool
+	}{
+		{
+			name:     "pattern without braces returns nil",
+			pattern:  "simple-pattern",
+			shouldBe: nil,
+		},
+		{
+			name:     "pattern with only opening brace returns nil",
+			pattern:  "pattern{",
+			shouldBe: nil,
+		},
+		{
+			name:     "pattern with only closing brace returns nil",
+			pattern:  "pattern}",
+			shouldBe: nil,
+		},
+		{
+			name:        "pattern with {digits} placeholder",
+			pattern:     "user/{digits}",
+			shouldBe:    regexp.MustCompile(`^user/\d+$`),
+			testStr:     "user/123",
+			shouldMatch: true,
+		},
+		{
+			name:        "pattern with {alpha} placeholder",
+			pattern:     "user/{alpha}",
+			shouldBe:    regexp.MustCompile(`^user/[a-zA-Z]+$`),
+			testStr:     "user/john",
+			shouldMatch: true,
+		},
+		{
+			name:        "pattern with multiple {digits} placeholders",
+			pattern:     "posts/{digits}/comments/{digits}",
+			shouldBe:    regexp.MustCompile(`^posts/\d+/comments/\d+$`),
+			testStr:     "posts/123/comments/456",
+			shouldMatch: true,
+		},
+		{
+			name:        "pattern with mixed placeholders",
+			pattern:     "users/{alpha}/posts/{digits}",
+			shouldBe:    regexp.MustCompile(`^users/[a-zA-Z]+/posts/\d+$`),
+			testStr:     "users/john/posts/123",
+			shouldMatch: true,
+		},
+		{
+			name:        "pattern with unsupported placeholder",
+			pattern:     "user/{unsupported}",
+			shouldBe:    regexp.MustCompile(`^user/\{unsupported\}$`),
+			testStr:     "user/{unsupported}",
+			shouldMatch: true,
+		},
+		{
+			name:        "pattern starting with placeholder",
+			pattern:     "{digits}/posts",
+			shouldBe:    regexp.MustCompile(`^\d+/posts$`),
+			testStr:     "123/posts",
+			shouldMatch: true,
+		},
+		{
+			name:        "pattern ending with placeholder",
+			pattern:     "posts/{digits}",
+			shouldBe:    regexp.MustCompile(`^posts/\d+$`),
+			testStr:     "posts/123",
+			shouldMatch: true,
+		},
+		{
+			name:        "pattern with special characters",
+			pattern:     "api/v1/users/{digits}",
+			shouldBe:    regexp.MustCompile(`^api/v1/users/\d+$`),
+			testStr:     "api/v1/users/123",
+			shouldMatch: true,
+		},
+		{
+			name:        "pattern with regex special characters",
+			pattern:     "path/to/{digits}",
+			shouldBe:    regexp.MustCompile(`^path/to/\d+$`),
+			testStr:     "path/to/123",
+			shouldMatch: true,
+		},
+		{
+			name:        "pattern with multiple unsupported placeholders",
+			pattern:     "user/{unsupported1}/posts/{unsupported2}",
+			shouldBe:    regexp.MustCompile(`^user/\{unsupported1\}/posts/\{unsupported2\}$`),
+			testStr:     "user/{unsupported1}/posts/{unsupported2}",
+			shouldMatch: true,
+		},
+		{
+			name:        "pattern with {digits} should not match non-digits",
+			pattern:     "user/{digits}",
+			shouldBe:    regexp.MustCompile(`^user/\d+$`),
+			testStr:     "user/abc",
+			shouldMatch: false,
+		},
+		{
+			name:        "pattern with {alpha} should not match digits",
+			pattern:     "user/{alpha}",
+			shouldBe:    regexp.MustCompile(`^user/[a-zA-Z]+$`),
+			testStr:     "user/123",
+			shouldMatch: false,
+		},
+		{
+			name:        "empty pattern with braces",
+			pattern:     "{}",
+			shouldBe:    regexp.MustCompile(`^\{\}$`),
+			testStr:     "{}",
+			shouldMatch: true,
+		},
+		{
+			name:        "pattern with consecutive placeholders",
+			pattern:     "{digits}{alpha}",
+			shouldBe:    regexp.MustCompile(`^\d+[a-zA-Z]+$`),
+			testStr:     "123abc",
+			shouldMatch: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, _ := CompileCustomPattern(tt.pattern)
+
+			if tt.shouldBe == nil {
+				if result != nil {
+					t.Errorf("CompileCustomPattern(%q) = %v, want nil", tt.pattern, result)
+				}
+				return
+			}
+
+			if result == nil {
+				t.Errorf("CompileCustomPattern(%q) = nil, want %v", tt.pattern, tt.shouldBe)
+				return
+			}
+
+			// Test that the compiled regex matches the expected pattern
+			if result.String() != tt.shouldBe.String() {
+				t.Errorf("CompileCustomPattern(%q) = %v, want %v", tt.pattern, result.String(), tt.shouldBe.String())
+			}
+
+			// If testStr is provided, test matching behavior
+			if tt.testStr != "" {
+				matches := result.MatchString(tt.testStr)
+				if matches != tt.shouldMatch {
+					t.Errorf("CompileCustomPattern(%q).MatchString(%q) = %v, want %v", tt.pattern, tt.testStr, matches, tt.shouldMatch)
+				}
+			}
+		})
+	}
+}
+
 func TestParseBodyJSON(t *testing.T) {
 	data := "\r\n\r\n\r\n{\r\n\r\n\r\n\"a\":\r\n\r\n\r\n \"1\",\r\n\r\n\"b\":\"2\"\r\n\r\n}\r\n\r\n\r\n\r\n"
 	expected := `{"a":"1","b":"2"}`
