@@ -14,13 +14,16 @@ func OnRegisterParamMatcherEvent() string {
 		return ""
 	}
 
+	if !utils.IsValidParamName(param) {
+		return utils.GetMessageAction(fmt.Sprintf("Invalid param name: %s. Param names must match [a-zA-Z_]+", param))
+	}
+
 	server := globals.GetCurrentServer()
 	if server == nil {
 		return ""
 	}
 
 	if _, exists := server.ParamMatchers[param]; exists {
-		log.Debugf("Param matcher %s already exists, skipping", param)
 		return ""
 	}
 

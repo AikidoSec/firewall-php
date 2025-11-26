@@ -13,7 +13,7 @@ routes = [
     "/test",
     "/posts/2023-05-01",                         # default :date matcher
     "/posts/aikido-123",                         # custom :tenant matcher
-    "/blog/aikido-123/aikido-foo-123-bar",       # custom :tenant + :slug matchers
+    "/aikido-123/blog/aikido-foo-123-bar",       # custom :tenant + :slug matchers
 ]
 
 

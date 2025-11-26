@@ -17,7 +17,7 @@
             "hits": 5
         },
         {
-            "path": "/blog/:tenant/:slug",
+            "path": "/:tenant/blog/:slug",
             "method": "GET",
             "hits": 5
         }

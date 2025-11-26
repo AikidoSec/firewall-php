@@ -547,6 +547,18 @@ func TestCompileCustomPattern(t *testing.T) {
 			shouldMatch: true,
 			wantErr:     false,
 		},
+		{
+			name:     "pattern with too many replacements",
+			pattern:  "{digits}-{alpha}-{digits}-{alpha}-{digits}-{alpha}-{digits}-{alpha}",
+			shouldBe: nil,
+			wantErr:  true,
+		},
+		{
+			name:     "pattern with consecutive similar placeholders",
+			pattern:  "{digits}{digits}-{digits}-{digits}",
+			shouldBe: nil,
+			wantErr:  true,
+		},
 	}
 
 	for _, tt := range tests {
