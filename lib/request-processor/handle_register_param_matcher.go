@@ -26,9 +26,7 @@ func OnRegisterParamMatcherEvent() string {
 
 	regexCompiled, err := utils.CompileCustomPattern(regex)
 	if err != nil {
-		errorMessage := fmt.Sprintf("Error compiling param matcher %s -> regex \"%s\": %s", param, regex, err.Error())
-		log.Info(errorMessage)
-		return utils.GetMessageAction(errorMessage)
+		return utils.GetMessageAction(fmt.Sprintf("Error compiling param matcher %s -> regex \"%s\": %s", param, regex, err.Error()))
 	}
 	server.ParamMatchers[param] = regexCompiled
 	log.Infof("Registered param matcher %s -> %s", param, regex)
