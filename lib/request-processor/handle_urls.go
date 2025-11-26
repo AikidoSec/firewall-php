@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+	"html"
 	"main/attack"
 	"main/context"
 	"main/globals"
@@ -30,14 +32,12 @@ func OnPreOutgoingRequest() string {
 	operation := context.GetFunctionName()
 
 	// Check if the domain is blocked based on cloud configuration
-	res := ssrf.CheckBlockedDomain(hostname, port, operation)
-	if res != nil {
-		//return attack.ReportAttackDetected(res)
-		// TODO: Change the error message (remove " originating from...")
-		return attack.GetAttackDetectedAction(*res)
+	if ssrf.CheckBlockedDomain(hostname) {
+		message := fmt.Sprintf("Aikido firewall has blocked an outbound connection: %s(...) to %s", operation, html.EscapeString(hostname))
+		return attack.GetThrowAction(message, 500)
 	}
 
-	res = ssrf.CheckContextForSSRF(hostname, port, operation)
+	res := ssrf.CheckContextForSSRF(hostname, port, operation)
 	if res != nil {
 		return attack.ReportAttackDetected(res)
 	}

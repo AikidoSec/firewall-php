@@ -17,7 +17,7 @@ def test_explicitly_blocked_domain():
     """Test that explicitly blocked domains are always blocked"""
     response = php_server_post("/testDetection", {"url": "http://evil.example.com"})
     assert_response_code_is(response, 500)
-    assert_response_body_contains(response, "blocked outbound connection")
+    assert_response_body_contains(response, "Aikido firewall has blocked an outbound connection")
 
 def test_allowed_domain_with_block_new():
     """Test that allowed domains can be accessed when blockNewOutgoingRequests is true"""
@@ -28,7 +28,7 @@ def test_new_domain_blocked_when_flag_enabled():
     """Test that new/unknown domains are blocked when blockNewOutgoingRequests is true"""
     response = php_server_post("/testDetection", {"url": "http://unknown.example.com"})
     assert_response_code_is(response, 500)
-    assert_response_body_contains(response, "blocked outbound connection")
+    assert_response_body_contains(response, "Aikido firewall has blocked an outbound connection")
 
 def test_new_domain_allowed_when_flag_disabled():
     """Test that new domains are allowed when blockNewOutgoingRequests is false"""
@@ -41,7 +41,7 @@ def test_blocked_domain_still_blocked_when_flag_disabled():
     """Test that explicitly blocked domains are still blocked when blockNewOutgoingRequests is false"""
     response = php_server_post("/testDetection", {"url": "http://evil.example.com"})
     assert_response_code_is(response, 500)
-    assert_response_body_contains(response, "blocked outbound connection")
+    assert_response_body_contains(response, "Aikido firewall has blocked an outbound connection")
    
 def test_detection_mode():
     """Test that detection mode (block: false) detects but doesn't block"""
@@ -57,12 +57,12 @@ def test_case_insensitive_matching():
     # Test with uppercase hostname
     response = php_server_post("/testDetection", {"url": "http://EVIL.EXAMPLE.COM"})
     assert_response_code_is(response, 500)
-    assert_response_body_contains(response, "blocked outbound connection")
+    assert_response_body_contains(response, "Aikido firewall has blocked an outbound connection")
    
     # Test with mixed case
     response = php_server_post("/testDetection", {"url": "http://Evil.Example.Com"})
     assert_response_code_is(response, 500)
-    assert_response_body_contains(response, "blocked outbound connection")
+    assert_response_body_contains(response, "Aikido firewall has blocked an outbound connection")
   
     
 def run_test():

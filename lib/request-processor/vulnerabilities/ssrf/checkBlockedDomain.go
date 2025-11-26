@@ -3,31 +3,15 @@ package ssrf
 import (
 	"main/globals"
 	"main/helpers"
-	"main/utils"
-	"strconv"
 	"strings"
 )
 
-// createBlockedDomainResult creates an InterceptorResult for a blocked domain
-func createBlockedDomainResult(hostname string, port uint32, operation string) *utils.InterceptorResult {
-	return &utils.InterceptorResult{
-		Operation: operation,
-		Kind:      utils.BlockedDomain,
-		Source:    "outbound-request",
-		Metadata: map[string]string{
-			"hostname": hostname,
-			"port":     strconv.Itoa(int(port)),
-		},
-		Payload: hostname,
-	}
-}
-
 // CheckBlockedDomain checks if an outbound request to a hostname should be blocked
 // based on the cloud configuration for blocked/allowed domains
-func CheckBlockedDomain(hostname string, port uint32, operation string) *utils.InterceptorResult {
+func CheckBlockedDomain(hostname string) bool {
 	server := globals.GetCurrentServer()
 	if server == nil {
-		return nil
+		return false
 	}
 
 	trimmedHostname := helpers.TrimInvisible(hostname)
@@ -42,22 +26,22 @@ func CheckBlockedDomain(hostname string, port uint32, operation string) *utils.I
 
 	// If hostname has mode "block", always block it
 	if found && mode == "block" {
-		return createBlockedDomainResult(hostname, port, operation)
+		return true
 	}
 
 	// If blockNewOutgoingRequests is enabled
 	if server.CloudConfig.BlockNewOutgoingRequests {
 		// If hostname has mode "allow", allow it
 		if found && mode == "allow" {
-			return nil
+			return false
 		}
 
 		// If hostname is not in the list, block it
 		if !found {
-			return createBlockedDomainResult(hostname, port, operation)
+			return true
 		}
 	}
 
 	// Allow the connection
-	return nil
+	return false
 }
