@@ -34,6 +34,7 @@ ZEND_FUNCTION(register_param_matcher) {
 
     } catch (const std::exception& e) {
         AIKIDO_LOG_ERROR("Exception encountered in processing register param matcher event: %s\n", e.what());
+        RETURN_BOOL(false);
     }
 
     AIKIDO_LOG_INFO("Registered param matcher %s -> %s\n", eventCache.paramMatcherParam.c_str(), eventCache.paramMatcherRegex.c_str());
