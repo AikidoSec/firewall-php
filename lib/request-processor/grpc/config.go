@@ -130,6 +130,13 @@ func setCloudConfig(server *ServerData, cloudConfigFromAgent *protos.CloudConfig
 
 	server.CloudConfig.UserAgentDetails = buildUserAgentDetailsFromProto(cloudConfigFromAgent.UserAgentDetails)
 
+	server.CloudConfig.BlockNewOutgoingRequests = cloudConfigFromAgent.BlockNewOutgoingRequests
+
+	server.CloudConfig.OutboundDomains = map[string]string{}
+	for _, domain := range cloudConfigFromAgent.OutboundDomains {
+		server.CloudConfig.OutboundDomains[domain.Hostname] = domain.Mode
+	}
+
 	// Force garbage collection to ensure that the IP blocklists temporary memory is released ASAP
 	runtime.GC()
 }

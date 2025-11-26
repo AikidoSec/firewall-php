@@ -48,22 +48,29 @@ type IpBlocklist struct {
 	Ips         []string
 }
 
+type OutboundDomain struct {
+	Hostname string `json:"hostname"`
+	Mode     string `json:"mode"`
+}
+
 type CloudConfigData struct {
-	Success               bool       `json:"success"`
-	ServiceId             int        `json:"serviceId"`
-	ConfigUpdatedAt       int64      `json:"configUpdatedAt"`
-	HeartbeatIntervalInMS int        `json:"heartbeatIntervalInMS"`
-	Endpoints             []Endpoint `json:"endpoints"`
-	BlockedUserIds        []string   `json:"blockedUserIds"`
-	BypassedIps           []string   `json:"allowedIPAddresses"`
-	ReceivedAnyStats      bool       `json:"receivedAnyStats"`
-	Block                 *bool      `json:"block,omitempty"`
-	BlockedIpsList        map[string]IpBlocklist
-	AllowedIpsList        map[string]IpBlocklist
-	BlockedUserAgents     string
-	MonitoredIpsList      map[string]IpBlocklist
-	MonitoredUserAgents   string
-	UserAgentDetails      map[string]string
+	Success                  bool             `json:"success"`
+	ServiceId                int              `json:"serviceId"`
+	ConfigUpdatedAt          int64            `json:"configUpdatedAt"`
+	HeartbeatIntervalInMS    int              `json:"heartbeatIntervalInMS"`
+	Endpoints                []Endpoint       `json:"endpoints"`
+	BlockedUserIds           []string         `json:"blockedUserIds"`
+	BypassedIps              []string         `json:"allowedIPAddresses"`
+	ReceivedAnyStats         bool             `json:"receivedAnyStats"`
+	Block                    *bool            `json:"block,omitempty"`
+	BlockNewOutgoingRequests bool             `json:"blockNewOutgoingRequests"`
+	OutboundDomains          []OutboundDomain `json:"domains"`
+	BlockedIpsList           map[string]IpBlocklist
+	AllowedIpsList           map[string]IpBlocklist
+	BlockedUserAgents        string
+	MonitoredIpsList         map[string]IpBlocklist
+	MonitoredUserAgents      string
+	UserAgentDetails         map[string]string
 }
 
 type IpsData struct {

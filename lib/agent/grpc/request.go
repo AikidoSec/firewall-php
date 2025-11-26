@@ -362,16 +362,17 @@ func getCloudConfig(server *ServerData, configUpdatedAt int64) *protos.CloudConf
 	}
 
 	cloudConfig := &protos.CloudConfig{
-		ConfigUpdatedAt:     server.CloudConfig.ConfigUpdatedAt,
-		BlockedUserIds:      server.CloudConfig.BlockedUserIds,
-		BypassedIps:         server.CloudConfig.BypassedIps,
-		BlockedIps:          getIpsList(server.CloudConfig.BlockedIpsList),
-		AllowedIps:          getIpsList(server.CloudConfig.AllowedIpsList),
-		BlockedUserAgents:   server.CloudConfig.BlockedUserAgents,
-		MonitoredIps:        getIpsList(server.CloudConfig.MonitoredIpsList),
-		MonitoredUserAgents: server.CloudConfig.MonitoredUserAgents,
-		UserAgentDetails:    server.CloudConfig.UserAgentDetails,
-		Block:               isBlockingEnabled,
+		ConfigUpdatedAt:          server.CloudConfig.ConfigUpdatedAt,
+		BlockedUserIds:           server.CloudConfig.BlockedUserIds,
+		BypassedIps:              server.CloudConfig.BypassedIps,
+		BlockedIps:               getIpsList(server.CloudConfig.BlockedIpsList),
+		AllowedIps:               getIpsList(server.CloudConfig.AllowedIpsList),
+		BlockedUserAgents:        server.CloudConfig.BlockedUserAgents,
+		MonitoredIps:             getIpsList(server.CloudConfig.MonitoredIpsList),
+		MonitoredUserAgents:      server.CloudConfig.MonitoredUserAgents,
+		UserAgentDetails:         server.CloudConfig.UserAgentDetails,
+		Block:                    isBlockingEnabled,
+		BlockNewOutgoingRequests: server.CloudConfig.BlockNewOutgoingRequests,
 	}
 
 	for _, endpoint := range server.CloudConfig.Endpoints {
@@ -383,6 +384,13 @@ func getCloudConfig(server *ServerData, configUpdatedAt int64) *protos.CloudConf
 			RateLimiting: &protos.RateLimiting{
 				Enabled: endpoint.RateLimiting.Enabled,
 			},
+		})
+	}
+
+	for _, domain := range server.CloudConfig.OutboundDomains {
+		cloudConfig.OutboundDomains = append(cloudConfig.OutboundDomains, &protos.OutboundDomain{
+			Hostname: domain.Hostname,
+			Mode:     domain.Mode,
 		})
 	}
 
