@@ -497,7 +497,7 @@ func StringSliceToMap(slice []string) map[string]struct{} {
 
 func GetMessageAction(message string) string {
 	actionMap := map[string]interface{}{
-		"action":  "message",
+		"action":  "warning_message",
 		"message": message,
 	}
 	actionJson, err := json.Marshal(actionMap)

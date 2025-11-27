@@ -60,7 +60,7 @@ ACTION_STATUS Action::Execute(std::string &event) {
         return executeExit(eventJson);
     } else if (actionType == "store") {
         return executeStore(eventJson);
-    } else if (actionType == "message") {
+    } else if (actionType == "warning_message") {
         return executeWarningMessage(eventJson);
     }
     return CONTINUE;
