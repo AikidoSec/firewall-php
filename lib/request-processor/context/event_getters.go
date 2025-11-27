@@ -51,6 +51,12 @@ func GetStackTrace() string {
 	return Context.Callback(C.STACK_TRACE)
 }
 
+func GetParamMatcher() (string, string) {
+	param := Context.Callback(C.PARAM_MATCHER_PARAM)
+	regex := Context.Callback(C.PARAM_MATCHER_REGEX)
+	return param, regex
+}
+
 func getHostNameAndPort(urlCallbackId int, portCallbackId int) (string, uint32) { // urlcallbackid is the type of data we request, eg C.OUTGOING_REQUEST_URL
 	urlStr := Context.Callback(urlCallbackId)
 	urlParsed, err := url.Parse(urlStr)

@@ -1,0 +1,27 @@
+{
+    "type": "heartbeat",
+    "routes": [
+        {
+            "path": "/test",
+            "method": "GET",
+            "hits": 5
+        },
+        {
+            "path": "/posts/:date",
+            "method": "GET",
+            "hits": 5
+        },
+        {
+            "path": "/posts/:tenant",
+            "method": "GET",
+            "hits": 5
+        },
+        {
+            "path": "/:tenant/blog/:slug",
+            "method": "GET",
+            "hits": 5
+        }
+    ]
+}
+
+
