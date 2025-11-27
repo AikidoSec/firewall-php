@@ -6,7 +6,7 @@ enum ACTION_STATUS {
     CONTINUE,
     BLOCK,
     EXIT,
-    MESSAGE
+    WARNING_MESSAGE
 };
 
 class Action {
@@ -25,7 +25,7 @@ class Action {
 
         ACTION_STATUS executeStore(json &event);
 
-        ACTION_STATUS executeMessage(json &event);
+        ACTION_STATUS executeWarningMessage(json &event);
 
     public:
         Action() = default;

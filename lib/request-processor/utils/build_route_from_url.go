@@ -20,6 +20,7 @@ var (
 	HASH_LENGTHS            = []int{32, 40, 64, 128}
 	PARAM_NAME_REGEXP       = regexp.MustCompile(`^[a-zA-Z_]+$`)
 	MAX_REPLACEMENTS_NUMBER = 4
+	PLACEHOLDER_REGEXP      = regexp.MustCompile(`\{[a-zA-Z_]+\}`)
 )
 
 func IsValidParamName(param string) bool {
@@ -46,27 +47,32 @@ func CompileCustomPattern(pattern string) (*regexp.Regexp, error) {
 		}
 	}
 
-	placeholderRegex := regexp.MustCompile(`(\{[a-zA-Z]+})`)
-	parts := placeholderRegex.Split(pattern, -1)
-	matches := placeholderRegex.FindAllString(pattern, -1)
-
 	var regexParts []string
 	replacementsNumber := 0
-	for i, part := range parts {
-		if part != "" {
-			regexParts = append(regexParts, regexp.QuoteMeta(part))
+	lastIndex := 0
+
+	for _, match := range PLACEHOLDER_REGEXP.FindAllStringIndex(pattern, -1) {
+		if match[0] > lastIndex {
+			regexParts = append(regexParts, regexp.QuoteMeta(pattern[lastIndex:match[0]]))
 		}
-		if i < len(matches) {
-			if replacement, ok := supported[matches[i]]; ok {
-				regexParts = append(regexParts, replacement)
-				replacementsNumber++
-				if replacementsNumber > MAX_REPLACEMENTS_NUMBER {
-					return nil, errors.New("too many replacements in pattern")
-				}
-			} else {
-				regexParts = append(regexParts, regexp.QuoteMeta(matches[i]))
+
+		placeholder := pattern[match[0]:match[1]]
+		if replacement, ok := supported[placeholder]; ok {
+			regexParts = append(regexParts, replacement)
+			replacementsNumber++
+			if replacementsNumber > MAX_REPLACEMENTS_NUMBER {
+				return nil, errors.New("too many replacements in pattern")
 			}
+		} else {
+			regexParts = append(regexParts, regexp.QuoteMeta(placeholder))
 		}
+
+		lastIndex = match[1]
+	}
+
+	// Add any remaining literal text after the last placeholder
+	if lastIndex < len(pattern) {
+		regexParts = append(regexParts, regexp.QuoteMeta(pattern[lastIndex:]))
 	}
 
 	compiled, err := regexp.Compile("^" + strings.Join(regexParts, "") + "$")

@@ -28,7 +28,8 @@ ZEND_FUNCTION(register_param_matcher) {
     try {
         std::string outputEvent;
         requestProcessor.SendEvent(EVENT_REGISTER_PARAM_MATCHER, outputEvent);
-        if (action.Execute(outputEvent) == MESSAGE) {
+        if (action.Execute(outputEvent) == WARNING_MESSAGE) {
+            // If a warning message is returned, it means that the parameters are invalid, so we return false.
             RETURN_BOOL(false);
         }
 

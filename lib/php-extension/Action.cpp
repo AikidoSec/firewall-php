@@ -37,10 +37,10 @@ ACTION_STATUS Action::executeStore(json &event) {
     return CONTINUE;
 }
 
-ACTION_STATUS Action::executeMessage(json &event) {
+ACTION_STATUS Action::executeWarningMessage(json &event) {
     std::string message = event["message"];
     php_printf("%s\n", message.c_str());
-    return MESSAGE;
+    return WARNING_MESSAGE;
 }
 
 ACTION_STATUS Action::Execute(std::string &event) {
@@ -61,7 +61,7 @@ ACTION_STATUS Action::Execute(std::string &event) {
     } else if (actionType == "store") {
         return executeStore(eventJson);
     } else if (actionType == "message") {
-        return executeMessage(eventJson);
+        return executeWarningMessage(eventJson);
     }
     return CONTINUE;
 }
