@@ -128,14 +128,14 @@ bool RequestProcessor::Init() {
     }
 
     std::string initDataString = this->GetInitData();
-    if (AIKIDO_GLOBAL(disable) == true && AIKIDO_GLOBAL(sapi_name) != "apache2handler") {
+    if (AIKIDO_GLOBAL(disable) == true && AIKIDO_GLOBAL(sapi_name) != "apache2handler" && AIKIDO_GLOBAL(sapi_name) != "frankenphp") {
         /* 
-            As you can set AIKIDO_DISABLE per site, in an apache-mod-php setup, as a process can serve multiple sites,
+            As you can set AIKIDO_DISABLE per site, in an apache-mod-php or frankenphp setup, as a process can serve multiple sites,
             we can't just not initialize the request processor, as it can be disabled for one site but not for another.
             When subsequent requests come in for the non-disabled sites, the request processor needs to be initialized.
-            For non-apache-mod-php SAPI, we can just not initialize the request processor if AIKIDO_DISABLE is set to 1.
+            For non-apache-mod-php/frankenphp SAPI, we can just not initialize the request processor if AIKIDO_DISABLE is set to 1.
         */
-        AIKIDO_LOG_INFO("Request Processor initialization skipped because AIKIDO_DISABLE is set to 1 and SAPI is not apache2handler!\n");
+        AIKIDO_LOG_INFO("Request Processor initialization skipped because AIKIDO_DISABLE is set to 1 and SAPI is not apache2handler or frankenphp!\n");
         return false;
     }
 
@@ -215,29 +215,34 @@ bool RequestProcessor::RequestInit() {
         AIKIDO_LOG_INFO("RequestProcessorInit called successfully\n");
     }
     
-
+    
     const auto& sapiName = AIKIDO_GLOBAL(sapi_name);
-    if (sapiName == "apache2handler") {
-      // Apache-mod-php can serve multiple sites per process
+    if (sapiName == "apache2handler" || sapiName == "frankenphp") {
+      // Apache-mod-php and FrankenPHP can serve multiple sites per process
       // We need to reload config each request to detect token changes
+      // Check disable BEFORE modifying any state (shared Go state or per-instance state)
+      // Use GetEnvBool() to read disable flag without modifying global state
+        if (GetEnvBool("AIKIDO_DISABLE", false)) {
+            AIKIDO_LOG_INFO("Request Processor initialization skipped because AIKIDO_DISABLE is set to 1!\n");
+            return true;
+        }
         this->LoadConfigFromEnvironment();
     } else {
-        // Server APIs that are not apache-mod-php (like php-fpm, cli-server, ...) 
+        // Server APIs that are not apache-mod-php/frankenphp (like php-fpm, cli-server, ...) 
         //  can only serve one site per process, so the config should be loaded at the first request.
         // If the token is not set at the first request, we try to reload it until we get a valid token.
         // The user can update .env file via zero downtime deployments after the PHP server is started.
         if (AIKIDO_GLOBAL(token) == "") {
             AIKIDO_LOG_INFO("Loading Aikido config until we get a valid token for SAPI: %s...\n", AIKIDO_GLOBAL(sapi_name).c_str());
+            if (GetEnvBool("AIKIDO_DISABLE", false)) {
+                AIKIDO_LOG_INFO("Request Processor initialization skipped because AIKIDO_DISABLE is set to 1!\n");
+                return true;
+            }
             this->LoadConfigFromEnvironment();
         }
     }
 
     AIKIDO_LOG_DEBUG("RINIT started!\n");
-
-    if (AIKIDO_GLOBAL(disable) == true) {
-        AIKIDO_LOG_INFO("Request Processor initialization skipped because AIKIDO_DISABLE is set to 1!\n");
-        return true;
-    }
 
     this->requestInitialized = true;
     this->numberOfRequests++;
@@ -270,10 +275,17 @@ void RequestProcessor::LoadConfig(const std::string& previousToken, const std::s
 }
 
 void RequestProcessor::LoadConfigFromEnvironment() {
+    // In ZTS mode (FrankenPHP), AIKIDO_GLOBAL(token) is thread-local, so each thread has its own copy
+    // We read the previous token before LoadEnvironment() updates it with the current request's token
     auto& globalToken = AIKIDO_GLOBAL(token);
     std::string previousToken = globalToken;
+    
+    // LoadEnvironment() reads from $_SERVER['AIKIDO_TOKEN'] (per-request in FrankenPHP)
+    // and updates AIKIDO_GLOBAL(token) with the current request's token
     LoadEnvironment();
+    
     std::string currentToken = globalToken;
+    
     LoadConfig(previousToken, currentToken);
 }
 
