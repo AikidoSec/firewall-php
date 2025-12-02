@@ -7,9 +7,12 @@ import sys
 import json
 import argparse
 import socket
+import urllib.request
 from server_tests.php_built_in.main import php_built_in_start_server
 from server_tests.apache.main import apache_mod_php_init, apache_mod_php_process_test, apache_mod_php_pre_tests, apache_mod_php_start_server, apache_mod_php_uninit
 from server_tests.nginx.main import nginx_php_fpm_init, nginx_php_fpm_process_test, nginx_php_fpm_pre_tests, nginx_php_fpm_start_server, nginx_php_fpm_uninit
+from server_tests.frankenphp_classic.main import frankenphp_classic_init, frankenphp_classic_process_test, frankenphp_classic_pre_tests, frankenphp_classic_start_server, frankenphp_classic_uninit
+from server_tests.frankenphp_worker.main import frankenphp_worker_init, frankenphp_worker_process_test, frankenphp_worker_pre_tests, frankenphp_worker_start_server, frankenphp_worker_uninit
 
 INIT = 0
 PROCESS_TEST = 1
@@ -39,6 +42,20 @@ servers = {
         nginx_php_fpm_start_server,
         nginx_php_fpm_uninit
     ),
+    "frankenphp-classic": (
+        frankenphp_classic_init,
+        frankenphp_classic_process_test,
+        frankenphp_classic_pre_tests,
+        frankenphp_classic_start_server,
+        frankenphp_classic_uninit
+    ),
+    "frankenphp-worker": (
+        frankenphp_worker_init,
+        frankenphp_worker_process_test,
+        frankenphp_worker_pre_tests,
+        frankenphp_worker_start_server,
+        frankenphp_worker_uninit
+    ),
 }
 
 used_ports = set()
@@ -46,6 +63,8 @@ passed_tests = []
 failed_tests = []
 
 lock = threading.Lock()
+max_concurrent_tests = 69
+test_semaphore = threading.Semaphore(max_concurrent_tests)
 
 def is_port_in_active_use(port):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
@@ -76,14 +95,24 @@ def print_test_results(s, tests):
     for t in tests:
         print(f"\t- {t}")
 
+def handle_test_scenario_with_semaphore(data, root_tests_dir, test_lib_dir, server, benchmark, valgrind, debug):
+    test_semaphore.acquire()
+    try:
+        handle_test_scenario(data, root_tests_dir, test_lib_dir, server, benchmark, valgrind, debug)
+    finally:
+        test_semaphore.release()
+
 def handle_test_scenario(data, root_tests_dir, test_lib_dir, server, benchmark, valgrind, debug):
     test_name = data["test_name"]
     mock_port = data["mock_port"]
     server_port = data["server_port"]
+    mock_aikido_core = None
+    server_process = None
+    test_process = None
     try:
         print(f"Running {test_name}...")
         print(f"Starting mock server on port {mock_port} with start_config.json for {test_name}...")
-        mock_aikido_core = subprocess.Popen(["python3", "mock_aikido_core.py", str(mock_port), data["config_path"]])
+        mock_aikido_core = subprocess.Popen(["python3", "-u", "mock_aikido_core.py", str(mock_port), data["config_path"]])
         time.sleep(5)
 
         print(f"Starting {server} server on port {server_port} for {test_name}...")
@@ -105,16 +134,13 @@ def handle_test_scenario(data, root_tests_dir, test_lib_dir, server, benchmark, 
         subprocess.run(["python3", test_script_name, str(server_port), str(mock_port), test_name],
                        env=dict(os.environ, PYTHONPATH=f"{test_lib_dir}:$PYTHONPATH"),
                        cwd=test_script_cwd,
-                       check=True, timeout=600, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                       check=True, timeout=600)
 
         passed_tests.append(test_name)
 
     except subprocess.CalledProcessError as e:
         print(f"Error in testing scenario {test_name}:")
-        print(f"Exception output: {e.output}")
         print(f"Test exit code: {e.returncode}")
-        print(f"Test stdout: {e.stdout.decode()}")
-        print(f"Test stderr: {e.stderr.decode()}")
         failed_tests.append(test_name)
 
     except subprocess.TimeoutExpired:
@@ -172,12 +198,17 @@ def main(root_tests_dir, test_lib_dir, test_dirs, server="php-built-in", benchma
         tests_data.append(test_data)
 
     if servers[server][PRE_TESTS] is not None:
-        test_data = servers[server][PRE_TESTS]()
-
+        pre_tests = servers[server][PRE_TESTS]
+        if server in ["frankenphp-classic", "frankenphp-worker"]:
+            pre_tests(tests_data)
+        else:
+            pre_tests()
+    
     threads = []
+    target_func = handle_test_scenario_with_semaphore if server in ["frankenphp-classic", "frankenphp-worker"] else handle_test_scenario
     for test_data in tests_data:
         args = (test_data, root_tests_dir, test_lib_dir, server, benchmark, valgrind, debug)
-        thread = threading.Thread(target=handle_test_scenario, args=args)
+        thread = threading.Thread(target=target_func, args=args)
         threads.append(thread)
         thread.start()
         time.sleep(10)
@@ -197,7 +228,7 @@ if __name__ == "__main__":
     parser.add_argument("--benchmark", action="store_true", help="Enable benchmarking.")
     parser.add_argument("--valgrind", action="store_true", help="Enable valgrind.")
     parser.add_argument("--debug", action="store_true", help="Enable debugging logs.")
-    parser.add_argument("--server", type=str, choices=["php-built-in", "apache-mod-php", "nginx-php-fpm"], default="php-built-in", help="Select the type of server testing.")
+    parser.add_argument("--server", type=str, choices=["php-built-in", "apache-mod-php", "nginx-php-fpm", "frankenphp-classic", "frankenphp-worker"], default="php-built-in", help="Select the type of server testing.")
     parser.add_argument("--max-tests", type=int, default=0, help="Maximum number of tests to execute.")
     parser.add_argument("--max-runs", type=int, default=1, help="Maximum number of test runs.")
 

@@ -3,7 +3,6 @@ package context
 // #include "../../API.h"
 import "C"
 import (
-	"main/globals"
 	"main/helpers"
 	"main/log"
 	"main/utils"
@@ -25,6 +24,10 @@ func ContextSetMap(contextId int, rawDataPtr **string, parsedPtr **map[string]in
 		return
 	}
 
+	if Context.Callback == nil {
+		return
+	}
+
 	contextData := Context.Callback(contextId)
 	if rawDataPtr != nil {
 		*rawDataPtr = &contextData
@@ -43,6 +46,11 @@ func ContextSetString(context_id int, m **string) {
 	if *m != nil {
 		return
 	}
+
+	if Context.Callback == nil {
+		return
+	}
+
 	temp := Context.Callback(context_id)
 	*m = &temp
 }
@@ -69,6 +77,9 @@ func ContextSetRouteParams() {
 
 func ContextSetStatusCode() {
 	if Context.StatusCode != nil {
+		return
+	}
+	if Context.Callback == nil {
 		return
 	}
 	status_code_str := Context.Callback(C.CONTEXT_STATUS_CODE)
@@ -105,9 +116,12 @@ func ContextSetIp() {
 	if Context.IP != nil {
 		return
 	}
+	if Context.Callback == nil {
+		return
+	}
 	remoteAddress := Context.Callback(C.CONTEXT_REMOTE_ADDRESS)
 	xForwardedFor := Context.Callback(C.CONTEXT_HEADER_X_FORWARDED_FOR)
-	ip := utils.GetIpFromRequest(globals.GetCurrentServer(), remoteAddress, xForwardedFor)
+	ip := utils.GetIpFromRequest(GetCurrentServer(), remoteAddress, xForwardedFor)
 	Context.IP = &ip
 }
 
@@ -116,7 +130,7 @@ func ContextSetIsIpBypassed() {
 		return
 	}
 
-	isIpBypassed := utils.IsIpBypassed(globals.GetCurrentServer(), GetIp())
+	isIpBypassed := utils.IsIpBypassed(GetCurrentServer(), GetIp())
 	Context.IsIpBypassed = &isIpBypassed
 }
 
@@ -132,6 +146,9 @@ func ContextSetRateLimitGroup() {
 	if Context.RateLimitGroup != nil {
 		return
 	}
+	if Context.Callback == nil {
+		return
+	}
 	rateLimitGroup := Context.Callback(C.CONTEXT_RATE_LIMIT_GROUP)
 	Context.RateLimitGroup = &rateLimitGroup
 }
@@ -141,7 +158,11 @@ func ContextSetEndpointConfig() {
 		return
 	}
 
-	endpointConfig := utils.GetEndpointConfig(globals.GetCurrentServer(), GetMethod(), GetParsedRoute())
+	if GetCurrentServer() == nil {
+		return
+	}
+
+	endpointConfig := utils.GetEndpointConfig(GetCurrentServer(), GetMethod(), GetParsedRoute())
 	Context.EndpointConfig = &endpointConfig
 }
 
@@ -150,7 +171,11 @@ func ContextSetWildcardEndpointsConfigs() {
 		return
 	}
 
-	wildcardEndpointsConfigs := utils.GetWildcardEndpointsConfigs(globals.GetCurrentServer(), GetMethod(), GetParsedRoute())
+	if GetCurrentServer() == nil {
+		return
+	}
+
+	wildcardEndpointsConfigs := utils.GetWildcardEndpointsConfigs(GetCurrentServer(), GetMethod(), GetParsedRoute())
 	Context.WildcardEndpointsConfigs = &wildcardEndpointsConfigs
 }
 
@@ -226,14 +251,15 @@ func ContextSetIsEndpointIpAllowed() {
 
 	isEndpointIpAllowed := utils.NoConfig
 
+	server := GetCurrentServer()
 	endpointConfig := GetEndpointConfig()
-	if endpointConfig != nil {
-		isEndpointIpAllowed = utils.IsIpAllowedOnEndpoint(globals.GetCurrentServer(), endpointConfig.AllowedIPAddresses, ip)
+	if endpointConfig != nil && server != nil {
+		isEndpointIpAllowed = utils.IsIpAllowedOnEndpoint(server, endpointConfig.AllowedIPAddresses, ip)
 	}
 
-	if isEndpointIpAllowed == utils.NoConfig {
+	if isEndpointIpAllowed == utils.NoConfig && server != nil {
 		for _, wildcardEndpointConfig := range GetWildcardEndpointsConfig() {
-			isEndpointIpAllowed = utils.IsIpAllowedOnEndpoint(globals.GetCurrentServer(), wildcardEndpointConfig.AllowedIPAddresses, ip)
+			isEndpointIpAllowed = utils.IsIpAllowedOnEndpoint(server, wildcardEndpointConfig.AllowedIPAddresses, ip)
 			if isEndpointIpAllowed != utils.NoConfig {
 				break
 			}

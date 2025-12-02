@@ -1,15 +1,15 @@
-name: Build Ubuntu PHP test images
+name: Build Ubuntu PHP test images (NTS)
 
 on:
   workflow_dispatch:
   push:
     paths:
-      - .github/workflows/Dockerfile.ubuntu-php-test
-      - .github/workflows/build-ubuntu-php-test-images.yml
+      - .github/workflows/Dockerfile.ubuntu-php-test-nts
+      - .github/workflows/build-ubuntu-php-test-images-nts.yml
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: aikidosec/firewall-php-test-ubuntu
+  IMAGE_NAME: aikidosec/firewall-php-test-ubuntu-nts
   VERSION: v1
 
 jobs:
@@ -30,7 +30,7 @@ jobs:
       - uses: docker/build-push-action@v6
         with:
           context: .
-          file: .github/workflows/Dockerfile.ubuntu-php-test
+          file: .github/workflows/Dockerfile.ubuntu-php-test-nts
           platforms: linux/amd64
           push: true
           build-args: |
@@ -56,7 +56,7 @@ jobs:
       - uses: docker/build-push-action@v6
         with:
           context: .
-          file: .github/workflows/Dockerfile.ubuntu-php-test
+          file: .github/workflows/Dockerfile.ubuntu-php-test-nts
           platforms: linux/arm64
           push: true
           build-args: |
