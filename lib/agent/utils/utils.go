@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"encoding/json"
 	"fmt"
 	. "main/aikido_types"
 	"main/config"
@@ -145,4 +146,12 @@ func AnonymizeToken(token string) string {
 		return token
 	}
 	return token[len(token)-4:]
+}
+
+func JsonMarshal(v any) string {
+	bytes, err := json.Marshal(v)
+	if err != nil {
+		return ""
+	}
+	return string(bytes)
 }
