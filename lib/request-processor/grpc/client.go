@@ -23,6 +23,9 @@ func Init() {
 	conn, err := grpc.Dial(
 		"unix://"+globals.SocketPath,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithDefaultCallOptions(
+			grpc.MaxCallRecvMsgSize(10*1024*1024),  // 10MB max receive message size
+			grpc.MaxCallSendMsgSize(10*1024*1024)), // 10MB max receive message size
 	)
 
 	if err != nil {
