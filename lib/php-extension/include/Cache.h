@@ -31,6 +31,9 @@ class EventCache {
     std::string sqlQuery;
     std::string sqlDialect;
 
+    std::string paramMatcherParam;
+    std::string paramMatcherRegex;
+
     EventCache() = default;
     void Reset();
 };

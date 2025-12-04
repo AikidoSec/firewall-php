@@ -128,6 +128,14 @@ char* GoContextCallback(int callbackId) {
                 ctx = "STACK_TRACE";
                 ret = GetStackTrace();
                 break;
+            case PARAM_MATCHER_PARAM:
+                ctx = "PARAM_MATCHER_PARAM";
+                ret = eventCache.paramMatcherParam;
+                break;
+            case PARAM_MATCHER_REGEX:
+                ctx = "PARAM_MATCHER_REGEX";
+                ret = eventCache.paramMatcherRegex;
+                break;
         }
     } catch (std::exception& e) {
         AIKIDO_LOG_DEBUG("Exception in GoContextCallback: %s\n", e.what());
