@@ -23,11 +23,6 @@ All these checks first verify if the hostname was provided via user input.
 Protects both curl and fopen wrapper functions (file_get_contents, etc...).
 */
 func OnPreOutgoingRequest() string {
-	if context.IsEndpointProtectionTurnedOff() {
-		log.Infof("Protection is turned off -> will not run detection logic!")
-		return ""
-	}
-
 	hostname, port := context.GetOutgoingRequestHostnameAndPort()
 	operation := context.GetFunctionName()
 
@@ -35,6 +30,11 @@ func OnPreOutgoingRequest() string {
 	if !context.IsIpBypassed() && ssrf.IsBlockOutboundConnection(hostname) {
 		message := fmt.Sprintf("Aikido firewall has blocked an outbound connection: %s(...) to %s", operation, html.EscapeString(hostname))
 		return attack.GetThrowAction(message, 500)
+	}
+
+	if context.IsEndpointProtectionTurnedOff() {
+		log.Infof("Protection is turned off -> will not run detection logic!")
+		return ""
 	}
 
 	res := ssrf.CheckContextForSSRF(hostname, port, operation)

@@ -8,7 +8,7 @@ Tests the outbound domain blocking feature:
 1. Tests that explicitly blocked domains are always blocked
 2. Tests that bypassed IPs (allowedIPAddresses) can access any domain including blocked ones
 3. Tests that non-bypassed IPs are blocked when accessing new domains with blockNewOutgoingRequests enabled
-4. Tests that forceProtectionOff allows access to any domain, even blocked ones
+4. Tests that forceProtectionOff does not affect outbound domain blocking
 5. Tests that allowed domains can be accessed when blockNewOutgoingRequests is true
 6. Tests that new/unknown domains are blocked when blockNewOutgoingRequests is true
 7. Tests that new domains are allowed when blockNewOutgoingRequests is false
@@ -34,9 +34,10 @@ def test_explicitly_blocked_domain():
     assert_response_body_contains(response, "Aikido firewall has blocked an outbound connection")
     
 def test_force_protection_off():
-    """Test that force protection off works"""
+    """Test that force protection off does not affect outbound domain blocking"""
     response = php_server_post("/testDetection2", {"url": "http://evil.example.com/test"})
-    assert_response_code_is(response, 200)
+    assert_response_code_is(response, 500)
+    assert_response_body_contains(response, "Aikido firewall has blocked an outbound connection")
 
 
 def test_allowed_domain_with_block_new():
