@@ -29,10 +29,18 @@ def test_explicitly_blocked_domain():
     response = php_server_post("/testDetection", {"url": "http://random.example.com"}, headers={"X-Forwarded-For": "1.2.3.4"})
     assert_response_code_is(response, 200)
 
-    response = php_server_post("/testDetection", {"url": "http://random.example.com/test"}, headers={"X-Forwarded-For": "1.2.3.5"})
+    response = php_server_post("/testDetection", {"url": "http://random2.example.com/test"}, headers={"X-Forwarded-For": "1.2.3.5"})
     assert_response_code_is(response, 500)
     assert_response_body_contains(response, "Aikido firewall has blocked an outbound connection")
     
+    mock_server_wait_for_new_events(70)
+    
+    events = mock_server_get_events()
+    assert_events_length_is(events, 2)
+    assert_started_event_is_valid(events[0])
+    
+    assert_event_contains_subset_file(events[1], "blocked_domains_in_heartbeat.json")
+
 def test_force_protection_off():
     """Test that force protection off does not affect outbound domain blocking"""
     response = php_server_post("/testDetection2", {"url": "http://evil.example.com/test"})
