@@ -18,7 +18,7 @@
     ],
     "blockedUserIds": [],
     "allowedIPAddresses": ["1.2.3.4"],
-    "receivedAnyStats": true,
+    "receivedAnyStats": false,
     "block": true,
     "blockNewOutgoingRequests": true,
     "domains": [

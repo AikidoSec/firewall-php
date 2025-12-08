@@ -28,6 +28,11 @@ func OnPreOutgoingRequest() string {
 
 	// Check if the domain is blocked based on cloud configuration
 	if !context.IsIpBypassed() && ssrf.IsBlockOutboundConnection(hostname) {
+		server := globals.GetCurrentServer()
+		// Blocked domains should also be reported to the agent.
+		if server != nil {
+			go grpc.OnDomain(server, hostname, port)
+		}
 		message := fmt.Sprintf("Aikido firewall has blocked an outbound connection: %s(...) to %s", operation, html.EscapeString(hostname))
 		return attack.GetThrowAction(message, 500)
 	}
