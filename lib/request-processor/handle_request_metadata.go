@@ -22,10 +22,9 @@ func OnRequestShutdownReporting(params RequestShutdownParams) {
 	}
 
 	log.Info("[RSHUTDOWN] Got request metadata: ", params.Method, " ", params.Route, " ", params.StatusCode)
-	// Only detect web scanner activity for non-bypassed IPs
-	if !params.IsIpBypassed {
-		params.IsWebScanner = webscanner.IsWebScanner(params.Method, params.Route, params.QueryParsed)
-	}
+
+	params.IsWebScanner = webscanner.IsWebScanner(params.Method, params.Route, params.QueryParsed)
+
 	params.ShouldDiscoverRoute = utils.ShouldDiscoverRoute(params.StatusCode, params.Route, params.Method)
 	if !params.RateLimited && !params.ShouldDiscoverRoute && !params.IsWebScanner {
 		return
@@ -40,23 +39,24 @@ func OnPostRequest() string {
 	if server == nil {
 		return ""
 	}
-
-	go OnRequestShutdownReporting(RequestShutdownParams{
-		Server:         server,
-		Method:         context.GetMethod(),
-		Route:          context.GetRoute(),
-		RouteParsed:    context.GetParsedRoute(),
-		StatusCode:     context.GetStatusCode(),
-		User:           context.GetUserId(),
-		UserAgent:      context.GetUserAgent(),
-		IP:             context.GetIp(),
-		Url:            context.GetUrl(),
-		RateLimitGroup: context.GetRateLimitGroup(),
-		APISpec:        api_discovery.GetApiInfo(server),
-		RateLimited:    context.IsEndpointRateLimited(),
-		QueryParsed:    context.GetQueryParsed(),
-		IsIpBypassed:   context.IsIpBypassed(),
-	})
+	// Only send request metadata if the IP is not bypassed
+	if !context.IsIpBypassed() {
+		go OnRequestShutdownReporting(RequestShutdownParams{
+			Server:         server,
+			Method:         context.GetMethod(),
+			Route:          context.GetRoute(),
+			RouteParsed:    context.GetParsedRoute(),
+			StatusCode:     context.GetStatusCode(),
+			User:           context.GetUserId(),
+			UserAgent:      context.GetUserAgent(),
+			IP:             context.GetIp(),
+			Url:            context.GetUrl(),
+			RateLimitGroup: context.GetRateLimitGroup(),
+			APISpec:        api_discovery.GetApiInfo(server),
+			RateLimited:    context.IsEndpointRateLimited(),
+			QueryParsed:    context.GetQueryParsed(),
+		})
+	}
 	context.Clear()
 	return ""
 }
