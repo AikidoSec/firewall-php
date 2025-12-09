@@ -37,7 +37,7 @@ void Log::Write(AIKIDO_LOG_LEVEL level, const char* format, ...) {
         return;
     }
 
-    fprintf(logFile, "[AIKIDO][%s][%d][%jd][%s] ", ToString(level).c_str(), getpid(), (intmax_t)GetThreadID(), GetTime().c_str());
+    fprintf(logFile, "[AIKIDO][%s][%d][%lu][%s] ", ToString(level).c_str(), getpid(), GetThreadID(), GetTime().c_str());
 
     va_list args;
     va_start(args, format);

@@ -14,6 +14,7 @@
 #include <sys/wait.h>
 #include <sys/syscall.h>
 #include <inttypes.h>
+#include <pthread.h>
 
 #include <functional>
 #include <random>
