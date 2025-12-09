@@ -82,7 +82,7 @@ func (s *GrpcServer) OnRequestShutdown(ctx context.Context, req *protos.RequestM
 		go storeRoute(server, req.GetMethod(), req.GetRouteParsed(), req.GetApiSpec(), req.GetRateLimited())
 		go updateRateLimitingCounts(server, req.GetMethod(), req.GetRoute(), req.GetRouteParsed(), req.GetUser(), req.GetIp(), req.GetRateLimitGroup())
 	}
-	go updateAttackWaveCountsAndDetect(server, req.GetIsWebScanner(), req.GetIp(), req.GetUser(), req.GetUserAgent())
+	go updateAttackWaveCountsAndDetect(server, req.GetIsWebScanner(), req.GetIp(), req.GetUser(), req.GetUserAgent(), req.GetMethod(), req.GetUrl())
 
 	atomic.StoreUint32(&server.GotTraffic, 1)
 	return &emptypb.Empty{}, nil
@@ -174,7 +174,10 @@ func (s *GrpcServer) OnMonitoredUserAgentMatch(ctx context.Context, req *protos.
 var grpcServer *grpc.Server
 
 func StartServer(lis net.Listener) {
-	grpcServer = grpc.NewServer() //grpc.MaxConcurrentStreams(100)
+	grpcServer = grpc.NewServer(
+		grpc.MaxRecvMsgSize(10*1024*1024), // 10MB max receive message size
+		grpc.MaxSendMsgSize(10*1024*1024), // 10MB max send message size
+	)
 	protos.RegisterAikidoServer(grpcServer, &GrpcServer{})
 
 	log.Infof(log.MainLogger, "gRPC server is running on Unix socket %s", constants.SocketPath)

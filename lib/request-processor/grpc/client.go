@@ -24,6 +24,9 @@ func Init() {
 	conn, err := grpc.Dial(
 		"unix://"+globals.SocketPath,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithDefaultCallOptions(
+			grpc.MaxCallRecvMsgSize(10*1024*1024),  // 10MB max receive message size
+			grpc.MaxCallSendMsgSize(10*1024*1024)), // 10MB max receive message size
 	)
 
 	if err != nil {
@@ -147,6 +150,7 @@ func OnRequestShutdown(params RequestShutdownParams) {
 		User:                params.User,
 		UserAgent:           params.UserAgent,
 		Ip:                  params.IP,
+		Url:                 params.Url,
 		RateLimitGroup:      params.RateLimitGroup,
 		ApiSpec:             params.APISpec,
 		RateLimited:         params.RateLimited,

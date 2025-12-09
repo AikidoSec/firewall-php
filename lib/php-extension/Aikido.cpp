@@ -47,7 +47,7 @@ PHP_MSHUTDOWN_FUNCTION(aikido) {
 
     /*
         In the case of Apache mod-php servers, the MSHUTDOWN can be called multiple times.
-        As a consequence, we need to do the unhooking / uninitialization logic based on the current 
+        As a consequence, we need to do the unhooking / uninitialization logic based on the current
         PID for which the MSHUTDOWN is called. This logic is part of phpLifecycle.ModuleShutdown().
         The same does not apply for CLI mode, where the MSHUTDOWN is called only once.
     */
@@ -94,6 +94,7 @@ static const zend_function_entry ext_functions[] = {
     ZEND_NS_FE("aikido", auto_block_request, arginfo_aikido_auto_block_request)
     ZEND_NS_FE("aikido", set_token, arginfo_aikido_set_token)
     ZEND_NS_FE("aikido", set_rate_limit_group, arginfo_aikido_set_rate_limit_group)
+    ZEND_NS_FE("aikido", register_param_matcher, arginfo_aikido_register_param_matcher)
     ZEND_FE_END
 };
 

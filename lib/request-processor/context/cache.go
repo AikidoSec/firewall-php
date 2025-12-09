@@ -106,7 +106,7 @@ func ContextSetRoute(inst *instance.RequestProcessorInstance) {
 }
 
 func ContextSetParsedRoute(inst *instance.RequestProcessorInstance) {
-	parsedRoute := utils.BuildRouteFromURL(GetRoute(inst))
+	parsedRoute := utils.BuildRouteFromURL(inst, GetRoute(inst))
 	c := GetContext(inst)
 	c.RouteParsed = &parsedRoute
 }

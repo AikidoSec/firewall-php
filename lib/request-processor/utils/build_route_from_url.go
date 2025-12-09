@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"errors"
+	"main/instance"
 	"net"
 	"net/url"
 	"regexp"
@@ -8,33 +10,92 @@ import (
 )
 
 var (
-	UUID         = regexp.MustCompile(`(?:[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$`)
-	ULID         = regexp.MustCompile(`(?i)^[0-9A-HJKMNP-TV-Z]{26}$`)
-	OBJECT_ID    = regexp.MustCompile(`^[0-9a-fA-F]{24}$`)
-	NUMBER       = regexp.MustCompile(`^\d+$`)
-	DATE         = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}|\d{2}-\d{2}-\d{4}$`)
-	EMAIL        = regexp.MustCompile(`^[a-zA-Z0-9.!#$%&'*+/=?^_` + "`" + `{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$`)
-	HASH         = regexp.MustCompile(`^(?:[a-fA-F0-9]{32}|[a-fA-F0-9]{40}|[a-fA-F0-9]{64}|[a-fA-F0-9]{128})$`)
-	HASH_LENGTHS = []int{32, 40, 64, 128}
+	UUID                    = regexp.MustCompile(`(?:[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$`)
+	ULID                    = regexp.MustCompile(`(?i)^[0-9A-HJKMNP-TV-Z]{26}$`)
+	OBJECT_ID               = regexp.MustCompile(`^[0-9a-fA-F]{24}$`)
+	NUMBER                  = regexp.MustCompile(`^\d+$`)
+	DATE                    = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}|\d{2}-\d{2}-\d{4}$`)
+	EMAIL                   = regexp.MustCompile(`^[a-zA-Z0-9.!#$%&'*+/=?^_` + "`" + `{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$`)
+	HASH                    = regexp.MustCompile(`^(?:[a-fA-F0-9]{32}|[a-fA-F0-9]{40}|[a-fA-F0-9]{64}|[a-fA-F0-9]{128})$`)
+	HASH_LENGTHS            = []int{32, 40, 64, 128}
+	PARAM_NAME_REGEXP       = regexp.MustCompile(`^[a-zA-Z_]+$`)
+	MAX_REPLACEMENTS_NUMBER = 4
+	PLACEHOLDER_REGEXP      = regexp.MustCompile(`\{[a-zA-Z_]+\}`)
 )
 
-func BuildRouteFromURL(url string) string {
+func IsValidParamName(param string) bool {
+	return PARAM_NAME_REGEXP.MatchString(param)
+}
+
+func CompileCustomPattern(pattern string) (*regexp.Regexp, error) {
+	if !strings.Contains(pattern, "{") || !strings.Contains(pattern, "}") {
+		return nil, errors.New("pattern should contain { or }")
+	}
+
+	if strings.Contains(pattern, "/") {
+		return nil, errors.New("pattern should not contain slashes")
+	}
+
+	supported := map[string]string{
+		"{digits}": `\d+`,
+		"{alpha}":  "[a-zA-Z]+",
+	}
+
+	for name := range supported {
+		if strings.Contains(pattern, name+name) {
+			return nil, errors.New("pattern should not contain consecutive similar placeholders")
+		}
+	}
+
+	var regexParts []string
+	replacementsNumber := 0
+	lastIndex := 0
+
+	for _, match := range PLACEHOLDER_REGEXP.FindAllStringIndex(pattern, -1) {
+		if match[0] > lastIndex {
+			regexParts = append(regexParts, regexp.QuoteMeta(pattern[lastIndex:match[0]]))
+		}
+
+		placeholder := pattern[match[0]:match[1]]
+		if replacement, ok := supported[placeholder]; ok {
+			regexParts = append(regexParts, replacement)
+			replacementsNumber++
+			if replacementsNumber > MAX_REPLACEMENTS_NUMBER {
+				return nil, errors.New("too many replacements in pattern")
+			}
+		} else {
+			regexParts = append(regexParts, regexp.QuoteMeta(placeholder))
+		}
+
+		lastIndex = match[1]
+	}
+
+	// Add any remaining literal text after the last placeholder
+	if lastIndex < len(pattern) {
+		regexParts = append(regexParts, regexp.QuoteMeta(pattern[lastIndex:]))
+	}
+
+	compiled, err := regexp.Compile("^" + strings.Join(regexParts, "") + "$")
+	if err != nil {
+		return nil, err
+	}
+
+	return compiled, nil
+}
+
+func BuildRouteFromURL(inst *instance.RequestProcessorInstance, url string) string {
 	path := tryParseURLPath(url)
 	if path == "" {
 		return ""
 	}
 
-	route := strings.Join(replaceURLSegments(path), "/")
+	route := strings.Join(replaceURLSegments(inst, path), "/")
 
-	if route == "/" {
+	if route == "/" || route == "" {
 		return "/"
 	}
 
-	if strings.HasSuffix(route, "/") {
-		return route[:len(route)-1]
-	}
-
-	return route
+	return strings.TrimRight(route, "/")
 }
 
 func tryParseURLPath(rawURL string) string {
@@ -45,15 +106,31 @@ func tryParseURLPath(rawURL string) string {
 	return parsedURL.Path
 }
 
-func replaceURLSegments(path string) []string {
+func replaceURLSegments(inst *instance.RequestProcessorInstance, path string) []string {
 	segments := strings.Split(path, "/")
+	newSegments := make([]string, 0, len(segments))
 	for i, segment := range segments {
-		segments[i] = replaceURLSegmentWithParam(segment)
+		if segment == "" && i != 0 {
+			continue
+		}
+		newSegments = append(newSegments, replaceURLSegmentWithParam(inst, segment))
 	}
-	return segments
+	return newSegments
 }
 
-func replaceURLSegmentWithParam(segment string) string {
+func replaceURLSegmentWithParam(inst *instance.RequestProcessorInstance, segment string) string {
+	if inst != nil {
+		server := inst.GetCurrentServer()
+		if server != nil {
+			paramMatchers := server.ParamMatchers
+			for param, regex := range paramMatchers {
+				if regex.MatchString(segment) {
+					return ":" + param
+				}
+			}
+		}
+	}
+
 	if NUMBER.MatchString(segment) {
 		return ":number"
 	}

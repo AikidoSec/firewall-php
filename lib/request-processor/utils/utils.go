@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"encoding/json"
 	"fmt"
 	"main/helpers"
 	"main/instance"
@@ -493,4 +494,16 @@ func StringSliceToMap(slice []string) map[string]struct{} {
 		m[v] = struct{}{}
 	}
 	return m
+}
+
+func GetMessageAction(message string) string {
+	actionMap := map[string]interface{}{
+		"action":  "warning_message",
+		"message": message,
+	}
+	actionJson, err := json.Marshal(actionMap)
+	if err != nil {
+		return ""
+	}
+	return string(actionJson)
 }

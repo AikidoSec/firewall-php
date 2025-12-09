@@ -24,6 +24,7 @@ var eventHandlers = map[int]HandlerFunction{
 	C.EVENT_POST_REQUEST:             OnPostRequest,
 	C.EVENT_SET_USER:                 OnUserEvent,
 	C.EVENT_SET_RATE_LIMIT_GROUP:     OnRateLimitGroupEvent,
+	C.EVENT_REGISTER_PARAM_MATCHER:   OnRegisterParamMatcherEvent,
 	C.EVENT_GET_AUTO_BLOCKING_STATUS: OnGetAutoBlockingStatus,
 	C.EVENT_GET_BLOCKING_STATUS:      OnGetBlockingStatus,
 	C.EVENT_PRE_OUTGOING_REQUEST:     OnPreOutgoingRequest,

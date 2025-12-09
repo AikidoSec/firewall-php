@@ -52,6 +52,13 @@ func GetStackTrace(inst *instance.RequestProcessorInstance) string {
 	return GetContext(inst).Callback(inst, C.STACK_TRACE)
 }
 
+func GetParamMatcher(inst *instance.RequestProcessorInstance) (string, string) {
+	ctx := GetContext(inst)
+	param := ctx.Callback(inst, C.PARAM_MATCHER_PARAM)
+	regex := ctx.Callback(inst, C.PARAM_MATCHER_REGEX)
+	return param, regex
+}
+
 func getHostNameAndPort(inst *instance.RequestProcessorInstance, urlCallbackId int, portCallbackId int) (string, uint32) {
 	ctx := GetContext(inst)
 	urlStr := ctx.Callback(inst, urlCallbackId)

@@ -3,6 +3,7 @@ package globals
 import (
 	"log"
 	"os"
+	"regexp"
 	"sync"
 
 	. "main/aikido_types"
@@ -58,6 +59,7 @@ func NewServerData() *ServerData {
 		},
 		CloudConfigMutex:    sync.Mutex{},
 		MiddlewareInstalled: false,
+		ParamMatchers:       make(map[string]*regexp.Regexp),
 	}
 }
 
@@ -95,7 +97,7 @@ func CreateServer(token string) *ServerData {
 }
 
 const (
-	Version    = "1.4.8"
+	Version    = "1.4.10"
 	SocketPath = "/run/aikido-" + Version + "/aikido-agent.sock"
 )
 
