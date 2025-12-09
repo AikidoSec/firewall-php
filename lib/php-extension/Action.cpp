@@ -37,6 +37,11 @@ ACTION_STATUS Action::executeStore(json &event) {
     return CONTINUE;
 }
 
+ACTION_STATUS Action::executeBypassIp(json &event) {
+    SetIpBypassed();
+    return CONTINUE;
+}
+
 ACTION_STATUS Action::executeWarningMessage(json &event) {
     std::string message = event["message"];
     php_printf("%s\n", message.c_str());
@@ -62,6 +67,8 @@ ACTION_STATUS Action::Execute(std::string &event) {
         return executeStore(eventJson);
     } else if (actionType == "warning_message") {
         return executeWarningMessage(eventJson);
+    } else if (actionType == "bypassIp") {
+        return executeBypassIp(eventJson);
     }
     return CONTINUE;
 }

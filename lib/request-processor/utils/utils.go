@@ -208,6 +208,12 @@ func IsIpInSet(ipSet *netipx.IPSet, ip string) int {
 		return NoConfig
 	}
 
+	// Unmap IPv4-mapped IPv6 addresses (e.g., ::ffff:203.0.113.50 -> 203.0.113.50)
+	// This ensures IPv4-mapped addresses match IPv4 CIDR ranges
+	if ipAddress.Is4In6() {
+		ipAddress = ipAddress.Unmap()
+	}
+
 	if ipSet.Contains(ipAddress) {
 		return Found
 	}
