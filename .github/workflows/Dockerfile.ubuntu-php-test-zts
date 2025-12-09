@@ -138,6 +138,47 @@ RUN PHP_VER=$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;') && \
 RUN mkdir -p /usr/local/etc/php/conf.d && \
     echo "mysqli.default_socket = /var/lib/mysql/mysql.sock" > /usr/local/etc/php/conf.d/mysql-socket.ini
 
+# Install FrankenPHP binary based on PHP version
+# PHP 8.5 = v1.10.1, PHP 8.4 = v1.9.1, PHP 8.3 = v1.3.2, PHP 8.2 = v1.0.0-rc.3
+RUN if [ "${PHP_VERSION}" = "8.5" ]; then \
+        FRANKENPHP_VERSION="1.10.1" \
+        && FRANKENPHP_BINARY_URL="https://github.com/php/frankenphp/releases/download/v${FRANKENPHP_VERSION}/frankenphp-linux-x86_64" \
+        && curl -fsSL -L -o /usr/local/bin/frankenphp "$FRANKENPHP_BINARY_URL" \
+        && chmod +x /usr/local/bin/frankenphp \
+        && mkdir -p /etc/frankenphp/caddy.d \
+        && mkdir -p /etc/frankenphp/php.d \
+        && mkdir -p /usr/lib/frankenphp/modules; \
+    elif [ "${PHP_VERSION}" = "8.4" ]; then \
+        FRANKENPHP_VERSION="1.9.1" \
+        && FRANKENPHP_DEB_URL="https://github.com/php/frankenphp/releases/download/v${FRANKENPHP_VERSION}/frankenphp_${FRANKENPHP_VERSION}-1_amd64.deb" \
+        && curl -fsSL -L -o /tmp/frankenphp.deb "$FRANKENPHP_DEB_URL" \
+        && apt-get update \
+        && apt-get install -y /tmp/frankenphp.deb \
+        && rm -f /tmp/frankenphp.deb \
+        && rm -rf /var/lib/apt/lists/*; \
+    elif [ "${PHP_VERSION}" = "8.3" ]; then \
+        FRANKENPHP_VERSION="1.3.2" \
+        && FRANKENPHP_BINARY_URL="https://github.com/php/frankenphp/releases/download/v${FRANKENPHP_VERSION}/frankenphp-linux-x86_64" \
+        && curl -fsSL -L -o /usr/local/bin/frankenphp "$FRANKENPHP_BINARY_URL" \
+        && chmod +x /usr/local/bin/frankenphp \
+        && mkdir -p /etc/frankenphp/caddy.d \
+        && mkdir -p /etc/frankenphp/php.d \
+        && mkdir -p /usr/lib/frankenphp/modules; \
+    elif [ "${PHP_VERSION}" = "8.2" ]; then \
+        FRANKENPHP_VERSION="1.0.0-rc.3" \
+        && FRANKENPHP_BINARY_URL="https://github.com/php/frankenphp/releases/download/v${FRANKENPHP_VERSION}/frankenphp-linux-x86_64" \
+        && curl -fsSL -L -o /usr/local/bin/frankenphp "$FRANKENPHP_BINARY_URL" \
+        && chmod +x /usr/local/bin/frankenphp \
+        && mkdir -p /etc/frankenphp/caddy.d \
+        && mkdir -p /etc/frankenphp/php.d \
+        && mkdir -p /usr/lib/frankenphp/modules; \
+    fi
+
+# Create FrankenPHP folder structure (for binary installations, DEB creates these automatically)
+RUN mkdir -p /etc/frankenphp/caddy.d \
+    && mkdir -p /etc/frankenphp/php.d \
+    && mkdir -p /usr/lib/frankenphp/modules
+
 # Install web servers and database (without PHP packages)
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
