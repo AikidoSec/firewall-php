@@ -102,6 +102,11 @@ bool LoadLaravelEnvFile() {
     This function reads environment variables from $_SERVER for FrankenPHP compatibility.
 */
 std::string GetFrankenEnvVariable(const std::string& env_key) {
+    if (Z_TYPE(PG(http_globals)[TRACK_VARS_SERVER]) != IS_ARRAY) {
+        AIKIDO_LOG_DEBUG("franken_env[%s] = (empty - $_SERVER not an array)\n", env_key.c_str());
+        return "";
+    }
+    
     std::string env_value = AIKIDO_GLOBAL(server).GetVar(env_key.c_str());
     if (!env_value.empty()) {
         if (env_key == "AIKIDO_TOKEN") {

@@ -2,7 +2,6 @@ package instance
 
 import (
 	. "main/aikido_types"
-	"main/context"
 	"sync"
 	"unsafe"
 )
@@ -13,7 +12,7 @@ import (
 type RequestProcessorInstance struct {
 	CurrentToken    string
 	CurrentServer   *ServerData
-	RequestContext  context.RequestContextData
+	threadID        uint64         // CACHED: OS thread ID cached at RINIT for fast context lookups
 	ContextInstance unsafe.Pointer // For context callbacks
 	ContextCallback unsafe.Pointer // C function pointer, must be per-instance in ZTS
 
@@ -24,10 +23,9 @@ type RequestProcessorInstance struct {
 // NewRequestProcessorInstance creates an instance. Pass isZTS=true for FrankenPHP.
 func NewRequestProcessorInstance(isZTS bool) *RequestProcessorInstance {
 	return &RequestProcessorInstance{
-		CurrentToken:   "",
-		CurrentServer:  nil,
-		RequestContext: context.RequestContextData{},
-		isZTS:          isZTS,
+		CurrentToken:  "",
+		CurrentServer: nil,
+		isZTS:         isZTS,
 	}
 }
 
@@ -63,22 +61,6 @@ func (i *RequestProcessorInstance) GetCurrentToken() string {
 	return i.CurrentToken
 }
 
-func (i *RequestProcessorInstance) SetRequestContext(ctx context.RequestContextData) {
-	if i.isZTS {
-		i.mu.Lock()
-		defer i.mu.Unlock()
-	}
-	i.RequestContext = ctx
-}
-
-func (i *RequestProcessorInstance) GetRequestContext() *context.RequestContextData {
-	if i.isZTS {
-		i.mu.Lock()
-		defer i.mu.Unlock()
-	}
-	return &i.RequestContext
-}
-
 func (i *RequestProcessorInstance) IsInitialized() bool {
 	if i.isZTS {
 		i.mu.Lock()
@@ -105,4 +87,20 @@ func (i *RequestProcessorInstance) GetContextCallback() unsafe.Pointer {
 		defer i.mu.Unlock()
 	}
 	return i.ContextCallback
+}
+
+func (i *RequestProcessorInstance) SetThreadID(tid uint64) {
+	if i.isZTS {
+		i.mu.Lock()
+		defer i.mu.Unlock()
+	}
+	i.threadID = tid
+}
+
+func (i *RequestProcessorInstance) GetThreadID() uint64 {
+	if i.isZTS {
+		i.mu.Lock()
+		defer i.mu.Unlock()
+	}
+	return i.threadID
 }

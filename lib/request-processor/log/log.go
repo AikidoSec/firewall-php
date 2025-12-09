@@ -3,43 +3,25 @@ package log
 import (
 	"errors"
 	"fmt"
-	"log"
+
 	"main/globals"
+	"main/instance"
 	"os"
-	"sync"
 	"time"
 )
 
-type LogLevel int
-
-const (
-	DebugLevel LogLevel = iota
-	InfoLevel
-	WarnLevel
-	ErrorLevel
-)
-
-var (
-	currentLogLevel = ErrorLevel
-	Logger          = log.New(os.Stdout, "", 0)
-	cliLogging      = true
-	logFilePath     = ""
-	logMutex        sync.RWMutex
-)
-var LogFile *os.File
-
 type AikidoFormatter struct{}
 
-func (f *AikidoFormatter) Format(level LogLevel, message string) string {
+func (f *AikidoFormatter) Format(level globals.LogLevel, threadID uint64, message string) string {
 	var levelStr string
 	switch level {
-	case DebugLevel:
+	case globals.LogDebugLevel:
 		levelStr = "DEBUG"
-	case InfoLevel:
+	case globals.LogInfoLevel:
 		levelStr = "INFO"
-	case WarnLevel:
+	case globals.LogWarnLevel:
 		levelStr = "WARN"
-	case ErrorLevel:
+	case globals.LogErrorLevel:
 		levelStr = "ERROR"
 	default:
 		return "invalid log level"
@@ -49,137 +31,206 @@ func (f *AikidoFormatter) Format(level LogLevel, message string) string {
 		message = message[:1024] + "... [truncated]"
 	}
 
-	logMutex.RLock()
-	isCliLogging := cliLogging
-	logMutex.RUnlock()
+	globals.LogMutex.RLock()
+	isCliLogging := globals.CliLogging
+	globals.LogMutex.RUnlock()
 
 	if isCliLogging {
-		return fmt.Sprintf("[AIKIDO][%s] %s\n", levelStr, message)
+		return fmt.Sprintf("[AIKIDO][%s][tid:%d] %s\n", levelStr, threadID, message)
 	}
-	return fmt.Sprintf("[AIKIDO][%s][%s] %s\n", levelStr, time.Now().Format("15:04:05"), message)
+	return fmt.Sprintf("[AIKIDO][%s][tid:%d][%s] %s\n", levelStr, threadID, time.Now().Format("15:04:05"), message)
 }
 
 func initLogFile() {
-	logMutex.Lock()
-	defer logMutex.Unlock()
+	globals.LogMutex.Lock()
+	defer globals.LogMutex.Unlock()
 
-	if cliLogging {
+	if globals.CliLogging {
 		return
 	}
-	if LogFile != nil {
+	if globals.LogFile != nil {
 		return
 	}
 	var err error
-	LogFile, err = os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY, 0666)
+	globals.LogFile, err = os.OpenFile(globals.LogFilePath, os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
 		return
 	}
-	Logger.SetOutput(LogFile)
+	globals.Logger.SetOutput(globals.LogFile)
 }
 
-func logMessage(level LogLevel, args ...interface{}) {
-	logMutex.RLock()
-	lvl := currentLogLevel
-	logMutex.RUnlock()
+func logMessage(inst *instance.RequestProcessorInstance, level globals.LogLevel, args ...interface{}) {
+	globals.LogMutex.RLock()
+	lvl := globals.CurrentLogLevel
+	globals.LogMutex.RUnlock()
 
 	if level >= lvl {
 		initLogFile()
 		formatter := &AikidoFormatter{}
 		message := fmt.Sprint(args...)
-		formattedMessage := formatter.Format(level, message)
-		Logger.Print(formattedMessage)
+		threadID := uint64(0)
+		if inst != nil {
+			threadID = inst.GetThreadID()
+		}
+		formattedMessage := formatter.Format(level, threadID, message)
+		globals.Logger.Print(formattedMessage)
 	}
 }
 
-func logMessagef(level LogLevel, format string, args ...interface{}) {
-	logMutex.RLock()
-	lvl := currentLogLevel
-	logMutex.RUnlock()
+func logMessagef(inst *instance.RequestProcessorInstance, level globals.LogLevel, format string, args ...interface{}) {
+	globals.LogMutex.RLock()
+	lvl := globals.CurrentLogLevel
+	globals.LogMutex.RUnlock()
 
 	if level >= lvl {
 		initLogFile()
 		formatter := &AikidoFormatter{}
 		message := fmt.Sprintf(format, args...)
-		formattedMessage := formatter.Format(level, message)
-		Logger.Print(formattedMessage)
+		threadID := uint64(0)
+		if inst != nil {
+			threadID = inst.GetThreadID()
+		}
+		formattedMessage := formatter.Format(level, threadID, message)
+		globals.Logger.Print(formattedMessage)
 	}
 }
 
-func Debug(args ...interface{}) {
-	logMessage(DebugLevel, args...)
+func Debug(inst *instance.RequestProcessorInstance, args ...interface{}) {
+	logMessage(inst, globals.LogDebugLevel, args...)
 }
 
-func Info(args ...interface{}) {
-	logMessage(InfoLevel, args...)
+func Info(inst *instance.RequestProcessorInstance, args ...interface{}) {
+	logMessage(inst, globals.LogInfoLevel, args...)
 }
 
-func Warn(args ...interface{}) {
-	logMessage(WarnLevel, args...)
+func Warn(inst *instance.RequestProcessorInstance, args ...interface{}) {
+	logMessage(inst, globals.LogWarnLevel, args...)
 }
 
-func Error(args ...interface{}) {
-	logMessage(ErrorLevel, args...)
+func Error(inst *instance.RequestProcessorInstance, args ...interface{}) {
+	logMessage(inst, globals.LogErrorLevel, args...)
 }
 
-func Debugf(format string, args ...interface{}) {
-	logMessagef(DebugLevel, format, args...)
+func Debugf(inst *instance.RequestProcessorInstance, format string, args ...interface{}) {
+	logMessagef(inst, globals.LogDebugLevel, format, args...)
 }
 
-func Infof(format string, args ...interface{}) {
-	logMessagef(InfoLevel, format, args...)
+func Infof(inst *instance.RequestProcessorInstance, format string, args ...interface{}) {
+	logMessagef(inst, globals.LogInfoLevel, format, args...)
 }
 
-func Warnf(format string, args ...interface{}) {
-	logMessagef(WarnLevel, format, args...)
+func Warnf(inst *instance.RequestProcessorInstance, format string, args ...interface{}) {
+	logMessagef(inst, globals.LogWarnLevel, format, args...)
 }
 
-func Errorf(format string, args ...interface{}) {
-	logMessagef(ErrorLevel, format, args...)
+func Errorf(inst *instance.RequestProcessorInstance, format string, args ...interface{}) {
+	logMessagef(inst, globals.LogErrorLevel, format, args...)
+}
+
+// Direct threadID logging (for goroutines where inst cannot be safely passed)
+func logMessageWithThreadID(threadID uint64, level globals.LogLevel, args ...interface{}) {
+	globals.LogMutex.RLock()
+	lvl := globals.CurrentLogLevel
+	globals.LogMutex.RUnlock()
+
+	if level >= lvl {
+		initLogFile()
+		formatter := &AikidoFormatter{}
+		message := fmt.Sprint(args...)
+		formattedMessage := formatter.Format(level, threadID, message)
+		globals.Logger.Print(formattedMessage)
+	}
+}
+
+func logMessagefWithThreadID(threadID uint64, level globals.LogLevel, format string, args ...interface{}) {
+	globals.LogMutex.RLock()
+	lvl := globals.CurrentLogLevel
+	globals.LogMutex.RUnlock()
+
+	if level >= lvl {
+		initLogFile()
+		formatter := &AikidoFormatter{}
+		message := fmt.Sprintf(format, args...)
+		formattedMessage := formatter.Format(level, threadID, message)
+		globals.Logger.Print(formattedMessage)
+	}
+}
+
+func DebugWithThreadID(threadID uint64, args ...interface{}) {
+	logMessageWithThreadID(threadID, globals.LogDebugLevel, args...)
+}
+
+func InfoWithThreadID(threadID uint64, args ...interface{}) {
+	logMessageWithThreadID(threadID, globals.LogInfoLevel, args...)
+}
+
+func WarnWithThreadID(threadID uint64, args ...interface{}) {
+	logMessageWithThreadID(threadID, globals.LogWarnLevel, args...)
+}
+
+func ErrorWithThreadID(threadID uint64, args ...interface{}) {
+	logMessageWithThreadID(threadID, globals.LogErrorLevel, args...)
+}
+
+func DebugfWithThreadID(threadID uint64, format string, args ...interface{}) {
+	logMessagefWithThreadID(threadID, globals.LogDebugLevel, format, args...)
+}
+
+func InfofWithThreadID(threadID uint64, format string, args ...interface{}) {
+	logMessagefWithThreadID(threadID, globals.LogInfoLevel, format, args...)
+}
+
+func WarnfWithThreadID(threadID uint64, format string, args ...interface{}) {
+	logMessagefWithThreadID(threadID, globals.LogWarnLevel, format, args...)
+}
+
+func ErrorfWithThreadID(threadID uint64, format string, args ...interface{}) {
+	logMessagefWithThreadID(threadID, globals.LogErrorLevel, format, args...)
 }
 
 // SetLogLevel changes the current log level (thread-safe)
 func SetLogLevel(level string) error {
-	var newLevel LogLevel
+	var newLevel globals.LogLevel
 
 	switch level {
 	case "DEBUG":
-		newLevel = DebugLevel
+		newLevel = globals.LogDebugLevel
 	case "INFO":
-		newLevel = InfoLevel
+		newLevel = globals.LogInfoLevel
 	case "WARN":
-		newLevel = WarnLevel
+		newLevel = globals.LogWarnLevel
 	case "ERROR":
-		newLevel = ErrorLevel
+		newLevel = globals.LogErrorLevel
 	default:
 		return errors.New("invalid log level")
 	}
 
-	logMutex.Lock()
-	defer logMutex.Unlock()
-	currentLogLevel = newLevel
+	globals.LogMutex.Lock()
+	defer globals.LogMutex.Unlock()
+	globals.CurrentLogLevel = newLevel
 	return nil
 }
 
 func Init(diskLogs bool) {
-	logMutex.Lock()
-	defer logMutex.Unlock()
+	globals.LogMutex.Lock()
+	defer globals.LogMutex.Unlock()
 
 	if !diskLogs {
-		cliLogging = true
+		globals.CliLogging = true
 		return
 	}
-	cliLogging = false
+	globals.CliLogging = false
 	currentTime := time.Now()
 	timeStr := currentTime.Format("20060102150405")
-	logFilePath = fmt.Sprintf("/var/log/aikido-"+globals.Version+"/aikido-request-processor-%s-%d.log", timeStr, os.Getpid())
+	globals.LogFilePath = fmt.Sprintf("/var/log/aikido-"+globals.Version+"/aikido-request-processor-%s-%d.log", timeStr, os.Getpid())
 }
 
 func Uninit() {
-	logMutex.Lock()
-	defer logMutex.Unlock()
+	globals.LogMutex.Lock()
+	defer globals.LogMutex.Unlock()
 
-	if LogFile != nil {
-		LogFile.Close()
-		LogFile = nil
+	if globals.LogFile != nil {
+		globals.LogFile.Close()
+		globals.LogFile = nil
 	}
 }

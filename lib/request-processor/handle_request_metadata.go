@@ -12,7 +12,7 @@ import (
 )
 
 func OnPreRequest(inst *instance.RequestProcessorInstance) string {
-	context.Clear()
+	context.Clear(inst)
 	return ""
 }
 
@@ -21,7 +21,7 @@ func OnRequestShutdownReporting(params RequestShutdownParams) {
 		return
 	}
 
-	log.Info("[RSHUTDOWN] Got request metadata: ", params.Method, " ", params.Route, " ", params.StatusCode)
+	log.InfoWithThreadID(params.ThreadID, "[RSHUTDOWN] Got request metadata: ", params.Method, " ", params.Route, " ", params.StatusCode)
 	// Only detect web scanner activity for non-bypassed IPs
 	if !params.IsIpBypassed {
 		params.IsWebScanner = webscanner.IsWebScanner(params.Method, params.Route, params.QueryParsed)
@@ -31,33 +31,29 @@ func OnRequestShutdownReporting(params RequestShutdownParams) {
 		return
 	}
 
-	log.Info("[RSHUTDOWN] Got API spec: ", params.APISpec)
+	log.InfoWithThreadID(params.ThreadID, "[RSHUTDOWN] Got API spec: ", params.APISpec)
 	grpc.OnRequestShutdown(params)
 }
 
 func OnPostRequest(inst *instance.RequestProcessorInstance) string {
-	server := inst.GetCurrentServer()
-	if server == nil {
-		return ""
-	}
-
 	params := RequestShutdownParams{
-		Server:         server,
-		Method:         context.GetMethod(),
-		Route:          context.GetRoute(),
-		RouteParsed:    context.GetParsedRoute(),
-		StatusCode:     context.GetStatusCode(),
-		User:           context.GetUserId(),
-		UserAgent:      context.GetUserAgent(),
-		IP:             context.GetIp(),
-		RateLimitGroup: context.GetRateLimitGroup(),
-		RateLimited:    context.IsEndpointRateLimited(),
-		QueryParsed:    context.GetQueryParsed(),
-		IsIpBypassed:   context.IsIpBypassed(),
-		APISpec:        api_discovery.GetApiInfo(server), // Also needs context, must be called before Clear()
+		ThreadID:       inst.GetThreadID(),
+		Token:          inst.GetCurrentToken(),
+		Method:         context.GetMethod(inst),
+		Route:          context.GetRoute(inst),
+		RouteParsed:    context.GetParsedRoute(inst),
+		StatusCode:     context.GetStatusCode(inst),
+		User:           context.GetUserId(inst),
+		UserAgent:      context.GetUserAgent(inst),
+		IP:             context.GetIp(inst),
+		RateLimitGroup: context.GetRateLimitGroup(inst),
+		RateLimited:    context.IsEndpointRateLimited(inst),
+		QueryParsed:    context.GetQueryParsed(inst),
+		IsIpBypassed:   context.IsIpBypassed(inst),
+		APISpec:        api_discovery.GetApiInfo(inst, inst.GetCurrentServer()),
 	}
 
-	context.Clear()
+	context.Clear(inst)
 
 	go func() {
 		OnRequestShutdownReporting(params)

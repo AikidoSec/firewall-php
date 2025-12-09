@@ -63,9 +63,7 @@ def frankenphp_classic_pre_tests(tests_data):
             f.write("\n" + test_data["site_block"])
     
     subprocess.Popen(
-        [frankenphp_bin, 'run', '--config', caddyfile_path],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL
+        [frankenphp_bin, 'run', '--config', caddyfile_path]
     )
     time.sleep(20)
     

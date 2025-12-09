@@ -8,7 +8,7 @@ caddyfile_path = "/tmp/frankenphp_worker_test.caddyfile"
 log_dir = "/var/log/frankenphp"
 worker_scripts_dir = "/tmp/frankenphp_workers"
 
-num_workers = 1
+num_workers = 2
 
 caddyfile_base_template = """{{
     frankenphp {{
@@ -107,7 +107,7 @@ def frankenphp_worker_pre_tests(tests_data):
     subprocess.run(['rm', '-rf', f'{worker_scripts_dir}/*'])
     
     total_workers = len(tests_data)
-    threads = total_workers * 2
+    threads = total_workers * 3
     
     with open(caddyfile_path, 'w') as f:
         f.write(caddyfile_base_template.format(num_threads=threads, max_threads=threads))
@@ -115,9 +115,7 @@ def frankenphp_worker_pre_tests(tests_data):
             f.write("\n" + test_data["site_block"])
     
     process = subprocess.Popen(
-        [frankenphp_bin, 'run', '--config', caddyfile_path],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL
+        [frankenphp_bin, 'run', '--config', caddyfile_path]
     )
     time.sleep(20)
     

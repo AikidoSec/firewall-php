@@ -8,11 +8,11 @@ import (
 )
 
 func OnUserEvent(inst *instance.RequestProcessorInstance) string {
-	id := context.GetUserId()
-	username := context.GetUserName()
-	ip := context.GetIp()
+	id := context.GetUserId(inst)
+	username := context.GetUserName(inst)
+	ip := context.GetIp(inst)
 
-	log.Infof("Got user event!")
+	log.Infof(inst, "Got user event!")
 
 	if id == "" || ip == "" {
 		return ""
@@ -22,6 +22,7 @@ func OnUserEvent(inst *instance.RequestProcessorInstance) string {
 	if server == nil {
 		return ""
 	}
-	go grpc.OnUserEvent(server, id, username, ip)
+	threadID := inst.GetThreadID() // Capture threadID before goroutine
+	go grpc.OnUserEvent(threadID, server, id, username, ip)
 	return ""
 }

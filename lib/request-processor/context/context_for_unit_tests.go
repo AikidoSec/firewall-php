@@ -6,12 +6,14 @@ import (
 	"encoding/json"
 	"fmt"
 	. "main/aikido_types"
+	"main/globals"
+	"main/instance"
 )
 
 var TestContext map[string]string
 var TestServer *ServerData // Test server for unit tests
 
-func UnitTestsCallback(context_id int) string {
+func UnitTestsCallback(inst *instance.RequestProcessorInstance, context_id int) string {
 	switch context_id {
 	case C.CONTEXT_REMOTE_ADDRESS:
 		return TestContext["remoteAddress"]
@@ -41,19 +43,44 @@ func UnitTestsCallback(context_id int) string {
 	return ""
 }
 
-func LoadForUnitTests(context map[string]string) {
-	Context.Callback = UnitTestsCallback
+func LoadForUnitTests(context map[string]string) *instance.RequestProcessorInstance {
+	tid := getThreadID()
+
+	mockInst := instance.NewRequestProcessorInstance(false)
+	if TestServer != nil {
+		mockInst.SetCurrentServer(TestServer)
+		mockInst.SetCurrentToken(TestServer.AikidoConfig.Token)
+	}
+	mockInst.SetThreadID(tid)
+
+	ctx := &RequestContextData{
+		inst:     mockInst,
+		Callback: UnitTestsCallback,
+	}
+	globals.ContextData.Store(tid, ctx)
+	globals.ContextInstances.Store(tid, nil)
+
 	TestContext = context
+	return mockInst
 }
 
 func UnloadForUnitTests() {
-	Context = RequestContextData{}
-	EventContext = EventContextData{}
+	tid := getThreadID()
+	globals.ContextData.Delete(tid)
+	globals.ContextInstances.Delete(tid)
+	globals.EventContextData.Delete(tid)
 	TestServer = nil
+	TestContext = nil
 }
 
-func SetTestServer(server *ServerData) {
+func SetTestServer(inst *instance.RequestProcessorInstance, server *ServerData) {
 	TestServer = server
+
+	c := GetContext(inst)
+	if c != nil && c.inst != nil && server != nil {
+		c.inst.SetCurrentServer(server)
+		c.inst.SetCurrentToken(server.AikidoConfig.Token)
+	}
 }
 
 // GetTestServer returns the current test server, or nil if not set

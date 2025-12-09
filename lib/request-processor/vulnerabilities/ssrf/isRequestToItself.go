@@ -3,6 +3,7 @@ package ssrf
 import (
 	"main/context"
 	"main/helpers"
+	"main/instance"
 	"net/url"
 )
 
@@ -10,16 +11,21 @@ import (
 // This includes a special case for HTTP/HTTPS: if the server is running on HTTP (port 80) and makes a request
 // to HTTPS (port 443) of the same hostname, or vice versa, it's considered a request to itself.
 // This prevents false positives when a server makes requests to itself via different protocols.
-func IsRequestToItself(outboundHostname string, outboundPort uint32) bool {
+func IsRequestToItself(inst *instance.RequestProcessorInstance, outboundHostname string, outboundPort uint32) bool {
+	if inst == nil {
+		return false
+	}
+
+	server := inst.GetCurrentServer()
+
 	// Check if trust proxy is enabled
-	// If not enabled, we don't consider requests to iteself as safe
-	server := context.GetCurrentServer()
+	// If not enabled, we don't consider requests to itself as safe
 	if server != nil && !server.AikidoConfig.TrustProxy {
 		return false
 	}
 
 	// Get the current server URL from the incoming request
-	serverURL := context.GetUrl()
+	serverURL := context.GetUrl(inst)
 	if serverURL == "" {
 		return false
 	}

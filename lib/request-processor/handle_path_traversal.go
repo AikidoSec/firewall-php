@@ -9,28 +9,28 @@ import (
 )
 
 func OnPrePathAccessed(inst *instance.RequestProcessorInstance) string {
-	filename := context.GetFilename()
-	filename2 := context.GetFilename2()
-	operation := context.GetFunctionName()
+	filename := context.GetFilename(inst)
+	filename2 := context.GetFilename2(inst)
+	operation := context.GetFunctionName(inst)
 
 	if filename == "" || operation == "" {
 		return ""
 	}
 
-	if context.IsEndpointProtectionTurnedOff() {
-		log.Infof("Protection is turned off -> will not run detection logic!")
+	if context.IsEndpointProtectionTurnedOff(inst) {
+		log.Infof(inst, "Protection is turned off -> will not run detection logic!")
 		return ""
 	}
 
-	res := path_traversal.CheckContextForPathTraversal(filename, operation, true)
+	res := path_traversal.CheckContextForPathTraversal(inst, filename, operation, true)
 	if res != nil {
-		return attack.ReportAttackDetected(res)
+		return attack.ReportAttackDetected(res, inst)
 	}
 
 	if filename2 != "" {
-		res = path_traversal.CheckContextForPathTraversal(filename2, operation, true)
+		res = path_traversal.CheckContextForPathTraversal(inst, filename2, operation, true)
 		if res != nil {
-			return attack.ReportAttackDetected(res)
+			return attack.ReportAttackDetected(res, inst)
 		}
 	}
 	return ""

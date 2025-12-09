@@ -63,8 +63,6 @@ passed_tests = []
 failed_tests = []
 
 lock = threading.Lock()
-max_concurrent_tests = 69
-test_semaphore = threading.Semaphore(max_concurrent_tests)
 
 def is_port_in_active_use(port):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
@@ -95,14 +93,10 @@ def print_test_results(s, tests):
     for t in tests:
         print(f"\t- {t}")
 
-def handle_test_scenario_with_semaphore(data, root_tests_dir, test_lib_dir, server, benchmark, valgrind, debug):
-    test_semaphore.acquire()
-    try:
-        handle_test_scenario(data, root_tests_dir, test_lib_dir, server, benchmark, valgrind, debug)
-    finally:
-        test_semaphore.release()
-
 def handle_test_scenario(data, root_tests_dir, test_lib_dir, server, benchmark, valgrind, debug):
+	_handle_test_scenario_impl(data, root_tests_dir, test_lib_dir, server, benchmark, valgrind, debug)
+
+def _handle_test_scenario_impl(data, root_tests_dir, test_lib_dir, server, benchmark, valgrind, debug):
     test_name = data["test_name"]
     mock_port = data["mock_port"]
     server_port = data["server_port"]
@@ -112,7 +106,7 @@ def handle_test_scenario(data, root_tests_dir, test_lib_dir, server, benchmark, 
     try:
         print(f"Running {test_name}...")
         print(f"Starting mock server on port {mock_port} with start_config.json for {test_name}...")
-        mock_aikido_core = subprocess.Popen(["python3", "-u", "mock_aikido_core.py", str(mock_port), data["config_path"]])
+        mock_aikido_core = subprocess.Popen(["python3", "-u", "mock_aikido_core.py", str(mock_port), data["config_path"]], cwd=os.path.dirname(os.path.abspath(__file__)))
         time.sleep(5)
 
         print(f"Starting {server} server on port {server_port} for {test_name}...")
@@ -205,14 +199,12 @@ def main(root_tests_dir, test_lib_dir, test_dirs, server="php-built-in", benchma
             pre_tests()
     
     threads = []
-    target_func = handle_test_scenario_with_semaphore if server in ["frankenphp-classic", "frankenphp-worker"] else handle_test_scenario
     for test_data in tests_data:
         args = (test_data, root_tests_dir, test_lib_dir, server, benchmark, valgrind, debug)
-        thread = threading.Thread(target=target_func, args=args)
+        thread = threading.Thread(target=handle_test_scenario, args=args)
         threads.append(thread)
         thread.start()
         time.sleep(10)
-
     for thread in threads:
         thread.join()
 

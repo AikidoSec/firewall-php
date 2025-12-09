@@ -51,7 +51,7 @@ func Init() bool {
 
 	handle := C.dlopen(zenInternalsLibPath, C.RTLD_LAZY)
 	if handle == nil {
-		log.Errorf("Failed to load zen-internals library from '%s' with error %s!", C.GoString(zenInternalsLibPath), C.GoString(C.dlerror()))
+		log.Errorf(nil, "Failed to load zen-internals library from '%s' with error %s!", C.GoString(zenInternalsLibPath), C.GoString(C.dlerror()))
 		return false
 	}
 
@@ -60,7 +60,7 @@ func Init() bool {
 
 	vDetectSqlInjection := C.dlsym(handle, detectSqlInjectionFnName)
 	if vDetectSqlInjection == nil {
-		log.Error("Failed to load detect_sql_injection function from zen-internals library!")
+		log.Error(nil, "Failed to load detect_sql_injection function from zen-internals library!")
 		C.dlclose(handle)
 		return false
 	}
@@ -68,7 +68,7 @@ func Init() bool {
 	zenLib.handle = handle
 	zenLib.detectSqlInjection = (C.detect_sql_injection_func)(vDetectSqlInjection)
 	zenLib.initialized = true
-	log.Debugf("Loaded zen-internals library!")
+	log.Debugf(nil, "Loaded zen-internals library!")
 	return true
 }
 
@@ -114,6 +114,6 @@ func DetectSQLInjection(query string, user_input string, dialect int) int {
 		cUserInput, userInputLen,
 		C.int(dialect)))
 
-	log.Debugf("DetectSqlInjection(\"%s\", \"%s\", %d) -> %d", query, user_input, dialect, result)
+	log.Debugf(nil, "DetectSqlInjection(\"%s\", \"%s\", %d) -> %d", query, user_input, dialect, result)
 	return result
 }

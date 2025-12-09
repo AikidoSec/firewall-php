@@ -24,7 +24,7 @@ func buildIpList(cloudIpList map[string]*protos.IpList) map[string]IpList {
 	for ipListKey, protoIpList := range cloudIpList {
 		ipSet, err := utils.BuildIpList(protoIpList.Description, protoIpList.Ips)
 		if err != nil {
-			log.Errorf("Error building IP list: %s\n", err)
+			log.Errorf(nil, "Error building IP list: %s\n", err)
 			continue
 		}
 		ipList[ipListKey] = *ipSet
@@ -35,7 +35,7 @@ func buildIpList(cloudIpList map[string]*protos.IpList) map[string]IpList {
 func getEndpointData(ep *protos.Endpoint) EndpointData {
 	allowedIPSet, err := utils.BuildIpSet(ep.AllowedIPAddresses)
 	if err != nil {
-		log.Errorf("Error building allowed IP set: %s\n", err)
+		log.Errorf(nil, "Error building allowed IP set: %s\n", err)
 	}
 	endpointData := EndpointData{
 		ForceProtectionOff: ep.ForceProtectionOff,
@@ -71,7 +71,7 @@ func buildUserAgentsRegexpFromProto(userAgents string) *regexp.Regexp {
 	}
 	userAgentsRegexp, err := regexp.Compile("(?i)" + userAgents)
 	if err != nil {
-		log.Errorf("Error compiling user agents regex: %s\n", err)
+		log.Errorf(nil, "Error compiling user agents regex: %s\n", err)
 		return nil
 	}
 	return userAgentsRegexp
@@ -114,7 +114,7 @@ func setCloudConfig(server *ServerData, cloudConfigFromAgent *protos.CloudConfig
 	bypassedIPSet, bypassedIPSetErr := utils.BuildIpSet(cloudConfigFromAgent.BypassedIps)
 	server.CloudConfig.BypassedIps = bypassedIPSet
 	if bypassedIPSet == nil {
-		log.Errorf("Error building bypassed IP set: %s\n", bypassedIPSetErr)
+		log.Errorf(nil, "Error building bypassed IP set: %s\n", bypassedIPSetErr)
 	}
 
 	if cloudConfigFromAgent.Block {

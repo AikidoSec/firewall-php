@@ -12,7 +12,7 @@ std::string GetTime();
 
 std::string GetDateTime();
 
-uint64_t GetThreadID();  // Returns 0 for NTS, pthread_self() for ZTS
+uint64_t GetThreadID();
 
 const char* GetEventName(EVENT_ID event);
 

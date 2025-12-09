@@ -275,13 +275,9 @@ void RequestProcessor::LoadConfig(const std::string& previousToken, const std::s
 }
 
 void RequestProcessor::LoadConfigFromEnvironment() {
-    // In ZTS mode (FrankenPHP), AIKIDO_GLOBAL(token) is thread-local, so each thread has its own copy
-    // We read the previous token before LoadEnvironment() updates it with the current request's token
     auto& globalToken = AIKIDO_GLOBAL(token);
     std::string previousToken = globalToken;
-    
-    // LoadEnvironment() reads from $_SERVER['AIKIDO_TOKEN'] (per-request in FrankenPHP)
-    // and updates AIKIDO_GLOBAL(token) with the current request's token
+        
     LoadEnvironment();
     
     std::string currentToken = globalToken;

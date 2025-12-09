@@ -8,7 +8,8 @@ type Method struct {
 }
 
 type RequestShutdownParams struct {
-	Server              *ServerData
+	ThreadID            uint64
+	Token               string
 	Method              string
 	Route               string
 	RouteParsed         string

@@ -4,55 +4,57 @@ package context
 import "C"
 import (
 	"main/helpers"
+	"main/instance"
 	"net/url"
 )
 
-func GetOutgoingRequestHostnameAndPort() (string, uint32) {
-	return getHostNameAndPort(C.OUTGOING_REQUEST_URL, C.OUTGOING_REQUEST_PORT)
+func GetOutgoingRequestHostnameAndPort(inst *instance.RequestProcessorInstance) (string, uint32) {
+	return getHostNameAndPort(inst, C.OUTGOING_REQUEST_URL, C.OUTGOING_REQUEST_PORT)
 }
 
-func GetOutgoingRequestEffectiveHostnameAndPort() (string, uint32) {
-	return getHostNameAndPort(C.OUTGOING_REQUEST_EFFECTIVE_URL, C.OUTGOING_REQUEST_EFFECTIVE_URL_PORT)
+func GetOutgoingRequestEffectiveHostnameAndPort(inst *instance.RequestProcessorInstance) (string, uint32) {
+	return getHostNameAndPort(inst, C.OUTGOING_REQUEST_EFFECTIVE_URL, C.OUTGOING_REQUEST_EFFECTIVE_URL_PORT)
 }
 
-func GetOutgoingRequestResolvedIp() string {
-	return Context.Callback(C.OUTGOING_REQUEST_RESOLVED_IP)
+func GetOutgoingRequestResolvedIp(inst *instance.RequestProcessorInstance) string {
+	return GetContext(inst).Callback(inst, C.OUTGOING_REQUEST_RESOLVED_IP)
 }
 
-func GetFunctionName() string {
-	return Context.Callback(C.FUNCTION_NAME)
+func GetFunctionName(inst *instance.RequestProcessorInstance) string {
+	return GetContext(inst).Callback(inst, C.FUNCTION_NAME)
 }
 
-func GetCmd() string {
-	return Context.Callback(C.CMD)
+func GetCmd(inst *instance.RequestProcessorInstance) string {
+	return GetContext(inst).Callback(inst, C.CMD)
 }
 
-func GetFilename() string {
-	return Context.Callback(C.FILENAME)
+func GetFilename(inst *instance.RequestProcessorInstance) string {
+	return GetContext(inst).Callback(inst, C.FILENAME)
 }
 
-func GetFilename2() string {
-	return Context.Callback(C.FILENAME2)
+func GetFilename2(inst *instance.RequestProcessorInstance) string {
+	return GetContext(inst).Callback(inst, C.FILENAME2)
 }
 
-func GetSqlQuery() string {
-	return Context.Callback(C.SQL_QUERY)
+func GetSqlQuery(inst *instance.RequestProcessorInstance) string {
+	return GetContext(inst).Callback(inst, C.SQL_QUERY)
 }
 
-func GetSqlDialect() string {
-	return Context.Callback(C.SQL_DIALECT)
+func GetSqlDialect(inst *instance.RequestProcessorInstance) string {
+	return GetContext(inst).Callback(inst, C.SQL_DIALECT)
 }
 
-func GetModule() string {
-	return Context.Callback(C.MODULE)
+func GetModule(inst *instance.RequestProcessorInstance) string {
+	return GetContext(inst).Callback(inst, C.MODULE)
 }
 
-func GetStackTrace() string {
-	return Context.Callback(C.STACK_TRACE)
+func GetStackTrace(inst *instance.RequestProcessorInstance) string {
+	return GetContext(inst).Callback(inst, C.STACK_TRACE)
 }
 
-func getHostNameAndPort(urlCallbackId int, portCallbackId int) (string, uint32) { // urlcallbackid is the type of data we request, eg C.OUTGOING_REQUEST_URL
-	urlStr := Context.Callback(urlCallbackId)
+func getHostNameAndPort(inst *instance.RequestProcessorInstance, urlCallbackId int, portCallbackId int) (string, uint32) {
+	ctx := GetContext(inst)
+	urlStr := ctx.Callback(inst, urlCallbackId)
 	urlParsed, err := url.Parse(urlStr)
 	if err != nil {
 		return "", 0
@@ -60,7 +62,7 @@ func getHostNameAndPort(urlCallbackId int, portCallbackId int) (string, uint32) 
 	hostname := urlParsed.Hostname()
 	portFromURL := helpers.GetPortFromURL(urlParsed)
 
-	portStr := Context.Callback(portCallbackId)
+	portStr := ctx.Callback(inst, portCallbackId)
 	port := helpers.ParsePort(portStr)
 	if port == 0 {
 		port = portFromURL
