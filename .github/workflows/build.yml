@@ -490,9 +490,15 @@ jobs:
             ${{ env.AIKIDO_DEB }}
 
       - name: Prepare php-fpm
+        if: matrix.server == 'nginx-php-fpm'
         run: |
-          ls -l /usr/sbin | grep php
-          ln -s /usr/sbin/php-fpm${{ matrix.php_version }} /usr/sbin/php-fpm
+          # Verify NTS-built PHP-FPM exists and is NTS (not ZTS-enabled)
+          /usr/local/sbin/php-fpm -v
+          /usr/local/sbin/php-fpm -i | grep -q "Thread Safety => disabled" || (echo "ERROR: PHP-FPM not built with NTS!" && exit 1)
+          # Create symlink for nginx to find php-fpm
+          ln -sf /usr/local/sbin/php-fpm /usr/sbin/php-fpm || true
+          # Verify symlink works
+          php-fpm -i | grep -q "Thread Safety => disabled" || (echo "ERROR: php-fpm symlink not working or not NTS!" && exit 1)
 
       # MariaDB startup compatible with your current approach
       - name: Start MariaDB (background)
