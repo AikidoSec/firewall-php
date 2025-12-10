@@ -1,8 +1,6 @@
 package context
 
 // #include "../../API.h"
-// #include <pthread.h>
-// static unsigned long get_thread_id() { return (unsigned long)pthread_self(); }
 import "C"
 import (
 	. "main/aikido_types"
@@ -55,12 +53,12 @@ func GetServerPID() int32 {
 }
 
 func Init(instPtr unsafe.Pointer, callback CallbackFunction) bool {
-	tid := getThreadID()
-
 	inst := instance.GetInstance(instPtr)
-	if inst != nil {
-		inst.SetThreadID(tid)
+	if inst == nil {
+		return false
 	}
+
+	tid := inst.GetThreadID()
 
 	globals.ContextInstances.Store(tid, instPtr)
 
@@ -80,11 +78,6 @@ func GetContext(inst *instance.RequestProcessorInstance) *RequestContextData {
 
 func (ctx *RequestContextData) GetInstance() *instance.RequestProcessorInstance {
 	return ctx.inst
-}
-
-// getThreadID is only called once during Init to bootstrap the threadID cache in inst
-func getThreadID() uint64 {
-	return uint64(C.get_thread_id())
 }
 
 func Clear(inst *instance.RequestProcessorInstance) bool {

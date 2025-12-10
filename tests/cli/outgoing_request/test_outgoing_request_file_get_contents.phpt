@@ -12,6 +12,6 @@ file_get_contents("http://www.example.com");
 
 ?>
 
---EXPECT--
-[AIKIDO][INFO] [BEFORE] Got domain: www.example.com
-[AIKIDO][INFO] [AFTER] Got domain: www.example.com port: 80
+--EXPECTREGEX--
+.*\[AIKIDO\]\[INFO\]\[tid:\d+\] \[BEFORE\] Got domain: www.example.com
+\[AIKIDO\]\[INFO\]\[tid:\d+\] \[AFTER\] Got domain: www.example.com port: 80

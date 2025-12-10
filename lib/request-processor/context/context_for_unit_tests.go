@@ -1,6 +1,8 @@
 package context
 
 // #include "../../API.h"
+// #include <pthread.h>
+// static unsigned long get_thread_id() { return (unsigned long)pthread_self(); }
 import "C"
 import (
 	"encoding/json"
@@ -43,15 +45,18 @@ func UnitTestsCallback(inst *instance.RequestProcessorInstance, context_id int) 
 	return ""
 }
 
+func getThreadID() uint64 {
+	return uint64(C.get_thread_id())
+}
+
 func LoadForUnitTests(context map[string]string) *instance.RequestProcessorInstance {
 	tid := getThreadID()
 
-	mockInst := instance.NewRequestProcessorInstance(false)
+	mockInst := instance.NewRequestProcessorInstance(tid, false)
 	if TestServer != nil {
 		mockInst.SetCurrentServer(TestServer)
 		mockInst.SetCurrentToken(TestServer.AikidoConfig.Token)
 	}
-	mockInst.SetThreadID(tid)
 
 	ctx := &RequestContextData{
 		inst:     mockInst,

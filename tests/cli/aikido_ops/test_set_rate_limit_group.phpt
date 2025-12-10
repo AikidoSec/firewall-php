@@ -11,5 +11,5 @@ AIKIDO_LOG_LEVEL=INFO
 
 ?>
 
---EXPECT--
-[AIKIDO][INFO] Got rate limit group: my_user_group
+--EXPECTREGEX--
+\[AIKIDO\]\[INFO\]\[tid:\d+\] Got rate limit group: my_user_group

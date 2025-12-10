@@ -36,6 +36,9 @@ func OnRequestShutdownReporting(params RequestShutdownParams) {
 }
 
 func OnPostRequest(inst *instance.RequestProcessorInstance) string {
+	if inst.GetCurrentServer() == nil {
+		return ""
+	}
 	params := RequestShutdownParams{
 		ThreadID:       inst.GetThreadID(),
 		Token:          inst.GetCurrentToken(),

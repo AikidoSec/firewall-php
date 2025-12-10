@@ -25,7 +25,7 @@ func CreateInstance(threadID uint64, isZTS bool) unsafe.Pointer {
 		return unsafe.Pointer(existingInstance)
 	}
 
-	instance := NewRequestProcessorInstance(isZTS)
+	instance := NewRequestProcessorInstance(threadID, isZTS)
 	instances[threadID] = instance
 
 	// Pin to prevent GC while C++ holds the pointer

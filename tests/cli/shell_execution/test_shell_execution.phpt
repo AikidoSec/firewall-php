@@ -55,24 +55,24 @@ if (is_resource($process)) {
 echo "\n";
 ?>
 
---EXPECTF--
-[AIKIDO][INFO] Got shell command: echo "Hello from exec!"
+--EXPECTREGEX--
+\[AIKIDO\]\[INFO\]\[tid:\d+\] Got shell command: echo "Hello from exec!"
 Array
-(
-    [0] => Hello from exec!
-)
+\(
+    \[0\] => Hello from exec!
+\)
 
-[AIKIDO][INFO] Got shell command: echo "Hello from shell_exec!"
+\[AIKIDO\]\[INFO\]\[tid:\d+\] Got shell command: echo "Hello from shell_exec!"
 Hello from shell_exec!
 
-[AIKIDO][INFO] Got shell command: echo "Hello from system!"
+\[AIKIDO\]\[INFO\]\[tid:\d+\] Got shell command: echo "Hello from system!"
 Hello from system!
 
-[AIKIDO][INFO] Got shell command: echo "Hello from passthru!"
+\[AIKIDO\]\[INFO\]\[tid:\d+\] Got shell command: echo "Hello from passthru!"
 Hello from passthru!
 
-[AIKIDO][INFO] Got shell command: echo "Hello from popen!"
+\[AIKIDO\]\[INFO\]\[tid:\d+\] Got shell command: echo "Hello from popen!"
 Hello from popen!
 
-[AIKIDO][INFO] Got shell command: echo "Hello from proc_open!"
+\[AIKIDO\]\[INFO\]\[tid:\d+\] Got shell command: echo "Hello from proc_open!"
 Hello from proc_open!

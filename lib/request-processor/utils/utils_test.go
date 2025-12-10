@@ -381,7 +381,7 @@ func TestBuildRouteFromURL_WithParamMatchers(t *testing.T) {
 		"slug":   mustCompileCustomPattern("aikido-{alpha}-{digits}-{alpha}"),
 	}
 
-	testInst := instance.NewRequestProcessorInstance(false)
+	testInst := instance.NewRequestProcessorInstance(0, false)
 	testInst.SetCurrentServer(server)
 
 	tests := []struct {
