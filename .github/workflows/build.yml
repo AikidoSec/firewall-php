@@ -446,6 +446,9 @@ jobs:
       - name: Run CLI tests
         run: |
           export TEST_PHP_EXECUTABLE=/usr/bin/php
+          cd lib/php-extension/
+          phpize
+          cd ../../
           php lib/php-extension/run-tests.php ./tests/cli
 
       - name: Run ${{ matrix.server }} server tests
@@ -510,6 +513,10 @@ jobs:
 
       - name: Run CLI tests
         run: |
+          export TEST_PHP_EXECUTABLE=/usr/local/bin/php        
+          cd lib/php-extension/
+          phpize
+          cd ../../
           php lib/php-extension/run-tests.php ./tests/cli
 
       - name: Run ${{ matrix.server }} server tests
@@ -579,6 +586,10 @@ jobs:
 
       - name: Run CLI tests
         run: |
+          export TEST_PHP_EXECUTABLE=/usr/local/bin/php
+          cd lib/php-extension/
+          phpize
+          cd ../../
           php lib/php-extension/run-tests.php ./tests/cli
 
       - name: Run ${{ matrix.server }} server tests
@@ -668,6 +679,9 @@ jobs:
       - name: Run CLI tests
         run: |
           export TEST_PHP_EXECUTABLE=/usr/local/bin/php
+          cd lib/php-extension/
+          phpize
+          cd ../../
           php lib/php-extension/run-tests.php ./tests/cli
 
       - name: Run ${{ matrix.server }} server tests
