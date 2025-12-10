@@ -71,6 +71,8 @@ RUN if [ -f ext/openssl/openssl.c ] && grep -q 'REGISTER_LONG_CONSTANT("OPENSSL_
 # Build PHP with ZTS enabled
 RUN ./configure \
       --prefix=/usr/local \
+      --with-config-file-path=/usr/local/lib \
+      --with-config-file-scan-dir=/usr/local/etc/php/conf.d \
       --enable-zts \
       --enable-maintainer-zts \
       --enable-fpm \
@@ -151,6 +153,9 @@ RUN     mkdir -p /etc/php-fpm.d && \
 # Configure MySQL socket path for mysqli (so "localhost" connections work)
 RUN mkdir -p /usr/local/etc/php/conf.d && \
     echo "mysqli.default_socket = /var/lib/mysql/mysql.sock" > /usr/local/etc/php/conf.d/mysql-socket.ini
+
+RUN mkdir -p /etc/php/${PHP_VERSION}/apache2/conf.d && \
+    echo "Created Apache mod_php directory: /etc/php/${PHP_VERSION}/apache2/conf.d"
 
 # Install FrankenPHP binary based on PHP version
 # PHP 8.5 = v1.10.1, PHP 8.4 = v1.9.1, PHP 8.3 = v1.3.2, PHP 8.2 = v1.0.0-rc.3
