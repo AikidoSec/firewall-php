@@ -26,6 +26,7 @@ RUN apt-get update && \
       libxml2-dev libsqlite3-dev libcurl4-openssl-dev libssl-dev \
       libzip-dev libonig-dev libjpeg-dev libpng-dev libwebp-dev \
       libicu-dev libreadline-dev libxslt1-dev default-libmysqlclient-dev \
+      apache2-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Timezone to UTC
@@ -72,6 +73,7 @@ RUN ./configure \
       --with-openssl \
       --with-zlib \
       --with-zip \
+      --with-apxs2=/usr/bin/apxs \
 && make -j"$(nproc)" \
 && make install \
 && strip /usr/local/bin/php /usr/local/sbin/php-fpm || true
