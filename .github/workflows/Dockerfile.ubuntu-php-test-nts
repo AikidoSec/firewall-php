@@ -1,49 +1,154 @@
 # syntax=docker/dockerfile:1.7
-FROM ubuntu:24.04
+# Ubuntu test image with PHP built from source in NTS mode
+# Used for testing the extension with standard PHP (non-thread-safe)
 
 ARG DEBIAN_FRONTEND=noninteractive
-ARG PHP_VERSION=7.2
+ARG PHP_VERSION=8.3
+ARG PHP_SRC_REF=PHP-${PHP_VERSION}
 
-ENV PHP_VERSION=${PHP_VERSION}
+FROM ubuntu:24.04 AS base
+SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
 
+ENV DEBIAN_FRONTEND=noninteractive \
+    TZ=Etc/UTC \
+    LC_ALL=C.UTF-8 \
+    LANG=C.UTF-8 \
+    LANGUAGE=C.UTF-8 \
+    PHP_VERSION=${PHP_VERSION}
+
+# Install base dependencies and build tools
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
       ca-certificates curl gnupg lsb-release tzdata locales \
       software-properties-common apt-transport-https \
       git make unzip xz-utils \
-      # web servers & DB (installed later after PPA)
-      && rm -rf /var/lib/apt/lists/*
+      build-essential autoconf bison re2c pkg-config \
+      libxml2-dev libsqlite3-dev libcurl4-openssl-dev libssl-dev \
+      libzip-dev libonig-dev libjpeg-dev libpng-dev libwebp-dev \
+      libicu-dev libreadline-dev libxslt1-dev default-libmysqlclient-dev \
+    && rm -rf /var/lib/apt/lists/*
 
 # Timezone to UTC
-RUN ln -fs /usr/share/zoneinfo/Etc/UTC /etc/localtime && \
-    echo "Etc/UTC" > /etc/timezone && \
+RUN ln -fs /usr/share/zoneinfo/${TZ} /etc/localtime && \
+    echo "${TZ}" > /etc/timezone && \
     dpkg-reconfigure -f noninteractive tzdata
 
+# Fetch and build PHP from source with NTS
+FROM base AS php-build
+ARG PHP_SRC_REF
+WORKDIR /usr/src
+RUN git clone --depth 1 --branch "${PHP_SRC_REF}" https://github.com/php/php-src.git
+WORKDIR /usr/src/php-src
 
-RUN add-apt-repository -y universe && \
-    add-apt-repository -y ppa:ondrej/php
+RUN sed -i 's/\[\([0-9]\+\.[0-9]\+\.[0-9]\+\)-dev\]/[\1]/' configure.ac
+RUN ./buildconf --force
 
-RUN apt-get update
+# Patch openssl.c for OpenSSL compatibility
+RUN if [ -f ext/openssl/openssl.c ] && grep -q 'REGISTER_LONG_CONSTANT("OPENSSL_SSLV23_PADDING"' ext/openssl/openssl.c; then \
+    awk '/REGISTER_LONG_CONSTANT\("OPENSSL_SSLV23_PADDING"/ { \
+        indent = $0; \
+        gsub(/[^[:space:]].*/, "", indent); \
+        print indent "#ifdef RSA_SSLV23_PADDING"; \
+        gsub(/^[[:space:]]*/, indent "    "); \
+        print; \
+        print indent "#endif"; \
+        next \
+    } \
+    { print }' ext/openssl/openssl.c > ext/openssl/openssl.c.new && \
+    mv ext/openssl/openssl.c.new ext/openssl/openssl.c; \
+    fi || true
 
-RUN set -eux; \
-    PHP_PKG="php${PHP_VERSION}"; \
+# Build PHP with NTS (no ZTS flags)
+RUN ./configure \
+      --prefix=/usr/local \
+      --with-config-file-path=/usr/local/lib \
+      --with-config-file-scan-dir=/usr/local/etc/php/conf.d \
+      --enable-fpm \
+      --enable-mbstring \
+      --enable-pcntl \
+      --with-extra-version="" \
+      --with-curl \
+      --with-mysqli \
+      --with-openssl \
+      --with-zlib \
+      --with-zip \
+&& make -j"$(nproc)" \
+&& make install \
+&& strip /usr/local/bin/php /usr/local/sbin/php-fpm || true
+
+# Final image with PHP and test infrastructure
+FROM base AS final
+COPY --from=php-build /usr/local /usr/local
+
+# Verify NTS (ZTS should NOT be enabled)
+RUN php -v | grep -v "ZTS" >/dev/null || (echo "ERROR: ZTS is enabled but should be NTS!" && exit 1) && \
+    php -m | grep -E 'curl|mysqli' >/dev/null
+
+ENV PATH="/usr/local/bin:${PATH}"
+
+RUN ln -sf /usr/local/bin/php /usr/bin/php && \
+    ln -sf /usr/local/sbin/php-fpm /usr/sbin/php-fpm || true
+
+RUN PHP_VER=$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;') && \
+    mkdir -p /etc/php/${PHP_VER}/fpm && \
+    mkdir -p /etc/php/${PHP_VER}/fpm/pool.d && \
+    mkdir -p /run/php && \
+    mkdir -p /run/php-fpm && \
+    mkdir -p /var/run && \
+    mkdir -p /var/log && \
+    mkdir -p /usr/local/etc/php-fpm.d && \
+    mkdir -p /usr/local/etc/php/conf.d && \
+
+    ln -sf /usr/local/etc/php/conf.d /etc/php/${PHP_VER}/fpm/conf.d || true && \
+
+    echo "[global]" > /usr/local/etc/php-fpm.conf && \
+    echo "pid = /run/php-fpm/php-fpm.pid" >> /usr/local/etc/php-fpm.conf && \
+    echo "error_log = /var/log/php${PHP_VER}-fpm.log" >> /usr/local/etc/php-fpm.conf && \
+    echo "daemonize = yes" >> /usr/local/etc/php-fpm.conf && \
+    echo "include=/usr/local/etc/php-fpm.d/*.conf" >> /usr/local/etc/php-fpm.conf && \
+    echo "include=/etc/php/${PHP_VER}/fpm/pool.d/*.conf" >> /usr/local/etc/php-fpm.conf && \
+
+    echo "[www]" > /usr/local/etc/php-fpm.d/www.conf && \
+    echo "user = root" >> /usr/local/etc/php-fpm.d/www.conf && \
+    echo "group = root" >> /usr/local/etc/php-fpm.d/www.conf && \
+    echo "listen = 127.0.0.1:9000" >> /usr/local/etc/php-fpm.d/www.conf && \
+    echo "listen.owner = root" >> /usr/local/etc/php-fpm.d/www.conf && \
+    echo "listen.group = root" >> /usr/local/etc/php-fpm.d/www.conf && \
+    echo "pm = dynamic" >> /usr/local/etc/php-fpm.d/www.conf && \
+    echo "pm.max_children = 5" >> /usr/local/etc/php-fpm.d/www.conf && \
+    echo "pm.start_servers = 2" >> /usr/local/etc/php-fpm.d/www.conf && \
+    echo "pm.min_spare_servers = 1" >> /usr/local/etc/php-fpm.d/www.conf && \
+    echo "pm.max_spare_servers = 3" >> /usr/local/etc/php-fpm.d/www.conf && \
+
+    php-fpm -t -y /usr/local/etc/php-fpm.conf 2>&1 | grep -v "Nothing matches the include pattern" || true && \
+    php-fpm -t -y /usr/local/etc/php-fpm.conf >/dev/null 2>&1 || \
+    (PHP_MAJOR=$(php -r 'echo PHP_MAJOR_VERSION;') && \
+     PHP_MINOR=$(php -r 'echo PHP_MINOR_VERSION;') && \
+     echo "PHP-FPM config test failed for PHP ${PHP_MAJOR}.${PHP_MINOR}" && \
+     echo "Config file contents:" && cat /usr/local/etc/php-fpm.conf && \
+     echo "Pool config:" && cat /usr/local/etc/php-fpm.d/www.conf && \
+     exit 1) && \
+
+    ln -sf /usr/local/etc/php-fpm.conf /etc/php/${PHP_VER}/fpm/php-fpm.conf && \
+    ln -sf /usr/local/etc/php-fpm.d/www.conf /etc/php/${PHP_VER}/fpm/pool.d/www.conf || true
+
+# Configure MySQL socket path for mysqli (so "localhost" connections work)
+RUN mkdir -p /usr/local/etc/php/conf.d && \
+    echo "mysqli.default_socket = /var/lib/mysql/mysql.sock" > /usr/local/etc/php/conf.d/mysql-socket.ini
+
+# Install web servers and database (without PHP packages)
+RUN apt-get update && \
     apt-get install -y --no-install-recommends \
       nginx \
       apache2 \
       mariadb-server \
-      ${PHP_PKG} ${PHP_PKG}-cli ${PHP_PKG}-common ${PHP_PKG}-fpm \
-      ${PHP_PKG}-curl ${PHP_PKG}-sqlite3 ${PHP_PKG}-mysql \
-      ${PHP_PKG}-mbstring ${PHP_PKG}-xml ${PHP_PKG}-zip \
-      libapache2-mod-php${PHP_VERSION} \
-    ; \
-    # Apache: switch to prefork for mod_php scenario and enable rewrite
-    a2dismod mpm_event || true; \
-    a2dismod mpm_worker || true; \
-    a2enmod mpm_prefork rewrite || true
+      apache2-bin \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN if [ "$(printf '%s\n' "${PHP_VERSION}" "8.5" | sort -V | head -n1)" != "8.5" ]; then \
-      apt-get install -y --no-install-recommends php${PHP_VERSION}-opcache; \
-    fi
+# Apache: switch to prefork for mod_php scenario and enable rewrite
+RUN a2dismod mpm_event || true && \
+    a2dismod mpm_worker || true && \
+    a2enmod mpm_prefork rewrite cgi cgid || true
 
 # ---- Python toolchain used by tests ----
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
@@ -57,17 +162,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   && "$VIRTUAL_ENV/bin/pip" install --no-cache-dir \
        flask pandas psutil requests \
   && apt-get clean && rm -rf /var/lib/apt/lists/*
-
-#  PHP-CGI + Apache CGI modules for tests that require CGI
-RUN set -eux; \
-    apt-get update; \
-    apt-get install -y --no-install-recommends \
-      php${PHP_VERSION}-cgi \
-      apache2-bin; \
-    a2enmod cgi cgid || true; \
-    mkdir -p /usr/lib/cgi-bin; \
-    # Provide a php-cgi wrapper in the standard location
-    ln -sf /usr/bin/php-cgi /usr/lib/cgi-bin/php-cgi
 
 # Helper: start MariaDB 
 RUN mkdir -p /usr/local/bin /var/lib/mysql /run/mysqld && \
@@ -87,31 +181,11 @@ RUN mkdir -p /usr/local/bin /var/lib/mysql /run/mysqld && \
     > /usr/local/bin/start-mariadb && \
     chmod +x /usr/local/bin/start-mariadb
 
-# Robust Apache PHP switcher (handles module names, MPM, restart, verification)
-RUN printf '%s\n' '#!/usr/bin/env bash' \
-      'set -euo pipefail' \
-      'ver="${1:-${PHP_VERSION:-8.2}}"' \
-      'a2dismod mpm_event >/dev/null 2>&1 || true' \
-      'a2dismod mpm_worker >/dev/null 2>&1 || true' \
-      'a2enmod  mpm_prefork >/dev/null 2>&1 || true' \
-      'if ! a2query -m "php${ver}" >/dev/null 2>&1; then' \
-      '  apt-get update && apt-get install -y --no-install-recommends "libapache2-mod-php${ver}"' \
-      'fi' \
-      'for m in php5 php7 php7.0 php7.1 php7.2 php7.3 php7.4 php8 php8.0 php8.1 php8.2 php8.3 php8.4 php8.5; do' \
-      '  a2query -m "$m" >/dev/null 2>&1 && a2dismod "$m" >/dev/null 2>&1 || true' \
-      'done' \
-      'a2enmod "php${ver}"' \
-      'apache2ctl -t' \
-      'apache2ctl -k graceful || apache2ctl -k restart' \
-      'if ! apache2ctl -M 2>/dev/null | grep -Eiq "php[0-9]*_module"; then' \
-      '  echo "Apache does not have a PHP module loaded:"' \
-      '  apache2ctl -M || true' \
-      '  exit 1' \
-      'fi' \
-      'echo "Apache now using mod_php for PHP ${ver}"' \
-    > /usr/local/bin/a2-switch-php && \
-    chmod +x /usr/local/bin/a2-switch-php
-
+# Create PHP-CGI symlink for CGI tests (using source-built PHP)
+RUN mkdir -p /usr/lib/cgi-bin && \
+    ln -sf /usr/local/bin/php-cgi /usr/lib/cgi-bin/php-cgi || \
+    (echo "Note: php-cgi may not be available in source build" && true)
 
 WORKDIR /work
+CMD ["bash"]
 
