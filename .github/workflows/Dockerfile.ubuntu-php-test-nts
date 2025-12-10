@@ -26,7 +26,11 @@ RUN apt-get update && \
       libxml2-dev libsqlite3-dev libcurl4-openssl-dev libssl-dev \
       libzip-dev libonig-dev libjpeg-dev libpng-dev libwebp-dev \
       libicu-dev libreadline-dev libxslt1-dev default-libmysqlclient-dev \
+      apache2 \
+      apache2-bin \
       apache2-dev \
+      nginx \
+      mariadb-server \
     && rm -rf /var/lib/apt/lists/*
 
 # Timezone to UTC
@@ -145,15 +149,6 @@ RUN PHP_VER=$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;') && \
 # Configure MySQL socket path for mysqli (so "localhost" connections work)
 RUN mkdir -p /usr/local/etc/php/conf.d && \
     echo "mysqli.default_socket = /var/lib/mysql/mysql.sock" > /usr/local/etc/php/conf.d/mysql-socket.ini
-
-# Install web servers and database (without PHP packages)
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-      nginx \
-      apache2 \
-      mariadb-server \
-      apache2-bin \
-    && rm -rf /var/lib/apt/lists/*
 
 # Apache: switch to prefork for mod_php scenario and enable rewrite
 RUN a2dismod mpm_event || true && \
