@@ -77,7 +77,7 @@ RUN ./configure \
       --with-openssl \
       --with-zlib \
       --with-zip \
-      --with-apxs2=/usr/bin/apxs2 \
+      --with-apxs2=/usr/bin/apxs \
 && make -j"$(nproc)" \
 && make install \
 && strip /usr/local/bin/php /usr/local/sbin/php-fpm || true
