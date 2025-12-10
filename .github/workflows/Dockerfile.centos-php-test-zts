@@ -71,8 +71,6 @@ RUN if [ -f ext/openssl/openssl.c ] && grep -q 'REGISTER_LONG_CONSTANT("OPENSSL_
 # Build PHP with ZTS enabled
 RUN ./configure \
       --prefix=/usr/local \
-      --with-config-file-path=/usr/local/lib \
-      --with-config-file-scan-dir=/usr/local/etc/php/conf.d \
       --enable-zts \
       --enable-maintainer-zts \
       --enable-fpm \
