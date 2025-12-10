@@ -92,6 +92,14 @@ RUN ./configure \
 FROM base AS final
 COPY --from=php-build /usr/local /usr/local
 
+RUN EXTENSION_DIR=$(php -i | grep "^extension_dir" | awk '{print $3}') && \
+    if [ -z "$EXTENSION_DIR" ]; then \
+        echo "Error: Could not determine extension_dir"; \
+        exit 1; \
+    fi && \
+    mkdir -p "$EXTENSION_DIR" \
+    echo "Created extension_dir: $EXTENSION_DIR"
+
 # Verify ZTS is enabled
 RUN php -v | grep -q "ZTS" || (echo "ERROR: ZTS not enabled!" && exit 1) && \
     php -m | grep -E 'curl|mysqli' >/dev/null
