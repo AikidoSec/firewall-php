@@ -10,7 +10,7 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: aikidosec/firewall-php-test-ubuntu-nts
-  VERSION: v1
+  VERSION: v2
 
 jobs:
   build-amd64:
