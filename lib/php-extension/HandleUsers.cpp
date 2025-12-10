@@ -24,7 +24,7 @@ ZEND_FUNCTION(set_user) {
         return;
     }
 
-    if (AIKIDO_GLOBAL(disable) == true || IsCurrentIpBypassed()) {
+    if (AIKIDO_GLOBAL(disable) == true) {
         RETURN_BOOL(false);
     }
 
