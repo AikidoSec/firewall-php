@@ -507,12 +507,6 @@ jobs:
           sleep 5
           mysql -u root -ppwd -e "SELECT 1" || (echo "MySQL not up" && exit 1)
 
-      # For Apache mod_php tests, ensure the right PHP module is active
-      - name: Ensure Apache uses PHP ${{ matrix.php_version }}
-        if: matrix.server == 'apache-mod-php'
-        run: |
-          a2-switch-php ${{ matrix.php_version }}
-
       - name: Install DEB
         run: |
           dpkg -i -E ${{ env.AIKIDO_DEB }}/${{ env.AIKIDO_DEB }}
