@@ -199,8 +199,8 @@ RUN ARCH=$(uname -m) && \
         && chmod +x /usr/local/bin/frankenphp \
         && mkdir -p /etc/frankenphp/caddy.d \
         && mkdir -p /etc/frankenphp/php.d \
-        && mkdir -p /usr/lib/frankenphp/modules; \
-    else \
+        && mkdir -p /usr/lib/frankenphp/modules;
+    else
         echo "Unsupported PHP version: $PHP_VER (supported: 8.2, 8.3, 8.4, 8.5)"; \
     fi
 
