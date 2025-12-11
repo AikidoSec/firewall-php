@@ -201,7 +201,7 @@ RUN ARCH=$(uname -m) && \
         && mkdir -p /etc/frankenphp/php.d \
         && mkdir -p /usr/lib/frankenphp/modules; \
     else \
-        echo "Unsupported PHP version: $PHP_VER (supported: 8.2, 8.3, 8.4, 8.5)" && exit 1; \
+        echo "Unsupported PHP version: $PHP_VER (supported: 8.2, 8.3, 8.4, 8.5)" \
     fi
 
 # Create FrankenPHP folder structure (for binary installations, RPM creates these automatically)
