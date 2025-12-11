@@ -70,6 +70,7 @@ RUN ./configure \
       --enable-fpm \
       --enable-mbstring \
       --enable-pcntl \
+      --enable-cgi \
       --with-extra-version="" \
       --with-curl \
       --with-mysqli \

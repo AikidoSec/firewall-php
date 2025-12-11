@@ -70,6 +70,14 @@ RUN if [ -f ext/openssl/openssl.c ] && grep -q 'REGISTER_LONG_CONSTANT("OPENSSL_
 
 RUN mkdir -p /usr/local/etc/php/conf.d
 
+# Configure Apache to use prefork MPM (non-threaded) before building PHP
+# This prevents PHP's configure script from auto-enabling ZTS when --with-apxs2 is used
+RUN mkdir -p /etc/httpd/conf.modules.d && \
+    sed -i 's/^LoadModule mpm_event_module/#LoadModule mpm_event_module/g' /etc/httpd/conf.modules.d/*.conf 2>/dev/null || true && \
+    sed -i 's/^LoadModule mpm_worker_module/#LoadModule mpm_worker_module/g' /etc/httpd/conf.modules.d/*.conf 2>/dev/null || true && \
+    sed -i 's/^LoadModule mpm_prefork_module/#LoadModule mpm_prefork_module/g' /etc/httpd/conf.modules.d/*.conf 2>/dev/null || true && \
+    echo "LoadModule mpm_prefork_module modules/mod_mpm_prefork.so" > /etc/httpd/conf.modules.d/00-mpm-prefork.conf
+
 # Build PHP with NTS (no ZTS flags)
 RUN ./configure \
       --prefix=/usr/local \
@@ -78,6 +86,7 @@ RUN ./configure \
       --enable-fpm \
       --enable-mbstring \
       --enable-pcntl \
+      --enable-cgi \
       --with-extra-version="" \
       --with-curl \
       --with-mysqli \
@@ -85,6 +94,7 @@ RUN ./configure \
       --with-zlib \
       --with-zip \
       --with-apxs2=/usr/bin/apxs \
+      --disable-zts \
 && make -j"$(nproc)" \
 && make install \
 && strip /usr/local/bin/php /usr/local/sbin/php-fpm || true
@@ -159,20 +169,35 @@ RUN     mkdir -p /etc/php-fpm.d && \
 RUN echo "mysqli.default_socket = /var/lib/mysql/mysql.sock" > /usr/local/etc/php/conf.d/mysql-socket.ini
 
 # Configure Apache to load libphp.so module (if it exists)
-RUN if [ -f /usr/lib64/httpd/modules/libphp.so ]; then \
-    echo "# Load PHP module for Apache" > /etc/httpd/conf.modules.d/10-php.conf && \
-    echo "LoadModule php_module modules/libphp.so" >> /etc/httpd/conf.modules.d/10-php.conf && \
-    echo "" >> /etc/httpd/conf.modules.d/10-php.conf && \
-    echo "# Configure PHP file handling" >> /etc/httpd/conf.modules.d/10-php.conf && \
-    echo "<FilesMatch \.php$>" >> /etc/httpd/conf.modules.d/10-php.conf && \
-    echo "    SetHandler application/x-httpd-php" >> /etc/httpd/conf.modules.d/10-php.conf && \
-    echo "</FilesMatch>" >> /etc/httpd/conf.modules.d/10-php.conf && \
-    echo "" >> /etc/httpd/conf.modules.d/10-php.conf && \
-    echo "# Directory index" >> /etc/httpd/conf.modules.d/10-php.conf && \
-    echo "DirectoryIndex index.php index.html" >> /etc/httpd/conf.modules.d/10-php.conf && \
-    echo "Created Apache PHP module configuration at /etc/httpd/conf.modules.d/10-php.conf"; \
+# PHP 7 uses libphp7.so, other versions use libphp.so
+RUN PHP_MAJOR=$(php -r 'echo PHP_MAJOR_VERSION;') && \
+    if [ "$PHP_MAJOR" = "7" ]; then \
+        LIBPHP_NAME="libphp7.so"; \
     else \
-    echo "Warning: libphp.so not found, skipping Apache PHP module configuration"; \
+        LIBPHP_NAME="libphp.so"; \
+    fi && \
+    if [ -f "/usr/lib64/httpd/modules/${LIBPHP_NAME}" ]; then \
+        echo "# Load PHP module for Apache" > /etc/httpd/conf.modules.d/10-php.conf && \
+        if [ "$PHP_MAJOR" = "7" ]; then \
+            echo "LoadModule php7_module /usr/lib64/httpd/modules/${LIBPHP_NAME}" >> /etc/httpd/conf.modules.d/10-php.conf && \
+            echo "" >> /etc/httpd/conf.modules.d/10-php.conf && \
+            echo "# Configure PHP file handling" >> /etc/httpd/conf.modules.d/10-php.conf && \
+            echo "<IfModule php7_module>" >> /etc/httpd/conf.modules.d/10-php.conf; \
+        else \
+            echo "LoadModule php_module /usr/lib64/httpd/modules/${LIBPHP_NAME}" >> /etc/httpd/conf.modules.d/10-php.conf && \
+            echo "" >> /etc/httpd/conf.modules.d/10-php.conf && \
+            echo "# Configure PHP file handling" >> /etc/httpd/conf.modules.d/10-php.conf && \
+            echo "<IfModule php_module>" >> /etc/httpd/conf.modules.d/10-php.conf; \
+        fi && \
+        echo "    PHPIniDir /usr/local/etc/php" >> /etc/httpd/conf.modules.d/10-php.conf && \
+        echo "    <FilesMatch \.php$>" >> /etc/httpd/conf.modules.d/10-php.conf && \
+        echo "        SetHandler application/x-httpd-php" >> /etc/httpd/conf.modules.d/10-php.conf && \
+        echo "    </FilesMatch>" >> /etc/httpd/conf.modules.d/10-php.conf && \
+        echo "    DirectoryIndex index.php index.html" >> /etc/httpd/conf.modules.d/10-php.conf && \
+        echo "</IfModule>" >> /etc/httpd/conf.modules.d/10-php.conf && \
+        echo "Created Apache PHP module configuration at /etc/httpd/conf.modules.d/10-php.conf with ${LIBPHP_NAME}"; \
+    else \
+        echo "Warning: ${LIBPHP_NAME} not found, skipping Apache PHP module configuration"; \
     fi
 
 # Python deps used by test harness
