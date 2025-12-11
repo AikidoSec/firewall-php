@@ -3,7 +3,6 @@ package ssrf
 import (
 	"main/globals"
 	"main/helpers"
-	"strings"
 )
 
 // IsBlockOutboundConnection checks if an outbound request to a hostname should be blocked
@@ -14,14 +13,14 @@ func IsBlockOutboundConnection(hostname string) bool {
 		return false
 	}
 
-	trimmedHostname := helpers.TrimInvisible(hostname)
-	// Normalize hostname to lowercase for case-insensitive comparison
-	normalizedHostname := strings.ToLower(trimmedHostname)
+	// Normalize the hostname (handles Punycode/IDN, invisible chars, case)
+	normalizedHostname := helpers.NormalizeHostname(hostname)
 
 	server.CloudConfigMutex.Lock()
 	defer server.CloudConfigMutex.Unlock()
 
 	// Check if hostname is in the outbound domains list
+	// Config keys are already normalized at load time (see grpc/config.go)
 	mode, found := server.CloudConfig.OutboundDomains[normalizedHostname]
 
 	// If hostname has mode "block", always block it

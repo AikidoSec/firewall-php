@@ -2,6 +2,7 @@ package grpc
 
 import (
 	. "main/aikido_types"
+	"main/helpers"
 	"main/ipc/protos"
 	"main/log"
 	"main/utils"
@@ -134,7 +135,8 @@ func setCloudConfig(server *ServerData, cloudConfigFromAgent *protos.CloudConfig
 
 	server.CloudConfig.OutboundDomains = map[string]string{}
 	for _, domain := range cloudConfigFromAgent.OutboundDomains {
-		server.CloudConfig.OutboundDomains[domain.Hostname] = domain.Mode
+		// Normalize hostname to prevent Punycode bypass attacks
+		server.CloudConfig.OutboundDomains[helpers.NormalizeHostname(domain.Hostname)] = domain.Mode
 	}
 
 	// Force garbage collection to ensure that the IP blocklists temporary memory is released ASAP

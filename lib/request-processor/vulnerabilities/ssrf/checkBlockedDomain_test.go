@@ -4,16 +4,23 @@ import (
 	"main/aikido_types"
 	"main/context"
 	"main/globals"
+	"main/helpers"
 	"testing"
 
 	"go4.org/netipx"
 )
 
 func setupTestServerForBlockedDomains(blockNewOutgoingRequests bool, outboundDomains map[string]string, bypassedIps *netipx.IPSet, requestIp string) func() {
+	// Normalize domain keys like config.go does at load time
+	normalizedDomains := map[string]string{}
+	for domain, mode := range outboundDomains {
+		normalizedDomains[helpers.NormalizeHostname(domain)] = mode
+	}
+
 	server := &aikido_types.ServerData{
 		CloudConfig: aikido_types.CloudConfigData{
 			BlockNewOutgoingRequests: blockNewOutgoingRequests,
-			OutboundDomains:          outboundDomains,
+			OutboundDomains:          normalizedDomains,
 			BypassedIps:              bypassedIps,
 		},
 	}
@@ -175,5 +182,138 @@ func TestIsBlockOutboundConnection_EmptyDomainsListWithBlockNewDisabled(t *testi
 
 	if isBlocked {
 		t.Error("Expected domain to be allowed when domains list is empty and blockNewOutgoingRequests is false")
+	}
+}
+
+// Punycode bypass tests - ensure attackers cannot bypass blocked domain checks
+// by using Punycode encoding (xn--...) instead of Unicode domain names
+
+func TestIsBlockOutboundConnection_PunycodeBypass_BlockedUnicodeRequestedAsPunycode(t *testing.T) {
+	// Test that a blocked Unicode domain is also blocked when requested using Punycode
+	// The domain list contains "münchen.de" in Unicode, but attacker tries "xn--mnchen-3ya.de"
+	outboundDomains := map[string]string{
+		"münchen.de": "block",
+	}
+	cleanup := setupTestServerForBlockedDomains(false, outboundDomains, nil, "")
+	defer cleanup()
+
+	// Attacker tries to bypass by using Punycode encoding
+	isBlocked := IsBlockOutboundConnection("xn--mnchen-3ya.de")
+
+	if !isBlocked {
+		t.Error("Expected Punycode hostname to be blocked when Unicode equivalent is in blocked list")
+	}
+}
+
+func TestIsBlockOutboundConnection_PunycodeBypass_BlockedPunycodeRequestedAsUnicode(t *testing.T) {
+	// Test that a blocked Punycode domain is also blocked when requested using Unicode
+	// The domain list contains "xn--mnchen-3ya.de" in Punycode, but attacker tries "münchen.de"
+	outboundDomains := map[string]string{
+		"xn--mnchen-3ya.de": "block",
+	}
+	cleanup := setupTestServerForBlockedDomains(false, outboundDomains, nil, "")
+	defer cleanup()
+
+	// Attacker tries to bypass by using Unicode
+	isBlocked := IsBlockOutboundConnection("münchen.de")
+
+	if !isBlocked {
+		t.Error("Expected Unicode hostname to be blocked when Punycode equivalent is in blocked list")
+	}
+}
+
+func TestIsBlockOutboundConnection_PunycodeBypass_AllowedUnicodeRequestedAsPunycode(t *testing.T) {
+	// Test that an allowed Unicode domain is also allowed when requested using Punycode
+	outboundDomains := map[string]string{
+		"münchen.de": "allow",
+	}
+	cleanup := setupTestServerForBlockedDomains(true, outboundDomains, nil, "")
+	defer cleanup()
+
+	// Request using Punycode encoding
+	isBlocked := IsBlockOutboundConnection("xn--mnchen-3ya.de")
+
+	if isBlocked {
+		t.Error("Expected Punycode hostname to be allowed when Unicode equivalent is in allow list")
+	}
+}
+
+func TestIsBlockOutboundConnection_PunycodeBypass_AllowedPunycodeRequestedAsUnicode(t *testing.T) {
+	// Test that an allowed Punycode domain is also allowed when requested using Unicode
+	outboundDomains := map[string]string{
+		"xn--mnchen-3ya.de": "allow",
+	}
+	cleanup := setupTestServerForBlockedDomains(true, outboundDomains, nil, "")
+	defer cleanup()
+
+	// Request using Unicode
+	isBlocked := IsBlockOutboundConnection("münchen.de")
+
+	if isBlocked {
+		t.Error("Expected Unicode hostname to be allowed when Punycode equivalent is in allow list")
+	}
+}
+
+func TestIsBlockOutboundConnection_PunycodeBypass_MixedSubdomains(t *testing.T) {
+	// Test with subdomains containing IDN
+	outboundDomains := map[string]string{
+		"böse.evil.com": "block",
+	}
+	cleanup := setupTestServerForBlockedDomains(false, outboundDomains, nil, "")
+	defer cleanup()
+
+	// Attacker tries with Punycode subdomain (xn--bse-sna = böse)
+	isBlocked := IsBlockOutboundConnection("xn--bse-sna.evil.com")
+
+	if !isBlocked {
+		t.Error("Expected Punycode subdomain to be blocked when Unicode equivalent is in blocked list")
+	}
+}
+
+func TestIsBlockOutboundConnection_PunycodeBypass_RussianDomain(t *testing.T) {
+	// Test with Cyrillic (Russian) domain - "москва.ru" (Moscow)
+	outboundDomains := map[string]string{
+		"москва.ru": "block",
+	}
+	cleanup := setupTestServerForBlockedDomains(false, outboundDomains, nil, "")
+	defer cleanup()
+
+	// Attacker tries with Punycode
+	isBlocked := IsBlockOutboundConnection("xn--80adxhks.ru")
+
+	if !isBlocked {
+		t.Error("Expected Punycode Cyrillic hostname to be blocked when Unicode equivalent is in blocked list")
+	}
+}
+
+func TestIsBlockOutboundConnection_PunycodeBypass_ChineseDomain(t *testing.T) {
+	// Test with Chinese domain - "中文.com"
+	outboundDomains := map[string]string{
+		"中文.com": "block",
+	}
+	cleanup := setupTestServerForBlockedDomains(false, outboundDomains, nil, "")
+	defer cleanup()
+
+	// Attacker tries with Punycode
+	isBlocked := IsBlockOutboundConnection("xn--fiq228c.com")
+
+	if !isBlocked {
+		t.Error("Expected Punycode Chinese hostname to be blocked when Unicode equivalent is in blocked list")
+	}
+}
+
+func TestIsBlockOutboundConnection_PunycodeBypass_WithPortStripped(t *testing.T) {
+	// Test that hostnames work correctly (port should already be stripped by caller)
+	outboundDomains := map[string]string{
+		"münchen.de": "block",
+	}
+	cleanup := setupTestServerForBlockedDomains(false, outboundDomains, nil, "")
+	defer cleanup()
+
+	// Just the hostname without port
+	isBlocked := IsBlockOutboundConnection("xn--mnchen-3ya.de")
+
+	if !isBlocked {
+		t.Error("Expected Punycode hostname to be blocked")
 	}
 }

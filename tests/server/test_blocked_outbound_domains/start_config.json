@@ -33,6 +33,18 @@
         {
             "hostname": "allowed-site.com",
             "mode": "allow"
+        },
+        {
+            "hostname": "böse.example.com",
+            "mode": "block"
+        },
+        {
+            "hostname": "xn--mnchen-3ya.example.com",
+            "mode": "block"
+        },
+        {
+            "hostname": "münchen-allowed.example.com",
+            "mode": "allow"
         }
     ]
 }

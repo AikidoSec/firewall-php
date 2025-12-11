@@ -15,6 +15,9 @@ Tests the outbound domain blocking feature:
 8. Tests that explicitly blocked domains are still blocked when blockNewOutgoingRequests is false
 9. Tests that detection mode (block: false) doesn't block
 10. Tests case-insensitive hostname matching
+11. Tests Punycode/IDN bypass prevention (Unicode domain blocked, Punycode request)
+12. Tests reverse Punycode bypass prevention (Punycode domain blocked, Unicode request)
+13. Tests URL percent-encoding bypass prevention
 '''
 
 def test_explicitly_blocked_domain():
@@ -61,7 +64,6 @@ def test_new_domain_blocked_when_flag_enabled():
 
 def test_new_domain_allowed_when_flag_disabled():
     """Test that new domains are allowed when blockNewOutgoingRequests is false"""
-    apply_config("config_disable_block_new.json")
     
     response = php_server_post("/testDetection", {"url": "http://another-unknown.example.com"})
     assert_response_code_is(response, 200)
@@ -74,14 +76,12 @@ def test_blocked_domain_still_blocked_when_flag_disabled():
    
 def test_detection_mode():
     """Test that detection mode (block: false) detects but doesn't block"""
-    apply_config("config_no_blocking.json")
     
     response = php_server_post("/testDetection", {"url": "http://evil.example.com"})
     assert_response_code_is(response, 200)
 
 def test_case_insensitive_matching():
     """Test that hostname matching is case-insensitive"""
-    apply_config("start_config.json")
     
     # Test with uppercase hostname
     response = php_server_post("/testDetection", {"url": "http://EVIL.EXAMPLE.COM"})
@@ -92,6 +92,48 @@ def test_case_insensitive_matching():
     response = php_server_post("/testDetection", {"url": "http://Evil.Example.Com"})
     assert_response_code_is(response, 500)
     assert_response_body_contains(response, "Aikido firewall has blocked an outbound connection")
+
+def test_punycode_bypass_unicode_blocked_punycode_request():
+    """Test that Punycode requests are blocked when Unicode domain is in blocklist.
+    Config has 'böse.example.com' blocked, attacker tries 'xn--bse-sna.example.com' (Punycode)"""
+    
+    # böse.example.com is blocked in config as Unicode
+    # xn--bse-sna is the Punycode encoding of "böse"
+    response = php_server_post("/testDetection", {"url": "http://xn--bse-sna.example.com"})
+    assert_response_code_is(response, 500)
+    assert_response_body_contains(response, "Aikido firewall has blocked an outbound connection")
+
+def test_punycode_bypass_punycode_blocked_unicode_request():
+    """Test that Unicode requests are blocked when Punycode domain is in blocklist.
+    Config has 'xn--mnchen-3ya.example.com' blocked, attacker tries 'münchen.example.com' (Unicode)"""
+    
+    # xn--mnchen-3ya.example.com is blocked in config as Punycode
+    # münchen is the Unicode form
+    response = php_server_post("/testDetection", {"url": "http://münchen.example.com"})
+    assert_response_code_is(response, 500)
+    assert_response_body_contains(response, "Aikido firewall has blocked an outbound connection")
+
+def test_punycode_allowed_domain():
+    """Test that allowed IDN domains work with both Unicode and Punycode forms"""
+    
+    # münchen-allowed.example.com is allowed in config as Unicode
+    # Should work with Unicode form
+    response = php_server_post("/testDetection", {"url": "http://münchen-allowed.example.com"})
+    assert_response_code_is(response, 200)
+    
+    # Should also work with Punycode form (xn--mnchen-allowed-gsb.example.com)
+    response = php_server_post("/testDetection", {"url": "http://xn--mnchen-allowed-gsb.example.com"})
+    assert_response_code_is(response, 200)
+
+def test_url_percent_encoding_bypass():
+    """Test that URL percent-encoded hostnames are properly normalized.
+    Attackers might try to use %C3%B6 instead of ö to bypass blocking."""
+    
+    # böse.example.com is blocked - try with percent-encoded ö (%C3%B6)
+    # b%C3%B6se.example.com should be normalized to böse.example.com
+    response = php_server_post("/testDetection", {"url": "http://b%C3%B6se.example.com"})
+    assert_response_code_is(response, 500)
+    assert_response_body_contains(response, "Aikido firewall has blocked an outbound connection")
   
     
 def run_test():
@@ -99,10 +141,17 @@ def run_test():
     test_force_protection_off()
     test_allowed_domain_with_block_new()
     test_new_domain_blocked_when_flag_enabled()
+    test_case_insensitive_matching()
+    test_punycode_bypass_unicode_blocked_punycode_request()
+    test_punycode_bypass_punycode_blocked_unicode_request()
+    test_punycode_allowed_domain()
+    test_url_percent_encoding_bypass()
+    apply_config("config_disable_block_new.json")
     test_new_domain_allowed_when_flag_disabled()
     test_blocked_domain_still_blocked_when_flag_disabled()
+    apply_config("config_no_blocking.json")
     test_detection_mode()
-    test_case_insensitive_matching()
+
     
 if __name__ == "__main__":
     load_test_args()
