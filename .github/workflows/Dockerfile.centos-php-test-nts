@@ -121,7 +121,8 @@ RUN php -v | grep -v "ZTS" >/dev/null || (echo "ERROR: ZTS is enabled but should
 ENV PATH="/usr/local/bin:${PATH}"
 
 RUN ln -sf /usr/local/bin/php /usr/bin/php && \
-    ln -sf /usr/local/sbin/php-fpm /usr/sbin/php-fpm || true
+    ln -sf /usr/local/sbin/php-fpm /usr/sbin/php-fpm || true && \
+    ln -sf /usr/local/bin/php-cgi /usr/bin/php-cgi
 
 RUN     mkdir -p /etc/php-fpm.d && \
     mkdir -p /run/php-fpm && \

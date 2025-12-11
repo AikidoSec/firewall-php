@@ -111,7 +111,8 @@ RUN php -v | grep -q "ZTS" || (echo "ERROR: ZTS not enabled!" && exit 1) && \
 ENV PATH="/usr/local/bin:${PATH}"
 
 RUN ln -sf /usr/local/bin/php /usr/bin/php && \
-    ln -sf /usr/local/sbin/php-fpm /usr/sbin/php-fpm || true
+    ln -sf /usr/local/sbin/php-fpm /usr/sbin/php-fpm || true && \
+    ln -sf /usr/local/bin/php-cgi /usr/bin/php-cgi
 
 RUN     mkdir -p /etc/php-fpm.d && \
     mkdir -p /run/php-fpm && \
@@ -158,31 +159,41 @@ RUN     mkdir -p /etc/php-fpm.d && \
 # Note: /usr/local/etc/php/conf.d was created before PHP build
 RUN echo "mysqli.default_socket = /var/lib/mysql/mysql.sock" > /usr/local/etc/php/conf.d/mysql-socket.ini
 
-# Install FrankenPHP binary based on PHP version
-# PHP 8.5 = v1.10.1, PHP 8.4 = v1.9.1, PHP 8.3 = v1.3.2, PHP 8.2 = v1.0.0-rc.3
-RUN if [ "${PHP_VERSION}" = "8.5" ]; then \
+# Install FrankenPHP binary based on PHP version and architecture
+# PHP 8.5 = v1.10.1, PHP 8.4 = v1.9.1, PHP 8.3 = v1.3.2, PHP 8.2 = v1.1.0
+RUN ARCH=$(uname -m) && \
+    if [ "$ARCH" = "x86_64" ] || [ "$ARCH" = "amd64" ]; then \
+        ARCH_SUFFIX="x86_64"; \
+    elif [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then \
+        ARCH_SUFFIX="aarch64"; \
+    else \
+        echo "Unsupported architecture: $ARCH" && exit 1; \
+    fi && \
+    if [ "${PHP_VERSION}" = "8.5" ]; then \
         FRANKENPHP_VERSION="1.10.1" \
-        && FRANKENPHP_RPM_URL="https://github.com/php/frankenphp/releases/download/v${FRANKENPHP_VERSION}/frankenphp-0.0.0-1.x86_64.rpm" \
-        && curl -fsSL -L -o /tmp/frankenphp.rpm "$FRANKENPHP_RPM_URL" \
-        && yum install -y /tmp/frankenphp.rpm \
-        && rm -f /tmp/frankenphp.rpm; \
+        && FRANKENPHP_BINARY_URL="https://github.com/php/frankenphp/releases/download/v${FRANKENPHP_VERSION}/frankenphp-linux-${ARCH_SUFFIX}" \
+        && curl -fsSL -L -o /usr/local/bin/frankenphp "$FRANKENPHP_BINARY_URL" \
+        && chmod +x /usr/local/bin/frankenphp \
+        && mkdir -p /etc/frankenphp/caddy.d \
+        && mkdir -p /etc/frankenphp/php.d \
+        && mkdir -p /usr/lib/frankenphp/modules; \
     elif [ "${PHP_VERSION}" = "8.4" ]; then \
         FRANKENPHP_VERSION="1.9.1" \
-        && FRANKENPHP_RPM_URL="https://github.com/php/frankenphp/releases/download/v${FRANKENPHP_VERSION}/frankenphp-0.0.0-1.x86_64.rpm" \
+        && FRANKENPHP_RPM_URL="https://github.com/php/frankenphp/releases/download/v${FRANKENPHP_VERSION}/frankenphp-0.0.0-1.${ARCH_SUFFIX}.rpm" \
         && curl -fsSL -L -o /tmp/frankenphp.rpm "$FRANKENPHP_RPM_URL" \
         && yum install -y /tmp/frankenphp.rpm \
         && rm -f /tmp/frankenphp.rpm; \
     elif [ "${PHP_VERSION}" = "8.3" ]; then \
         FRANKENPHP_VERSION="1.3.2" \
-        && FRANKENPHP_BINARY_URL="https://github.com/php/frankenphp/releases/download/v${FRANKENPHP_VERSION}/frankenphp-linux-x86_64" \
+        && FRANKENPHP_BINARY_URL="https://github.com/php/frankenphp/releases/download/v${FRANKENPHP_VERSION}/frankenphp-linux-${ARCH_SUFFIX}" \
         && curl -fsSL -L -o /usr/local/bin/frankenphp "$FRANKENPHP_BINARY_URL" \
         && chmod +x /usr/local/bin/frankenphp \
         && mkdir -p /etc/frankenphp/caddy.d \
         && mkdir -p /etc/frankenphp/php.d \
         && mkdir -p /usr/lib/frankenphp/modules; \
     elif [ "${PHP_VERSION}" = "8.2" ]; then \
-        FRANKENPHP_VERSION="1.0.0-rc.3" \
-        && FRANKENPHP_BINARY_URL="https://github.com/php/frankenphp/releases/download/v${FRANKENPHP_VERSION}/frankenphp-linux-x86_64" \
+        FRANKENPHP_VERSION="1.1.0" \
+        && FRANKENPHP_BINARY_URL="https://github.com/php/frankenphp/releases/download/v${FRANKENPHP_VERSION}/frankenphp-linux-${ARCH_SUFFIX}" \
         && curl -fsSL -L -o /usr/local/bin/frankenphp "$FRANKENPHP_BINARY_URL" \
         && chmod +x /usr/local/bin/frankenphp \
         && mkdir -p /etc/frankenphp/caddy.d \
