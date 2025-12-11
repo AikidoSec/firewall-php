@@ -78,6 +78,7 @@ RUN ./configure \
       --with-zlib \
       --with-zip \
       --with-apxs2=/usr/bin/apxs \
+&& mkdir -p /usr/lib/apache2/modules \
 && make -j"$(nproc)" \
 && make install \
 && strip /usr/local/bin/php /usr/local/sbin/php-fpm || true
