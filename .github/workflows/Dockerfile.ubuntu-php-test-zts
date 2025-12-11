@@ -60,6 +60,11 @@ RUN if [ -f ext/openssl/openssl.c ] && grep -q 'REGISTER_LONG_CONSTANT("OPENSSL_
 
 RUN mkdir -p /usr/local/etc/php/conf.d
 
+# Apache: switch to prefork for mod_php scenario and enable rewrite
+RUN a2dismod mpm_event || true && \
+    a2dismod mpm_worker || true && \
+    a2enmod mpm_prefork rewrite cgi cgid || true
+
 # Build PHP with ZTS enabled
 RUN ./configure \
       --prefix=/usr/local \
@@ -214,10 +219,15 @@ RUN apt-get update && \
       apache2-bin \
     && rm -rf /var/lib/apt/lists/*
 
+
+RUN service apache2 stop || true
+
 # Apache: switch to prefork for mod_php scenario and enable rewrite
 RUN a2dismod mpm_event || true && \
     a2dismod mpm_worker || true && \
     a2enmod mpm_prefork rewrite cgi cgid || true
+
+RUN service apache2 start || true
 
 # ---- Python toolchain used by tests ----
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \

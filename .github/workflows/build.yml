@@ -711,7 +711,7 @@ jobs:
           uname -a
           cat /etc/centos-release || cat /etc/redhat-release || echo "CentOS/Stream detected"
           php -v
-          which frankenphp && frankenphp -v || (echo "ERROR: FrankenPHP not found!" && exit 1)
+          command -v frankenphp && frankenphp -v || (echo "ERROR: FrankenPHP not found!" && exit 1)
 
       - name: Verify ZTS is enabled
         run: |
@@ -799,7 +799,7 @@ jobs:
 
       - name: Verify FrankenPHP is installed
         run: |
-          which frankenphp && frankenphp -v || (echo "ERROR: FrankenPHP not found!" && exit 1)
+          command -v frankenphp && frankenphp -v || (echo "ERROR: FrankenPHP not found!" && exit 1)
 
       - name: Start MariaDB (background)
         run: |

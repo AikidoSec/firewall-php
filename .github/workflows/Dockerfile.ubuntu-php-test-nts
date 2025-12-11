@@ -101,9 +101,14 @@ COPY --from=php-build /usr/lib/apache2/modules/ /usr/lib/apache2/modules/
 
 # Configure Apache to use prefork MPM (non-threaded) for NTS PHP
 # This must be done in the final stage since the base image has default MPM settings
+RUN service apache2 stop || true
+
+# Apache: switch to prefork for mod_php scenario and enable rewrite
 RUN a2dismod mpm_event || true && \
     a2dismod mpm_worker || true && \
-    a2enmod mpm_prefork || true
+    a2enmod mpm_prefork rewrite cgi cgid || true
+
+RUN service apache2 start || true
 
 RUN EXTENSION_DIR=$(php -i | grep "^extension_dir" | awk '{print $3}') && \
     if [ -z "$EXTENSION_DIR" ]; then \
