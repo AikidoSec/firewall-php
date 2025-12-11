@@ -68,6 +68,8 @@ RUN if [ -f ext/openssl/openssl.c ] && grep -q 'REGISTER_LONG_CONSTANT("OPENSSL_
     mv ext/openssl/openssl.c.new ext/openssl/openssl.c; \
     fi || true
 
+RUN mkdir -p /usr/local/etc/php/conf.d
+
 # Build PHP with NTS (no ZTS flags)
 RUN ./configure \
       --prefix=/usr/local \
@@ -152,9 +154,8 @@ RUN     mkdir -p /etc/php-fpm.d && \
     ln -sf /usr/local/etc/php-fpm.conf /etc/php-fpm.conf && \
     ln -sf /usr/local/etc/php-fpm.d/www.conf /etc/php-fpm.d/www.conf || true
 
-RUN mkdir -p /usr/local/etc/php/conf.d
-
 # Configure MySQL socket path for mysqli (so "localhost" connections work)
+# Note: /usr/local/etc/php/conf.d was created before PHP build
 RUN echo "mysqli.default_socket = /var/lib/mysql/mysql.sock" > /usr/local/etc/php/conf.d/mysql-socket.ini
 
 # Python deps used by test harness
