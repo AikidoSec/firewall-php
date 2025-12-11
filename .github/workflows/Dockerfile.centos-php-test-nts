@@ -158,6 +158,23 @@ RUN     mkdir -p /etc/php-fpm.d && \
 # Note: /usr/local/etc/php/conf.d was created before PHP build
 RUN echo "mysqli.default_socket = /var/lib/mysql/mysql.sock" > /usr/local/etc/php/conf.d/mysql-socket.ini
 
+# Configure Apache to load libphp.so module (if it exists)
+RUN if [ -f /usr/lib64/httpd/modules/libphp.so ]; then \
+    echo "# Load PHP module for Apache" > /etc/httpd/conf.modules.d/10-php.conf && \
+    echo "LoadModule php_module modules/libphp.so" >> /etc/httpd/conf.modules.d/10-php.conf && \
+    echo "" >> /etc/httpd/conf.modules.d/10-php.conf && \
+    echo "# Configure PHP file handling" >> /etc/httpd/conf.modules.d/10-php.conf && \
+    echo "<FilesMatch \.php$>" >> /etc/httpd/conf.modules.d/10-php.conf && \
+    echo "    SetHandler application/x-httpd-php" >> /etc/httpd/conf.modules.d/10-php.conf && \
+    echo "</FilesMatch>" >> /etc/httpd/conf.modules.d/10-php.conf && \
+    echo "" >> /etc/httpd/conf.modules.d/10-php.conf && \
+    echo "# Directory index" >> /etc/httpd/conf.modules.d/10-php.conf && \
+    echo "DirectoryIndex index.php index.html" >> /etc/httpd/conf.modules.d/10-php.conf && \
+    echo "Created Apache PHP module configuration at /etc/httpd/conf.modules.d/10-php.conf"; \
+    else \
+    echo "Warning: libphp.so not found, skipping Apache PHP module configuration"; \
+    fi
+
 # Python deps used by test harness
 RUN python3 -m pip install --no-cache-dir --upgrade pip && \
     python3 -m pip install --no-cache-dir flask requests psutil
