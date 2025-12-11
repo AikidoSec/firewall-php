@@ -94,8 +94,6 @@ RUN ./configure \
 FROM base AS final
 COPY --from=php-build /usr/local /usr/local
 
-RUN mkdir -p /usr/lib64/httpd/modules
-COPY --from=php-build /usr/lib64/httpd/modules/ /usr/lib64/httpd/modules/
 
 RUN EXTENSION_DIR=$(php -i | grep "^extension_dir" | awk '{print $3}') && \
     if [ -z "$EXTENSION_DIR" ]; then \
