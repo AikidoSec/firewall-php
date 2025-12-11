@@ -172,7 +172,7 @@ RUN ARCH=$(uname -m) && \
     fi && \
     if [ "$PHP_VER" = "8.5" ]; then \
         FRANKENPHP_VERSION="1.10.1" \
-        && FRANKENPHP_BINARY_URL="https://github.com/php/frankenphp/releases/download/v${FRANKENPHP_VERSION}/frankenphp-linux-${ARCH_SUFFIX}" \
+        && FRANKENPHP_BINARY_URL="https://github.com/php/frankenphp/releases/download/v${FRANKENPHP_VERSION}/frankenphp-linux-${ARCH_SUFFIX}-gnu" \
         && curl -fsSL -L -o /usr/local/bin/frankenphp "$FRANKENPHP_BINARY_URL" \
         && chmod +x /usr/local/bin/frankenphp \
         && mkdir -p /etc/frankenphp/caddy.d \
@@ -186,14 +186,6 @@ RUN ARCH=$(uname -m) && \
         && rm -f /tmp/frankenphp.rpm; \
     elif [ "$PHP_VER" = "8.3" ]; then \
         FRANKENPHP_VERSION="1.3.2" \
-        && FRANKENPHP_BINARY_URL="https://github.com/php/frankenphp/releases/download/v${FRANKENPHP_VERSION}/frankenphp-linux-${ARCH_SUFFIX}" \
-        && curl -fsSL -L -o /usr/local/bin/frankenphp "$FRANKENPHP_BINARY_URL" \
-        && chmod +x /usr/local/bin/frankenphp \
-        && mkdir -p /etc/frankenphp/caddy.d \
-        && mkdir -p /etc/frankenphp/php.d \
-        && mkdir -p /usr/lib/frankenphp/modules; \
-    elif [ "$PHP_VER" = "8.2" ]; then \
-        FRANKENPHP_VERSION="1.1.0" \
         && FRANKENPHP_BINARY_URL="https://github.com/php/frankenphp/releases/download/v${FRANKENPHP_VERSION}/frankenphp-linux-${ARCH_SUFFIX}" \
         && curl -fsSL -L -o /usr/local/bin/frankenphp "$FRANKENPHP_BINARY_URL" \
         && chmod +x /usr/local/bin/frankenphp \
