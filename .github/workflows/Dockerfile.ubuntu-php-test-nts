@@ -150,12 +150,10 @@ RUN PHP_VER=$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;') && \
     ln -sf /usr/local/etc/php-fpm.conf /etc/php/${PHP_VER}/fpm/php-fpm.conf && \
     ln -sf /usr/local/etc/php-fpm.d/www.conf /etc/php/${PHP_VER}/fpm/pool.d/www.conf || true
 
-# Configure MySQL socket path for mysqli (so "localhost" connections work)
-RUN mkdir -p /usr/local/etc/php/conf.d && \
-    echo "mysqli.default_socket = /var/lib/mysql/mysql.sock" > /usr/local/etc/php/conf.d/mysql-socket.ini
+RUN mkdir -p /usr/local/etc/php/conf.d
 
-RUN mkdir -p /etc/php/${PHP_VERSION}/apache2/conf.d && \
-    echo "Created Apache mod_php directory: /etc/php/${PHP_VERSION}/apache2/conf.d"
+# Configure MySQL socket path for mysqli (so "localhost" connections work)
+RUN echo "mysqli.default_socket = /var/lib/mysql/mysql.sock" > /usr/local/etc/php/conf.d/mysql-socket.ini
 
 # Apache: switch to prefork for mod_php scenario and enable rewrite
 RUN a2dismod mpm_event || true && \

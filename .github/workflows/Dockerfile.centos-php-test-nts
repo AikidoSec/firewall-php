@@ -152,12 +152,10 @@ RUN     mkdir -p /etc/php-fpm.d && \
     ln -sf /usr/local/etc/php-fpm.conf /etc/php-fpm.conf && \
     ln -sf /usr/local/etc/php-fpm.d/www.conf /etc/php-fpm.d/www.conf || true
 
-# Configure MySQL socket path for mysqli (so "localhost" connections work)
-RUN mkdir -p /usr/local/etc/php/conf.d && \
-    echo "mysqli.default_socket = /var/lib/mysql/mysql.sock" > /usr/local/etc/php/conf.d/mysql-socket.ini
+RUN mkdir -p /usr/local/etc/php/conf.d
 
-RUN mkdir -p /etc/php/${PHP_VERSION}/apache2/conf.d && \
-    echo "Created Apache mod_php directory: /etc/php/${PHP_VERSION}/apache2/conf.d"
+# Configure MySQL socket path for mysqli (so "localhost" connections work)
+RUN echo "mysqli.default_socket = /var/lib/mysql/mysql.sock" > /usr/local/etc/php/conf.d/mysql-socket.ini
 
 # Python deps used by test harness
 RUN python3 -m pip install --no-cache-dir --upgrade pip && \
