@@ -65,7 +65,7 @@ RUN if [ -f ext/openssl/openssl.c ] && grep -q 'REGISTER_LONG_CONSTANT("OPENSSL_
 
 RUN mkdir -p /usr/local/etc/php/conf.d
 
-# Apache: switch to prefork for mod_php scenario and enable rewrite
+# Apache: switch to prefork for mod_php scenario and enable rewrite(needed by php build)
 RUN a2dismod mpm_event || true && \
     a2dismod mpm_worker || true && \
     a2enmod mpm_prefork rewrite cgi cgid || true
@@ -98,6 +98,12 @@ COPY --from=php-build /usr/local /usr/local
 
 RUN mkdir -p /usr/lib/apache2/modules
 COPY --from=php-build /usr/lib/apache2/modules/ /usr/lib/apache2/modules/
+
+# Configure Apache to use prefork MPM (non-threaded) for NTS PHP
+# This must be done in the final stage since the base image has default MPM settings
+RUN a2dismod mpm_event || true && \
+    a2dismod mpm_worker || true && \
+    a2enmod mpm_prefork || true
 
 RUN EXTENSION_DIR=$(php -i | grep "^extension_dir" | awk '{print $3}') && \
     if [ -z "$EXTENSION_DIR" ]; then \
@@ -164,27 +170,26 @@ RUN PHP_VER=$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;') && \
 # Note: /usr/local/etc/php/conf.d was created before PHP build
 RUN echo "mysqli.default_socket = /var/lib/mysql/mysql.sock" > /usr/local/etc/php/conf.d/mysql-socket.ini
 
-# Configure Apache to load libphp.so module (if it exists)
+# Configure Apache to load libphp module (if it exists)
 # PHP 7 uses libphp7.so, other versions use libphp.so
-RUN PHP_MAJOR=$(php -r 'echo PHP_MAJOR_VERSION;') && \
-    if [ "$PHP_MAJOR" = "7" ]; then \
+# Check for both possible filenames to handle any case
+RUN if [ -f "/usr/lib/apache2/modules/libphp7.so" ]; then \
         LIBPHP_NAME="libphp7.so"; \
-    else \
+        MODULE_NAME="php7_module"; \
+    elif [ -f "/usr/lib/apache2/modules/libphp.so" ]; then \
         LIBPHP_NAME="libphp.so"; \
+        MODULE_NAME="php_module"; \
+    else \
+        echo "Warning: No libphp module found in /usr/lib/apache2/modules/" && \
+        ls -la /usr/lib/apache2/modules/ || true && \
+        exit 0; \
     fi && \
-    if [ -f "/usr/lib/apache2/modules/${LIBPHP_NAME}" ]; then \
+    if [ -n "$LIBPHP_NAME" ]; then \
         echo "# Load PHP module for Apache" > /etc/apache2/conf-available/php.conf && \
-        if [ "$PHP_MAJOR" = "7" ]; then \
-            echo "LoadModule php7_module /usr/lib/apache2/modules/${LIBPHP_NAME}" >> /etc/apache2/conf-available/php.conf && \
-            echo "" >> /etc/apache2/conf-available/php.conf && \
-            echo "# Configure PHP file handling" >> /etc/apache2/conf-available/php.conf && \
-            echo "<IfModule php7_module>" >> /etc/apache2/conf-available/php.conf; \
-        else \
-            echo "LoadModule php_module /usr/lib/apache2/modules/${LIBPHP_NAME}" >> /etc/apache2/conf-available/php.conf && \
-            echo "" >> /etc/apache2/conf-available/php.conf && \
-            echo "# Configure PHP file handling" >> /etc/apache2/conf-available/php.conf && \
-            echo "<IfModule php_module>" >> /etc/apache2/conf-available/php.conf; \
-        fi && \
+        echo "LoadModule ${MODULE_NAME} /usr/lib/apache2/modules/${LIBPHP_NAME}" >> /etc/apache2/conf-available/php.conf && \
+        echo "" >> /etc/apache2/conf-available/php.conf && \
+        echo "# Configure PHP file handling" >> /etc/apache2/conf-available/php.conf && \
+        echo "<IfModule ${MODULE_NAME}>" >> /etc/apache2/conf-available/php.conf && \
         echo "    PHPIniDir /usr/local/etc/php" >> /etc/apache2/conf-available/php.conf && \
         echo "    <FilesMatch \.php$>" >> /etc/apache2/conf-available/php.conf && \
         echo "        SetHandler application/x-httpd-php" >> /etc/apache2/conf-available/php.conf && \
@@ -192,9 +197,7 @@ RUN PHP_MAJOR=$(php -r 'echo PHP_MAJOR_VERSION;') && \
         echo "    DirectoryIndex index.php index.html" >> /etc/apache2/conf-available/php.conf && \
         echo "</IfModule>" >> /etc/apache2/conf-available/php.conf && \
         a2enconf php >/dev/null 2>&1 || true && \
-        echo "Created Apache PHP module configuration with ${LIBPHP_NAME}"; \
-    else \
-        echo "Warning: ${LIBPHP_NAME} not found, skipping Apache PHP module configuration"; \
+        echo "Created Apache PHP module configuration with ${LIBPHP_NAME} (${MODULE_NAME})"; \
     fi
 
 # ---- Python toolchain used by tests ----

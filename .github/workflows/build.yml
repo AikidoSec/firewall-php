@@ -690,7 +690,7 @@ jobs:
           python3 run_server_tests.py ../tests/server ../tests/testlib --server=${{ matrix.server }} --max-runs=3
 
   test_php_frankenphp:
-    name: FrankenPHP php-${{ matrix.php_version }} ${{ matrix.server }} ${{ matrix.arch == '' && 'x86_64' || 'arm' }}
+    name: CentOS FrankenPHP php-${{ matrix.php_version }} ${{ matrix.server }} ${{ matrix.arch == '' && 'x86_64' || 'arm' }}
     runs-on: ubuntu-24.04${{ matrix.arch }}
     container:
       image: ghcr.io/aikidosec/firewall-php-test-centos-zts:${{ matrix.php_version }}-v2
