@@ -202,7 +202,7 @@ RUN ARCH=$(uname -m) && \
 
 # Create FrankenPHP folder structure (for binary installations, DEB creates these automatically)
 RUN mkdir -p /etc/frankenphp/caddy.d \
-    && mkdir -p /etc/frankenphp/php.d \git
+    && mkdir -p /etc/frankenphp/php.d \
     && mkdir -p /usr/lib/frankenphp/modules
 
 # Install web servers and database (without PHP packages)
