@@ -91,10 +91,9 @@ RUN ./configure \
 && make install \
 && strip /usr/local/bin/php /usr/local/sbin/php-fpm || true
 
-# Final image with PHP and test infrastructure
 # Stage to extract FrankenPHP binary from official Docker image
 # Using simple PHP version tags: php8.2, php8.3, php8.4, php8.5
-ARG PHP_VERSION=8.3
+ARG PHP_VERSION
 ARG FRANKENPHP_IMAGE=dunglas/frankenphp:php${PHP_VERSION}
 
 FROM ${FRANKENPHP_IMAGE} AS frankenphp-source
