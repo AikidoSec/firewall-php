@@ -121,7 +121,7 @@ message IpList {
 
 message OutboundDomain {
   string hostname = 1;
-  string mode = 2;
+  bool block = 2;
 }
 
 message CloudConfig {

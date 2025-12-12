@@ -21,17 +21,17 @@ func IsBlockOutboundConnection(hostname string) bool {
 
 	// Check if hostname is in the outbound domains list
 	// Config keys are already normalized at load time (see grpc/config.go)
-	mode, found := server.CloudConfig.OutboundDomains[normalizedHostname]
+	block, found := server.CloudConfig.OutboundDomains[normalizedHostname]
 
-	// If hostname has mode "block", always block it
-	if found && mode == "block" {
+	// If hostname is in the list with block=true, always block it
+	if found && block {
 		return true
 	}
 
 	// If blockNewOutgoingRequests is enabled
 	if server.CloudConfig.BlockNewOutgoingRequests {
-		// If hostname has mode "allow", allow it
-		if found && mode == "allow" {
+		// If hostname is in the list with block=false (allow), allow it
+		if found && !block {
 			return false
 		}
 

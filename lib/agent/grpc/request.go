@@ -390,7 +390,7 @@ func getCloudConfig(server *ServerData, configUpdatedAt int64) *protos.CloudConf
 	for _, domain := range server.CloudConfig.OutboundDomains {
 		cloudConfig.OutboundDomains = append(cloudConfig.OutboundDomains, &protos.OutboundDomain{
 			Hostname: domain.Hostname,
-			Mode:     domain.Mode,
+			Block:    domain.Mode == "block",
 		})
 	}
 

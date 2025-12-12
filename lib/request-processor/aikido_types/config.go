@@ -69,5 +69,5 @@ type CloudConfigData struct {
 	UserAgentDetails         map[string]*regexp.Regexp
 	Block                    int
 	BlockNewOutgoingRequests bool
-	OutboundDomains          map[string]string // hostname -> mode (allow/block)
+	OutboundDomains          map[string]bool // hostname -> block (true = block, false = allow)
 }
