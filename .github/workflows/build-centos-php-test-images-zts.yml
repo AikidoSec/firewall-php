@@ -38,10 +38,11 @@ jobs:
           docker pull --platform linux/amd64 dunglas/frankenphp:php${PHP_VERSION}
           docker create --platform linux/amd64 --name temp-frankenphp dunglas/frankenphp:php${PHP_VERSION}
           docker cp temp-frankenphp:/usr/local/bin/frankenphp frankenphp-binary/frankenphp
+          docker cp temp-frankenphp:/usr/local/lib/libphp.so frankenphp-binary/libphp.so
           docker rm temp-frankenphp
           chmod +x frankenphp-binary/frankenphp
-          ls -lh frankenphp-binary/frankenphp
-          file frankenphp-binary/frankenphp
+          ls -lh frankenphp-binary/frankenphp frankenphp-binary/libphp.so
+          file frankenphp-binary/frankenphp frankenphp-binary/libphp.so
 
       - name: Build & push (amd64)
         uses: docker/build-push-action@v6
@@ -81,10 +82,11 @@ jobs:
           docker pull --platform linux/arm64 dunglas/frankenphp:php${PHP_VERSION}
           docker create --platform linux/arm64 --name temp-frankenphp dunglas/frankenphp:php${PHP_VERSION}
           docker cp temp-frankenphp:/usr/local/bin/frankenphp frankenphp-binary/frankenphp
+          docker cp temp-frankenphp:/usr/local/lib/libphp.so frankenphp-binary/libphp.so
           docker rm temp-frankenphp
           chmod +x frankenphp-binary/frankenphp
-          ls -lh frankenphp-binary/frankenphp
-          file frankenphp-binary/frankenphp
+          ls -lh frankenphp-binary/frankenphp frankenphp-binary/libphp.so
+          file frankenphp-binary/frankenphp frankenphp-binary/libphp.so
 
       - name: Build & push (arm64)
         uses: docker/build-push-action@v6
