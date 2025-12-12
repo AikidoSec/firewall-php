@@ -82,6 +82,7 @@ RUN ./configure \
       --enable-mbstring \
       --enable-pcntl \
       --enable-cgi \
+      --enable-embed \
       --with-extra-version="" \
       --with-curl \
       --with-mysqli \
