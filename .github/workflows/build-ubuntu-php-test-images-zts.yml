@@ -27,6 +27,16 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set FrankenPHP image
+        id: frankenphp_image
+        run: |
+          PHP_VERSION="${{ matrix.php_version }}"
+          if awk "BEGIN {exit !($PHP_VERSION >= 8.2)}"; then
+            echo "image=dunglas/frankenphp:php${PHP_VERSION}" >> $GITHUB_OUTPUT
+          else
+            echo "image=scratch" >> $GITHUB_OUTPUT
+          fi
+
       - uses: docker/build-push-action@v6
         with:
           context: .
@@ -35,6 +45,7 @@ jobs:
           push: true
           build-args: |
             PHP_VERSION=${{ matrix.php_version }}
+            FRANKENPHP_IMAGE=${{ steps.frankenphp_image.outputs.image }}
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.php_version }}-amd64-${{ env.VERSION }}
           cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:cache-${{ matrix.php_version }}-amd64-${{ env.VERSION }}
           cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:cache-${{ matrix.php_version }}-amd64-${{ env.VERSION }},mode=max
@@ -53,6 +64,16 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set FrankenPHP image
+        id: frankenphp_image
+        run: |
+          PHP_VERSION="${{ matrix.php_version }}"
+          if awk "BEGIN {exit !($PHP_VERSION >= 8.2)}"; then
+            echo "image=dunglas/frankenphp:php${PHP_VERSION}" >> $GITHUB_OUTPUT
+          else
+            echo "image=scratch" >> $GITHUB_OUTPUT
+          fi
+
       - uses: docker/build-push-action@v6
         with:
           context: .
@@ -61,6 +82,7 @@ jobs:
           push: true
           build-args: |
             PHP_VERSION=${{ matrix.php_version }}
+            FRANKENPHP_IMAGE=${{ steps.frankenphp_image.outputs.image }}
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.php_version }}-arm64-${{ env.VERSION }}
           cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:cache-${{ matrix.php_version }}-arm64-${{ env.VERSION }}
           cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:cache-${{ matrix.php_version }}-arm64-${{ env.VERSION }},mode=max

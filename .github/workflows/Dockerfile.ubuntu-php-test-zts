@@ -5,7 +5,7 @@
 ARG DEBIAN_FRONTEND=noninteractive
 ARG PHP_VERSION=8.3
 ARG PHP_SRC_REF=PHP-${PHP_VERSION}
-ARG FRANKENPHP_IMAGE=dunglas/frankenphp:php${PHP_VERSION}
+ARG FRANKENPHP_IMAGE=scratch
 
 FROM ubuntu:24.04 AS base
 SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
@@ -107,7 +107,7 @@ RUN case "$PHP_VERSION" in \
 COPY --from=php-build /usr/local /usr/local
 
 RUN --mount=type=bind,from=frankenphp-source,source=/usr/local/bin/frankenphp,target=/tmp/frankenphp \
-    if awk "BEGIN {exit !(${PHP_VERSION} >= 8.2)}"; then \
+    if [ -f /tmp/frankenphp ]; then \
         cp /tmp/frankenphp /usr/local/bin/frankenphp && \
         chmod +x /usr/local/bin/frankenphp && \
         mkdir -p /etc/frankenphp/caddy.d \
