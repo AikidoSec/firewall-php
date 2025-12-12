@@ -19,7 +19,7 @@ RUN yum install -y yum-utils && \
     dnf config-manager --set-enabled crb || dnf config-manager --set-enabled powertools || true
 
 # Install minimal tools needed for re2c build (replace curl-minimal with full curl)
-RUN yum install -y xz tar gcc gcc-c++ make
+RUN yum install -y xz tar gcc gcc-c++ make cmake
 
 ENV RE2C_VERSION=3.1
 RUN curl -fsSL -o /tmp/re2c.tar.xz https://github.com/skvadrik/re2c/releases/download/${RE2C_VERSION}/re2c-${RE2C_VERSION}.tar.xz \
@@ -93,6 +93,19 @@ RUN ./configure \
 && make install \
 && strip /usr/local/bin/php /usr/local/sbin/php-fpm || true
 
+WORKDIR /usr/src
+RUN git clone https://github.com/e-dant/watcher.git
+WORKDIR /usr/src/watcher
+RUN cmake -S . -B build \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=/usr/local \
+    -DBUILD_LIB=ON \
+    -DBUILD_BIN=ON \
+    -DBUILD_HDR=ON && \
+    cmake --build build && \
+    cmake --install build && \
+    ldconfig
+
 FROM base AS final
 
 COPY --from=php-build /usr/local /usr/local
@@ -101,16 +114,9 @@ COPY frankenphp-binary/ /tmp/frankenphp-binary/
 RUN if [ -f /tmp/frankenphp-binary/frankenphp ]; then \
         cp /tmp/frankenphp-binary/frankenphp /usr/local/bin/frankenphp && \
         chmod +x /usr/local/bin/frankenphp && \
-        [ -f /tmp/frankenphp-binary/lib/libphp.so ] && cp /tmp/frankenphp-binary/lib/libphp.so /usr/local/lib/libphp.so || true && \
-        [ -f /tmp/frankenphp-binary/lib/libwatcher-c.so.0 ] && cp /tmp/frankenphp-binary/lib/libwatcher-c.so.0 /usr/local/lib/libwatcher-c.so.0 || true && \
-        [ -f /tmp/frankenphp-binary/lib/libargon2.so.1 ] && cp /tmp/frankenphp-binary/lib/libargon2.so.1 /usr/local/lib/libargon2.so.1 || true && \
-        mkdir -p /etc/frankenphp/caddy.d \
-        && mkdir -p /etc/frankenphp/php.d \
-        && mkdir -p /usr/lib/frankenphp/modules \
-        && echo "/usr/local/lib" > /etc/ld.so.conf.d/usr-local-lib.conf \
-        && ldconfig \
-        && echo "FrankenPHP installed. Checking dependencies:" \
-        && ldd /usr/local/bin/frankenphp 2>/dev/null | grep -E "libphp|libargon2|not found" || true; \
+        mkdir -p /etc/frankenphp/caddy.d && \
+        mkdir -p /etc/frankenphp/php.d && \
+        mkdir -p /usr/lib/frankenphp/modules; \
     fi
 
 RUN EXTENSION_DIR=$(php -i | grep "^extension_dir" | awk '{print $3}') && \
@@ -176,10 +182,10 @@ RUN     mkdir -p /etc/php-fpm.d && \
 RUN echo "mysqli.default_socket = /var/lib/mysql/mysql.sock" > /usr/local/etc/php/conf.d/mysql-socket.ini
 
 RUN if [ -f /usr/local/bin/frankenphp ]; then \
-        frankenphp -v || echo "Warning: frankenphp version check failed"; \
-    else \
-        echo "WARNING: frankenphp binary not found; FrankenPHP-specific tests will be skipped."; \
-    fi
+         frankenphp -v || echo "Warning: frankenphp version check failed"; \
+     else \
+         echo "WARNING: frankenphp binary not found; FrankenPHP-specific tests will be skipped."; \
+     fi
 
 # Python deps used by test harness
 RUN python3 -m pip install --no-cache-dir --upgrade pip && \

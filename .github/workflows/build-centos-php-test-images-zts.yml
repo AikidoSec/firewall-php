@@ -39,7 +39,7 @@ jobs:
           docker create --platform linux/amd64 --name temp-frankenphp dunglas/frankenphp:php${PHP_VERSION}-bookworm
           docker cp temp-frankenphp:/usr/local/bin/frankenphp frankenphp-binary/frankenphp
           mkdir -p frankenphp-binary/lib
-          docker cp temp-frankenphp:/usr/local/lib/libphp.so frankenphp-binary/lib/libphp.so
+          echo "NOTE: Not copying libphp.so for CentOS (GLIBC 2.34) - using compiled version"
           docker cp temp-frankenphp:/usr/local/lib/libwatcher-c.so.0 frankenphp-binary/lib/libwatcher-c.so.0 || true
           docker cp temp-frankenphp:/lib/x86_64-linux-gnu/libargon2.so.1 frankenphp-binary/lib/libargon2.so.1 || true
           docker rm temp-frankenphp
@@ -86,15 +86,6 @@ jobs:
           docker pull --platform linux/arm64 dunglas/frankenphp:php${PHP_VERSION}-bookworm
           docker create --platform linux/arm64 --name temp-frankenphp dunglas/frankenphp:php${PHP_VERSION}-bookworm
           docker cp temp-frankenphp:/usr/local/bin/frankenphp frankenphp-binary/frankenphp
-          mkdir -p frankenphp-binary/lib
-          docker cp temp-frankenphp:/usr/local/lib/libphp.so frankenphp-binary/lib/libphp.so
-          docker cp temp-frankenphp:/usr/local/lib/libwatcher-c.so.0 frankenphp-binary/lib/libwatcher-c.so.0 || true
-          docker cp temp-frankenphp:/lib/aarch64-linux-gnu/libargon2.so.1 frankenphp-binary/lib/libargon2.so.1 || true
-          docker rm temp-frankenphp
-          chmod +x frankenphp-binary/frankenphp
-          echo "Extracted FrankenPHP files:"
-          ls -lh frankenphp-binary/
-          ls -lh frankenphp-binary/lib/ || true
 
       - name: Build & push (arm64)
         uses: docker/build-push-action@v6

@@ -25,7 +25,7 @@ RUN apt-get update && \
       build-essential autoconf bison re2c pkg-config \
       libxml2-dev libsqlite3-dev libcurl4-openssl-dev libssl-dev \
       libzip-dev libonig-dev libjpeg-dev libpng-dev libwebp-dev \
-      libicu-dev libreadline-dev libxslt1-dev default-libmysqlclient-dev \
+      libicu-dev libreadline-dev libxslt1-dev default-libmysqlclient-dev cmake \
     && rm -rf /var/lib/apt/lists/*
 
 # Timezone to UTC
@@ -76,7 +76,6 @@ RUN ./configure \
       --enable-mbstring \
       --enable-pcntl \
       --enable-cgi \
-      --enable-embed \
       --with-extra-version="" \
       --with-curl \
       --with-mysqli \
@@ -87,6 +86,19 @@ RUN ./configure \
 && make install \
 && strip /usr/local/bin/php /usr/local/sbin/php-fpm || true
 
+WORKDIR /usr/src
+RUN git clone https://github.com/e-dant/watcher.git
+WORKDIR /usr/src/watcher
+RUN cmake -S . -B build \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=/usr/local \
+    -DBUILD_LIB=ON \
+    -DBUILD_BIN=ON \
+    -DBUILD_HDR=ON && \
+    cmake --build build && \
+    cmake --install build && \
+    ldconfig
+
 # Final image with PHP and test infrastructure
 FROM base AS final
 
@@ -96,16 +108,9 @@ COPY frankenphp-binary/ /tmp/frankenphp-binary/
 RUN if [ -f /tmp/frankenphp-binary/frankenphp ]; then \
         cp /tmp/frankenphp-binary/frankenphp /usr/local/bin/frankenphp && \
         chmod +x /usr/local/bin/frankenphp && \
-        [ -f /tmp/frankenphp-binary/lib/libphp.so ] && cp /tmp/frankenphp-binary/lib/libphp.so /usr/local/lib/libphp.so || true && \
-        [ -f /tmp/frankenphp-binary/lib/libwatcher-c.so.0 ] && cp /tmp/frankenphp-binary/lib/libwatcher-c.so.0 /usr/local/lib/libwatcher-c.so.0 || true && \
-        [ -f /tmp/frankenphp-binary/lib/libargon2.so.1 ] && cp /tmp/frankenphp-binary/lib/libargon2.so.1 /usr/local/lib/libargon2.so.1 || true && \
-        mkdir -p /etc/frankenphp/caddy.d \
-        && mkdir -p /etc/frankenphp/php.d \
-        && mkdir -p /usr/lib/frankenphp/modules \
-        && echo "/usr/local/lib" > /etc/ld.so.conf.d/usr-local-lib.conf \
-        && ldconfig \
-        && echo "FrankenPHP installed. Checking dependencies:" \
-        && ldd /usr/local/bin/frankenphp 2>/dev/null | grep -E "libphp|libargon2|not found" || true; \
+        mkdir -p /etc/frankenphp/caddy.d && \
+        mkdir -p /etc/frankenphp/php.d && \
+        mkdir -p /usr/lib/frankenphp/modules; \
     fi
 
 
