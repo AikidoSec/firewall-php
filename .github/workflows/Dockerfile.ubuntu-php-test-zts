@@ -89,15 +89,7 @@ RUN ./configure \
 # Final image with PHP and test infrastructure
 FROM base AS final
 
-ARG PHP_VERSION
-RUN case "$PHP_VERSION" in \
-      8.2|8.3|8.4|8.5) \
-        echo "Using FrankenPHP Docker image for PHP_VERSION=${PHP_VERSION}"; \
-        ;; \
-      *) \
-        echo "WARNING: FrankenPHP Docker images are officially only for PHP >= 8.2 (got PHP_VERSION=${PHP_VERSION}). Build will continue."; \
-        ;; \
-    esac
+COPY --from=php-build /usr/local /usr/local
 
 COPY frankenphp-binary/ /tmp/frankenphp-binary/
 RUN if [ -f /tmp/frankenphp-binary/frankenphp ]; then \
