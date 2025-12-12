@@ -34,15 +34,14 @@ jobs:
       - name: Extract FrankenPHP binary from Docker image
         if: matrix.php_version >= '8.2'
         run: |
-          PHP_VERSION="${{ matrix.php_version }}"
-          docker pull --platform linux/amd64 dunglas/frankenphp:php${PHP_VERSION}
-          docker create --platform linux/amd64 --name temp-frankenphp dunglas/frankenphp:php${PHP_VERSION}
+          docker pull --platform linux/amd64 dunglas/frankenphp:8.4
+          docker create --platform linux/amd64 --name temp-frankenphp dunglas/frankenphp:8.4
           docker cp temp-frankenphp:/usr/local/bin/frankenphp frankenphp-binary/frankenphp
-          docker cp temp-frankenphp:/usr/local/lib/libphp.so frankenphp-binary/libphp.so
+          docker cp temp-frankenphp:/usr/local/lib/. frankenphp-binary/lib/
           docker rm temp-frankenphp
           chmod +x frankenphp-binary/frankenphp
-          ls -lh frankenphp-binary/frankenphp frankenphp-binary/libphp.so
-          file frankenphp-binary/frankenphp frankenphp-binary/libphp.so
+          ls -lh frankenphp-binary/ || true
+          ls -lh frankenphp-binary/lib/ || true
 
       - name: Build & push (amd64)
         uses: docker/build-push-action@v6
@@ -78,15 +77,14 @@ jobs:
       - name: Extract FrankenPHP binary from Docker image
         if: matrix.php_version >= '8.2'
         run: |
-          PHP_VERSION="${{ matrix.php_version }}"
-          docker pull --platform linux/arm64 dunglas/frankenphp:php${PHP_VERSION}
-          docker create --platform linux/arm64 --name temp-frankenphp dunglas/frankenphp:php${PHP_VERSION}
+          docker pull --platform linux/arm64 dunglas/frankenphp:8.4
+          docker create --platform linux/arm64 --name temp-frankenphp dunglas/frankenphp:8.4
           docker cp temp-frankenphp:/usr/local/bin/frankenphp frankenphp-binary/frankenphp
-          docker cp temp-frankenphp:/usr/local/lib/libphp.so frankenphp-binary/libphp.so
+          docker cp temp-frankenphp:/usr/local/lib/. frankenphp-binary/lib/
           docker rm temp-frankenphp
           chmod +x frankenphp-binary/frankenphp
-          ls -lh frankenphp-binary/frankenphp frankenphp-binary/libphp.so
-          file frankenphp-binary/frankenphp frankenphp-binary/libphp.so
+          ls -lh frankenphp-binary/ || true
+          ls -lh frankenphp-binary/lib/ || true
 
       - name: Build & push (arm64)
         uses: docker/build-push-action@v6
