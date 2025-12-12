@@ -28,19 +28,17 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Extract FrankenPHP binary from Docker image
+        if: matrix.php_version >= '8.2'
         run: |
           PHP_VERSION="${{ matrix.php_version }}"
-          if awk "BEGIN {exit !($PHP_VERSION >= 8.2)}"; then
-            mkdir -p frankenphp-binary
-            docker pull dunglas/frankenphp:php${PHP_VERSION} || true
-            docker create --name temp-frankenphp dunglas/frankenphp:php${PHP_VERSION} || true
-            docker cp temp-frankenphp:/usr/local/bin/frankenphp frankenphp-binary/frankenphp || true
-            docker rm temp-frankenphp || true
-            chmod +x frankenphp-binary/frankenphp || true
-          else
-            mkdir -p frankenphp-binary
-            echo "WARNING: FrankenPHP binary not found for PHP version ${PHP_VERSION}. Skipping FrankenPHP-specific tests."
-          fi
+          mkdir -p frankenphp-binary
+          docker pull --platform linux/amd64 dunglas/frankenphp:php${PHP_VERSION}
+          docker create --platform linux/amd64 --name temp-frankenphp dunglas/frankenphp:php${PHP_VERSION}
+          docker cp temp-frankenphp:/usr/local/bin/frankenphp frankenphp-binary/frankenphp
+          docker rm temp-frankenphp
+          chmod +x frankenphp-binary/frankenphp
+          ls -lh frankenphp-binary/frankenphp
+          file frankenphp-binary/frankenphp
 
       - uses: docker/build-push-action@v6
         with:
@@ -50,7 +48,6 @@ jobs:
           push: true
           build-args: |
             PHP_VERSION=${{ matrix.php_version }}
-            FRANKENPHP_IMAGE=${{ steps.frankenphp_image.outputs.image }}
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.php_version }}-amd64-${{ env.VERSION }}
           cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:cache-${{ matrix.php_version }}-amd64-${{ env.VERSION }}
           cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:cache-${{ matrix.php_version }}-amd64-${{ env.VERSION }},mode=max
@@ -70,19 +67,17 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Extract FrankenPHP binary from Docker image
+        if: matrix.php_version >= '8.2'
         run: |
           PHP_VERSION="${{ matrix.php_version }}"
-          if awk "BEGIN {exit !($PHP_VERSION >= 8.2)}"; then
-            mkdir -p frankenphp-binary
-            docker pull dunglas/frankenphp:php${PHP_VERSION} || true
-            docker create --name temp-frankenphp dunglas/frankenphp:php${PHP_VERSION} || true
-            docker cp temp-frankenphp:/usr/local/bin/frankenphp frankenphp-binary/frankenphp || true
-            docker rm temp-frankenphp || true
-            chmod +x frankenphp-binary/frankenphp || true
-          else
-            mkdir -p frankenphp-binary
-            touch frankenphp-binary/.keep
-          fi
+          mkdir -p frankenphp-binary
+          docker pull --platform linux/arm64 dunglas/frankenphp:php${PHP_VERSION}
+          docker create --platform linux/arm64 --name temp-frankenphp dunglas/frankenphp:php${PHP_VERSION}
+          docker cp temp-frankenphp:/usr/local/bin/frankenphp frankenphp-binary/frankenphp
+          docker rm temp-frankenphp
+          chmod +x frankenphp-binary/frankenphp
+          ls -lh frankenphp-binary/frankenphp
+          file frankenphp-binary/frankenphp
 
       - uses: docker/build-push-action@v6
         with:
@@ -92,7 +87,6 @@ jobs:
           push: true
           build-args: |
             PHP_VERSION=${{ matrix.php_version }}
-            FRANKENPHP_IMAGE=${{ steps.frankenphp_image.outputs.image }}
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.php_version }}-arm64-${{ env.VERSION }}
           cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:cache-${{ matrix.php_version }}-arm64-${{ env.VERSION }}
           cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:cache-${{ matrix.php_version }}-arm64-${{ env.VERSION }},mode=max

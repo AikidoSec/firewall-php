@@ -104,8 +104,6 @@ RUN case "$PHP_VERSION" in \
         ;; \
     esac
 
-COPY --from=php-build /usr/local/bin /usr/local/bin
-
 COPY frankenphp-binary/ /tmp/frankenphp-binary/
 RUN if [ -f /tmp/frankenphp-binary/frankenphp ]; then \
         cp /tmp/frankenphp-binary/frankenphp /usr/local/bin/frankenphp && \
