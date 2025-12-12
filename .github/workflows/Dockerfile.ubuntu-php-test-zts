@@ -101,7 +101,9 @@ RUN if [ -f /tmp/frankenphp-binary/frankenphp ]; then \
         mkdir -p /etc/frankenphp/caddy.d \
         && mkdir -p /etc/frankenphp/php.d \
         && mkdir -p /usr/lib/frankenphp/modules \
-        && ldconfig; \
+        && echo "/usr/local/lib" > /etc/ld.so.conf.d/usr-local-lib.conf \
+        && ldconfig \
+        && ls -lh /usr/local/lib/libphp.so || echo "WARNING: libphp.so not found in /usr/local/lib/"; \
     fi
 
 
@@ -117,7 +119,8 @@ RUN EXTENSION_DIR=$(php -i | grep "^extension_dir" | awk '{print $3}') && \
 RUN php -v | grep -q "ZTS" || (echo "ERROR: ZTS not enabled!" && exit 1) && \
     php -m | grep -E 'curl|mysqli' >/dev/null
 
-ENV PATH="/usr/local/bin:${PATH}"
+ENV PATH="/usr/local/bin:${PATH}" \
+    LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH:-}"
 
 RUN ln -sf /usr/local/bin/php /usr/bin/php && \
     ln -sf /usr/local/sbin/php-fpm /usr/sbin/php-fpm || true && \
