@@ -96,6 +96,7 @@ COPY frankenphp-binary/ /tmp/frankenphp-binary/
 RUN if [ -f /tmp/frankenphp-binary/frankenphp ]; then \
         cp /tmp/frankenphp-binary/frankenphp /usr/local/bin/frankenphp && \
         cp /tmp/frankenphp-binary/libphp.so /usr/local/lib/libphp.so && \
+        ln -sf /usr/local/lib/libphp.so /usr/local/bin/libphp.so && \
         chmod +x /usr/local/bin/frankenphp && \
         mkdir -p /etc/frankenphp/caddy.d \
         && mkdir -p /etc/frankenphp/php.d \
