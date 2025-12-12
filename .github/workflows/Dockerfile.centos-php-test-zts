@@ -5,6 +5,7 @@
 ARG BASE_IMAGE=quay.io/centos/centos:stream9
 ARG PHP_VERSION=8.3
 ARG PHP_SRC_REF=PHP-${PHP_VERSION}
+ARG FRANKENPHP_IMAGE=dunglas/frankenphp:php${PHP_VERSION}
 
 FROM ${BASE_IMAGE} AS base
 SHELL ["/bin/bash", "-euo", "pipefail", "-c"]
@@ -93,8 +94,6 @@ RUN ./configure \
 
 # Stage to extract FrankenPHP binary from official Docker image
 # Using simple PHP version tags: php8.2, php8.3, php8.4, php8.5
-ARG PHP_VERSION
-ARG FRANKENPHP_IMAGE=dunglas/frankenphp:php${PHP_VERSION}
 
 FROM ${FRANKENPHP_IMAGE} AS frankenphp-source
 
