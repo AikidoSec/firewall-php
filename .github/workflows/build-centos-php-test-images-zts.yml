@@ -35,14 +35,17 @@ jobs:
         if: matrix.php_version >= '8.2'
         run: |
           PHP_VERSION="${{ matrix.php_version }}"
+          PHP_VERSION="${{ matrix.php_version }}"
           docker pull --platform linux/amd64 dunglas/frankenphp:php${PHP_VERSION}
           docker create --platform linux/amd64 --name temp-frankenphp dunglas/frankenphp:php${PHP_VERSION}
           docker cp temp-frankenphp:/usr/local/bin/frankenphp frankenphp-binary/frankenphp
           docker cp temp-frankenphp:/usr/local/lib/. frankenphp-binary/lib/
           docker rm temp-frankenphp
           chmod +x frankenphp-binary/frankenphp
+          echo "Extracted files:"
           ls -lh frankenphp-binary/ || true
-          ls -lh frankenphp-binary/lib/ || true
+          echo "Extracted libraries (looking for libargon2 and libphp):"
+          find frankenphp-binary/lib -name "*argon2*" -o -name "*libphp*" 2>/dev/null | head -10 || true
 
       - name: Build & push (amd64)
         uses: docker/build-push-action@v6

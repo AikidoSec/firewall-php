@@ -40,8 +40,10 @@ jobs:
           docker cp temp-frankenphp:/usr/local/lib/. frankenphp-binary/lib/
           docker rm temp-frankenphp
           chmod +x frankenphp-binary/frankenphp
+          echo "Extracted files:"
           ls -lh frankenphp-binary/ || true
-          ls -lh frankenphp-binary/lib/ || true
+          echo "Extracted libraries (looking for libargon2 and libphp):"
+          find frankenphp-binary/lib -name "*argon2*" -o -name "*libphp*" 2>/dev/null | head -10 || true
 
       - uses: docker/build-push-action@v6
         with:
