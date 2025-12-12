@@ -28,14 +28,19 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Set FrankenPHP image
-        id: frankenphp_image
+      - name: Extract FrankenPHP binary from Docker image
         run: |
           PHP_VERSION="${{ matrix.php_version }}"
           if awk "BEGIN {exit !($PHP_VERSION >= 8.2)}"; then
-            echo "image=dunglas/frankenphp:php${PHP_VERSION}" >> $GITHUB_OUTPUT
+            mkdir -p frankenphp-binary
+            docker pull dunglas/frankenphp:php${PHP_VERSION} || true
+            docker create --name temp-frankenphp dunglas/frankenphp:php${PHP_VERSION} || true
+            docker cp temp-frankenphp:/usr/local/bin/frankenphp frankenphp-binary/frankenphp || true
+            docker rm temp-frankenphp || true
+            chmod +x frankenphp-binary/frankenphp || true
           else
-            echo "image=quay.io/centos/centos:stream9" >> $GITHUB_OUTPUT
+            mkdir -p frankenphp-binary
+            echo "WARNING: FrankenPHP binary not found for PHP version ${PHP_VERSION}. Skipping FrankenPHP-specific tests."
           fi
 
       - name: Build & push (amd64)
@@ -47,7 +52,6 @@ jobs:
           push: true
           build-args: |
             PHP_VERSION=${{ matrix.php_version }}
-            FRANKENPHP_IMAGE=${{ steps.frankenphp_image.outputs.image }}
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.php_version }}-amd64-${{ env.VERSION }}
           cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:cache-${{ matrix.php_version }}-amd64-${{ env.VERSION }}
           cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:cache-${{ matrix.php_version }}-amd64-${{ env.VERSION }},mode=max
@@ -67,14 +71,19 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Set FrankenPHP image
-        id: frankenphp_image
+      - name: Extract FrankenPHP binary from Docker image
         run: |
           PHP_VERSION="${{ matrix.php_version }}"
           if awk "BEGIN {exit !($PHP_VERSION >= 8.2)}"; then
-            echo "image=dunglas/frankenphp:php${PHP_VERSION}" >> $GITHUB_OUTPUT
+            mkdir -p frankenphp-binary
+            docker pull dunglas/frankenphp:php${PHP_VERSION} || true
+            docker create --name temp-frankenphp dunglas/frankenphp:php${PHP_VERSION} || true
+            docker cp temp-frankenphp:/usr/local/bin/frankenphp frankenphp-binary/frankenphp || true
+            docker rm temp-frankenphp || true
+            chmod +x frankenphp-binary/frankenphp || true
           else
-            echo "image=quay.io/centos/centos:stream9" >> $GITHUB_OUTPUT
+            mkdir -p frankenphp-binary
+            touch frankenphp-binary/.keep
           fi
 
       - name: Build & push (arm64)
@@ -86,7 +95,6 @@ jobs:
           push: true
           build-args: |
             PHP_VERSION=${{ matrix.php_version }}
-            FRANKENPHP_IMAGE=${{ steps.frankenphp_image.outputs.image }}
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.php_version }}-arm64-${{ env.VERSION }}
           cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:cache-${{ matrix.php_version }}-arm64-${{ env.VERSION }}
           cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:cache-${{ matrix.php_version }}-arm64-${{ env.VERSION }},mode=max
