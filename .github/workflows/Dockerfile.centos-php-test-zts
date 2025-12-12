@@ -39,7 +39,6 @@ RUN yum install -y autoconf bison pkgconfig \
     git wget \
     python3 python3-devel python3-pip \
     nginx httpd httpd-devel procps-ng mysql-server \
-    libargon2 \
  && yum clean all
 
 # Install mariadb-devel separately (may need different repo or skip if not critical)
@@ -103,6 +102,7 @@ RUN if [ -f /tmp/frankenphp-binary/frankenphp ]; then \
         cp /tmp/frankenphp-binary/frankenphp /usr/local/bin/frankenphp && \
         chmod +x /usr/local/bin/frankenphp && \
         [ -f /tmp/frankenphp-binary/lib/libphp.so ] && cp /tmp/frankenphp-binary/lib/libphp.so /usr/local/lib/libphp.so || true && \
+        [ -f /tmp/frankenphp-binary/lib/libargon2.so.1 ] && cp /tmp/frankenphp-binary/lib/libargon2.so.1 /usr/local/lib/libargon2.so.1 || true && \
         mkdir -p /etc/frankenphp/caddy.d \
         && mkdir -p /etc/frankenphp/php.d \
         && mkdir -p /usr/lib/frankenphp/modules \
