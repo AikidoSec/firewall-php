@@ -39,6 +39,7 @@ RUN yum install -y autoconf bison pkgconfig \
     git wget \
     python3 python3-devel python3-pip \
     nginx httpd httpd-devel procps-ng mysql-server \
+    libargon2 \
  && yum clean all
 
 # Install mariadb-devel separately (may need different repo or skip if not critical)
@@ -100,16 +101,14 @@ COPY --from=php-build /usr/local /usr/local
 COPY frankenphp-binary/ /tmp/frankenphp-binary/
 RUN if [ -f /tmp/frankenphp-binary/frankenphp ]; then \
         cp /tmp/frankenphp-binary/frankenphp /usr/local/bin/frankenphp && \
-        [ -d /tmp/frankenphp-binary/lib ] && cp -a /tmp/frankenphp-binary/lib/* /usr/local/lib/ || true && \
-        [ -f /usr/local/lib/libphp.so ] && ln -sf /usr/local/lib/libphp.so /usr/local/bin/libphp.so || true && \
         chmod +x /usr/local/bin/frankenphp && \
         mkdir -p /etc/frankenphp/caddy.d \
         && mkdir -p /etc/frankenphp/php.d \
         && mkdir -p /usr/lib/frankenphp/modules \
         && echo "/usr/local/lib" > /etc/ld.so.conf.d/usr-local-lib.conf \
         && ldconfig \
-        && echo "Copied libraries:" && ls -lh /usr/local/lib/*.so* 2>/dev/null | head -20 || true \
-        && echo "Checking libphp.so dependencies:" && ldd /usr/local/lib/libphp.so 2>/dev/null | grep -E "libargon2|not found" || true; \
+        && echo "FrankenPHP installed. Checking libphp.so dependencies:" \
+        && ldd /usr/local/lib/libphp.so 2>/dev/null | grep -E "argon2|not found" || true; \
     fi
 
 RUN EXTENSION_DIR=$(php -i | grep "^extension_dir" | awk '{print $3}') && \

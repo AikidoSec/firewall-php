@@ -37,14 +37,10 @@ jobs:
           docker pull --platform linux/amd64 dunglas/frankenphp:php${PHP_VERSION}-bookworm
           docker create --platform linux/amd64 --name temp-frankenphp dunglas/frankenphp:php${PHP_VERSION}-bookworm
           docker cp temp-frankenphp:/usr/local/bin/frankenphp frankenphp-binary/frankenphp
-          docker cp temp-frankenphp:/usr/local/lib/. frankenphp-binary/lib/
-          docker cp temp-frankenphp:/usr/lib/. frankenphp-binary/lib/ || true
           docker rm temp-frankenphp
           chmod +x frankenphp-binary/frankenphp
-          echo "Extracted files:"
+          echo "Extracted FrankenPHP binary:"
           ls -lh frankenphp-binary/ || true
-          echo "Extracted libraries (looking for libargon2 and libphp):"
-          find frankenphp-binary/lib -name "*argon2*" -o -name "*libphp*" 2>/dev/null | head -10 || true
 
       - uses: docker/build-push-action@v6
         with:
@@ -55,8 +51,8 @@ jobs:
           build-args: |
             PHP_VERSION=${{ matrix.php_version }}
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.php_version }}-amd64-${{ env.VERSION }}
-          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:cache-${{ matrix.php_version }}-amd64-${{ env.VERSION }}
-          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:cache-${{ matrix.php_version }}-amd64-${{ env.VERSION }},mode=max
+          #cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:cache-${{ matrix.php_version }}-amd64-${{ env.VERSION }}
+          #cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:cache-${{ matrix.php_version }}-amd64-${{ env.VERSION }},mode=max
 
   build-arm64:
     runs-on: ubuntu-24.04-arm
@@ -79,14 +75,13 @@ jobs:
         if: matrix.php_version >= '8.2'
         run: |
           PHP_VERSION="${{ matrix.php_version }}"
-          docker pull --platform linux/arm64 dunglas/frankenphp:php${PHP_VERSION}
-          docker create --platform linux/arm64 --name temp-frankenphp dunglas/frankenphp:php${PHP_VERSION}
+          docker pull --platform linux/arm64 dunglas/frankenphp:php${PHP_VERSION}-bookworm
+          docker create --platform linux/arm64 --name temp-frankenphp dunglas/frankenphp:php${PHP_VERSION}-bookworm
           docker cp temp-frankenphp:/usr/local/bin/frankenphp frankenphp-binary/frankenphp
-          docker cp temp-frankenphp:/usr/local/lib/. frankenphp-binary/lib/
           docker rm temp-frankenphp
           chmod +x frankenphp-binary/frankenphp
+          echo "Extracted FrankenPHP binary:"
           ls -lh frankenphp-binary/ || true
-          ls -lh frankenphp-binary/lib/ || true
 
       - uses: docker/build-push-action@v6
         with:
@@ -97,8 +92,8 @@ jobs:
           build-args: |
             PHP_VERSION=${{ matrix.php_version }}
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.php_version }}-arm64-${{ env.VERSION }}
-          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:cache-${{ matrix.php_version }}-arm64-${{ env.VERSION }}
-          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:cache-${{ matrix.php_version }}-arm64-${{ env.VERSION }},mode=max
+          #cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:cache-${{ matrix.php_version }}-arm64-${{ env.VERSION }}
+          #cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:cache-${{ matrix.php_version }}-arm64-${{ env.VERSION }},mode=max
 
   publish-manifests:
     runs-on: ubuntu-24.04
