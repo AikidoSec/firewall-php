@@ -35,7 +35,7 @@ ZEND_FUNCTION(should_block_request) {
         return;
     }
 
-    if (AIKIDO_GLOBAL(disable) == true) {
+    if (AIKIDO_GLOBAL(disable) == true || IsCurrentIpBypassed()) {
         return;
     }
 
@@ -70,7 +70,7 @@ ZEND_FUNCTION(auto_block_request) {
         return;
     }
 
-    if (AIKIDO_GLOBAL(disable) == true) {
+    if (AIKIDO_GLOBAL(disable) == true || IsCurrentIpBypassed()) {
         return;
     }
 

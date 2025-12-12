@@ -87,6 +87,14 @@ ZEND_NAMED_FUNCTION(aikido_generic_handler) {
             return;
         }
 
+        if (IsCurrentIpBypassed()) {
+            if (original_handler) {
+                original_handler(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+            }
+            AIKIDO_LOG_INFO("Aikido generic handler finished earlier because IP is bypassed!\n");
+            return;
+        }
+
         eventCache.functionName = scope_name;
         sink = scope_name;
 

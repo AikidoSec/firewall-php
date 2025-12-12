@@ -27,6 +27,8 @@ class Action {
 
         ACTION_STATUS executeWarningMessage(json &event);
 
+        ACTION_STATUS executeBypassIp(json &event);
+
     public:
         Action() = default;
         ~Action() = default;

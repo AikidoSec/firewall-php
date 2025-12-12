@@ -16,6 +16,7 @@ void PhpLifecycle::RequestInit() {
     requestProcessor.RequestInit();
     checkedAutoBlock = false;
     checkedShouldBlockRequest = false;
+    InitIpBypassCheck();
 }
 
 void PhpLifecycle::RequestShutdown() {

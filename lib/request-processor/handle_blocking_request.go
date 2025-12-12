@@ -49,10 +49,6 @@ func OnGetBlockingStatus() string {
 
 	autoBlockingStatus := OnGetAutoBlockingStatus()
 
-	if context.IsIpBypassed() {
-		return ""
-	}
-
 	if context.IsEndpointRateLimitingEnabled() {
 		// If request is monitored for rate limiting,
 		// do a sync call via gRPC to see if the request should be blocked or not
@@ -96,11 +92,6 @@ func OnGetAutoBlockingStatus() string {
 		return GetAction("exit", "blocked", "ip", "not allowed by config to access this endpoint", ip, 403)
 	}
 
-	if context.IsIpBypassed() {
-		log.Infof("IP \"%s\" is bypassed! Skipping additional checks...", ip)
-		return ""
-	}
-
 	if !utils.IsIpAllowed(server, ip) {
 		log.Infof("IP \"%s\" is not found in allow lists!", ip)
 		return GetAction("exit", "blocked", "ip", "not in allow lists", ip, 403)
@@ -133,5 +124,24 @@ func OnGetAutoBlockingStatus() string {
 		return GetAction("exit", "blocked", "user-agent", description, userAgent, 403)
 	}
 
+	return ""
+}
+
+func GetBypassAction() string {
+	actionMap := map[string]interface{}{
+		"action": "bypassIp",
+	}
+	actionJson, err := json.Marshal(actionMap)
+	if err != nil {
+		return ""
+	}
+	return string(actionJson)
+}
+
+func OnGetIsIpBypassed() string {
+	log.Debugf("OnGetIsIpBypassed called!")
+	if context.IsIpBypassed() {
+		return GetBypassAction()
+	}
 	return ""
 }
