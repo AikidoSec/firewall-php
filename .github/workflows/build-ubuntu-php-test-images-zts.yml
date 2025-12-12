@@ -33,8 +33,9 @@ jobs:
       - name: Extract FrankenPHP binary from Docker image
         if: matrix.php_version >= '8.2'
         run: |
-          docker pull --platform linux/amd64 dunglas/frankenphp:8.4
-          docker create --platform linux/amd64 --name temp-frankenphp dunglas/frankenphp:8.4
+          PHP_VERSION="${{ matrix.php_version }}"
+          docker pull --platform linux/amd64 dunglas/frankenphp:php${PHP_VERSION}
+          docker create --platform linux/amd64 --name temp-frankenphp dunglas/frankenphp:php${PHP_VERSION}
           docker cp temp-frankenphp:/usr/local/bin/frankenphp frankenphp-binary/frankenphp
           docker cp temp-frankenphp:/usr/local/lib/. frankenphp-binary/lib/
           docker rm temp-frankenphp
@@ -74,8 +75,9 @@ jobs:
       - name: Extract FrankenPHP binary from Docker image
         if: matrix.php_version >= '8.2'
         run: |
-          docker pull --platform linux/arm64 dunglas/frankenphp:8.4
-          docker create --platform linux/arm64 --name temp-frankenphp dunglas/frankenphp:8.4
+          PHP_VERSION="${{ matrix.php_version }}"
+          docker pull --platform linux/arm64 dunglas/frankenphp:php${PHP_VERSION}
+          docker create --platform linux/arm64 --name temp-frankenphp dunglas/frankenphp:php${PHP_VERSION}
           docker cp temp-frankenphp:/usr/local/bin/frankenphp frankenphp-binary/frankenphp
           docker cp temp-frankenphp:/usr/local/lib/. frankenphp-binary/lib/
           docker rm temp-frankenphp
