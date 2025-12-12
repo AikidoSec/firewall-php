@@ -35,7 +35,7 @@ jobs:
           if awk "BEGIN {exit !($PHP_VERSION >= 8.2)}"; then
             echo "image=dunglas/frankenphp:php${PHP_VERSION}" >> $GITHUB_OUTPUT
           else
-            echo "image=scratch" >> $GITHUB_OUTPUT
+            echo "image=quay.io/centos/centos:stream9" >> $GITHUB_OUTPUT
           fi
 
       - name: Build & push (amd64)
@@ -74,7 +74,7 @@ jobs:
           if awk "BEGIN {exit !($PHP_VERSION >= 8.2)}"; then
             echo "image=dunglas/frankenphp:php${PHP_VERSION}" >> $GITHUB_OUTPUT
           else
-            echo "image=scratch" >> $GITHUB_OUTPUT
+            echo "image=quay.io/centos/centos:stream9" >> $GITHUB_OUTPUT
           fi
 
       - name: Build & push (arm64)

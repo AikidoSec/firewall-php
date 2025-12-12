@@ -34,7 +34,7 @@ jobs:
           if awk "BEGIN {exit !($PHP_VERSION >= 8.2)}"; then
             echo "image=dunglas/frankenphp:php${PHP_VERSION}" >> $GITHUB_OUTPUT
           else
-            echo "image=scratch" >> $GITHUB_OUTPUT
+            echo "image=ubuntu:24.04" >> $GITHUB_OUTPUT
           fi
 
       - uses: docker/build-push-action@v6
@@ -71,7 +71,7 @@ jobs:
           if awk "BEGIN {exit !($PHP_VERSION >= 8.2)}"; then
             echo "image=dunglas/frankenphp:php${PHP_VERSION}" >> $GITHUB_OUTPUT
           else
-            echo "image=scratch" >> $GITHUB_OUTPUT
+            echo "image=ubuntu:24.04" >> $GITHUB_OUTPUT
           fi
 
       - uses: docker/build-push-action@v6

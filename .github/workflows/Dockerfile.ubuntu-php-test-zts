@@ -5,7 +5,7 @@
 ARG DEBIAN_FRONTEND=noninteractive
 ARG PHP_VERSION=8.3
 ARG PHP_SRC_REF=PHP-${PHP_VERSION}
-ARG FRANKENPHP_IMAGE=scratch
+ARG FRANKENPHP_IMAGE=ubuntu:24.04
 
 FROM ubuntu:24.04 AS base
 SHELL ["/bin/bash", "-eo", "pipefail", "-c"]

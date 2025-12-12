@@ -5,7 +5,7 @@
 ARG BASE_IMAGE=quay.io/centos/centos:stream9
 ARG PHP_VERSION=8.3
 ARG PHP_SRC_REF=PHP-${PHP_VERSION}
-ARG FRANKENPHP_IMAGE=scratch
+ARG FRANKENPHP_IMAGE=quay.io/centos/centos:stream9
 
 FROM ${BASE_IMAGE} AS base
 SHELL ["/bin/bash", "-euo", "pipefail", "-c"]
