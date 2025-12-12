@@ -37,10 +37,13 @@ jobs:
           docker pull --platform linux/amd64 dunglas/frankenphp:php${PHP_VERSION}-bookworm
           docker create --platform linux/amd64 --name temp-frankenphp dunglas/frankenphp:php${PHP_VERSION}-bookworm
           docker cp temp-frankenphp:/usr/local/bin/frankenphp frankenphp-binary/frankenphp
+          mkdir -p frankenphp-binary/lib
+          docker cp temp-frankenphp:/usr/local/lib/libphp.so frankenphp-binary/lib/libphp.so
           docker rm temp-frankenphp
           chmod +x frankenphp-binary/frankenphp
-          echo "Extracted FrankenPHP binary:"
-          ls -lh frankenphp-binary/ || true
+          echo "Extracted FrankenPHP files:"
+          ls -lh frankenphp-binary/
+          ls -lh frankenphp-binary/lib/ || true
 
       - uses: docker/build-push-action@v6
         with:
@@ -78,10 +81,13 @@ jobs:
           docker pull --platform linux/arm64 dunglas/frankenphp:php${PHP_VERSION}-bookworm
           docker create --platform linux/arm64 --name temp-frankenphp dunglas/frankenphp:php${PHP_VERSION}-bookworm
           docker cp temp-frankenphp:/usr/local/bin/frankenphp frankenphp-binary/frankenphp
+          mkdir -p frankenphp-binary/lib
+          docker cp temp-frankenphp:/usr/local/lib/libphp.so frankenphp-binary/lib/libphp.so
           docker rm temp-frankenphp
           chmod +x frankenphp-binary/frankenphp
-          echo "Extracted FrankenPHP binary:"
-          ls -lh frankenphp-binary/ || true
+          echo "Extracted FrankenPHP files:"
+          ls -lh frankenphp-binary/
+          ls -lh frankenphp-binary/lib/ || true
 
       - uses: docker/build-push-action@v6
         with:

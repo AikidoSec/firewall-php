@@ -102,13 +102,14 @@ COPY frankenphp-binary/ /tmp/frankenphp-binary/
 RUN if [ -f /tmp/frankenphp-binary/frankenphp ]; then \
         cp /tmp/frankenphp-binary/frankenphp /usr/local/bin/frankenphp && \
         chmod +x /usr/local/bin/frankenphp && \
+        [ -f /tmp/frankenphp-binary/lib/libphp.so ] && cp /tmp/frankenphp-binary/lib/libphp.so /usr/local/lib/libphp.so || true && \
         mkdir -p /etc/frankenphp/caddy.d \
         && mkdir -p /etc/frankenphp/php.d \
         && mkdir -p /usr/lib/frankenphp/modules \
         && echo "/usr/local/lib" > /etc/ld.so.conf.d/usr-local-lib.conf \
         && ldconfig \
-        && echo "FrankenPHP installed. Checking libphp.so dependencies:" \
-        && ldd /usr/local/lib/libphp.so 2>/dev/null | grep -E "argon2|not found" || true; \
+        && echo "FrankenPHP installed. Checking dependencies:" \
+        && ldd /usr/local/bin/frankenphp 2>/dev/null | grep -E "libphp|libargon2|not found" || true; \
     fi
 
 RUN EXTENSION_DIR=$(php -i | grep "^extension_dir" | awk '{print $3}') && \
