@@ -97,6 +97,7 @@ RUN if [ -f /tmp/frankenphp-binary/frankenphp ]; then \
         cp /tmp/frankenphp-binary/frankenphp /usr/local/bin/frankenphp && \
         chmod +x /usr/local/bin/frankenphp && \
         [ -f /tmp/frankenphp-binary/lib/libphp.so ] && cp /tmp/frankenphp-binary/lib/libphp.so /usr/local/lib/libphp.so || true && \
+        [ -f /tmp/frankenphp-binary/lib/libwatcher-c.so.0 ] && cp /tmp/frankenphp-binary/lib/libwatcher-c.so.0 /usr/local/lib/libwatcher-c.so.0 || true && \
         [ -f /tmp/frankenphp-binary/lib/libargon2.so.1 ] && cp /tmp/frankenphp-binary/lib/libargon2.so.1 /usr/local/lib/libargon2.so.1 || true && \
         mkdir -p /etc/frankenphp/caddy.d \
         && mkdir -p /etc/frankenphp/php.d \

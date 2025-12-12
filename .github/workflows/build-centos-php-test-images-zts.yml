@@ -40,6 +40,7 @@ jobs:
           docker cp temp-frankenphp:/usr/local/bin/frankenphp frankenphp-binary/frankenphp
           mkdir -p frankenphp-binary/lib
           docker cp temp-frankenphp:/usr/local/lib/libphp.so frankenphp-binary/lib/libphp.so
+          docker cp temp-frankenphp:/usr/local/lib/libwatcher-c.so.0 frankenphp-binary/lib/libwatcher-c.so.0 || true
           docker cp temp-frankenphp:/lib/x86_64-linux-gnu/libargon2.so.1 frankenphp-binary/lib/libargon2.so.1 || true
           docker rm temp-frankenphp
           chmod +x frankenphp-binary/frankenphp
@@ -87,6 +88,7 @@ jobs:
           docker cp temp-frankenphp:/usr/local/bin/frankenphp frankenphp-binary/frankenphp
           mkdir -p frankenphp-binary/lib
           docker cp temp-frankenphp:/usr/local/lib/libphp.so frankenphp-binary/lib/libphp.so
+          docker cp temp-frankenphp:/usr/local/lib/libwatcher-c.so.0 frankenphp-binary/lib/libwatcher-c.so.0 || true
           docker cp temp-frankenphp:/lib/aarch64-linux-gnu/libargon2.so.1 frankenphp-binary/lib/libargon2.so.1 || true
           docker rm temp-frankenphp
           chmod +x frankenphp-binary/frankenphp
