@@ -27,11 +27,13 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Prepare FrankenPHP binary directory
+        run: mkdir -p frankenphp-binary
+
       - name: Extract FrankenPHP binary from Docker image
         if: matrix.php_version >= '8.2'
         run: |
           PHP_VERSION="${{ matrix.php_version }}"
-          mkdir -p frankenphp-binary
           docker pull --platform linux/amd64 dunglas/frankenphp:php${PHP_VERSION}
           docker create --platform linux/amd64 --name temp-frankenphp dunglas/frankenphp:php${PHP_VERSION}
           docker cp temp-frankenphp:/usr/local/bin/frankenphp frankenphp-binary/frankenphp
@@ -66,11 +68,13 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Prepare FrankenPHP binary directory
+        run: mkdir -p frankenphp-binary
+
       - name: Extract FrankenPHP binary from Docker image
         if: matrix.php_version >= '8.2'
         run: |
           PHP_VERSION="${{ matrix.php_version }}"
-          mkdir -p frankenphp-binary
           docker pull --platform linux/arm64 dunglas/frankenphp:php${PHP_VERSION}
           docker create --platform linux/arm64 --name temp-frankenphp dunglas/frankenphp:php${PHP_VERSION}
           docker cp temp-frankenphp:/usr/local/bin/frankenphp frankenphp-binary/frankenphp
