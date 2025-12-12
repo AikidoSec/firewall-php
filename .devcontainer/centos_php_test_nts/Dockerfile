@@ -1,84 +1,42 @@
 # syntax=docker/dockerfile:1.7
-# CentOS Stream 9 test image with PHP built from source in NTS mode
+# Ubuntu test image with PHP built from source in NTS mode
 # Used for testing the extension with standard PHP (non-thread-safe)
 
-ARG BASE_IMAGE=quay.io/centos/centos:stream9
+ARG DEBIAN_FRONTEND=noninteractive
 ARG PHP_VERSION=8.3
 ARG PHP_SRC_REF=PHP-${PHP_VERSION}
 
-FROM ${BASE_IMAGE} AS base
-SHELL ["/bin/bash", "-euo", "pipefail", "-c"]
+FROM ubuntu:24.04 AS base
+SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
 
-ENV TZ=Etc/UTC \
+ENV DEBIAN_FRONTEND=noninteractive \
+    TZ=Etc/UTC \
     LC_ALL=C.UTF-8 \
     LANG=C.UTF-8 \
+    LANGUAGE=C.UTF-8 \
     PHP_VERSION=${PHP_VERSION}
 
-RUN yum install -y yum-utils && \
-    dnf config-manager --set-enabled crb || dnf config-manager --set-enabled powertools || true
+# Install base dependencies and build tools
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+      ca-certificates curl gnupg lsb-release tzdata locales \
+      software-properties-common apt-transport-https \
+      git make unzip xz-utils \
+      build-essential autoconf bison re2c pkg-config \
+      libxml2-dev libsqlite3-dev libcurl4-openssl-dev libssl-dev \
+      libzip-dev libonig-dev libjpeg-dev libpng-dev libwebp-dev \
+      libicu-dev libreadline-dev libxslt1-dev default-libmysqlclient-dev \
+      apache2 \
+      apache2-bin \
+      apache2-dev \
+      nginx \
+      mariadb-server \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install minimal tools needed for re2c build (replace curl-minimal with full curl)
-RUN yum install -y xz tar gcc gcc-c++ make
-
-ENV RE2C_VERSION=3.1
-RUN curl -fsSL -o /tmp/re2c.tar.xz https://github.com/skvadrik/re2c/releases/download/${RE2C_VERSION}/re2c-${RE2C_VERSION}.tar.xz \
-    && mkdir -p /tmp/re2c-src \
-    && tar -xJf /tmp/re2c.tar.xz -C /tmp/re2c-src --strip-components=1 \
-    && cd /tmp/re2c-src \
-    && ./configure \
-    && make -j"$(nproc)" \
-    && make install \
-    && rm -rf /tmp/re2c-src /tmp/re2c.tar.xz
-
-# Install remaining build dependencies and tools
-RUN yum install -y autoconf bison pkgconfig \
-    libxml2-devel sqlite-devel libcurl-devel openssl-devel \
-    libzip-devel oniguruma-devel libjpeg-turbo-devel libpng-devel libwebp-devel \
-    libicu-devel readline-devel libxslt-devel \
-    git wget \
-    python3 python3-devel python3-pip \
-    nginx httpd httpd-devel procps-ng mysql-server \
-    cpio unzip nano lsof jq rpmdevtools sudo \
- && yum clean all
-
-# Install mariadb-devel separately (may need different repo or skip if not critical)
-RUN yum install -y mariadb-devel || yum install -y mariadb-connector-c-devel || echo "Warning: mariadb-devel not available, continuing without it"
-
-# Install Go toolchain (architecture-aware)
-RUN ARCH=$(uname -m) && \
-    if [ "$ARCH" = "x86_64" ] || [ "$ARCH" = "amd64" ]; then \
-        curl -O https://dl.google.com/go/go1.23.3.linux-amd64.tar.gz && \
-        tar -C /usr/local -xzf go1.23.3.linux-amd64.tar.gz && \
-        rm -f go1.23.3.linux-amd64.tar.gz; \
-    elif [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then \
-        curl -O https://dl.google.com/go/go1.23.3.linux-arm64.tar.gz && \
-        tar -C /usr/local -xzf go1.23.3.linux-arm64.tar.gz && \
-        rm -f go1.23.3.linux-arm64.tar.gz; \
-    else \
-        echo "Unsupported architecture: $ARCH" && exit 1; \
-    fi
-ENV PATH="/usr/local/go/bin:${PATH}"
-
-# Install protoc and Go protobuf plugins
-RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@latest \
-    && go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
-RUN ARCH=$(uname -m) && \
-    if [ "$ARCH" = "x86_64" ] || [ "$ARCH" = "amd64" ]; then \
-        PROTOC_ZIP=protoc-28.3-linux-x86_64.zip && \
-        curl -OL https://github.com/protocolbuffers/protobuf/releases/download/v28.3/$PROTOC_ZIP && \
-        unzip -o $PROTOC_ZIP -d /usr/local bin/protoc && \
-        unzip -o $PROTOC_ZIP -d /usr/local include/* && \
-        rm -f $PROTOC_ZIP; \
-    elif [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then \
-        PROTOC_ZIP=protoc-28.3-linux-aarch_64.zip && \
-        curl -OL https://github.com/protocolbuffers/protobuf/releases/download/v28.3/$PROTOC_ZIP && \
-        unzip -o $PROTOC_ZIP -d /usr/local bin/protoc && \
-        unzip -o $PROTOC_ZIP -d /usr/local include/* && \
-        rm -f $PROTOC_ZIP; \
-    else \
-        echo "Unsupported architecture: $ARCH" && exit 1; \
-    fi
-ENV PATH="$HOME/go/bin:${PATH}"
+# Timezone to UTC
+RUN ln -fs /usr/share/zoneinfo/${TZ} /etc/localtime && \
+    echo "${TZ}" > /etc/timezone && \
+    dpkg-reconfigure -f noninteractive tzdata
 
 # Fetch and build PHP from source with NTS
 FROM base AS php-build
@@ -87,10 +45,12 @@ WORKDIR /usr/src
 RUN git clone --depth 1 --branch "${PHP_SRC_REF}" https://github.com/php/php-src.git
 WORKDIR /usr/src/php-src
 
+RUN apt-get update && apt-get install -y wget && rm -rf /usr/local/go && wget https://go.dev/dl/go1.24.1.linux-arm64.tar.gz && tar -C /usr/local -xzf go1.24.1.linux-arm64.tar.gz && export PATH=/usr/local/go/bin:$PATH && wget https://github.com/protocolbuffers/protobuf/releases/download/v24.4/protoc-24.4-linux-aarch_64.zip && unzip protoc-24.4-linux-aarch_64.zip -d /usr/local && chmod +x /usr/local/bin/protoc && export PATH=$PATH:/usr/local/bin && /usr/local/go/bin/go install google.golang.org/protobuf/cmd/protoc-gen-go@latest && /usr/local/go/bin/go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest && ln -sf /root/go/bin/protoc-gen-go /usr/local/bin/protoc-gen-go && ln -sf /root/go/bin/protoc-gen-go-grpc /usr/local/bin/protoc-gen-go-grpc && protoc-gen-go --version && protoc-gen-go-grpc --version && protoc --version && go version
+
 RUN sed -i 's/\[\([0-9]\+\.[0-9]\+\.[0-9]\+\)-dev\]/[\1]/' configure.ac
 RUN ./buildconf --force
 
-# Patch openssl.c for OpenSSL compatibility (RSA_SSLV23_PADDING may not be available in newer OpenSSL)
+# Patch openssl.c for OpenSSL compatibility
 RUN if [ -f ext/openssl/openssl.c ] && grep -q 'REGISTER_LONG_CONSTANT("OPENSSL_SSLV23_PADDING"' ext/openssl/openssl.c; then \
     awk '/REGISTER_LONG_CONSTANT\("OPENSSL_SSLV23_PADDING"/ { \
         indent = $0; \
@@ -105,6 +65,13 @@ RUN if [ -f ext/openssl/openssl.c ] && grep -q 'REGISTER_LONG_CONSTANT("OPENSSL_
     mv ext/openssl/openssl.c.new ext/openssl/openssl.c; \
     fi || true
 
+RUN mkdir -p /usr/local/etc/php/conf.d
+
+# Apache: switch to prefork for mod_php scenario and enable rewrite
+RUN a2dismod mpm_event || true && \
+    a2dismod mpm_worker || true && \
+    a2enmod mpm_prefork rewrite cgi cgid || true
+
 # Build PHP with NTS (no ZTS flags)
 RUN ./configure \
       --prefix=/usr/local \
@@ -113,6 +80,7 @@ RUN ./configure \
       --enable-fpm \
       --enable-mbstring \
       --enable-pcntl \
+      --enable-cgi \
       --with-extra-version="" \
       --with-curl \
       --with-mysqli \
@@ -120,6 +88,8 @@ RUN ./configure \
       --with-zlib \
       --with-zip \
       --with-apxs2=/usr/bin/apxs \
+      --disable-zts \
+&& mkdir -p /usr/lib/apache2/modules \
 && make -j"$(nproc)" \
 && make install \
 && strip /usr/local/bin/php /usr/local/sbin/php-fpm || true
@@ -127,15 +97,17 @@ RUN ./configure \
 # Final image with PHP and test infrastructure
 FROM base AS final
 COPY --from=php-build /usr/local /usr/local
-# Copy libphp.so module (installed by apxs to Apache modules directory, not /usr/local)
-# Note: /usr/lib64/ is the standard path for 64-bit libraries on both x86_64 and aarch64
-# The architecture is determined by the binary itself (ELF header), not the directory path
-# apxs installs to /usr/lib64/httpd/modules/ on CentOS/RHEL, or /usr/lib/httpd/modules/ on some distros
-# We need to copy it from the build stage since COPY --from=php-build /usr/local only copies /usr/local
-RUN mkdir -p /usr/lib64/httpd/modules /usr/lib/httpd/modules
-# Copy from lib64 (standard on CentOS/RHEL for both x86_64 and aarch64)
-# If libphp.so exists in the build stage, it will be copied; if not, COPY will fail gracefully
-COPY --from=php-build /usr/lib64/httpd/modules/ /usr/lib64/httpd/modules/
+
+RUN mkdir -p /usr/lib/apache2/modules
+# Copy libphp module from build stage (PHP 7 uses libphp7.so, PHP 8+ uses libphp.so)
+# Use wildcard to copy whichever file exists
+COPY --from=php-build /usr/lib/apache2/modules/libphp*.so /usr/lib/apache2/modules/
+
+# Configure Apache to use prefork MPM (non-threaded) for NTS PHP
+# This must be done in the final stage since the base image has default MPM settings
+RUN a2dismod mpm_event || true && \
+    a2dismod mpm_worker || true && \
+    a2enmod mpm_prefork || true
 
 RUN EXTENSION_DIR=$(php -i | grep "^extension_dir" | awk '{print $3}') && \
     if [ -z "$EXTENSION_DIR" ]; then \
@@ -152,24 +124,27 @@ RUN php -v | grep -v "ZTS" >/dev/null || (echo "ERROR: ZTS is enabled but should
 ENV PATH="/usr/local/bin:${PATH}"
 
 RUN ln -sf /usr/local/bin/php /usr/bin/php && \
-    ln -sf /usr/local/sbin/php-fpm /usr/sbin/php-fpm || true
+    ln -sf /usr/local/sbin/php-fpm /usr/sbin/php-fpm || true && \
+    ln -sf /usr/local/bin/php-cgi /usr/bin/php-cgi
 
-RUN     mkdir -p /etc/php-fpm.d && \
+RUN PHP_VER=$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;') && \
+    mkdir -p /etc/php/${PHP_VER}/fpm && \
+    mkdir -p /etc/php/${PHP_VER}/fpm/pool.d && \
+    mkdir -p /run/php && \
     mkdir -p /run/php-fpm && \
     mkdir -p /var/run && \
-    mkdir -p /var/log/php-fpm && \
-    mkdir -p /etc/httpd || true && \
+    mkdir -p /var/log && \
     mkdir -p /usr/local/etc/php-fpm.d && \
     mkdir -p /usr/local/etc/php/conf.d && \
 
-    ln -sf /usr/local/etc/php/conf.d /etc/php.d || true && \
+    ln -sf /usr/local/etc/php/conf.d /etc/php/${PHP_VER}/fpm/conf.d || true && \
 
     echo "[global]" > /usr/local/etc/php-fpm.conf && \
     echo "pid = /run/php-fpm/php-fpm.pid" >> /usr/local/etc/php-fpm.conf && \
-    echo "error_log = /var/log/php-fpm/error.log" >> /usr/local/etc/php-fpm.conf && \
+    echo "error_log = /var/log/php${PHP_VER}-fpm.log" >> /usr/local/etc/php-fpm.conf && \
     echo "daemonize = yes" >> /usr/local/etc/php-fpm.conf && \
     echo "include=/usr/local/etc/php-fpm.d/*.conf" >> /usr/local/etc/php-fpm.conf && \
-    echo "include=/etc/php-fpm.d/*.conf" >> /usr/local/etc/php-fpm.conf && \
+    echo "include=/etc/php/${PHP_VER}/fpm/pool.d/*.conf" >> /usr/local/etc/php-fpm.conf && \
 
     echo "[www]" > /usr/local/etc/php-fpm.d/www.conf && \
     echo "user = root" >> /usr/local/etc/php-fpm.d/www.conf && \
@@ -192,39 +167,79 @@ RUN     mkdir -p /etc/php-fpm.d && \
      echo "Pool config:" && cat /usr/local/etc/php-fpm.d/www.conf && \
      exit 1) && \
 
-    ln -sf /usr/local/etc/php-fpm.conf /etc/php-fpm.conf && \
-    ln -sf /usr/local/etc/php-fpm.d/www.conf /etc/php-fpm.d/www.conf || true
+    ln -sf /usr/local/etc/php-fpm.conf /etc/php/${PHP_VER}/fpm/php-fpm.conf && \
+    ln -sf /usr/local/etc/php-fpm.d/www.conf /etc/php/${PHP_VER}/fpm/pool.d/www.conf || true
 
 # Configure MySQL socket path for mysqli (so "localhost" connections work)
-RUN mkdir -p /usr/local/etc/php/conf.d && \
-    echo "mysqli.default_socket = /var/lib/mysql/mysql.sock" > /usr/local/etc/php/conf.d/mysql-socket.ini
+# Note: /usr/local/etc/php/conf.d was created before PHP build
+RUN echo "mysqli.default_socket = /var/lib/mysql/mysql.sock" > /usr/local/etc/php/conf.d/mysql-socket.ini
 
-RUN mkdir -p /etc/php/${PHP_VERSION}/apache2/conf.d && \
-    echo "Created Apache mod_php directory: /etc/php/${PHP_VERSION}/apache2/conf.d"
-
-# Configure Apache to load libphp.so module (if it exists)
-RUN if [ -f /usr/lib64/httpd/modules/libphp.so ]; then \
-    echo "# Load PHP module for Apache" > /etc/httpd/conf.modules.d/10-php.conf && \
-    echo "LoadModule php_module modules/libphp.so" >> /etc/httpd/conf.modules.d/10-php.conf && \
-    echo "" >> /etc/httpd/conf.modules.d/10-php.conf && \
-    echo "# Configure PHP file handling" >> /etc/httpd/conf.modules.d/10-php.conf && \
-    echo "<FilesMatch \.php$>" >> /etc/httpd/conf.modules.d/10-php.conf && \
-    echo "    SetHandler application/x-httpd-php" >> /etc/httpd/conf.modules.d/10-php.conf && \
-    echo "</FilesMatch>" >> /etc/httpd/conf.modules.d/10-php.conf && \
-    echo "" >> /etc/httpd/conf.modules.d/10-php.conf && \
-    echo "# Directory index" >> /etc/httpd/conf.modules.d/10-php.conf && \
-    echo "DirectoryIndex index.php index.html" >> /etc/httpd/conf.modules.d/10-php.conf && \
-    echo "Created Apache PHP module configuration at /etc/httpd/conf.modules.d/10-php.conf"; \
+# Configure Apache to load libphp module (if it exists)
+# PHP 7 uses libphp7.so, other versions use libphp.so
+# Check for both possible filenames to handle any case
+RUN if [ -f "/usr/lib/apache2/modules/libphp7.so" ]; then \
+        LIBPHP_NAME="libphp7.so"; \
+        MODULE_NAME="php7_module"; \
+    elif [ -f "/usr/lib/apache2/modules/libphp.so" ]; then \
+        LIBPHP_NAME="libphp.so"; \
+        MODULE_NAME="php_module"; \
     else \
-    echo "Warning: libphp.so not found, skipping Apache PHP module configuration"; \
+        echo "Warning: No libphp module found in /usr/lib/apache2/modules/" && \
+        ls -la /usr/lib/apache2/modules/ || true && \
+        exit 0; \
+    fi && \
+    if [ -n "$LIBPHP_NAME" ]; then \
+        echo "# Load PHP module for Apache" > /etc/apache2/conf-available/php.conf && \
+        echo "LoadModule ${MODULE_NAME} /usr/lib/apache2/modules/${LIBPHP_NAME}" >> /etc/apache2/conf-available/php.conf && \
+        echo "" >> /etc/apache2/conf-available/php.conf && \
+        echo "# Configure PHP file handling" >> /etc/apache2/conf-available/php.conf && \
+        echo "<IfModule ${MODULE_NAME}>" >> /etc/apache2/conf-available/php.conf && \
+        echo "    PHPIniDir /usr/local/etc/php" >> /etc/apache2/conf-available/php.conf && \
+        echo "    <FilesMatch \.php$>" >> /etc/apache2/conf-available/php.conf && \
+        echo "        SetHandler application/x-httpd-php" >> /etc/apache2/conf-available/php.conf && \
+        echo "    </FilesMatch>" >> /etc/apache2/conf-available/php.conf && \
+        echo "    DirectoryIndex index.php index.html" >> /etc/apache2/conf-available/php.conf && \
+        echo "</IfModule>" >> /etc/apache2/conf-available/php.conf && \
+        a2enconf php >/dev/null 2>&1 || true && \
+        echo "Created Apache PHP module configuration with ${LIBPHP_NAME} (${MODULE_NAME})"; \
     fi
 
-# Python deps used by test harness
-RUN python3 -m pip install --no-cache-dir --upgrade pip && \
-    python3 -m pip install --no-cache-dir flask requests psutil
+# ---- Python toolchain used by tests ----
+ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
+  PYTHONDONTWRITEBYTECODE=1 \
+  VIRTUAL_ENV=/opt/ci-venv \
+  PATH="/opt/ci-venv/bin:${PATH}"
 
-# Quality-of-life
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 python3-venv python3-pip python3-dev \
+  && python3 -m venv "$VIRTUAL_ENV" \
+  && "$VIRTUAL_ENV/bin/pip" install --no-cache-dir \
+       flask pandas psutil requests \
+  && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Helper: start MariaDB 
+RUN mkdir -p /usr/local/bin /var/lib/mysql /run/mysqld && \
+    printf '%s\n' '#!/usr/bin/env bash' \
+      'set -euo pipefail' \
+      'mkdir -p /var/lib/mysql /run/mysqld' \
+      'chown -R mysql:mysql /var/lib/mysql /run/mysqld' \
+      'if [ ! -d /var/lib/mysql/mysql ]; then' \
+      '  mysqld --initialize-insecure --user=mysql --datadir=/var/lib/mysql' \
+      'fi' \
+      'mysqld --user=mysql --datadir=/var/lib/mysql &' \
+      'pid=$!' \
+      'for i in {1..30}; do mysqladmin ping --silent && break; sleep 1; done' \
+      'mysql -u root -e "CREATE DATABASE IF NOT EXISTS db;" || true' \
+      'mysql -u root -e "ALTER USER '\''root'\''@'\''localhost'\'' IDENTIFIED BY '\''pwd'\''; FLUSH PRIVILEGES;" || true' \
+      'wait $pid' \
+    > /usr/local/bin/start-mariadb && \
+    chmod +x /usr/local/bin/start-mariadb
+
+# Create PHP-CGI symlink for CGI tests (using source-built PHP)
+RUN mkdir -p /usr/lib/cgi-bin && \
+    ln -sf /usr/local/bin/php-cgi /usr/lib/cgi-bin/php-cgi || \
+    (echo "Note: php-cgi may not be available in source build" && true)
+
 WORKDIR /work
 CMD ["bash"]
-
 
