@@ -698,7 +698,7 @@ jobs:
     needs: [ build_rpm ]
     strategy:
       matrix:
-        php_version: ['8.3', '8.4', '8.5']
+        php_version: ['8.2', '8.3', '8.4', '8.5']
         server: ['frankenphp-worker', 'frankenphp-classic']
         arch: ['', '-arm']
       fail-fast: false
@@ -774,7 +774,7 @@ jobs:
     needs: [ build_deb ]
     strategy:
       matrix:
-        php_version: ['8.3', '8.4', '8.5']
+        php_version: ['8.2', '8.3', '8.4', '8.5']
         server: ['frankenphp-worker', 'frankenphp-classic']
         arch: ['', '-arm']
       fail-fast: false

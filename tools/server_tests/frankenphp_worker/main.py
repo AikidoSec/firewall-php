@@ -10,7 +10,28 @@ worker_scripts_dir = "/tmp/frankenphp_workers"
 
 num_workers = 2
 
-caddyfile_base_template = """{{
+def get_php_version():
+    """Get PHP version as a tuple (major, minor)"""
+    try:
+        result = subprocess.run(['php', '-r', 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;'], 
+                              capture_output=True, text=True, check=True)
+        version_str = result.stdout.strip()
+        major, minor = version_str.split('.')
+        return (int(major), int(minor))
+    except:
+        return (8, 3)  # Default to newer version
+
+def get_caddyfile_base_template():
+    """Get the appropriate caddyfile template based on PHP version"""
+    php_version = get_php_version()
+    
+    # FrankenPHP 1.1.0 (PHP 8.2) doesn't support the {{ global options block
+    if php_version == (8, 2):
+        # Use a simpler format without global options block
+        return ""
+    else:
+        # Newer versions support the global options block
+        return """{{
     frankenphp {{
         num_threads {num_threads}
         max_threads {max_threads}
@@ -110,7 +131,9 @@ def frankenphp_worker_pre_tests(tests_data):
     threads = total_workers * 3
     
     with open(caddyfile_path, 'w') as f:
-        f.write(caddyfile_base_template.format(num_threads=threads, max_threads=threads))
+        base_template = get_caddyfile_base_template()
+        if base_template:
+            f.write(base_template.format(num_threads=threads, max_threads=threads*2))
         for test_data in tests_data:
             f.write("\n" + test_data["site_block"])
     

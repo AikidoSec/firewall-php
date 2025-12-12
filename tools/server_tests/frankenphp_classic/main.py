@@ -58,7 +58,7 @@ def frankenphp_classic_pre_tests(tests_data):
     threads = total_workers * 2
     
     with open(caddyfile_path, 'w') as f:
-        f.write(caddyfile_base_template.format(num_threads=threads, max_threads=threads))
+        f.write(caddyfile_base_template.format(num_threads=threads, max_threads=threads*2))
         for test_data in tests_data:
             f.write("\n" + test_data["site_block"])
     
