@@ -99,7 +99,8 @@ RUN if [ -f /tmp/frankenphp-binary/frankenphp ]; then \
         chmod +x /usr/local/bin/frankenphp && \
         mkdir -p /etc/frankenphp/caddy.d \
         && mkdir -p /etc/frankenphp/php.d \
-        && mkdir -p /usr/lib/frankenphp/modules; \
+        && mkdir -p /usr/lib/frankenphp/modules \
+        && ldconfig; \
     fi
 
 
