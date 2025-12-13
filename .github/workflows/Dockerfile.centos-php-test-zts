@@ -94,10 +94,9 @@ RUN if [ -f ext/openssl/openssl.c ] && grep -q 'REGISTER_LONG_CONSTANT("OPENSSL_
 
 RUN mkdir -p /usr/local/etc/php/conf.d
 
-# Copy lexbor static library and headers from base stage (only if PHP 8.4+)
+# Copy lexbor static library and headers from base stage (includes lexbor if PHP 8.4+)
 ARG PHP_VERSION
-RUN if [ -d /tmp/dummy ]; then mkdir -p /usr/local/include/lexbor /usr/local/lib64; fi
-COPY --from=base /usr/local/include/lexbor* /usr/local/include/ 2>/dev/null || true
+COPY --from=base /usr/local/include /usr/local/include
 COPY --from=base /usr/local/lib /usr/local/lib
 COPY --from=base /usr/local/lib64 /usr/local/lib64
 
