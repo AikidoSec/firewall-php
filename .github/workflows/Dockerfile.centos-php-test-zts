@@ -44,6 +44,23 @@ RUN yum install -y autoconf bison pkgconfig \
 # Install mariadb-devel separately (may need different repo or skip if not critical)
 RUN yum install -y mariadb-devel || yum install -y mariadb-connector-c-devel || echo "Warning: mariadb-devel not available, continuing without it"
 
+# Build and install lexbor library (STATIC - embedded into libphp.so)
+ENV LEXBOR_VERSION=2.4.0
+RUN git clone --depth 1 --branch v${LEXBOR_VERSION} https://github.com/lexbor/lexbor.git /tmp/lexbor-src && \
+    cd /tmp/lexbor-src && \
+    cmake -S . -B build \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr/local \
+        -DLEXBOR_BUILD_SHARED=OFF \
+        -DLEXBOR_BUILD_STATIC=ON \
+        -DLEXBOR_INSTALL_HEADERS=ON && \
+    cmake --build build && \
+    cmake --install build && \
+    echo "Lexbor STATIC library installed:" && \
+    ls -la /usr/local/lib*/liblexbor* || true && \
+    ls -la /usr/local/include/lexbor/ || true && \
+    rm -rf /tmp/lexbor-src
+
 # Fetch and build PHP from source with ZTS
 FROM base AS php-build
 ARG PHP_SRC_REF
@@ -73,6 +90,16 @@ RUN mkdir -p /usr/local/etc/php/conf.d
 
 # Build PHP with ZTS enabled
 RUN ./configure \
+COPY --from=base /usr/local/include/lexbor /usr/local/include/lexbor
+COPY --from=base /usr/local/lib /usr/local/lib
+COPY --from=base /usr/local/lib64 /usr/local/lib64
+
+# Build PHP with ZTS enabled and statically link lexbor
+RUN export CFLAGS="-I/usr/local/include" && \
+    export LDFLAGS="-L/usr/local/lib -L/usr/local/lib64" && \
+    export LIBS="/usr/local/lib64/liblexbor_static.a" && \
+    ls -lh /usr/local/lib*/liblexbor* && \
+    ./configure \
       --prefix=/usr/local \
       --with-config-file-path=/usr/local/lib \
       --with-config-file-scan-dir=/usr/local/etc/php/conf.d \
@@ -82,6 +109,13 @@ RUN ./configure \
       --enable-mbstring \
       --enable-pcntl \
       --enable-cgi \
+      --enable-embed \
+      --enable-dom \
+      --enable-xml \
+      --enable-simplexml \
+      --enable-xmlreader \
+      --enable-xmlwriter \
+      --with-xsl \
       --with-extra-version="" \
       --with-curl \
       --with-mysqli \
@@ -103,11 +137,13 @@ RUN cmake -S . -B build \
     -DBUILD_HDR=ON && \
     cmake --build build && \
     cmake --install build && \
-    ldconfig
+    ldconfig /usr/local/lib /usr/local/lib64
 
 FROM base AS final
 
 COPY --from=php-build /usr/local /usr/local
+
+RUN ldconfig /usr/local/lib /usr/local/lib64
 
 COPY frankenphp-binary/ /tmp/frankenphp-binary/
 RUN if [ -f /tmp/frankenphp-binary/frankenphp ]; then \
@@ -123,7 +159,7 @@ RUN EXTENSION_DIR=$(php -i | grep "^extension_dir" | awk '{print $3}') && \
         echo "Error: Could not determine extension_dir"; \
         exit 1; \
     fi && \
-    mkdir -p "$EXTENSION_DIR" \
+    mkdir -p "$EXTENSION_DIR" && \
     echo "Created extension_dir: $EXTENSION_DIR"
 
 # Verify ZTS is enabled
@@ -131,7 +167,7 @@ RUN php -v | grep -q "ZTS" || (echo "ERROR: ZTS not enabled!" && exit 1) && \
     php -m | grep -E 'curl|mysqli' >/dev/null
 
 ENV PATH="/usr/local/bin:${PATH}" \
-    LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH:-}"
+    LD_LIBRARY_PATH="/usr/local/lib:/usr/local/lib64:${LD_LIBRARY_PATH:-}"
 
 RUN ln -sf /usr/local/bin/php /usr/bin/php && \
     ln -sf /usr/local/sbin/php-fpm /usr/sbin/php-fpm || true && \

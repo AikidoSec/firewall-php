@@ -33,6 +33,22 @@ RUN ln -fs /usr/share/zoneinfo/${TZ} /etc/localtime && \
     echo "${TZ}" > /etc/timezone && \
     dpkg-reconfigure -f noninteractive tzdata
 
+ENV LEXBOR_VERSION=2.4.0
+RUN git clone --depth 1 --branch v${LEXBOR_VERSION} https://github.com/lexbor/lexbor.git /tmp/lexbor-src && \
+    cd /tmp/lexbor-src && \
+    cmake -S . -B build \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr/local \
+        -DLEXBOR_BUILD_SHARED=OFF \
+        -DLEXBOR_BUILD_STATIC=ON \
+        -DLEXBOR_INSTALL_HEADERS=ON && \
+    cmake --build build && \
+    cmake --install build && \
+    echo "Lexbor STATIC library installed:" && \
+    ls -la /usr/local/lib*/liblexbor* || true && \
+    ls -la /usr/local/include/lexbor/ || true && \
+    rm -rf /tmp/lexbor-src
+
 # Fetch and build PHP from source with ZTS
 FROM base AS php-build
 ARG PHP_SRC_REF
@@ -65,8 +81,19 @@ RUN a2dismod mpm_event || true && \
     a2dismod mpm_worker || true && \
     a2enmod mpm_prefork rewrite cgi cgid || true
 
+# Copy lexbor static library and headers from base stage
+COPY --from=base /usr/local/include/lexbor /usr/local/include/lexbor
+COPY --from=base /usr/local/lib /usr/local/lib
+COPY --from=base /usr/local/lib64 /usr/local/lib64
+
+# Build PHP with ZTS enabled and statically link lexbor
+RUN export CFLAGS="-I/usr/local/include" && \
+    export LDFLAGS="-L/usr/local/lib -L/usr/local/lib64" && \
+    export LIBS="/usr/local/lib64/liblexbor_static.a" && \
 # Build PHP with ZTS enabled
 RUN ./configure \
+    ls -lh /usr/local/lib*/liblexbor* && \
+    ./configure \
       --prefix=/usr/local \
       --with-config-file-path=/usr/local/lib \
       --with-config-file-scan-dir=/usr/local/etc/php/conf.d \
@@ -76,6 +103,13 @@ RUN ./configure \
       --enable-mbstring \
       --enable-pcntl \
       --enable-cgi \
+      --enable-embed \
+      --enable-dom \
+      --enable-xml \
+      --enable-simplexml \
+      --enable-xmlreader \
+      --enable-xmlwriter \
+      --with-xsl \
       --with-extra-version="" \
       --with-curl \
       --with-mysqli \
@@ -97,12 +131,14 @@ RUN cmake -S . -B build \
     -DBUILD_HDR=ON && \
     cmake --build build && \
     cmake --install build && \
-    ldconfig
+    ldconfig /usr/local/lib /usr/local/lib64
 
 # Final image with PHP and test infrastructure
 FROM base AS final
 
 COPY --from=php-build /usr/local /usr/local
+
+RUN ldconfig /usr/local/lib /usr/local/lib64
 
 COPY frankenphp-binary/ /tmp/frankenphp-binary/
 RUN if [ -f /tmp/frankenphp-binary/frankenphp ]; then \
@@ -127,7 +163,7 @@ RUN php -v | grep -q "ZTS" || (echo "ERROR: ZTS not enabled!" && exit 1) && \
     php -m | grep -E 'curl|mysqli' >/dev/null
 
 ENV PATH="/usr/local/bin:${PATH}" \
-    LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH:-}"
+    LD_LIBRARY_PATH="/usr/local/lib:/usr/local/lib64:${LD_LIBRARY_PATH:-}"
 
 RUN ln -sf /usr/local/bin/php /usr/bin/php && \
     ln -sf /usr/local/sbin/php-fpm /usr/sbin/php-fpm || true && \
