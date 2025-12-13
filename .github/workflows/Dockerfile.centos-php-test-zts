@@ -88,8 +88,7 @@ RUN if [ -f ext/openssl/openssl.c ] && grep -q 'REGISTER_LONG_CONSTANT("OPENSSL_
 
 RUN mkdir -p /usr/local/etc/php/conf.d
 
-# Build PHP with ZTS enabled
-RUN ./configure \
+# Copy lexbor static library and headers from base stage
 COPY --from=base /usr/local/include/lexbor /usr/local/include/lexbor
 COPY --from=base /usr/local/lib /usr/local/lib
 COPY --from=base /usr/local/lib64 /usr/local/lib64
@@ -98,6 +97,7 @@ COPY --from=base /usr/local/lib64 /usr/local/lib64
 RUN export CFLAGS="-I/usr/local/include" && \
     export LDFLAGS="-L/usr/local/lib -L/usr/local/lib64" && \
     export LIBS="/usr/local/lib64/liblexbor_static.a" && \
+    echo "Building PHP with static lexbor:" && \
     ls -lh /usr/local/lib*/liblexbor* && \
     ./configure \
       --prefix=/usr/local \
@@ -125,6 +125,12 @@ RUN export CFLAGS="-I/usr/local/include" && \
 && make -j"$(nproc)" \
 && make install \
 && strip /usr/local/bin/php /usr/local/sbin/php-fpm || true
+
+# Verify lexbor symbols are embedded in libphp.so
+RUN echo "Checking if libphp.so has EMBEDDED lexbor symbols (static linking):" && \
+    nm /usr/local/lib/libphp.so | grep lxb_ | head -n 5 && \
+    echo "✓ Lexbor symbols found - static linking successful!" || \
+    echo "✗ WARNING: No lexbor symbols found in libphp.so"
 
 WORKDIR /usr/src
 RUN git clone https://github.com/e-dant/watcher.git

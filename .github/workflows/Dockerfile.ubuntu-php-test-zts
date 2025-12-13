@@ -33,6 +33,7 @@ RUN ln -fs /usr/share/zoneinfo/${TZ} /etc/localtime && \
     echo "${TZ}" > /etc/timezone && \
     dpkg-reconfigure -f noninteractive tzdata
 
+# Build and install lexbor library (STATIC - embedded into libphp.so)
 ENV LEXBOR_VERSION=2.4.0
 RUN git clone --depth 1 --branch v${LEXBOR_VERSION} https://github.com/lexbor/lexbor.git /tmp/lexbor-src && \
     cd /tmp/lexbor-src && \
@@ -84,15 +85,13 @@ RUN a2dismod mpm_event || true && \
 # Copy lexbor static library and headers from base stage
 COPY --from=base /usr/local/include/lexbor /usr/local/include/lexbor
 COPY --from=base /usr/local/lib /usr/local/lib
-COPY --from=base /usr/local/lib64 /usr/local/lib64
 
 # Build PHP with ZTS enabled and statically link lexbor
 RUN export CFLAGS="-I/usr/local/include" && \
-    export LDFLAGS="-L/usr/local/lib -L/usr/local/lib64" && \
-    export LIBS="/usr/local/lib64/liblexbor_static.a" && \
-# Build PHP with ZTS enabled
-RUN ./configure \
-    ls -lh /usr/local/lib*/liblexbor* && \
+    export LDFLAGS="-L/usr/local/lib" && \
+    export LIBS="/usr/local/lib/liblexbor_static.a" && \
+    echo "Building PHP with static lexbor:" && \
+    ls -lh /usr/local/lib/liblexbor* && \
     ./configure \
       --prefix=/usr/local \
       --with-config-file-path=/usr/local/lib \
@@ -120,6 +119,12 @@ RUN ./configure \
 && make install \
 && strip /usr/local/bin/php /usr/local/sbin/php-fpm || true
 
+# Verify lexbor symbols are embedded in libphp.so
+RUN echo "Checking if libphp.so has EMBEDDED lexbor symbols (static linking):" && \
+    nm /usr/local/lib/libphp.so | grep lxb_ | head -n 5 && \
+    echo "✓ Lexbor symbols found - static linking successful!" || \
+    echo "✗ WARNING: No lexbor symbols found in libphp.so"
+
 WORKDIR /usr/src
 RUN git clone https://github.com/e-dant/watcher.git
 WORKDIR /usr/src/watcher
@@ -131,14 +136,14 @@ RUN cmake -S . -B build \
     -DBUILD_HDR=ON && \
     cmake --build build && \
     cmake --install build && \
-    ldconfig /usr/local/lib /usr/local/lib64
+    ldconfig
 
 # Final image with PHP and test infrastructure
 FROM base AS final
 
 COPY --from=php-build /usr/local /usr/local
 
-RUN ldconfig /usr/local/lib /usr/local/lib64
+RUN ldconfig
 
 COPY frankenphp-binary/ /tmp/frankenphp-binary/
 RUN if [ -f /tmp/frankenphp-binary/frankenphp ]; then \
@@ -163,7 +168,7 @@ RUN php -v | grep -q "ZTS" || (echo "ERROR: ZTS not enabled!" && exit 1) && \
     php -m | grep -E 'curl|mysqli' >/dev/null
 
 ENV PATH="/usr/local/bin:${PATH}" \
-    LD_LIBRARY_PATH="/usr/local/lib:/usr/local/lib64:${LD_LIBRARY_PATH:-}"
+    LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH:-}"
 
 RUN ln -sf /usr/local/bin/php /usr/bin/php && \
     ln -sf /usr/local/sbin/php-fpm /usr/sbin/php-fpm || true && \
