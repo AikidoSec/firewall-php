@@ -33,22 +33,28 @@ RUN ln -fs /usr/share/zoneinfo/${TZ} /etc/localtime && \
     echo "${TZ}" > /etc/timezone && \
     dpkg-reconfigure -f noninteractive tzdata
 
-# Build and install lexbor library (STATIC - embedded into libphp.so)
+# Build and install lexbor library (STATIC - embedded into libphp.so) - only for PHP 8.4+
+ARG PHP_VERSION
 ENV LEXBOR_VERSION=2.4.0
-RUN git clone --depth 1 --branch v${LEXBOR_VERSION} https://github.com/lexbor/lexbor.git /tmp/lexbor-src && \
-    cd /tmp/lexbor-src && \
-    cmake -S . -B build \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DCMAKE_INSTALL_PREFIX=/usr/local \
-        -DLEXBOR_BUILD_SHARED=OFF \
-        -DLEXBOR_BUILD_STATIC=ON \
-        -DLEXBOR_INSTALL_HEADERS=ON && \
-    cmake --build build && \
-    cmake --install build && \
-    echo "Lexbor STATIC library installed:" && \
-    ls -la /usr/local/lib*/liblexbor* || true && \
-    ls -la /usr/local/include/lexbor/ || true && \
-    rm -rf /tmp/lexbor-src
+RUN if [ "$(echo "${PHP_VERSION}" | cut -d. -f1)" -ge 8 ] && [ "$(echo "${PHP_VERSION}" | cut -d. -f2)" -ge 4 ]; then \
+        echo "Building lexbor for PHP ${PHP_VERSION} (8.4+)"; \
+        git clone --depth 1 --branch v${LEXBOR_VERSION} https://github.com/lexbor/lexbor.git /tmp/lexbor-src && \
+        cd /tmp/lexbor-src && \
+        cmake -S . -B build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX=/usr/local \
+            -DLEXBOR_BUILD_SHARED=OFF \
+            -DLEXBOR_BUILD_STATIC=ON \
+            -DLEXBOR_INSTALL_HEADERS=ON && \
+        cmake --build build && \
+        cmake --install build && \
+        echo "Lexbor STATIC library installed:" && \
+        ls -la /usr/local/lib*/liblexbor* || true && \
+        ls -la /usr/local/include/lexbor/ || true && \
+        rm -rf /tmp/lexbor-src; \
+    else \
+        echo "Skipping lexbor build for PHP ${PHP_VERSION} (< 8.4)"; \
+    fi
 
 # Fetch and build PHP from source with ZTS
 FROM base AS php-build
@@ -82,16 +88,22 @@ RUN a2dismod mpm_event || true && \
     a2dismod mpm_worker || true && \
     a2enmod mpm_prefork rewrite cgi cgid || true
 
-# Copy lexbor static library and headers from base stage
-COPY --from=base /usr/local/include/lexbor /usr/local/include/lexbor
+# Copy lexbor static library and headers from base stage (only if PHP 8.4+)
+ARG PHP_VERSION
+RUN mkdir -p /usr/local/include /usr/local/lib
+COPY --from=base /usr/local/include/lexbor* /usr/local/include/ 2>/dev/null || true
 COPY --from=base /usr/local/lib /usr/local/lib
 
-# Build PHP with ZTS enabled and statically link lexbor
-RUN export CFLAGS="-I/usr/local/include" && \
-    export LDFLAGS="-L/usr/local/lib" && \
-    export LIBS="/usr/local/lib/liblexbor_static.a" && \
-    echo "Building PHP with static lexbor:" && \
-    ls -lh /usr/local/lib/liblexbor* && \
+# Build PHP with ZTS enabled and conditionally link lexbor for PHP 8.4+
+RUN if [ -f /usr/local/lib/liblexbor_static.a ]; then \
+        echo "Building PHP ${PHP_VERSION} with static lexbor (8.4+)"; \
+        export CFLAGS="-I/usr/local/include"; \
+        export LDFLAGS="-L/usr/local/lib"; \
+        export LIBS="/usr/local/lib/liblexbor_static.a"; \
+        ls -lh /usr/local/lib/liblexbor* || true; \
+    else \
+        echo "Building PHP ${PHP_VERSION} without lexbor (< 8.4)"; \
+    fi && \
     ./configure \
       --prefix=/usr/local \
       --with-config-file-path=/usr/local/lib \
@@ -119,11 +131,16 @@ RUN export CFLAGS="-I/usr/local/include" && \
 && make install \
 && strip /usr/local/bin/php /usr/local/sbin/php-fpm || true
 
-# Verify lexbor symbols are embedded in libphp.so
-RUN echo "Checking if libphp.so has EMBEDDED lexbor symbols (static linking):" && \
-    nm /usr/local/lib/libphp.so | grep lxb_ | head -n 5 && \
-    echo "✓ Lexbor symbols found - static linking successful!" || \
-    echo "✗ WARNING: No lexbor symbols found in libphp.so"
+# Verify lexbor symbols are embedded in libphp.so (only for PHP 8.4+)
+ARG PHP_VERSION
+RUN if [ "$(echo "${PHP_VERSION}" | cut -d. -f1)" -ge 8 ] && [ "$(echo "${PHP_VERSION}" | cut -d. -f2)" -ge 4 ]; then \
+        echo "Checking if libphp.so has EMBEDDED lexbor symbols (PHP ${PHP_VERSION}):" && \
+        nm /usr/local/lib/libphp.so | grep lxb_ | head -n 5 && \
+        echo "✓ Lexbor symbols found - static linking successful!" || \
+        echo "✗ WARNING: No lexbor symbols found in libphp.so"; \
+    else \
+        echo "Skipping lexbor verification for PHP ${PHP_VERSION} (< 8.4)"; \
+    fi
 
 WORKDIR /usr/src
 RUN git clone https://github.com/e-dant/watcher.git
