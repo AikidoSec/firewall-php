@@ -1,0 +1,14 @@
+{
+    "type": "heartbeat",
+    "hostnames": [
+        {
+            "hostname": "random2.example.com",
+            "port": 80,
+            "hits": 1
+        },
+        {
+            "hostname": "evil.example.com",
+            "port": 80
+        }
+    ]
+}

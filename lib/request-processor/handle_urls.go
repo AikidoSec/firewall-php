@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+	"html"
 	"main/attack"
 	"main/context"
 	"main/grpc"
@@ -15,18 +17,31 @@ import (
 - basic SSRF (local IP address used as hostname)
 - direct SSRF attacks (hostname that resolves directly to a local IP address - does not go through redirects)
 - direct IMDS SSRF attacks (hostname is an IMDS IP)
+- blocked outbound domains (based on cloud configuration)
 
 All these checks first verify if the hostname was provided via user input.
 Protects both curl and fopen wrapper functions (file_get_contents, etc...).
 */
 func OnPreOutgoingRequest(inst *instance.RequestProcessorInstance) string {
+	hostname, port := context.GetOutgoingRequestHostnameAndPort(inst)
+	operation := context.GetFunctionName(inst)
+
+	// Check if the domain is blocked based on cloud configuration
+	if !context.IsIpBypassed(inst) && ssrf.IsBlockedOutboundDomain(hostname) {
+		server := inst.GetCurrentServer()
+		// Blocked domains should also be reported to the agent.
+		if server != nil {
+			threadID := inst.GetThreadID()
+			go grpc.OnDomain(threadID, server, hostname, port)
+		}
+		message := fmt.Sprintf("Aikido firewall has blocked an outbound connection: %s(...) to %s", operation, html.EscapeString(hostname))
+		return attack.GetThrowAction(message, 500)
+	}
+
 	if context.IsEndpointProtectionTurnedOff(inst) {
 		log.Infof(inst, "Protection is turned off -> will not run detection logic!")
 		return ""
 	}
-
-	hostname, port := context.GetOutgoingRequestHostnameAndPort(inst)
-	operation := context.GetFunctionName(inst)
 
 	res := ssrf.CheckContextForSSRF(inst, hostname, port, operation)
 	if res != nil {

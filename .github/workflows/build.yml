@@ -244,6 +244,18 @@ jobs:
         run: |
           curl -L -O https://github.com/AikidoSec/zen-internals/releases/download/v${{ env.AIKIDO_LIBZEN_VERSION }}/${{ env.AIKIDO_LIBZEN }}
 
+      - name: Verify Aikido Zen Internals Lib SHA256
+        run: |
+          EXPECTED_SHA256=$(curl -s https://api.github.com/repos/AikidoSec/zen-internals/releases/tags/v${{ env.AIKIDO_LIBZEN_VERSION }} | jq -r '.assets[] | select(.name == "${{ env.AIKIDO_LIBZEN }}") | .digest' | sed 's/sha256://')
+          ACTUAL_SHA256=$(sha256sum ${{ env.AIKIDO_LIBZEN }} | awk '{print $1}')
+          echo "Expected SHA256: $EXPECTED_SHA256"
+          echo "Actual SHA256:   $ACTUAL_SHA256"
+          if [ "$EXPECTED_SHA256" != "$ACTUAL_SHA256" ]; then
+            echo "SHA256 mismatch! Downloaded file may be corrupted or tampered with."
+            exit 1
+          fi
+          echo "SHA256 verification passed!"
+
       - name: Prepare rpm package
         run: |
           mv aikido-agent-${{ env.ARCH }}/aikido-agent package/rpm/opt/aikido/aikido-agent

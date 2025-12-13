@@ -1,0 +1,51 @@
+{
+    "success": true,
+    "serviceId": 1,
+    "heartbeatIntervalInMS": 600000,
+    "endpoints": [
+        {
+            "method": "POST",
+            "route": "/testDetection2",
+            "forceProtectionOff": true,
+            "graphql": null,
+            "allowedIPAddresses": [],
+            "rateLimiting": {
+                "enabled": false,
+                "maxRequests": 100,
+                "windowSizeInMS": 60000
+            }
+        }
+    ],
+    "blockedUserIds": [],
+    "allowedIPAddresses": ["1.2.3.4"],
+    "receivedAnyStats": false,
+    "block": true,
+    "blockNewOutgoingRequests": true,
+    "domains": [
+        {
+            "hostname": "safe.example.com",
+            "mode": "allow"
+        },
+        {
+            "hostname": "evil.example.com",
+            "mode": "block"
+        },
+        {
+            "hostname": "allowed-site.com",
+            "mode": "allow"
+        },
+        {
+            "hostname": "böse.example.com",
+            "mode": "block"
+        },
+        {
+            "hostname": "xn--mnchen-3ya.example.com",
+            "mode": "block"
+        },
+        {
+            "hostname": "münchen-allowed.example.com",
+            "mode": "allow"
+        }
+    ]
+}
+

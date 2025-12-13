@@ -120,6 +120,11 @@ message IpList {
   repeated string ips = 3;
 }
 
+message OutboundDomain {
+  string hostname = 1;
+  bool block = 2;
+}
+
 message CloudConfig {
   int64 configUpdatedAt = 1;
   repeated Endpoint endpoints = 2;
@@ -132,6 +137,8 @@ message CloudConfig {
   string monitoredUserAgents = 9;
   map<string, string> userAgentDetails = 10;
   bool block = 11;
+  bool blockNewOutgoingRequests = 12;
+  repeated OutboundDomain outboundDomains = 13;
 }
 
 message RateLimitingStatus {
