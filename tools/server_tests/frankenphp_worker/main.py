@@ -1,7 +1,6 @@
 import os
 import subprocess
 import time
-import urllib.request
 
 frankenphp_bin = "frankenphp"
 caddyfile_path = "/tmp/frankenphp_worker_test.caddyfile"
@@ -145,15 +144,6 @@ def frankenphp_worker_pre_tests(tests_data):
     result = subprocess.run(['pgrep', '-x', 'frankenphp'], capture_output=True, text=True)
     if not result.stdout.strip():
         raise RuntimeError("FrankenPHP worker failed to start!")
-    
-    for i in range(30):
-        try:
-            urllib.request.urlopen('http://localhost:2019/config', timeout=1)
-            break
-        except:
-            time.sleep(1)
-    else:
-        raise RuntimeError("FrankenPHP admin API not ready!")
     
     print(f"FrankenPHP worker started with {threads} threads for {len(tests_data)} tests")
 
