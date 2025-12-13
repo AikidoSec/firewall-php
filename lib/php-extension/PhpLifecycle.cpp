@@ -11,18 +11,22 @@ void PhpLifecycle::ModuleInit() {
 }
 
 void PhpLifecycle::RequestInit() {
-    action.Reset();
-    requestCache.Reset();
-    requestProcessor.RequestInit();
-    checkedAutoBlock = false;
-    checkedShouldBlockRequest = false;
+    AIKIDO_GLOBAL(action).Reset();
+    AIKIDO_GLOBAL(requestCache).Reset();
+    AIKIDO_GLOBAL(requestProcessor).RequestInit();
+    AIKIDO_GLOBAL(checkedAutoBlock) = false;
+    AIKIDO_GLOBAL(checkedShouldBlockRequest) = false;
 }
 
 void PhpLifecycle::RequestShutdown() {
-    requestProcessor.RequestShutdown();
+    AIKIDO_GLOBAL(requestProcessor).RequestShutdown();
 }
 
 void PhpLifecycle::ModuleShutdown() {
+#ifdef ZTS
+    AIKIDO_LOG_INFO("ZTS mode: Uninitializing Aikido Request Processor to stop background goroutines...\n");
+    AIKIDO_GLOBAL(requestProcessor).Uninit();
+#else
     if (this->mainPID == getpid()) {
         AIKIDO_LOG_INFO("Module shutdown called on main PID.\n");
         AIKIDO_LOG_INFO("Unhooking functions...\n");
@@ -31,8 +35,9 @@ void PhpLifecycle::ModuleShutdown() {
         UnhookAll();
     } else {
         AIKIDO_LOG_INFO("Module shutdown NOT called on main PID. Uninitializing Aikido Request Processor...\n");
-        requestProcessor.Uninit();
+        AIKIDO_GLOBAL(requestProcessor).Uninit();
     }
+#endif
 }
 
 void PhpLifecycle::HookAll() {
@@ -48,5 +53,3 @@ void PhpLifecycle::UnhookAll() {
     UnhookFileCompilation();
     UnhookAstProcess();
 }
-
-PhpLifecycle phpLifecycle;

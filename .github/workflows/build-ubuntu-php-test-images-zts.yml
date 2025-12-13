@@ -1,0 +1,121 @@
+name: Build Ubuntu PHP test images (ZTS)
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/Dockerfile.ubuntu-php-test-zts
+      - .github/workflows/build-ubuntu-php-test-images-zts.yml
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: aikidosec/firewall-php-test-ubuntu-zts
+  VERSION: v2
+
+jobs:
+  build-amd64:
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix: { php_version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4', '8.5'] }
+      fail-fast: false
+    permissions: { contents: read, packages: write }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Prepare FrankenPHP binary directory
+        run: mkdir -p frankenphp-binary
+
+      - name: Extract FrankenPHP binary from Docker image
+        if: matrix.php_version >= '8.2'
+        run: |
+          PHP_VERSION="${{ matrix.php_version }}"
+          docker pull --platform linux/amd64 dunglas/frankenphp:php${PHP_VERSION}-bookworm
+          docker create --platform linux/amd64 --name temp-frankenphp dunglas/frankenphp:php${PHP_VERSION}-bookworm
+          docker cp temp-frankenphp:/usr/local/bin/frankenphp frankenphp-binary/frankenphp
+          mkdir -p frankenphp-binary/lib
+          docker cp temp-frankenphp:/usr/local/lib/libphp.so frankenphp-binary/lib/libphp.so
+          docker cp temp-frankenphp:/usr/local/lib/libwatcher-c.so.0 frankenphp-binary/lib/libwatcher-c.so.0 || true
+          docker cp temp-frankenphp:/lib/x86_64-linux-gnu/libargon2.so.1 frankenphp-binary/lib/libargon2.so.1 || true
+          docker rm temp-frankenphp
+          chmod +x frankenphp-binary/frankenphp
+          echo "Extracted FrankenPHP files:"
+          ls -lh frankenphp-binary/
+          ls -lh frankenphp-binary/lib/ || true
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: .github/workflows/Dockerfile.ubuntu-php-test-zts
+          platforms: linux/amd64
+          push: true
+          build-args: |
+            PHP_VERSION=${{ matrix.php_version }}
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.php_version }}-amd64-${{ env.VERSION }}
+          #cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:cache-${{ matrix.php_version }}-amd64-${{ env.VERSION }}
+          #cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:cache-${{ matrix.php_version }}-amd64-${{ env.VERSION }},mode=max
+
+  build-arm64:
+    runs-on: ubuntu-24.04-arm
+    strategy:
+      matrix: { php_version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4', '8.5'] }
+      fail-fast: false
+    permissions: { contents: read, packages: write }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Prepare FrankenPHP binary directory
+        run: mkdir -p frankenphp-binary
+
+      - name: Extract FrankenPHP binary from Docker image
+        if: matrix.php_version >= '8.2'
+        run: |
+          PHP_VERSION="${{ matrix.php_version }}"
+          docker pull --platform linux/arm64 dunglas/frankenphp:php${PHP_VERSION}-bookworm
+          docker create --platform linux/arm64 --name temp-frankenphp dunglas/frankenphp:php${PHP_VERSION}-bookworm
+          docker cp temp-frankenphp:/usr/local/bin/frankenphp frankenphp-binary/frankenphp
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: .github/workflows/Dockerfile.ubuntu-php-test-zts
+          platforms: linux/arm64
+          push: true
+          build-args: |
+            PHP_VERSION=${{ matrix.php_version }}
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.php_version }}-arm64-${{ env.VERSION }}
+          #cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:cache-${{ matrix.php_version }}-arm64-${{ env.VERSION }}
+          #cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:cache-${{ matrix.php_version }}-arm64-${{ env.VERSION }},mode=max
+
+  publish-manifests:
+    runs-on: ubuntu-24.04
+    needs: [build-amd64, build-arm64]
+    strategy:
+      matrix: { php_version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4', '8.5'] }
+      fail-fast: false
+    permissions: { contents: read, packages: write }
+    steps:
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create multi-arch manifest
+        run: |
+          IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          V=${{ matrix.php_version }}
+          docker buildx imagetools create \
+            --tag ${IMAGE}:${V}-${{ env.VERSION }} \
+            ${IMAGE}:${V}-amd64-${{ env.VERSION }} \
+            ${IMAGE}:${V}-arm64-${{ env.VERSION }}
+

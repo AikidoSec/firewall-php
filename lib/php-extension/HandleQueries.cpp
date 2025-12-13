@@ -24,6 +24,7 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_pdo_query) {
     }
 
     eventId = EVENT_PRE_SQL_QUERY_EXECUTED;
+    auto& eventCache = AIKIDO_GLOBAL(eventCache);
     eventCache.moduleName = "PDO";
     eventCache.sqlQuery = ZSTR_VAL(query);
     eventCache.sqlDialect = GetSqlDialectFromPdo(pdo_object);
@@ -47,6 +48,7 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_pdo_exec) {
     }
 
     eventId = EVENT_PRE_SQL_QUERY_EXECUTED;
+    auto& eventCache = AIKIDO_GLOBAL(eventCache);
     eventCache.moduleName = "PDO";
     eventCache.sqlQuery = ZSTR_VAL(query);
     eventCache.sqlDialect = GetSqlDialectFromPdo(pdo_object);
@@ -66,6 +68,7 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_pdostatement_execute) {
     }
 
     eventId = EVENT_PRE_SQL_QUERY_EXECUTED;
+    auto& eventCache = AIKIDO_GLOBAL(eventCache);
     eventCache.moduleName = "PDOStatement"; 
     eventCache.sqlQuery = PHP_GET_CHAR_PTR(stmt->query_string);    
 
@@ -116,6 +119,7 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_mysqli_query){
     scopedTimer.SetSink(sink, "sql_op");
 
     eventId = EVENT_PRE_SQL_QUERY_EXECUTED;
+    auto& eventCache = AIKIDO_GLOBAL(eventCache);
     eventCache.moduleName = "mysqli";
     eventCache.sqlQuery = query;
     eventCache.sqlDialect = "mysql";

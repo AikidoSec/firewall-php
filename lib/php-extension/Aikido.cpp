@@ -16,14 +16,14 @@ PHP_MINIT_FUNCTION(aikido) {
         return SUCCESS;
     }
 
-    phpLifecycle.HookAll();
+    AIKIDO_GLOBAL(phpLifecycle).HookAll();
     /* If SAPI name is "cli" run in "simple" mode */
     if (AIKIDO_GLOBAL(sapi_name) == "cli") {
         AIKIDO_LOG_INFO("MINIT finished earlier because we run in CLI mode!\n");
         return SUCCESS;
     }
 
-    phpLifecycle.ModuleInit();
+    AIKIDO_GLOBAL(phpLifecycle).ModuleInit();
     AIKIDO_LOG_INFO("MINIT finished!\n");
     return SUCCESS;
 }
@@ -41,7 +41,7 @@ PHP_MSHUTDOWN_FUNCTION(aikido) {
     /* If SAPI name is "cli" run in "simple" mode */
     if (AIKIDO_GLOBAL(sapi_name) == "cli") {
         AIKIDO_LOG_INFO("MSHUTDOWN finished earlier because we run in CLI mode!\n");
-        phpLifecycle.UnhookAll();
+        AIKIDO_GLOBAL(phpLifecycle).UnhookAll();
         return SUCCESS;
     }
 
@@ -52,15 +52,16 @@ PHP_MSHUTDOWN_FUNCTION(aikido) {
         The same does not apply for CLI mode, where the MSHUTDOWN is called only once.
     */
 
-    phpLifecycle.ModuleShutdown();
+    AIKIDO_GLOBAL(phpLifecycle).ModuleShutdown();
     AIKIDO_LOG_DEBUG("MSHUTDOWN finished!\n");
     return SUCCESS;
 }
 
 PHP_RINIT_FUNCTION(aikido) {
     ScopedTimer scopedTimer("request_init", "request_op");
+    
+    AIKIDO_GLOBAL(phpLifecycle).RequestInit();
 
-    phpLifecycle.RequestInit();
     AIKIDO_LOG_DEBUG("RINIT finished!\n");
     return SUCCESS;
 }
@@ -76,7 +77,7 @@ PHP_RSHUTDOWN_FUNCTION(aikido) {
     }
 
     DestroyAstToClean();
-    phpLifecycle.RequestShutdown();
+    AIKIDO_GLOBAL(phpLifecycle).RequestShutdown();
     AIKIDO_LOG_DEBUG("RSHUTDOWN finished!\n");
     return SUCCESS;
 }
@@ -97,6 +98,62 @@ static const zend_function_entry ext_functions[] = {
     ZEND_FE_END
 };
 
+PHP_GINIT_FUNCTION(aikido) {
+    aikido_globals->environment_loaded = false;
+    aikido_globals->log_level = 0;
+    aikido_globals->blocking = false;
+    aikido_globals->disable = false;
+    aikido_globals->disk_logs = false;
+    aikido_globals->collect_api_schema = false;
+    aikido_globals->trust_proxy = false;
+    aikido_globals->localhost_allowed_by_default = false;
+    aikido_globals->report_stats_interval_to_agent = 0;
+    aikido_globals->currentRequestStart = std::chrono::high_resolution_clock::time_point{};
+    aikido_globals->totalOverheadForCurrentRequest = 0;
+    aikido_globals->laravelEnvLoaded = false;
+    aikido_globals->checkedAutoBlock = false;
+    aikido_globals->checkedShouldBlockRequest = false;
+    aikido_globals->global_ast_to_clean = nullptr;
+    aikido_globals->original_ast_process = nullptr;
+#ifdef ZTS
+    new (&aikido_globals->log_level_str) std::string();
+    new (&aikido_globals->sapi_name) std::string();
+    new (&aikido_globals->token) std::string();
+    new (&aikido_globals->endpoint) std::string();
+    new (&aikido_globals->config_endpoint) std::string();
+    new (&aikido_globals->logger) Log();
+    new (&aikido_globals->agent) Agent();
+    new (&aikido_globals->server) Server();
+    new (&aikido_globals->requestProcessor) RequestProcessor();
+    new (&aikido_globals->action) Action();
+    new (&aikido_globals->requestCache) RequestCache();
+    new (&aikido_globals->eventCache) EventCache();
+    new (&aikido_globals->phpLifecycle) PhpLifecycle();
+    new (&aikido_globals->stats) std::unordered_map<std::string, SinkStats>();
+    new (&aikido_globals->laravelEnv) std::unordered_map<std::string, std::string>();
+#endif
+}
+
+PHP_GSHUTDOWN_FUNCTION(aikido) {
+#ifdef ZTS
+    aikido_globals->laravelEnv.~unordered_map();
+    aikido_globals->phpLifecycle.~PhpLifecycle();
+    aikido_globals->action.~Action();
+    aikido_globals->requestProcessor.~RequestProcessor();
+    aikido_globals->stats.~unordered_map();
+    aikido_globals->server.~Server();
+    aikido_globals->logger.~Log();
+    aikido_globals->agent.~Agent();
+    aikido_globals->eventCache.~EventCache();
+    aikido_globals->requestCache.~RequestCache();
+    aikido_globals->config_endpoint.~string();
+    aikido_globals->endpoint.~string();
+    aikido_globals->token.~string();
+    aikido_globals->sapi_name.~string();
+    aikido_globals->log_level_str.~string();
+#endif
+}
+
 zend_module_entry aikido_module_entry = {
     STANDARD_MODULE_HEADER,
     "aikido",                   /* Extension name */
@@ -108,8 +165,8 @@ zend_module_entry aikido_module_entry = {
     PHP_MINFO(aikido),          /* PHP_MINFO - Module info */
     PHP_AIKIDO_VERSION,         /* Version */
     PHP_MODULE_GLOBALS(aikido), /* Module globals */
-    NULL,                       /* PHP_GINIT – Globals initialization */
-    NULL,                       /* PHP_GSHUTDOWN – Globals shutdown */
+    PHP_GINIT(aikido),          /* PHP_GINIT – Globals initialization */
+    PHP_GSHUTDOWN(aikido),      /* PHP_GSHUTDOWN – Globals shutdown */
     NULL,
     STANDARD_MODULE_PROPERTIES_EX,
 };

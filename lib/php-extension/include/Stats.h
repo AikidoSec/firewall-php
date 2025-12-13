@@ -31,4 +31,3 @@ class SinkStats {
     void IncrementWithoutContext();
 };
 
-extern std::unordered_map<std::string, SinkStats> stats;

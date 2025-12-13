@@ -148,7 +148,7 @@ def toggle_config_line(file_path, line_to_check, comment_ch, enable=False):
     commented_line_pattern = r"\s*" + re.escape(line_to_check.strip()) + r".*"
 
     if enable:
-        commented_line_pattern = "\s*" + comment_ch + commented_line_pattern
+        commented_line_pattern = r"\s*" + comment_ch + commented_line_pattern
 
     # Initialize a flag to track changes
     changes_made = False
@@ -295,7 +295,14 @@ def apache_mod_php_process_test(test_data):
 
 
 def apache_mod_php_pre_tests():
-    subprocess.run([f'/usr/sbin/{apache_binary}', '-k', 'start'])
+    if not os.path.exists('/etc/httpd'):
+        # Debian/Ubuntu Apache - use apache2ctl which sources /etc/apache2/envvars
+        # This ensures APACHE_RUN_DIR and other variables are properly set
+        # apache2ctl will source envvars and then start Apache with the correct environment
+        subprocess.run(['/usr/sbin/apache2ctl', 'start'], check=True)
+    else:
+        # CentOS/RHEL Apache
+        subprocess.run([f'/usr/sbin/{apache_binary}', '-k', 'start'], check=True)
 
 
 def apache_mod_php_start_server(test_data, test_lib_dir, valgrind):
