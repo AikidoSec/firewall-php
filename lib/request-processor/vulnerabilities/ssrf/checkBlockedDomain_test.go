@@ -50,7 +50,7 @@ func TestIsBlockedOutboundDomain_ExplicitlyBlockedDomain(t *testing.T) {
 	inst, cleanup := setupTestServerForBlockedDomains(false, outboundDomains, nil, "")
 	defer cleanup()
 
-	isBlocked := IsBlockedOutboundDomainWithInst(inst,WithInst(inst, "evil.com")
+	isBlocked := IsBlockedOutboundDomainWithInst(inst, "evil.com")
 
 	if !isBlocked {
 		t.Error("Expected blocked domain to be blocked, but it was allowed")
@@ -67,7 +67,7 @@ func TestIsBlockedOutboundDomain_ExplicitlyBlockedDomainRegardlessOfFlag(t *test
 	inst, cleanup := setupTestServerForBlockedDomains(false, outboundDomains, nil, "")
 	defer cleanup()
 
-	isBlocked := IsBlockedOutboundDomainWithInst(inst,WithInst(inst, "evil.com")
+	isBlocked := IsBlockedOutboundDomainWithInst(inst, "evil.com")
 
 	if !isBlocked {
 		t.Error("Expected blocked domain to be blocked regardless of blockNewOutgoingRequests flag")
@@ -82,7 +82,7 @@ func TestIsBlockedOutboundDomain_AllowedDomainWithBlockNewEnabled(t *testing.T) 
 	inst, cleanup := setupTestServerForBlockedDomains(true, outboundDomains, nil, "")
 	defer cleanup()
 
-	isBlocked := IsBlockedOutboundDomainWithInst(inst,WithInst(inst, "safe.com")
+	isBlocked := IsBlockedOutboundDomainWithInst(inst, "safe.com")
 
 	if isBlocked {
 		t.Error("Expected allowed domain to be allowed when blockNewOutgoingRequests is true")
@@ -97,7 +97,7 @@ func TestIsBlockedOutboundDomain_NewDomainBlockedWhenFlagEnabled(t *testing.T) {
 	inst, cleanup := setupTestServerForBlockedDomains(true, outboundDomains, nil, "")
 	defer cleanup()
 
-	isBlocked := IsBlockedOutboundDomainWithInst(inst,WithInst(inst, "unknown.com")
+	isBlocked := IsBlockedOutboundDomainWithInst(inst, "unknown.com")
 
 	if !isBlocked {
 		t.Error("Expected unknown domain to be blocked when blockNewOutgoingRequests is true")
@@ -113,7 +113,7 @@ func TestIsBlockedOutboundDomain_NewDomainAllowedWhenFlagDisabled(t *testing.T) 
 	inst, cleanup := setupTestServerForBlockedDomains(false, outboundDomains, nil, "")
 	defer cleanup()
 
-	isBlocked := IsBlockedOutboundDomainWithInst(inst,WithInst(inst, "unknown.com")
+	isBlocked := IsBlockedOutboundDomainWithInst(inst, "unknown.com")
 
 	if isBlocked {
 		t.Error("Expected unknown domain to be allowed when blockNewOutgoingRequests is false")
@@ -129,7 +129,7 @@ func TestIsBlockedOutboundDomain_CaseInsensitiveHostname(t *testing.T) {
 	defer cleanup()
 
 	// Test with uppercase hostname
-	isBlocked := IsBlockedOutboundDomainWithInst(inst,WithInst(inst, "EVIL.COM")
+	isBlocked := IsBlockedOutboundDomainWithInst(inst, "EVIL.COM")
 
 	if !isBlocked {
 		t.Error("Expected uppercase hostname to be blocked (case-insensitive matching)")
@@ -148,7 +148,7 @@ func TestIsBlockedOutboundDomain_NoServerReturnsNil(t *testing.T) {
 	inst := instance.NewRequestProcessorInstance(0, false)
 	// Don't set a server, so inst.GetCurrentServer() will return nil
 
-	isBlocked := IsBlockedOutboundDomainWithInst(inst,WithInst(inst, "evil.com")
+	isBlocked := IsBlockedOutboundDomainWithInst(inst, "evil.com")
 
 	if isBlocked {
 		t.Error("Expected nil isBlocked when there's no server")
@@ -161,7 +161,7 @@ func TestIsBlockedOutboundDomain_EmptyDomainsListWithBlockNewEnabled(t *testing.
 	inst, cleanup := setupTestServerForBlockedDomains(true, outboundDomains, nil, "")
 	defer cleanup()
 
-	isBlocked := IsBlockedOutboundDomainWithInst(inst,WithInst(inst, "example.com")
+	isBlocked := IsBlockedOutboundDomainWithInst(inst, "example.com")
 
 	if !isBlocked {
 		t.Error("Expected domain to be blocked when domains list is empty and blockNewOutgoingRequests is true")
@@ -174,7 +174,7 @@ func TestIsBlockedOutboundDomain_EmptyDomainsListWithBlockNewDisabled(t *testing
 	inst, cleanup := setupTestServerForBlockedDomains(false, outboundDomains, nil, "")
 	defer cleanup()
 
-	isBlocked := IsBlockedOutboundDomainWithInst(inst,WithInst(inst, "example.com")
+	isBlocked := IsBlockedOutboundDomainWithInst(inst, "example.com")
 
 	if isBlocked {
 		t.Error("Expected domain to be allowed when domains list is empty and blockNewOutgoingRequests is false")
