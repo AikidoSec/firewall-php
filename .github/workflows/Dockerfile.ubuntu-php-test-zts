@@ -33,29 +33,6 @@ RUN ln -fs /usr/share/zoneinfo/${TZ} /etc/localtime && \
     echo "${TZ}" > /etc/timezone && \
     dpkg-reconfigure -f noninteractive tzdata
 
-# Build and install lexbor library (STATIC - embedded into libphp.so) - only for PHP 8.4+
-ARG PHP_VERSION
-ENV LEXBOR_VERSION=2.4.0
-RUN if [ "$(echo "${PHP_VERSION}" | cut -d. -f1)" -ge 8 ] && [ "$(echo "${PHP_VERSION}" | cut -d. -f2)" -ge 4 ]; then \
-        echo "Building lexbor for PHP ${PHP_VERSION} (8.4+)"; \
-        git clone --depth 1 --branch v${LEXBOR_VERSION} https://github.com/lexbor/lexbor.git /tmp/lexbor-src && \
-        cd /tmp/lexbor-src && \
-        cmake -S . -B build \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_INSTALL_PREFIX=/usr/local \
-            -DLEXBOR_BUILD_SHARED=OFF \
-            -DLEXBOR_BUILD_STATIC=ON \
-            -DLEXBOR_INSTALL_HEADERS=ON && \
-        cmake --build build && \
-        cmake --install build && \
-        echo "Lexbor STATIC library installed:" && \
-        ls -la /usr/local/lib*/liblexbor* || true && \
-        ls -la /usr/local/include/lexbor/ || true && \
-        rm -rf /tmp/lexbor-src; \
-    else \
-        echo "Skipping lexbor build for PHP ${PHP_VERSION} (< 8.4)"; \
-    fi
-
 # Fetch and build PHP from source with ZTS
 FROM base AS php-build
 ARG PHP_SRC_REF
@@ -127,6 +104,7 @@ RUN if [ -f /usr/local/lib/liblexbor_static.a ]; then \
       --with-zlib \
       --with-zip \
       --disable-zend-signals \
+      --enable-zend-max-execution-timers \
 && make -j"$(nproc)" \
 && make install \
 && strip /usr/local/bin/php /usr/local/sbin/php-fpm || true
