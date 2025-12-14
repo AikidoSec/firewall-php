@@ -2,6 +2,7 @@ package api_discovery
 
 import (
 	"main/context"
+	"main/instance"
 	"main/ipc/protos"
 	"slices"
 	"strings"
@@ -30,10 +31,10 @@ var commonAuthCookieNames = append([]string{
 
 // GetApiAuthType returns the authentication type of the API request.
 // Returns nil if the authentication type could not be determined.
-func GetApiAuthType() []*protos.APIAuthType {
+func GetApiAuthType(inst *instance.RequestProcessorInstance) []*protos.APIAuthType {
 	var result []*protos.APIAuthType
 
-	headers := context.GetHeadersParsed()
+	headers := context.GetHeadersParsed(inst)
 
 	// Check the Authorization header
 	authHeader, authHeaderExists := headers["authorization"].(string)
@@ -44,7 +45,7 @@ func GetApiAuthType() []*protos.APIAuthType {
 		}
 	}
 
-	result = append(result, findApiKeys()...)
+	result = append(result, findApiKeys(inst)...)
 	return result
 }
 
@@ -81,11 +82,11 @@ func getPhpHttpHeaderEquivalent(apiKey string) string {
 }
 
 // findApiKeys searches for API keys in headers and cookies.
-func findApiKeys() []*protos.APIAuthType {
+func findApiKeys(inst *instance.RequestProcessorInstance) []*protos.APIAuthType {
 	var result []*protos.APIAuthType
 
-	headers := context.GetHeadersParsed()
-	cookies := context.GetCookiesParsed()
+	headers := context.GetHeadersParsed(inst)
+	cookies := context.GetCookiesParsed(inst)
 	for header_index, header := range commonApiKeyHeaderNames {
 		if value, exists := headers[getPhpHttpHeaderEquivalent(header)]; exists && value != "" {
 			result = append(result, &protos.APIAuthType{

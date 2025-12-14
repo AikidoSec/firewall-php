@@ -1,7 +1,7 @@
 #include "Includes.h"
 
 void helper_handle_pre_shell_execution(std::string cmd, EVENT_ID &eventId) {
-    eventCache.cmd = cmd;
+    AIKIDO_GLOBAL(eventCache).cmd = cmd;
     eventId = EVENT_PRE_SHELL_EXECUTED;
 }
 
@@ -24,6 +24,8 @@ AIKIDO_HANDLER_FUNCTION(handle_shell_execution) {
 
 
 AIKIDO_HANDLER_FUNCTION(handle_shell_execution_with_array) {
+    scopedTimer.SetSink(sink, "exec_op");
+
     zval *cmdVal = nullptr;
 
     ZEND_PARSE_PARAMETERS_START(0, -1)

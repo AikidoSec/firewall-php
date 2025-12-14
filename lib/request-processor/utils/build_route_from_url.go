@@ -2,7 +2,7 @@ package utils
 
 import (
 	"errors"
-	"main/globals"
+	"main/instance"
 	"net"
 	"net/url"
 	"regexp"
@@ -83,13 +83,13 @@ func CompileCustomPattern(pattern string) (*regexp.Regexp, error) {
 	return compiled, nil
 }
 
-func BuildRouteFromURL(url string) string {
+func BuildRouteFromURL(inst *instance.RequestProcessorInstance, url string) string {
 	path := tryParseURLPath(url)
 	if path == "" {
 		return ""
 	}
 
-	route := strings.Join(replaceURLSegments(path), "/")
+	route := strings.Join(replaceURLSegments(inst, path), "/")
 
 	if route == "/" || route == "" {
 		return "/"
@@ -106,25 +106,27 @@ func tryParseURLPath(rawURL string) string {
 	return parsedURL.Path
 }
 
-func replaceURLSegments(path string) []string {
+func replaceURLSegments(inst *instance.RequestProcessorInstance, path string) []string {
 	segments := strings.Split(path, "/")
 	newSegments := make([]string, 0, len(segments))
 	for i, segment := range segments {
 		if segment == "" && i != 0 {
 			continue
 		}
-		newSegments = append(newSegments, replaceURLSegmentWithParam(segment))
+		newSegments = append(newSegments, replaceURLSegmentWithParam(inst, segment))
 	}
 	return newSegments
 }
 
-func replaceURLSegmentWithParam(segment string) string {
-	server := globals.GetCurrentServer()
-	if server != nil {
-		paramMatchers := server.ParamMatchers
-		for param, regex := range paramMatchers {
-			if regex.MatchString(segment) {
-				return ":" + param
+func replaceURLSegmentWithParam(inst *instance.RequestProcessorInstance, segment string) string {
+	if inst != nil {
+		server := inst.GetCurrentServer()
+		if server != nil {
+			paramMatchers := server.ParamMatchers
+			for param, regex := range paramMatchers {
+				if regex.MatchString(segment) {
+					return ":" + param
+				}
 			}
 		}
 	}

@@ -17,7 +17,6 @@ bool CallPhpEcho(std::string message) {
 
 bool CallPhpFunction(std::string function_name, unsigned int params_number, zval* params, zval* return_value, zval* object) {
     if (!object && !zend_hash_str_exists(CG(function_table), function_name.c_str(), function_name.size())) {
-        AIKIDO_LOG_INFO("Function name '%s' does not exist!\n", function_name.c_str());
         return false;
     }
 
@@ -36,12 +35,16 @@ bool CallPhpFunction(std::string function_name, unsigned int params_number, zval
 
     int _result = call_user_function(EG(function_table), object, &_function_name, _return_value, params_number, params);
 
-    zend_string_release(_function_name_str);
+    zval_dtor(&_function_name);
+
+    if (_result != SUCCESS) {
+        return false;
+    }
 
     if (!return_value) {
         zval_ptr_dtor(&_temp_return_value);
     }
-    return _result == SUCCESS;
+    return true;
 }
 
 bool CallPhpFunctionWithOneParam(std::string function_name, long first_param, zval* return_value, zval* object) {
@@ -60,7 +63,8 @@ bool CallPhpFunctionWithOneParam(std::string function_name, std::string first_pa
 
     bool ret = CallPhpFunction(function_name, 1, _params, return_value, object);
 
-    zend_string_release(_first_param);
+    // Clean up the zval properly - this will handle the string refcount
+    zval_dtor(&_params[0]);
 
     return ret;
 }
@@ -90,3 +94,4 @@ std::string CallPhpFunctionCurlGetInfo(zval* curl_handle, int curl_info_option) 
 
     return result;
 }
+

@@ -1,16 +1,16 @@
-name: Create images for building extension
+name: Create images for building extension (NTS)
 
 on:
   workflow_dispatch:
   push:
     paths:
-      - .github/workflows/Dockerfile.build-extension
-      - .github/workflows/build-extension-images.yml
+      - .github/workflows/Dockerfile.build-extension-nts
+      - .github/workflows/build-extension-images-nts.yml
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: aikidosec/firewall-php-build-extension
-  VERSION: v1
+  IMAGE_NAME: aikidosec/firewall-php-build-extension-nts
+  VERSION: v2
 
 jobs:
   build-amd64:
@@ -18,7 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php_version: ['7.2','7.3','7.4','8.0','8.1','8.2','8.3','8.4','8.5']
+        php_version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4', '8.5']
     permissions:
       contents: read
       packages: write
@@ -36,7 +36,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: .github/workflows/Dockerfile.build-extension
+          file: .github/workflows/Dockerfile.build-extension-nts
           target: dev
           platforms: linux/amd64
           push: true
@@ -71,7 +71,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: .github/workflows/Dockerfile.build-extension
+          file: .github/workflows/Dockerfile.build-extension-nts
           target: dev
           platforms: linux/arm64
           push: true
