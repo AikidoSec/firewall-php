@@ -3,7 +3,7 @@
 # Used for testing the extension with FrankenPHP and other ZTS environments
 
 ARG BASE_IMAGE=quay.io/centos/centos:stream9
-ARG PHP_VERSION=8.3
+ARG PHP_VERSION=8.5
 ARG PHP_SRC_REF=PHP-${PHP_VERSION}
 
 FROM ${BASE_IMAGE} AS base
@@ -120,7 +120,9 @@ FROM base AS final
 
 COPY --from=php-build /usr/local /usr/local
 
-RUN ldconfig /usr/local/lib /usr/local/lib64
+RUN echo "/usr/local/lib" > /etc/ld.so.conf.d/usr-local-lib.conf && \
+    echo "/usr/local/lib64" >> /etc/ld.so.conf.d/usr-local-lib.conf && \
+    ldconfig
 
 # Create FrankenPHP directories (binary installed separately or not at all for devcontainer)
 RUN mkdir -p /etc/frankenphp/caddy.d && \
