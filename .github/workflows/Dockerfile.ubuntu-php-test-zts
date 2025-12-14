@@ -138,7 +138,8 @@ FROM base AS final
 
 COPY --from=php-build /usr/local /usr/local
 
-RUN ldconfig
+RUN echo "/usr/local/lib" > /etc/ld.so.conf.d/usr-local-lib.conf && \
+    ldconfig
 
 COPY frankenphp-binary/ /tmp/frankenphp-binary/
 RUN if [ -f /tmp/frankenphp-binary/frankenphp ]; then \
