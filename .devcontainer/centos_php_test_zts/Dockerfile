@@ -44,6 +44,9 @@ RUN yum install -y autoconf bison pkgconfig \
 # Install mariadb-devel separately (may need different repo or skip if not critical)
 RUN yum install -y mariadb-devel || yum install -y mariadb-connector-c-devel || echo "Warning: mariadb-devel not available, continuing without it"
 
+# NOTE: Lexbor is BUNDLED in PHP source at ext/lexbor/ since PHP 8.4+
+# No external build needed - PHP compiles it from bundled sources automatically
+
 # Fetch and build PHP from source with ZTS
 FROM base AS php-build
 ARG PHP_SRC_REF
@@ -71,23 +74,8 @@ RUN if [ -f ext/openssl/openssl.c ] && grep -q 'REGISTER_LONG_CONSTANT("OPENSSL_
 
 RUN mkdir -p /usr/local/etc/php/conf.d
 
-# Copy lexbor static library and headers from base stage (includes lexbor if PHP 8.4+)
-ARG PHP_VERSION
-COPY --from=base /usr/local/include /usr/local/include
-COPY --from=base /usr/local/lib /usr/local/lib
-COPY --from=base /usr/local/lib64 /usr/local/lib64
-
-# Build PHP with ZTS enabled and conditionally link lexbor for PHP 8.4+
-RUN if [ -f /usr/local/lib64/liblexbor_static.a ]; then \
-        echo "Building PHP ${PHP_VERSION} with static lexbor (8.4+)"; \
-        export CFLAGS="-I/usr/local/include"; \
-        export LDFLAGS="-L/usr/local/lib -L/usr/local/lib64"; \
-        export LIBS="/usr/local/lib64/liblexbor_static.a"; \
-        ls -lh /usr/local/lib*/liblexbor* || true; \
-    else \
-        echo "Building PHP ${PHP_VERSION} without lexbor (< 8.4)"; \
-    fi && \
-    ./configure \
+# Build PHP with ZTS enabled (lexbor built from bundled sources in ext/lexbor/)
+RUN ./configure \
       --prefix=/usr/local \
       --with-config-file-path=/usr/local/lib \
       --with-config-file-scan-dir=/usr/local/etc/php/conf.d \
@@ -111,21 +99,9 @@ RUN if [ -f /usr/local/lib64/liblexbor_static.a ]; then \
       --with-zlib \
       --with-zip \
       --disable-zend-signals \
-      --enable-zend-max-execution-timers \
 && make -j"$(nproc)" \
 && make install \
 && strip /usr/local/bin/php /usr/local/sbin/php-fpm || true
-
-# Verify lexbor symbols are embedded in libphp.so (only for PHP 8.4+)
-ARG PHP_VERSION
-RUN if [ "$(echo "${PHP_VERSION}" | cut -d. -f1)" -ge 8 ] && [ "$(echo "${PHP_VERSION}" | cut -d. -f2)" -ge 4 ]; then \
-        echo "Checking if libphp.so has EMBEDDED lexbor symbols (PHP ${PHP_VERSION}):" && \
-        nm /usr/local/lib/libphp.so | grep lxb_ | head -n 5 && \
-        echo "✓ Lexbor symbols found - static linking successful!" || \
-        echo "✗ WARNING: No lexbor symbols found in libphp.so"; \
-    else \
-        echo "Skipping lexbor verification for PHP ${PHP_VERSION} (< 8.4)"; \
-    fi
 
 WORKDIR /usr/src
 RUN git clone https://github.com/e-dant/watcher.git
@@ -146,14 +122,10 @@ COPY --from=php-build /usr/local /usr/local
 
 RUN ldconfig /usr/local/lib /usr/local/lib64
 
-COPY frankenphp-binary/ /tmp/frankenphp-binary/
-RUN if [ -f /tmp/frankenphp-binary/frankenphp ]; then \
-        cp /tmp/frankenphp-binary/frankenphp /usr/local/bin/frankenphp && \
-        chmod +x /usr/local/bin/frankenphp && \
-        mkdir -p /etc/frankenphp/caddy.d && \
-        mkdir -p /etc/frankenphp/php.d && \
-        mkdir -p /usr/lib/frankenphp/modules; \
-    fi
+# Create FrankenPHP directories (binary installed separately or not at all for devcontainer)
+RUN mkdir -p /etc/frankenphp/caddy.d && \
+    mkdir -p /etc/frankenphp/php.d && \
+    mkdir -p /usr/lib/frankenphp/modules
 
 RUN EXTENSION_DIR=$(php -i | grep "^extension_dir" | awk '{print $3}') && \
     if [ -z "$EXTENSION_DIR" ]; then \
@@ -174,14 +146,13 @@ RUN ln -sf /usr/local/bin/php /usr/bin/php && \
     ln -sf /usr/local/sbin/php-fpm /usr/sbin/php-fpm || true && \
     ln -sf /usr/local/bin/php-cgi /usr/bin/php-cgi
 
-RUN     mkdir -p /etc/php-fpm.d && \
+RUN mkdir -p /etc/php-fpm.d && \
     mkdir -p /run/php-fpm && \
     mkdir -p /var/run && \
     mkdir -p /var/log/php-fpm && \
     mkdir -p /etc/httpd || true && \
     mkdir -p /usr/local/etc/php-fpm.d && \
     mkdir -p /usr/local/etc/php/conf.d && \
-
     ln -sf /usr/local/etc/php/conf.d /etc/php.d || true && \
 
     echo "[global]" > /usr/local/etc/php-fpm.conf && \
@@ -217,11 +188,6 @@ RUN     mkdir -p /etc/php-fpm.d && \
 
 RUN echo "mysqli.default_socket = /var/lib/mysql/mysql.sock" > /usr/local/etc/php/conf.d/mysql-socket.ini
 
-RUN if [ -f /usr/local/bin/frankenphp ]; then \
-         frankenphp -v || echo "Warning: frankenphp version check failed"; \
-     else \
-         echo "WARNING: frankenphp binary not found; FrankenPHP-specific tests will be skipped."; \
-     fi
 
 # Python deps used by test harness
 RUN python3 -m pip install --no-cache-dir --upgrade pip && \
