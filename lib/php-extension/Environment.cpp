@@ -102,6 +102,14 @@ bool LoadLaravelEnvFile() {
     This function reads environment variables from $_SERVER for FrankenPHP compatibility.
 */
 std::string GetFrankenEnvVariable(const std::string& env_key) {
+    if (AIKIDO_GLOBAL(sapi_name) != "frankenphp") {
+        return "";
+    }
+    
+    // Force $_SERVER autoglobal to be initialized (it's lazily loaded in PHP)
+    // This is CRITICAL in ZTS mode to ensure each thread gets request-specific $_SERVER values
+    zend_is_auto_global_str(ZEND_STRL("_SERVER"));
+    
     if (Z_TYPE(PG(http_globals)[TRACK_VARS_SERVER]) != IS_ARRAY) {
         AIKIDO_LOG_DEBUG("franken_env[%s] = (empty - $_SERVER not an array)\n", env_key.c_str());
         return "";
@@ -132,17 +140,22 @@ std::string GetLaravelEnvVariable(const std::string& env_key) {
 }
 
 /*
-    Load env variables from the following sources (in this order):
+    Load env variables from the following sources (priority order):
     - System environment variables
-    - PHP environment variables
-    - FrankenPHP environment variables
+    - FrankenPHP environment variables ($_SERVER - request-specific, thread-safe)
+    - PHP environment variables 
     - Laravel environment variables
+    
+    Order is critical: In multithreaded environments (FrankenPHP worker/classic, ZTS),
+    getenv() returns cached process-level values that may belong to a different request.
+    $_SERVER must be checked first to get fresh, request-specific environment data.
 */
+
 using EnvGetterFn = std::string(*)(const std::string&);
 EnvGetterFn envGetters[] = {
     &GetSystemEnvVariable,
-    &GetPhpEnvVariable,
     &GetFrankenEnvVariable,
+    &GetPhpEnvVariable,
     &GetLaravelEnvVariable
 };
 

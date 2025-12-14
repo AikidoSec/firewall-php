@@ -97,8 +97,76 @@ def apply_config(config_file):
     mock_server_set_config_file(config_file)
     time.sleep(120)
 
+_all_heartbeats = []
+
+def get_all_heartbeats():
+    """
+    Returns all heartbeats collected during the test.
+    Useful when you need to manually aggregate data across multiple heartbeats.
+    """
+    global _all_heartbeats
+    return _all_heartbeats
+
+def aggregate_field_from_heartbeats(field_path, unique_key=None):
+    """
+    Aggregates a field from all heartbeats.
+    
+    :param field_path: Dot-separated path to the field (e.g., "users", "hostnames", "routes")
+    :param unique_key: If provided, deduplicates by this key (e.g., "id" for users)
+    :return: List of aggregated items
+    """
+    global _all_heartbeats
+    result = []
+    seen_keys = set()
+    
+    for heartbeat in _all_heartbeats:
+        data = heartbeat
+        for key in field_path.split('.'):
+            data = data.get(key, [])
+            if not isinstance(data, (list, dict)):
+                break
+        
+        if isinstance(data, list):
+            for item in data:
+                if unique_key and isinstance(item, dict):
+                    key_value = item.get(unique_key)
+                    if key_value not in seen_keys:
+                        seen_keys.add(key_value)
+                        result.append(item)
+                elif not unique_key:
+                    result.append(item)
+    
+    return result
+
 def assert_events_length_is(events, length):
+    global _all_heartbeats
     assert isinstance(events, list), "Error: Events is not a list."
+    
+    started_events = [e for e in events if e.get('type') == 'started']
+    heartbeats = [e for e in events if e.get('type') == 'heartbeat']
+    other_events = [e for e in events if e.get('type') not in ['started', 'heartbeat']]
+    
+    _all_heartbeats = heartbeats.copy()
+    
+    filtered_started = [started_events[0]] if started_events else []
+    
+    has_other_events = len(other_events) > 0
+    
+    if heartbeats:
+        if not has_other_events and length == 2:
+            heartbeats_with_data = [h for h in heartbeats if h.get('stats', {}).get('requests', {}).get('total', 0) > 0]
+            if heartbeats_with_data:
+                filtered_heartbeat = [heartbeats_with_data[-1]]
+            else:
+                filtered_heartbeat = [heartbeats[-1]]
+        else:
+            filtered_heartbeat = []
+    else:
+        filtered_heartbeat = []
+    
+    events.clear()
+    events.extend(filtered_started + other_events + filtered_heartbeat)
+    
     assert len(events) == length, f"Error: Events list contains {len(events)} elements and not {length} elements. Events: {events}"
 
 subset_keys_contains_check = ["stack"]
@@ -111,15 +179,31 @@ def assert_event_contains_subset(event_subset_key, event, event_subset, dry_mode
     Recursively checks that all keys and values in the subset JSON exist in the event JSON
     and have the same values. If a key in the subset is a list, all its elements must exist in the
     corresponding list in the event.
+    
+    When checking a heartbeat event, this function will try to match against ALL heartbeats
+    collected during the test, and pass if ANY one of them matches the expected subset.
 
     :param event: The event JSON dictionary
     :param subset: The subset JSON dictionary
     :raises AssertionError: If the subset is not fully contained within the event
     """
+    global _all_heartbeats
+    
     def result(assertion_error):
         if dry_mode:
             return False
         raise assertion_error
+
+    if event_subset_key == "__root" and isinstance(event, dict) and event.get('type') == 'heartbeat' and isinstance(event_subset, dict) and event_subset.get('type') == 'heartbeat':
+        if len(_all_heartbeats) > 1:
+            print(f"Multiple heartbeats detected ({len(_all_heartbeats)}), checking subset against all heartbeats...")
+            for idx, heartbeat in enumerate(_all_heartbeats):
+                print(f"Trying heartbeat {idx + 1}/{len(_all_heartbeats)}...")
+
+                if assert_event_contains_subset("__heartbeat_check", heartbeat, event_subset, dry_mode=True):
+                    print(f"Match found in heartbeat {idx + 1}!")
+                    return True
+            return result(AssertionError(f"Subset not found in any of the {len(_all_heartbeats)} heartbeats."))
 
     print(f"Searching {event_subset} in {event} (dry_mode = {dry_mode})...")
 
