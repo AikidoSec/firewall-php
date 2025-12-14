@@ -126,6 +126,7 @@ RUN if [ -f /usr/local/lib/liblexbor_static.a ]; then \
       --with-openssl \
       --with-zlib \
       --with-zip \
+      --disable-zend-signals \
 && make -j"$(nproc)" \
 && make install \
 && strip /usr/local/bin/php /usr/local/sbin/php-fpm || true
