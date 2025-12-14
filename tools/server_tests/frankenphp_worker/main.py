@@ -128,7 +128,7 @@ def frankenphp_worker_pre_tests(tests_data):
     
     total_workers = len(tests_data)
     threads = total_workers * 3
-    
+
     with open(caddyfile_path, 'w') as f:
         base_template = get_caddyfile_base_template()
         if base_template:
@@ -136,18 +136,27 @@ def frankenphp_worker_pre_tests(tests_data):
         for test_data in tests_data:
             f.write("\n" + test_data["site_block"])
     
-    process = subprocess.Popen(
-        [frankenphp_bin, 'run', '--config', caddyfile_path]
-    )
-    time.sleep(20)
-    
-    result = subprocess.run(['pgrep', '-x', 'frankenphp'], capture_output=True, text=True)
-    if not result.stdout.strip():
-        raise RuntimeError("FrankenPHP worker failed to start!")
-    
-    print(f"FrankenPHP worker started with {threads} threads for {len(tests_data)} tests")
+    print(f"Caddyfile prepared for {len(tests_data)} tests with {threads} threads")
+    return threads
 
 def frankenphp_worker_start_server(test_data, test_lib_dir, valgrind):
+    result = subprocess.run(['pgrep', '-x', 'frankenphp'], capture_output=True, text=True)
+    
+    if not result.stdout.strip():
+        print("Starting FrankenPHP worker server...")
+        process = subprocess.Popen(
+            [frankenphp_bin, 'run', '--config', caddyfile_path]
+        )
+        time.sleep(2)
+        
+        result = subprocess.run(['pgrep', '-x', 'frankenphp'], capture_output=True, text=True)
+        if not result.stdout.strip():
+            raise RuntimeError("FrankenPHP worker failed to spawn!")
+        
+        print("FrankenPHP worker process started")
+    else:
+        print("FrankenPHP worker is already running")
+    
     return None
 
 def frankenphp_worker_uninit():

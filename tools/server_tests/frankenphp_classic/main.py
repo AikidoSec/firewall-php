@@ -62,16 +62,26 @@ def frankenphp_classic_pre_tests(tests_data):
         for test_data in tests_data:
             f.write("\n" + test_data["site_block"])
     
-    subprocess.Popen(
-        [frankenphp_bin, 'run', '--config', caddyfile_path]
-    )
-    time.sleep(20)
-    
-    result = subprocess.run(['pgrep', '-x', 'frankenphp'], capture_output=True, text=True)
-    if not result.stdout.strip():
-        raise RuntimeError("FrankenPHP classic failed to start!")
+    print(f"Caddyfile prepared for {len(tests_data)} tests with {threads} threads")
 
 def frankenphp_classic_start_server(test_data, test_lib_dir, valgrind):
+    result = subprocess.run(['pgrep', '-x', 'frankenphp'], capture_output=True, text=True)
+    
+    if not result.stdout.strip():
+        print("Starting FrankenPHP classic server...")
+        process = subprocess.Popen(
+            [frankenphp_bin, 'run', '--config', caddyfile_path]
+        )
+        time.sleep(2)
+        
+        result = subprocess.run(['pgrep', '-x', 'frankenphp'], capture_output=True, text=True)
+        if not result.stdout.strip():
+            raise RuntimeError("FrankenPHP classic failed to spawn!")
+        
+        print("FrankenPHP classic process started")
+    else:
+        print("FrankenPHP classic is already running")
+    
     return None
 
 def frankenphp_classic_uninit():
