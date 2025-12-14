@@ -308,13 +308,14 @@ func getRateLimitingStatus(server *ServerData, method, route, routeParsed, user,
 
 	server.RateLimitingMutex.RLock()
 	rateLimitingDataMatch := getRateLimitingDataForEndpoint(server, method, route, routeParsed)
-	server.RateLimitingMutex.RUnlock()
 
 	if rateLimitingDataMatch == nil {
+		server.RateLimitingMutex.RUnlock()
 		return &protos.RateLimitingStatus{Block: false}
 	}
 
 	rateLimitingDataMatch.Mutex.Lock()
+	server.RateLimitingMutex.RUnlock()
 	defer rateLimitingDataMatch.Mutex.Unlock()
 
 	if rateLimitGroup != "" {
