@@ -19,11 +19,8 @@ void InitIpBypassCheck() {
     }
 }
 
-bool IsCurrentIpBypassed() {
-    return isIpBypassed;
-}
 
-void SetIpBypassed() {
-    isIpBypassed = true;
+bool IsAikidoDisabledOrBypassed() {
+    return AIKIDO_GLOBAL(disable) == true || isIpBypassed;
 }
 

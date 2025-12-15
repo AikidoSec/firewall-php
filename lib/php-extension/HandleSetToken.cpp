@@ -3,7 +3,7 @@
 ZEND_FUNCTION(set_token) {
     ScopedTimer scopedTimer("set_token", "aikido_op");
 
-    if (AIKIDO_GLOBAL(disable) == true || IsCurrentIpBypassed()) {
+    if (IsAikidoDisabledOrBypassed()) {
         RETURN_BOOL(false);
     }
 

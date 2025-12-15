@@ -38,7 +38,7 @@ ACTION_STATUS Action::executeStore(json &event) {
 }
 
 ACTION_STATUS Action::executeBypassIp(json &event) {
-    SetIpBypassed();
+    isIpBypassed = true;
     return CONTINUE;
 }
 
