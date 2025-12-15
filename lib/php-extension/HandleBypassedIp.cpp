@@ -2,7 +2,7 @@
 
 // This variable is used to check if the request is bypassed,
 // if true, all blocking checks will be skipped.
-static bool isIpBypassed = false;
+bool isIpBypassed = false;
 
 void InitIpBypassCheck() {
     // Reset state for new request
