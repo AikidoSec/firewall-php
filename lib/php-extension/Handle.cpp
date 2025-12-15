@@ -79,11 +79,15 @@ ZEND_NAMED_FUNCTION(aikido_generic_handler) {
             return;
         }
 
-        if (AIKIDO_GLOBAL(disable) == true) {
+        if (IsAikidoDisabledOrBypassed()) {
             if (original_handler) {
                 original_handler(INTERNAL_FUNCTION_PARAM_PASSTHRU);
             }
-            AIKIDO_LOG_INFO("Aikido generic handler finished earlier because AIKIDO_DISABLE is set to 1!\n");
+            if (AIKIDO_GLOBAL(disable) == true) {
+                AIKIDO_LOG_INFO("Aikido generic handler finished earlier because AIKIDO_DISABLE is set to 1!\n");
+            } else {
+                AIKIDO_LOG_INFO("Aikido generic handler finished earlier because IP is bypassed!\n");
+            }
             return;
         }
 

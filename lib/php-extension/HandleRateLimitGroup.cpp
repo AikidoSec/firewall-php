@@ -1,7 +1,7 @@
 #include "Includes.h"
 
 ZEND_FUNCTION(set_rate_limit_group) {
-    if (AIKIDO_GLOBAL(disable) == true) {
+    if (IsAikidoDisabledOrBypassed()) {
         RETURN_BOOL(false);
     }
 

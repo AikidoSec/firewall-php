@@ -24,7 +24,7 @@ ZEND_FUNCTION(set_user) {
         return;
     }
 
-    if (AIKIDO_GLOBAL(disable) == true) {
+    if (IsAikidoDisabledOrBypassed()) {
         RETURN_BOOL(false);
     }
 
