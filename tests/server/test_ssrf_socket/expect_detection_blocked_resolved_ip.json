@@ -1,0 +1,34 @@
+{
+    "type": "detected_attack",
+    "request": {
+        "headers": {
+            "content_type": [
+                "application/json"
+            ]
+        },
+        "method": "POST",
+        "source": "php",
+        "route": "/testDetection"
+    },
+    "attack": {
+        "kind": "ssrf",
+        "operation": "socket_connect",
+        "module": "socket",
+        "blocked": true,
+        "source": "body",
+        "path": ".url",
+        "stack": "tests/server/test_ssrf_socket/index.php(20): socket_connect()",
+        "metadata": {
+            "hostname": "app1.example.local"
+        },
+        "user": {
+            "id": "12345",
+            "name": "Tudor"
+        }
+    },
+    "agent": {
+        "dryMode": false,
+        "library": "firewall-php"
+    }
+}
+

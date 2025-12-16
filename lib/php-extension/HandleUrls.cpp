@@ -77,3 +77,183 @@ AIKIDO_HANDLER_FUNCTION(handle_post_curl_exec) {
     }
     
 }
+
+AIKIDO_HANDLER_FUNCTION(handle_pre_socket_connect) {
+    scopedTimer.SetSink(sink, "outgoing_http_op");
+
+    zval *socketHandle = NULL;
+    zval *address = NULL;
+    zval *port = NULL;
+
+    ZEND_PARSE_PARAMETERS_START(2, 3)
+#if PHP_VERSION_ID >= 80000
+    Z_PARAM_OBJECT(socketHandle)
+#else
+    Z_PARAM_RESOURCE(socketHandle)
+#endif
+    Z_PARAM_ZVAL(address)
+    Z_PARAM_OPTIONAL
+    Z_PARAM_ZVAL_OR_NULL(port)
+    ZEND_PARSE_PARAMETERS_END();
+
+    std::string addressStr = "";
+    std::string portStr = "";
+
+    if (Z_TYPE_P(address) == IS_STRING) {
+        addressStr = Z_STRVAL_P(address);
+    } else if (Z_TYPE_P(address) == IS_LONG) {
+        // If address is numeric, it might be an IP address
+        addressStr = std::to_string(Z_LVAL_P(address));
+    }
+
+    if (port && Z_TYPE_P(port) == IS_LONG && Z_LVAL_P(port) > 0) {
+        portStr = std::to_string(Z_LVAL_P(port));
+    } else if (port && Z_TYPE_P(port) == IS_STRING) {
+        portStr = Z_STRVAL_P(port);
+    }
+
+    if (!addressStr.empty()) {
+        if (!portStr.empty()) {
+            eventCache.outgoingRequestUrl = "tcp://" + addressStr + ":" + portStr;
+            eventCache.outgoingRequestPort = portStr;
+        } else {
+            // If no port specified, use the address as-is (might be Unix socket or address with port in string)
+            eventCache.outgoingRequestUrl = addressStr;
+        }
+    }
+
+    if (eventCache.outgoingRequestUrl.empty()) return;
+
+    eventId = EVENT_PRE_OUTGOING_REQUEST;
+    eventCache.moduleName = "socket";
+}
+
+AIKIDO_HANDLER_FUNCTION(handle_post_socket_connect) {
+    eventId = EVENT_POST_OUTGOING_REQUEST;
+    eventCache.moduleName = "socket";
+    // For socket_connect, we don't have easy access to resolved IP after connection
+    // The URL was already set in pre handler
+    eventCache.outgoingRequestEffectiveUrl = eventCache.outgoingRequestUrl;
+    eventCache.outgoingRequestEffectiveUrlPort = eventCache.outgoingRequestPort;
+}
+
+AIKIDO_HANDLER_FUNCTION(handle_pre_fsockopen) {
+    scopedTimer.SetSink(sink, "outgoing_http_op");
+
+    zval *hostname = NULL;
+    zval *port = NULL;
+    zval *errno_val = NULL;
+    zval *errstr = NULL;
+    double timeout = 0.0;
+    zend_bool timeout_is_null = 1;
+
+    ZEND_PARSE_PARAMETERS_START(2, 5)
+    Z_PARAM_ZVAL(hostname)
+    Z_PARAM_ZVAL(port)
+    Z_PARAM_OPTIONAL
+    Z_PARAM_ZVAL_OR_NULL(errno_val)
+    Z_PARAM_ZVAL_OR_NULL(errstr)
+    Z_PARAM_DOUBLE_OR_NULL(timeout, timeout_is_null)
+    ZEND_PARSE_PARAMETERS_END();
+
+    std::string hostnameStr = "";
+    std::string portStr = "";
+
+    if (Z_TYPE_P(hostname) == IS_STRING) {
+        hostnameStr = Z_STRVAL_P(hostname);
+    }
+
+    if (Z_TYPE_P(port) == IS_LONG) {
+        portStr = std::to_string(Z_LVAL_P(port));
+    } else if (Z_TYPE_P(port) == IS_STRING) {
+        portStr = Z_STRVAL_P(port);
+    }
+
+    if (!hostnameStr.empty()) {
+        if (!portStr.empty()) {
+            eventCache.outgoingRequestUrl = "tcp://" + hostnameStr + ":" + portStr;
+            eventCache.outgoingRequestPort = portStr;
+        } else {
+            eventCache.outgoingRequestUrl = "tcp://" + hostnameStr;
+            eventCache.outgoingRequestPort = "80"; // Default port
+        }
+    }
+
+    if (eventCache.outgoingRequestUrl.empty()) return;
+
+    eventId = EVENT_PRE_OUTGOING_REQUEST;
+    eventCache.moduleName = "socket";
+}
+
+AIKIDO_HANDLER_FUNCTION(handle_post_fsockopen) {
+    eventId = EVENT_POST_OUTGOING_REQUEST;
+    eventCache.moduleName = "socket";
+    // For fsockopen, we don't have easy access to resolved IP after connection
+    // The URL was already set in pre handler
+    eventCache.outgoingRequestEffectiveUrl = eventCache.outgoingRequestUrl;
+    eventCache.outgoingRequestEffectiveUrlPort = eventCache.outgoingRequestPort;
+}
+
+AIKIDO_HANDLER_FUNCTION(handle_pre_stream_socket_client) {
+    scopedTimer.SetSink(sink, "outgoing_http_op");
+
+    zval *address = NULL;
+    zval *errno_val = NULL;
+    zval *errstr = NULL;
+    double timeout = 0.0;
+    zend_bool timeout_is_null = 1;
+    zend_long flags = 0;
+    zend_bool flags_is_null = 1;
+    zval *context = NULL;
+
+    ZEND_PARSE_PARAMETERS_START(1, 6)
+    Z_PARAM_ZVAL(address)
+    Z_PARAM_OPTIONAL
+    Z_PARAM_ZVAL_OR_NULL(errno_val)
+    Z_PARAM_ZVAL_OR_NULL(errstr)
+    Z_PARAM_DOUBLE_OR_NULL(timeout, timeout_is_null)
+    Z_PARAM_LONG_OR_NULL(flags, flags_is_null)
+    Z_PARAM_ZVAL_OR_NULL(context)
+    ZEND_PARSE_PARAMETERS_END();
+
+    std::string addressStr = "";
+
+    if (Z_TYPE_P(address) == IS_STRING) {
+        addressStr = Z_STRVAL_P(address);
+    }
+
+    if (!addressStr.empty()) {
+        // Parse the address to extract host and port
+        json addressJson = CallPhpFunctionParseUrl(addressStr);
+        if (!addressJson.empty()) {
+            eventCache.outgoingRequestUrl = addressStr;
+            if (addressJson.contains("port")) {
+                eventCache.outgoingRequestPort = std::to_string(addressJson["port"].get<int>());
+            } else {
+                // Try to infer port from scheme
+                if (addressStr.find("https://") == 0 || addressStr.find("ssl://") == 0) {
+                    eventCache.outgoingRequestPort = "443";
+                } else if (addressStr.find("http://") == 0 || addressStr.find("tcp://") == 0) {
+                    eventCache.outgoingRequestPort = "80";
+                }
+            }
+        } else {
+            // If parse_url fails, use the address as-is
+            eventCache.outgoingRequestUrl = addressStr;
+        }
+    }
+
+    if (eventCache.outgoingRequestUrl.empty()) return;
+
+    eventId = EVENT_PRE_OUTGOING_REQUEST;
+    eventCache.moduleName = "socket";
+}
+
+AIKIDO_HANDLER_FUNCTION(handle_post_stream_socket_client) {
+    eventId = EVENT_POST_OUTGOING_REQUEST;
+    eventCache.moduleName = "socket";
+    // For stream_socket_client, we don't have easy access to resolved IP after connection
+    // The URL was already set in pre handler
+    eventCache.outgoingRequestEffectiveUrl = eventCache.outgoingRequestUrl;
+    eventCache.outgoingRequestEffectiveUrlPort = eventCache.outgoingRequestPort;
+}
