@@ -158,11 +158,12 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_fsockopen) {
 #if PHP_VERSION_ID >= 80000
     Z_PARAM_ZVAL_OR_NULL(errno_val)
     Z_PARAM_ZVAL_OR_NULL(errstr)
+    Z_PARAM_DOUBLE_OR_NULL(timeout, timeout_is_null)
 #else
     Z_PARAM_ZVAL_EX(errno_val, 0, 1)
     Z_PARAM_ZVAL_EX(errstr, 0, 1)
+    Z_PARAM_DOUBLE_EX(timeout, 0, 1)
 #endif
-    Z_PARAM_DOUBLE_OR_NULL(timeout, timeout_is_null)
     ZEND_PARSE_PARAMETERS_END();
 
     std::string hostnameStr = "";
@@ -227,8 +228,8 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_stream_socket_client) {
 #else
     Z_PARAM_ZVAL_EX(errno_val, 0, 1)
     Z_PARAM_ZVAL_EX(errstr, 0, 1)
-    Z_PARAM_DOUBLE_OR_NULL(timeout, timeout_is_null)
-    Z_PARAM_LONG_OR_NULL(flags, flags_is_null)
+    Z_PARAM_DOUBLE_EX(timeout, 0, 1)
+    Z_PARAM_LONG_EX(flags, 0, 1)
     Z_PARAM_ZVAL_EX(context, 0, 1)
 #endif
     ZEND_PARSE_PARAMETERS_END();
