@@ -162,7 +162,7 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_fsockopen) {
 #else
     Z_PARAM_ZVAL_EX(errno_val, 0, 1)
     Z_PARAM_ZVAL_EX(errstr, 0, 1)
-    Z_PARAM_DOUBLE_EX(timeout, 0, 1)
+    Z_PARAM_DOUBLE_EX(timeout, timeout_is_null, 1, 0)
 #endif
     ZEND_PARSE_PARAMETERS_END();
 
@@ -228,8 +228,8 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_stream_socket_client) {
 #else
     Z_PARAM_ZVAL_EX(errno_val, 0, 1)
     Z_PARAM_ZVAL_EX(errstr, 0, 1)
-    Z_PARAM_DOUBLE_EX(timeout, 0, 1)
-    Z_PARAM_LONG_EX(flags, 0, 1)
+    Z_PARAM_DOUBLE_EX(timeout, timeout_is_null, 1, 0)
+    Z_PARAM_LONG_EX(flags, flags_is_null, 1, 0)
     Z_PARAM_ZVAL_EX(context, 0, 1)
 #endif
     ZEND_PARSE_PARAMETERS_END();
