@@ -10,7 +10,7 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: aikidosec/firewall-php-build-extension
-  VERSION: v1
+  VERSION: v1.0.1
 
 jobs:
   build-amd64:
