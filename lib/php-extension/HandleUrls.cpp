@@ -84,15 +84,16 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_socket_connect) {
     zval *socketHandle = NULL;
     zval *address = NULL;
     zval *port = NULL;
+    php_socket *phpSock = NULL;
 
-    ZEND_PARSE_PARAMETERS_START(2, 3)
+    ZEND_PARSE_PARAMETERS_START(0, -1)
+    Z_PARAM_OPTIONAL
 #if PHP_VERSION_ID >= 80000
     Z_PARAM_OBJECT(socketHandle)
 #else
     Z_PARAM_RESOURCE(socketHandle)
 #endif
     Z_PARAM_ZVAL(address)
-    Z_PARAM_OPTIONAL
 #if PHP_VERSION_ID >= 80000
     Z_PARAM_ZVAL_OR_NULL(port)
 #else
@@ -100,12 +101,29 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_socket_connect) {
 #endif
     ZEND_PARSE_PARAMETERS_END();
 
+
+
+    
+#if PHP_VERSION_ID >= 80000
+    if (socketHandle) {
+        phpSock = Z_SOCKET_P(socketHandle);
+        ENSURE_SOCKET_VALID(phpSock);
+            // if the socket is not an IP address, we return
+            if (phpSock->type != AF_INET && phpSock->type != AF_INET6) {
+                return;
+            }
+    }
+#else
+    // For PHP 7, we can't access the socket resource type directly
+    // as php_sockets_le_socket() is not exported. We'll rely on address validation instead.
+#endif
+
     std::string addressStr = "";
     std::string portStr = "";
 
-    if (Z_TYPE_P(address) == IS_STRING) {
+    if (address && Z_TYPE_P(address) == IS_STRING) {
         addressStr = Z_STRVAL_P(address);
-    } else if (Z_TYPE_P(address) == IS_LONG) {
+    } else if (address && Z_TYPE_P(address) == IS_LONG) {
         // If address is numeric, it might be an IP address
         addressStr = std::to_string(Z_LVAL_P(address));
     }
@@ -145,38 +163,23 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_fsockopen) {
     scopedTimer.SetSink(sink, "outgoing_http_op");
 
     zval *hostname = NULL;
-    zval *port = NULL;
-    zval *errno_val = NULL;
-    zval *errstr = NULL;
-    double timeout = 0.0;
-    zend_bool timeout_is_null = 1;
+    zend_long port = -1;
 
-    ZEND_PARSE_PARAMETERS_START(2, 5)
-    Z_PARAM_ZVAL(hostname)
-    Z_PARAM_ZVAL(port)
+    ZEND_PARSE_PARAMETERS_START(0, -1)
     Z_PARAM_OPTIONAL
-#if PHP_VERSION_ID >= 80000
-    Z_PARAM_ZVAL_OR_NULL(errno_val)
-    Z_PARAM_ZVAL_OR_NULL(errstr)
-    Z_PARAM_DOUBLE_OR_NULL(timeout, timeout_is_null)
-#else
-    Z_PARAM_ZVAL_EX(errno_val, 0, 1)
-    Z_PARAM_ZVAL_EX(errstr, 0, 1)
-    Z_PARAM_DOUBLE_EX(timeout, timeout_is_null, 1, 0)
-#endif
+    Z_PARAM_ZVAL(hostname)
+    Z_PARAM_LONG(port)
     ZEND_PARSE_PARAMETERS_END();
 
     std::string hostnameStr = "";
     std::string portStr = "";
 
-    if (Z_TYPE_P(hostname) == IS_STRING) {
+    if (hostname && Z_TYPE_P(hostname) == IS_STRING) {
         hostnameStr = Z_STRVAL_P(hostname);
     }
 
-    if (Z_TYPE_P(port) == IS_LONG) {
-        portStr = std::to_string(Z_LVAL_P(port));
-    } else if (Z_TYPE_P(port) == IS_STRING) {
-        portStr = Z_STRVAL_P(port);
+    if (port >= 0) {
+        portStr = std::to_string(port);
     }
 
     if (!hostnameStr.empty()) {
@@ -208,35 +211,15 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_stream_socket_client) {
     scopedTimer.SetSink(sink, "outgoing_http_op");
 
     zval *address = NULL;
-    zval *errno_val = NULL;
-    zval *errstr = NULL;
-    double timeout = 0.0;
-    zend_bool timeout_is_null = 1;
-    zend_long flags = 0;
-    zend_bool flags_is_null = 1;
-    zval *context = NULL;
 
-    ZEND_PARSE_PARAMETERS_START(1, 6)
-    Z_PARAM_ZVAL(address)
+    ZEND_PARSE_PARAMETERS_START(0, -1)
     Z_PARAM_OPTIONAL
-#if PHP_VERSION_ID >= 80000
-    Z_PARAM_ZVAL_OR_NULL(errno_val)
-    Z_PARAM_ZVAL_OR_NULL(errstr)
-    Z_PARAM_DOUBLE_OR_NULL(timeout, timeout_is_null)
-    Z_PARAM_LONG_OR_NULL(flags, flags_is_null)
-    Z_PARAM_ZVAL_OR_NULL(context)
-#else
-    Z_PARAM_ZVAL_EX(errno_val, 0, 1)
-    Z_PARAM_ZVAL_EX(errstr, 0, 1)
-    Z_PARAM_DOUBLE_EX(timeout, timeout_is_null, 1, 0)
-    Z_PARAM_LONG_EX(flags, flags_is_null, 1, 0)
-    Z_PARAM_ZVAL_EX(context, 0, 1)
-#endif
+    Z_PARAM_ZVAL(address)
     ZEND_PARSE_PARAMETERS_END();
 
     std::string addressStr = "";
 
-    if (Z_TYPE_P(address) == IS_STRING) {
+    if (address && Z_TYPE_P(address) == IS_STRING) {
         addressStr = Z_STRVAL_P(address);
     }
 
