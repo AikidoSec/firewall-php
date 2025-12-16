@@ -93,7 +93,11 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_socket_connect) {
 #endif
     Z_PARAM_ZVAL(address)
     Z_PARAM_OPTIONAL
+#if PHP_VERSION_ID >= 80000
     Z_PARAM_ZVAL_OR_NULL(port)
+#else
+    Z_PARAM_ZVAL_EX(port, 0, 1)
+#endif
     ZEND_PARSE_PARAMETERS_END();
 
     std::string addressStr = "";
@@ -151,8 +155,13 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_fsockopen) {
     Z_PARAM_ZVAL(hostname)
     Z_PARAM_ZVAL(port)
     Z_PARAM_OPTIONAL
+#if PHP_VERSION_ID >= 80000
     Z_PARAM_ZVAL_OR_NULL(errno_val)
     Z_PARAM_ZVAL_OR_NULL(errstr)
+#else
+    Z_PARAM_ZVAL_EX(errno_val, 0, 1)
+    Z_PARAM_ZVAL_EX(errstr, 0, 1)
+#endif
     Z_PARAM_DOUBLE_OR_NULL(timeout, timeout_is_null)
     ZEND_PARSE_PARAMETERS_END();
 
@@ -209,11 +218,19 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_stream_socket_client) {
     ZEND_PARSE_PARAMETERS_START(1, 6)
     Z_PARAM_ZVAL(address)
     Z_PARAM_OPTIONAL
+#if PHP_VERSION_ID >= 80000
     Z_PARAM_ZVAL_OR_NULL(errno_val)
     Z_PARAM_ZVAL_OR_NULL(errstr)
     Z_PARAM_DOUBLE_OR_NULL(timeout, timeout_is_null)
     Z_PARAM_LONG_OR_NULL(flags, flags_is_null)
     Z_PARAM_ZVAL_OR_NULL(context)
+#else
+    Z_PARAM_ZVAL_EX(errno_val, 0, 1)
+    Z_PARAM_ZVAL_EX(errstr, 0, 1)
+    Z_PARAM_DOUBLE_OR_NULL(timeout, timeout_is_null)
+    Z_PARAM_LONG_OR_NULL(flags, flags_is_null)
+    Z_PARAM_ZVAL_EX(context, 0, 1)
+#endif
     ZEND_PARSE_PARAMETERS_END();
 
     std::string addressStr = "";
