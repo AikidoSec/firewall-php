@@ -131,17 +131,17 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_socket_connect) {
         portStr = Z_STRVAL_P(port);
     }
 
-    if (!addressStr.empty()) {
-        if (!portStr.empty()) {
+    if (addressStr.empty()) {
+        return;
+    }
+
+    if (!portStr.empty()) {
             eventCache.outgoingRequestUrl = "tcp://" + addressStr + ":" + portStr;
             eventCache.outgoingRequestPort = portStr;
         } else {
-            // If no port specified, use the address as-is (might be Unix socket or address with port in string)
-            eventCache.outgoingRequestUrl = addressStr;
-        }
+            eventCache.outgoingRequestUrl = "tcp://" + addressStr;
+            eventCache.outgoingRequestPort = "80"; 
     }
-
-    if (eventCache.outgoingRequestUrl.empty()) return;
 
     eventId = EVENT_PRE_OUTGOING_REQUEST;
 }
