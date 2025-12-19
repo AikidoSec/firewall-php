@@ -1,0 +1,36 @@
+{
+    "type": "detected_attack",
+    "request": {
+        "headers": {
+            "content_type": [
+                "application/json"
+            ]
+        },
+        "method": "POST",
+        "body": "{\"url\": \"http://127.0.0.1:8081\", \"method\": \"socket_connect\"}",
+        "source": "php",
+        "route": "/testDetection"
+    },
+    "attack": {
+        "kind": "ssrf",
+        "operation": "socket_connect",
+        "blocked": false,
+        "source": "body",
+        "path": ".url",
+        "stack": "tests/server/test_ssrf_socket/index.php(20): socket_connect()",
+        "payload": "http://127.0.0.1:8081",
+        "metadata": {
+            "hostname": "127.0.0.1",
+            "port": "8081"
+        },
+        "user": {
+            "id": "12345",
+            "name": "Tudor"
+        }
+    },
+    "agent": {
+        "dryMode": true,
+        "library": "firewall-php"
+    }
+}
+

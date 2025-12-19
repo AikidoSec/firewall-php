@@ -117,6 +117,10 @@ Zen for PHP can do this because the monitored functions are hooked at the PHP-co
     * ✅ [`HTTP_Request2`](https://pear.php.net/package/http_request2)
     * ✅ [`Symfony\HTTPClient`](https://symfony.com/doc/current/http_client.html)
 * ✅ [`file_get_contents`](https://www.php.net/manual/en/function.file-get-contents.php)
+* ✅ Socket functions
+  * ✅ [`socket_connect`](https://www.php.net/manual/en/function.socket-connect.php)
+  * ✅ [`fsockopen`](https://www.php.net/manual/en/function.fsockopen.php)
+  * ✅ [`stream_socket_client`](https://www.php.net/manual/en/function.stream-socket-client.php)
 
 ## Reporting to your Aikido Security dashboard
 

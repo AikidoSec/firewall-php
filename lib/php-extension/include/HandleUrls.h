@@ -2,3 +2,10 @@
 
 AIKIDO_HANDLER_FUNCTION(handle_pre_curl_exec);
 AIKIDO_HANDLER_FUNCTION(handle_post_curl_exec);
+
+AIKIDO_HANDLER_FUNCTION(handle_pre_socket_connect);
+AIKIDO_HANDLER_FUNCTION(handle_post_socket_connect);
+AIKIDO_HANDLER_FUNCTION(handle_pre_fsockopen);
+AIKIDO_HANDLER_FUNCTION(handle_post_fsockopen);
+AIKIDO_HANDLER_FUNCTION(handle_pre_stream_socket_client);
+AIKIDO_HANDLER_FUNCTION(handle_post_stream_socket_client);
