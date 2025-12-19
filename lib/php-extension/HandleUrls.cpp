@@ -100,9 +100,6 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_socket_connect) {
     Z_PARAM_ZVAL_EX(port, 0, 1)
 #endif
     ZEND_PARSE_PARAMETERS_END();
-
-
-
     
 #if PHP_VERSION_ID >= 80000
     if (socketHandle) {
@@ -147,12 +144,10 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_socket_connect) {
     if (eventCache.outgoingRequestUrl.empty()) return;
 
     eventId = EVENT_PRE_OUTGOING_REQUEST;
-    eventCache.moduleName = "socket";
 }
 
 AIKIDO_HANDLER_FUNCTION(handle_post_socket_connect) {
     eventId = EVENT_POST_OUTGOING_REQUEST;
-    eventCache.moduleName = "socket";
     // For socket_connect, we don't have easy access to resolved IP after connection
     // The URL was already set in pre handler
     eventCache.outgoingRequestEffectiveUrl = eventCache.outgoingRequestUrl;
@@ -195,12 +190,10 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_fsockopen) {
     if (eventCache.outgoingRequestUrl.empty()) return;
 
     eventId = EVENT_PRE_OUTGOING_REQUEST;
-    eventCache.moduleName = "socket";
 }
 
 AIKIDO_HANDLER_FUNCTION(handle_post_fsockopen) {
     eventId = EVENT_POST_OUTGOING_REQUEST;
-    eventCache.moduleName = "socket";
     // For fsockopen, we don't have easy access to resolved IP after connection
     // The URL was already set in pre handler
     eventCache.outgoingRequestEffectiveUrl = eventCache.outgoingRequestUrl;
@@ -223,36 +216,16 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_stream_socket_client) {
         addressStr = Z_STRVAL_P(address);
     }
 
-    if (!addressStr.empty()) {
-        // Parse the address to extract host and port
-        json addressJson = CallPhpFunctionParseUrl(addressStr);
-        if (!addressJson.empty()) {
-            eventCache.outgoingRequestUrl = addressStr;
-            if (addressJson.contains("port")) {
-                eventCache.outgoingRequestPort = std::to_string(addressJson["port"].get<int>());
-            } else {
-                // Try to infer port from scheme
-                if (addressStr.find("https://") == 0 || addressStr.find("ssl://") == 0) {
-                    eventCache.outgoingRequestPort = "443";
-                } else if (addressStr.find("http://") == 0 || addressStr.find("tcp://") == 0) {
-                    eventCache.outgoingRequestPort = "80";
-                }
-            }
-        } else {
-            // If parse_url fails, use the address as-is
-            eventCache.outgoingRequestUrl = addressStr;
-        }
+    if (addressStr.empty()){
+        return;
     }
 
-    if (eventCache.outgoingRequestUrl.empty()) return;
-
+    eventCache.outgoingRequestUrl = addressStr;
     eventId = EVENT_PRE_OUTGOING_REQUEST;
-    eventCache.moduleName = "socket";
 }
 
 AIKIDO_HANDLER_FUNCTION(handle_post_stream_socket_client) {
     eventId = EVENT_POST_OUTGOING_REQUEST;
-    eventCache.moduleName = "socket";
     // For stream_socket_client, we don't have easy access to resolved IP after connection
     // The URL was already set in pre handler
     eventCache.outgoingRequestEffectiveUrl = eventCache.outgoingRequestUrl;
