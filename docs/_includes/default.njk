@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>{% if title %}{{ title }} · {% endif %}Aikido Zen Firewall for PHP</title>
+        <meta name="color-scheme" content="light dark" />
+
+        <link
+			href="https://unpkg.com/prismjs@1.20.0/themes/prism-okaidia.css"
+			rel="stylesheet"
+		/>
+        <link rel="stylesheet" href="/styles.css" />
+    </head>
+
+    <body>
+        <div class="shell">
+            <aside>
+                <div class="brand">
+                    <a class="brand-row" href="{{ "/" | url }}">
+                        <span class="brand-icon">{% include "logo-icon.svg" %}</span>
+                        <div>
+                            <strong>Aikido Zen Firewall</strong>
+                            <span>{{ agent }}</span>
+                        </div>
+                    </a>
+                </div>
+
+                <nav aria-label="Pages">
+                    <a
+                        class="navlink"
+                        href="{{ "/" | url }}"
+                        {% if page.url == p.url %}aria-current="page"{% endif %}
+                    >
+                        <span>👋 Welcome</span>
+                    </a>
+                    <a
+                        class="navlink"
+                        href="{{ "/requirements/" | url }}"
+                        {% if page.url == p.url %}aria-current="page"{% endif %}
+                    >
+                        <span>⚙️ Requirements</span>
+                    </a>
+                    <a
+                        class="navlink"
+                        href="{{ "/help/" | url }}"
+                        {% if page.url == p.url %}aria-current="page"{% endif %}
+                    >
+                        <span>❓ Get help</span>
+                    </a>
+                    <div class="navdivider" aria-hidden="true"></div>
+                    {% for group in collections.nav %}
+                        {% if group.dir %}
+                        <div class="navsection-title">{{ group.dir }}</div>
+                        {% endif %}
+                        {% for p in group.pages %}
+                            {% set label = p.data.title or p.fileSlug %}
+                            {% if label %}
+                            <a
+                                class="navlink{% if group.dir %} navlink--child{% endif %}"
+                                href="{{ p.url }}"
+                                {% if page.url == p.url %}aria-current="page"{% endif %}
+                            >
+                                <span>{{ label }}</span>
+                            </a>
+                            {% endif %}
+                        {% endfor %}
+                    {% endfor %}
+                </nav>
+            </aside>
+
+            <main>
+                <div class="topline">
+                    <div class="crumb">{{ page.url }}</div>
+                    <a class="edit-link" href="https://github.com/AikidoSec/firewall-php/edit/main/docs/{{ page.inputPath | replace('./', '') }}" target="_blank">Edit on Github</a>
+                </div>
+                <div class="content">
+                    {{ content | safe }}
+                </div>
+            </main>
+        </div>
+    </body>
+</html>
