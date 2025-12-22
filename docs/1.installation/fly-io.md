@@ -1,3 +1,7 @@
+---
+title: Fly.io (flyctl)
+---
+
 # Fly.io (flyctl)
 
 ## Installation Steps

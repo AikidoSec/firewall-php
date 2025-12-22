@@ -3,4 +3,4 @@ title: Welcome
 favorite: true
 ---
 
-# Getting started
+{% renderFile "./../README.md" %}

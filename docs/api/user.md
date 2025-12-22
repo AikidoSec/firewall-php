@@ -1,3 +1,7 @@
+---
+title: set_user
+---
+
 # Setting the current user
 
 To set the current user, you can use the `\aikido\set_user` php function.

@@ -1,4 +1,5 @@
 import syntaxHighlight from "@11ty/eleventy-plugin-syntaxhighlight";
+import { RenderPlugin } from "@11ty/eleventy";
 
 export default async function(eleventyConfig) {
   const getNavPages = (collectionApi) => {
@@ -30,6 +31,7 @@ export default async function(eleventyConfig) {
   };
 
   eleventyConfig.addPlugin(syntaxHighlight);
+  eleventyConfig.addPlugin(RenderPlugin);
   eleventyConfig.addPassthroughCopy({ "_includes/styles.css": "styles.css" });
   eleventyConfig.addGlobalData("layout", "default.njk");
   eleventyConfig.addGlobalData("agent", "PHP");

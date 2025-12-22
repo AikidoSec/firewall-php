@@ -1,3 +1,7 @@
+---
+title: Laravel Forge
+---
+
 # Laravel Forge
 
 In Forge, go to your server -> `Settings` -> `Environment` and add the `AIKIDO_TOKEN` in the .env file.

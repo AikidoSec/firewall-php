@@ -1,3 +1,7 @@
+---
+title: AWS Elastic beanstalk
+---
+
 # AWS Elastic beanstalk
 
 1. In your repo, create a new file in `.ebextensions/01_aikido_php_firewall.config` with the following content:

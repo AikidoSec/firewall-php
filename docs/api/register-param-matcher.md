@@ -1,3 +1,7 @@
+---
+title: register_param_matcher
+---
+
 # Register custom route parameter matchers
 
 Aikido exposes a new function, called `\aikido\register_param_matcher` that can be used to register custom route parameter matchers.

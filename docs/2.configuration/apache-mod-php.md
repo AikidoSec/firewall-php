@@ -1,3 +1,7 @@
+---
+title: Apache (mod_php)
+---
+
 # Apache (mod_php)
 
 1. Pass the Aikido environment variables to PHP from your Apache virtual host configuration (or .htaccess)

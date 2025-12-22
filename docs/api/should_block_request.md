@@ -1,3 +1,7 @@
+---
+title: should_block_request
+---
+
 # Should block request
 
 In order to enable the user blocking and rate limiting features, the protected app can call `\aikido\should_block_request` to obtain the blocking decision for the current request and act accordingly.

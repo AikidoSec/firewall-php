@@ -1,8 +1,12 @@
+---
+title: Debian 10
+---
+
 # Debian10
 
-1. In order to install the Aikido PHP firewall on Debian 10, you would need first to install gcc version 10:
+In order to install the Aikido PHP firewall on Debian 10, you would need first to install gcc version 10:
 
-```
+```bash
 wget https://mirrors.edge.kernel.org/ubuntu/pool/main/g/gcc-10/gcc-10-base_10-20200411-0ubuntu1_amd64.deb && dpkg -i gcc-10-base_10-20200411-0ubuntu1_amd64.deb
 wget https://mirrors.edge.kernel.org/ubuntu/pool/main/g/gcc-10/libgcc-s1_10-20200411-0ubuntu1_amd64.deb && dpkg -i libgcc-s1_10-20200411-0ubuntu1_amd64.deb
 ```
