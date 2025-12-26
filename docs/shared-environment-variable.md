@@ -1,0 +1,3 @@
+- The standard way of setting the Aikido Token is via environment variables -> `AIKIDO_TOKEN="your token"`.
+- Another way of doing that, is adding the `AIKIDO_TOKEN` variable in your `.env` file.
+- If you are unable to set any of the above, there's an alternative way of doing that from PHP, by following the ["Token setup from PHP code"](./docs/token-setup-php.md).

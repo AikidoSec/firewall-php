@@ -1,6 +1,8 @@
 import syntaxHighlight from "@11ty/eleventy-plugin-syntaxhighlight";
 import eleventyNavigationPlugin from "@11ty/eleventy-navigation";
 import { RenderPlugin } from "@11ty/eleventy";
+import { eleventyImageTransformPlugin } from "@11ty/eleventy-img";
+import MarkdownItGitHubAlerts from 'markdown-it-github-alerts'
 
 export default async function(eleventyConfig) {
   const markNavState = (items, currentUrl) => {
@@ -62,6 +64,12 @@ export default async function(eleventyConfig) {
   eleventyConfig.addPlugin(syntaxHighlight);
   eleventyConfig.addPlugin(RenderPlugin);
   eleventyConfig.addPlugin(eleventyNavigationPlugin);
+  eleventyConfig.addPlugin(eleventyImageTransformPlugin);
+
+  // Additional markdown rendering
+  eleventyConfig.amendLibrary("md", (mdLib) => mdLib.use(MarkdownItGitHubAlerts));
+
+  // Filters
   eleventyConfig.addFilter("navWithActive", (items, currentUrl) => markNavState(items, currentUrl));
   eleventyConfig.addFilter("navBreadcrumb", (items, currentUrl) => findBreadcrumb(items, currentUrl));
   eleventyConfig.addFilter("navFind", (items, currentUrl) => findNavItem(items, currentUrl));
