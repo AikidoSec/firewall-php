@@ -1,0 +1,15 @@
+{% macro render(items, isRoot) %}
+<ul{% if isRoot %} class="content-nav"{% endif %}>
+    {% for item in items %}
+        {% set label = item.title or item.key %}
+        <li>
+            <a href="{{ item.url | url }}">{{ label }}</a>
+            {% if item.children and item.children.length %}
+                {{ render(item.children, false) }}
+            {% endif %}
+        </li>
+    {% endfor %}
+</ul>
+{% endmacro %}
+
+{{ render(childItems, true) }}

@@ -1,5 +1,8 @@
 ---
 title: register_param_matcher
+eleventyNavigation:
+  key: register_param_matcher
+  parent: API
 ---
 
 # Register custom route parameter matchers

@@ -92,21 +92,56 @@ nav {
   gap: 4px;
 }
 
-.navsection-title {
-  margin: 12px 10px 4px;
-  font-size: 11px;
-  letter-spacing: 0.06em;
-  color: var(--muted);
-  text-transform: uppercase;
+nav .nav-list {
+  list-style: none;
+  margin: 0;
+  padding-left: 0;
+  display: grid;
+  gap: 2px;
 }
 
-.navdivider {
-  height: 1px;
-  margin: 10px 10px 8px;
-  background: var(--border);
+nav .nav-summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+nav .nav-summary:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 10px;
+}
+nav .nav-summary::-webkit-details-marker {
+  display: none;
+}
+nav .nav-summary::marker {
+  content: "";
+}
+nav .nav-summary::after {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-right: 2px solid var(--muted);
+  border-bottom: 2px solid var(--muted);
+  transform: rotate(-45deg);
+  margin-left: auto;
+  transition: transform .15s ease, border-color .15s ease;
+}
+nav .nav-group[open] > .nav-summary::after {
+  transform: rotate(45deg);
+}
+nav .nav-summary:hover::after {
+  border-color: var(--linkHover);
 }
 
-.navlink {
+nav .nav-group > .nav-list {
+  margin: 4px 0 6px 12px;
+  padding-left: 8px;
+  border-left: 1px solid var(--border);
+}
+
+nav .nav-link {
   position: relative;
   display: flex;
   gap: 10px;
@@ -114,14 +149,9 @@ nav {
   padding: 8px 10px 8px 18px;
   border-radius: 10px;
   border: 1px solid transparent;
+  flex: 1;
 }
-.navlink--child {
-  padding-left: 30px;
-}
-.navlink--child::before {
-  left: 18px;
-}
-.navlink::before {
+nav .nav-link::before {
   content: "";
   position: absolute;
   left: 8px;
@@ -131,40 +161,53 @@ nav {
   border-radius: 999px;
   background: transparent;
 }
-.navlink small {
-  color: var(--muted);
-  font-size: 12px;
-  margin-left: auto;
-}
-.navlink:hover {
-  background: var(--activeBg);
-}
-.navlink:hover::before {
+nav .nav-link:hover::before {
   background: color-mix(in oklab, var(--accent) 65%, transparent);
 }
-.navlink[aria-current="page"] {
-  background: var(--activeBg);
-  border-color: var(--border);
+nav .nav-summary:hover .nav-link::before {
+  background: color-mix(in oklab, var(--accent) 65%, transparent);
 }
-.navlink[aria-current="page"]::before {
-  background: var(--accent);
-}
-
-main {
-  padding: 26px 18px;
+nav .nav-link.is-current::before {
+  background: color-mix(in oklab, var(--accent) 80%, transparent);
 }
 
 main {
+  width: 100%;
   max-width: var(--max);
   margin: 0 auto;
   padding: 20px;
 }
 
 .content {
+  width: 100%;
   padding: 20px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: color-mix(in oklab, var(--panel) 96%, transparent);
+}
+.child-links {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.child-links h2 {
+  font-size: 16px;
+  margin: 0 0 10px;
+}
+.content-nav {
+  list-style: none;
+  margin: 0;
+  padding-left: 0;
+  display: grid;
+  gap: 6px;
+}
+.content-nav ul {
+  list-style: none;
+  margin: 6px 0 0;
+  padding-left: 12px;
+  border-left: 1px solid var(--border);
+  display: grid;
+  gap: 6px;
 }
 
 h1, h2, h3 { line-height: 1.2; margin: 0 0 12px; }

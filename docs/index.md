@@ -1,6 +1,9 @@
 ---
 title: Welcome
-favorite: true
+eleventyNavigation:
+  key: welcome
+  title: 👋 Welcome
+  order: 1
 ---
 
 {% renderFile "./../README.md" %}

@@ -1,5 +1,8 @@
 ---
 title: Apache (mod_php)
+eleventyNavigation:
+  key: Apache (mod_php)
+  parent: Installation
 ---
 
 # Apache (mod_php)

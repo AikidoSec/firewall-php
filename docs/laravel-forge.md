@@ -1,5 +1,8 @@
 ---
 title: Laravel Forge
+eleventyNavigation:
+  key: Laravel Forge
+  parent: Installation
 ---
 
 # Laravel Forge

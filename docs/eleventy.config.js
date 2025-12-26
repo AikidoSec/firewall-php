@@ -1,57 +1,72 @@
 import syntaxHighlight from "@11ty/eleventy-plugin-syntaxhighlight";
+import eleventyNavigationPlugin from "@11ty/eleventy-navigation";
 import { RenderPlugin } from "@11ty/eleventy";
 
 export default async function(eleventyConfig) {
-  const getNavPages = (collectionApi) => {
-    return collectionApi
-      .getAll()
-      .filter((item) => {
-        // Keep only real pages with output, and skip common utility pages
-        if (!item.url || item.url.startsWith("/assets/")) return false;
-        if (item.data && item.data.eleventyExcludeFromCollections) return false;
-        if (item.data && item.data.favorite === true) return false; // only show favorites
-        if (item.url === "/404/") return false;
-        return true;
-      })
-      .map((item) => {
-        const inputPath = (item.inputPath || "")
-          .replace(/^\.\//, "")
-          .replace(/\\/g, "/");
-        const parts = inputPath.split("/");
-        const navDir = parts.length > 1 ? parts.slice(0, -1).join("/") : "";
-        item.data = item.data || {};
-        item.data.navDir = navDir;
-        return item;
-      })
-      .sort((a, b) => {
-        const aTitle = (a.data.title || a.fileSlug || "").toLowerCase();
-        const bTitle = (b.data.title || b.fileSlug || "").toLowerCase();
-        return aTitle.localeCompare(bTitle, "en");
-      });
-  };
-
-  eleventyConfig.addPlugin(syntaxHighlight);
-  eleventyConfig.addPlugin(RenderPlugin);
-  eleventyConfig.addPassthroughCopy({ "_includes/styles.css": "styles.css" });
-  eleventyConfig.addGlobalData("layout", "default.njk");
-  eleventyConfig.addGlobalData("agent", "PHP");
-  eleventyConfig.addCollection("pages", (collectionApi) => getNavPages(collectionApi));
-  eleventyConfig.addCollection("nav", (collectionApi) => {
-    const pages = getNavPages(collectionApi);
-    const groups = new Map();
-
-    for (const page of pages) {
-      const dir = page.data.navDir || "";
-      if (!groups.has(dir)) groups.set(dir, []);
-      groups.get(dir).push(page);
+  const markNavState = (items, currentUrl) => {
+    if (!Array.isArray(items)) {
+      return [];
     }
 
-    const entries = [...groups.entries()].sort(([a], [b]) => {
-      if (!a && b) return 1;
-      if (a && !b) return -1;
-      return a.localeCompare(b, "en");
-    });
+    return items.map((item) => {
+      const children = markNavState(item.children || [], currentUrl);
+      const isCurrent = item.url === currentUrl;
+      const isOpen = isCurrent || children.some((child) => child.isCurrent || child.isOpen);
 
-    return entries.map(([dir, list]) => ({ dir, pages: list }));
-  });
+      return { ...item, children, isCurrent, isOpen };
+    });
+  };
+
+  const findNavItem = (items, currentUrl) => {
+    if (!Array.isArray(items)) {
+      return null;
+    }
+
+    for (const item of items) {
+      if (item.url === currentUrl) {
+        return item;
+      }
+
+      const childMatch = findNavItem(item.children || [], currentUrl);
+      if (childMatch) {
+        return childMatch;
+      }
+    }
+
+    return null;
+  };
+
+  const findBreadcrumb = (items, currentUrl) => {
+    if (!Array.isArray(items)) {
+      return [];
+    }
+
+    for (const item of items) {
+      if (item.url === currentUrl) {
+        return [item];
+      }
+
+      const childTrail = findBreadcrumb(item.children || [], currentUrl);
+      if (childTrail.length) {
+        return [item, ...childTrail];
+      }
+    }
+
+    return [];
+  };
+
+  // Site specific metadata
+  eleventyConfig.addGlobalData("agent", "PHP");
+
+  // Plugins
+  eleventyConfig.addPlugin(syntaxHighlight);
+  eleventyConfig.addPlugin(RenderPlugin);
+  eleventyConfig.addPlugin(eleventyNavigationPlugin);
+  eleventyConfig.addFilter("navWithActive", (items, currentUrl) => markNavState(items, currentUrl));
+  eleventyConfig.addFilter("navBreadcrumb", (items, currentUrl) => findBreadcrumb(items, currentUrl));
+  eleventyConfig.addFilter("navFind", (items, currentUrl) => findNavItem(items, currentUrl));
+
+  // Layout
+  eleventyConfig.addPassthroughCopy({ "_includes/styles.css": "styles.css" });
+  eleventyConfig.addGlobalData("layout", "default.njk");
 };

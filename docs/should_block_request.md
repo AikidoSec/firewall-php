@@ -1,5 +1,8 @@
 ---
 title: should_block_request
+eleventyNavigation:
+  key: should_block_request
+  parent: API
 ---
 
 # Should block request

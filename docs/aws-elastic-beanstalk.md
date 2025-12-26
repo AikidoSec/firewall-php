@@ -1,5 +1,8 @@
 ---
 title: AWS Elastic beanstalk
+eleventyNavigation:
+  key: AWS Elastic beanstalk
+  parent: Installation
 ---
 
 # AWS Elastic beanstalk

@@ -1,0 +1,24 @@
+{% macro render(items) %}
+<ul class="nav-list">
+    {% for item in items %}
+        {% set hasChildren = item.children and item.children.length %}
+        {% set label = item.title or item.key %}
+        {% if hasChildren %}
+            <li class="nav-item nav-item--parent">
+                <details class="nav-group" {% if item.isOpen %}open{% endif %}>
+                    <summary class="nav-summary">
+                        <a class="nav-link{% if item.isCurrent %} is-current{% endif %}" href="{{ item.url | url }}"{% if item.isCurrent %} aria-current="page"{% endif %}>{{ label }}</a>
+                    </summary>
+                    {{ render(item.children) }}
+                </details>
+            </li>
+        {% else %}
+            <li class="nav-item">
+                <a class="nav-link{% if item.isCurrent %} is-current{% endif %}" href="{{ item.url | url }}"{% if item.isCurrent %} aria-current="page"{% endif %}>{{ label }}</a>
+            </li>
+        {% endif %}
+    {% endfor %}
+</ul>
+{% endmacro %}
+
+{{ render(navItems) }}

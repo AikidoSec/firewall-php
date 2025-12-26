@@ -1,5 +1,8 @@
 ---
-title: PHP Code
+title: set_token
+eleventyNavigation:
+  key: set_token
+  parent: API
 ---
 
 # Token setup from PHP code

@@ -1,5 +1,8 @@
 ---
 title: Debian 10
+eleventyNavigation:
+  key: Debian 10
+  parent: Additional resources
 ---
 
 # Debian10

@@ -1,5 +1,8 @@
 ---
 title: set_user
+eleventyNavigation:
+  key: set_user
+  parent: API
 ---
 
 # Setting the current user

@@ -26,56 +26,44 @@
                     </a>
                 </div>
 
-                <nav aria-label="Pages">
-                    <a
-                        class="navlink"
-                        href="{{ "/" | url }}"
-                        {% if page.url == p.url %}aria-current="page"{% endif %}
-                    >
-                        <span>👋 Welcome</span>
-                    </a>
-                    <a
-                        class="navlink"
-                        href="{{ "/requirements/" | url }}"
-                        {% if page.url == p.url %}aria-current="page"{% endif %}
-                    >
-                        <span>⚙️ Requirements</span>
-                    </a>
-                    <a
-                        class="navlink"
-                        href="{{ "/help/" | url }}"
-                        {% if page.url == p.url %}aria-current="page"{% endif %}
-                    >
-                        <span>❓ Get help</span>
-                    </a>
-                    <div class="navdivider" aria-hidden="true"></div>
-                    {% for group in collections.nav %}
-                        {% if group.dir %}
-                        <div class="navsection-title">{{ group.dir }}</div>
-                        {% endif %}
-                        {% for p in group.pages %}
-                            {% set label = p.data.title or p.fileSlug %}
-                            {% if label %}
-                            <a
-                                class="navlink{% if group.dir %} navlink--child{% endif %}"
-                                href="{{ p.url }}"
-                                {% if page.url == p.url %}aria-current="page"{% endif %}
-                            >
-                                <span>{{ label }}</span>
-                            </a>
-                            {% endif %}
-                        {% endfor %}
-                    {% endfor %}
+                {% set navItems = collections.all | eleventyNavigation | navWithActive(page.url) %}
+                <nav class="sidebar-nav">
+                    {% include "nav.njk" %}
                 </nav>
             </aside>
 
             <main>
+                {% set crumbs = navItems | navBreadcrumb(page.url) %}
                 <div class="topline">
-                    <div class="crumb">{{ page.url }}</div>
-                    <a class="edit-link" href="https://github.com/AikidoSec/firewall-php/edit/main/docs/{{ page.inputPath | replace('./', '') }}" target="_blank">Edit on Github</a>
+                    <div class="crumb">
+                        {% if crumbs.length %}
+                            {% for item in crumbs %}
+                                {% set label = item.title or item.key %}
+                                {% if not loop.first %} / {% endif %}
+                                {% if loop.last %}
+                                    <span aria-current="page">{{ label }}</span>
+                                {% else %}
+                                    <a href="{{ item.url | url }}">{{ label }}</a>
+                                {% endif %}
+                            {% endfor %}
+                        {% else %}
+                            {{ page.url }}
+                        {% endif %}
+                    </div>
+                    <a class="edit-link" href="https://github.com/AikidoSec/firewall-{{ agent | lower }}/edit/main/docs/{{ page.inputPath | replace('./', '') }}" target="_blank">Edit on Github</a>
                 </div>
                 <div class="content">
                     {{ content | safe }}
+                    {% if showNavChildren %}
+                        {% set currentNav = navItems | navFind(page.url) %}
+                        {% if currentNav and currentNav.children and currentNav.children.length %}
+                            <div class="child-links">
+                                <h2>In this section</h2>
+                                {% set childItems = currentNav.children %}
+                                {% include "nav-children.njk" %}
+                            </div>
+                        {% endif %}
+                    {% endif %}
                 </div>
             </main>
         </div>

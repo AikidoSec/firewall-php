@@ -1,5 +1,8 @@
 ---
 title: Caddy
+eleventyNavigation:
+  key: Caddy
+  parent: Installation
 ---
 
 # Caddy (PHP-FPM)
@@ -14,7 +17,7 @@ example.com {
     php_fastcgi unix//run/php/php-fpm.sock {
         ...
 +        env AIKIDO_TOKEN "AIK_RUNTIME_...."
--        env AIKIDO_BLOCK "False"
++        env AIKIDO_BLOCK "True"
         ...
     }
     file_server
