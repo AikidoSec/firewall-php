@@ -1,21 +1,28 @@
 ---
-title: should_block_request
+title: Symfony
 eleventyNavigation:
-  key: should_block_request
-  parent: API
+  key: Symfony
+  parent: Frameworks
+showNavChildren: true
 ---
 
-# Should block request
+# Zen Firewall For Symfony
 
-In order to enable the user blocking and rate limiting features, the protected app can call `\aikido\should_block_request` to obtain the blocking decision for the current request and act accordingly.
+{% renderFile "./shared-intro.md" %}
 
-We provide middleware examples that can be used in different scenarious.
+## Install the Agent
 
-## No framework
+{% renderFile "./shared-package.md" %}
+
+## Configure the environment variable
+
+{% renderFile "./shared-environment-variable.md" %}
+
+## Install the Middleware
+
+### 1. Place the AikidoMiddleware in your app:
 
 ```php
-<?php
-
 namespace App\Middleware;
 
 use Psr\Http\Message\ResponseInterface;
@@ -107,88 +114,10 @@ class AikidoMiddleware implements MiddlewareInterface
 }
 ```
 
-## Laravel
+### 2. Enable Middleware
 
-1. Place the AikidoMiddleware in `app/Http/Middleware/AikidoMiddleware.php`.
+...
 
-```php
-<?php
+## Troubleshooting
 
-namespace App\Http\Middleware;
-
-use Closure;
-use Illuminate\Support\Facades\Auth;
-
-class AikidoMiddleware
-{
-    public function handle($request, Closure $next)
-    {
-        // Check if Aikido extension is loaded
-        if (!extension_loaded('aikido')) {
-            return $next($request);
-        }
-
-        // You can pass in the Aikido token here
-        // \aikido\set_token("your token here");
-
-		
-        // Get the authenticated user's ID from Laravel's Auth system
-        $userId = Auth::id();
-
-        // If a user is authenticated, set the user in Aikido Zen context
-        if ($userId) {
-            \aikido\set_user($userId);
-            // If you want to set the user's name in Aikido Zen context, you can change the above to:
-            // \aikido\set_user($userId, Auth::user()?->name);
-        }
-
-        // Check blocking decision from Aikido
-        $decision = \aikido\should_block_request();
-
-        if ($decision->block) {
-            if ($decision->type == "blocked") {
-                if ($decision->trigger == "user") {
-                    return response('Your user is blocked!', 403);
-                }
-            }
-            else if ($decision->type == "ratelimited") {
-                if ($decision->trigger == "user") {
-                    return response('Your user exceeded the rate limit for this endpoint!', 429);
-                }
-                else if ($decision->trigger == "ip") {
-                    return response("Your IP ({$decision->ip}) exceeded the rate limit for this endpoint!", 429);
-                }
-                else if ($decision->trigger == "group") {
-                    return response("Your group exceeded the rate limit for this endpoint!", 429);
-                }
-            }
-        }
-
-        // Continue to the next middleware or request handler
-        return $next($request);
-    }
-}
-```
-
-2. In `bootstrap/app.php`, apply the following changes:
-```php
-<?php
-// ...
-
-use App\Http\Middleware\AikidoMiddleware;
-
-return Application::configure(basePath: dirname(__DIR__))
-    ->withRouting(
-        web: __DIR__.'/../routes/web.php',
-        commands: __DIR__.'/../routes/console.php',
-        health: '/up',
-    )
-    ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->web(append: [
-            AikidoMiddleware::class,
-        ]);
-        // Append AikidoMiddleware to other groups ('api' for example)
-    })
-
-// ...
-```
+{% renderFile "./shared-troubleshooting.md" %}

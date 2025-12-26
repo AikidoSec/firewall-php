@@ -1,3 +1,10 @@
+---
+title: set_user
+eleventyNavigation:
+  key: set_user
+  parent: API
+---
+
 # Setting the current user
 
 To set the current user, you can use the `\aikido\set_user` php function.

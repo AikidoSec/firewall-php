@@ -1,3 +1,10 @@
+---
+title: register_param_matcher
+eleventyNavigation:
+  key: register_param_matcher
+  parent: API
+---
+
 # Register custom route parameter matchers
 
 Aikido exposes a new function, called `\aikido\register_param_matcher` that can be used to register custom route parameter matchers.

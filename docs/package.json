@@ -1,0 +1,14 @@
+{
+  "dependencies": {
+    "@11ty/eleventy": "^3.1.2",
+    "@11ty/eleventy-img": "^6.0.4",
+    "@11ty/eleventy-navigation": "^1.0.5",
+    "@11ty/eleventy-plugin-syntaxhighlight": "^5.0.2",
+    "markdown-it-github-alerts": "^1.0.0"
+  },
+  "type": "module",
+  "scripts": {
+    "watch": "eleventy --serve",
+    "build": "eleventy"
+  }
+}

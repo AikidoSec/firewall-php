@@ -1,3 +1,10 @@
+---
+title: Laravel Forge
+eleventyNavigation:
+  key: Laravel Forge
+  parent: Installation
+---
+
 # Laravel Forge
 
 In Forge, go to your server -> `Settings` -> `Environment` and add the `AIKIDO_TOKEN` in the .env file.

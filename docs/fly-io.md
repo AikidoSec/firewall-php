@@ -1,3 +1,10 @@
+---
+title: Fly.io (flyctl)
+eleventyNavigation:
+  key: Fly.io (flyctl)
+  parent: Installation
+---
+
 # Fly.io (flyctl)
 
 ## Installation Steps

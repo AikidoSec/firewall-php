@@ -1,3 +1,10 @@
+---
+title: AWS Elastic beanstalk
+eleventyNavigation:
+  key: AWS Elastic beanstalk
+  parent: Installation
+---
+
 # AWS Elastic beanstalk
 
 1. In your repo, create a new file in `.ebextensions/01_aikido_php_firewall.config` with the following content:

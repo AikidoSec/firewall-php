@@ -1,3 +1,10 @@
+---
+title: set_token
+eleventyNavigation:
+  key: set_token
+  parent: API
+---
+
 # Token setup from PHP code
 
 Aikido exposes a new function, called `\aikido\set_token` that can be used to pass in the token to the Aikido Agent.

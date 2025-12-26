@@ -132,3 +132,7 @@ http-client.private.env.json
 
 # All idea files
 .idea/**
+
+# Docs
+docs/node_modules/
+docs/_site/

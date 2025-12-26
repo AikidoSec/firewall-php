@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>{% if title %}{{ title }} · {% endif %}Aikido Zen Firewall for PHP</title>
+        <meta name="color-scheme" content="light dark" />
+
+        <link
+			href="https://unpkg.com/prismjs@1.20.0/themes/prism-okaidia.css"
+			rel="stylesheet"
+		/>
+        <link rel="stylesheet" href="/styles.css" />
+    </head>
+
+    <body>
+        <div class="shell">
+            <aside>
+                <div class="brand">
+                    <a class="brand-row" href="{{ "/" | url }}">
+                        <span class="brand-icon">{% include "logo-icon.svg" %}</span>
+                        <div>
+                            <strong>Aikido Zen Firewall</strong>
+                            <span>{{ agent }}</span>
+                        </div>
+                    </a>
+                </div>
+
+                {% set navItems = collections.all | eleventyNavigation | navWithActive(page.url) %}
+                <nav class="sidebar-nav">
+                    {% include "nav.njk" %}
+                </nav>
+            </aside>
+
+            <main>
+                {% set crumbs = navItems | navBreadcrumb(page.url) %}
+                <div class="topline">
+                    <div class="crumb">
+                        {% if crumbs.length %}
+                            {% for item in crumbs %}
+                                {% set label = item.title or item.key %}
+                                {% if not loop.first %} / {% endif %}
+                                {% if loop.last %}
+                                    <span aria-current="page">{{ label }}</span>
+                                {% else %}
+                                    <a href="{{ item.url | url }}">{{ label }}</a>
+                                {% endif %}
+                            {% endfor %}
+                        {% else %}
+                            {{ page.url }}
+                        {% endif %}
+                    </div>
+                    <a class="edit-link" href="https://github.com/AikidoSec/firewall-{{ agent | lower }}/edit/main/docs/{{ page.inputPath | replace('./', '') }}" target="_blank">Edit on Github</a>
+                </div>
+                <div class="content">
+                    {{ content | safe }}
+                    {% if showNavChildren %}
+                        {% set currentNav = navItems | navFind(page.url) %}
+                        {% if currentNav and currentNav.children and currentNav.children.length %}
+                            <div class="child-links">
+                                <h2>In this section</h2>
+                                {% set childItems = currentNav.children %}
+                                {% include "nav-children.njk" %}
+                            </div>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </main>
+        </div>
+    </body>
+</html>
