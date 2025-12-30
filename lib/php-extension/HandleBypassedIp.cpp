@@ -1,13 +1,14 @@
 #include "Includes.h"
 
-// This variable is used to check if the request is bypassed,
-// if true, all blocking checks will be skipped.
-bool isIpBypassed = false;
+// The isIpBypassed module global variable is used to store whether the current IP is bypassed.
+// If true, all blocking checks will be skipped.
+// Accessed via AIKIDO_GLOBAL(isIpBypassed).
+
+// The checkedIpBypass module global variable is used to check if IP bypass check
+// has already been called, in order to avoid multiple calls to this function.
+// Accessed via AIKIDO_GLOBAL(checkedIpBypass).
 
 void InitIpBypassCheck() {
-    // Reset state for new request
-    isIpBypassed = false;
-
     ScopedTimer scopedTimer("check_ip_bypass", "aikido_op");
 
     try {
@@ -19,8 +20,16 @@ void InitIpBypassCheck() {
     }
 }
 
-
 bool IsAikidoDisabledOrBypassed() {
-    return AIKIDO_GLOBAL(disable) == true || isIpBypassed;
+    if (AIKIDO_GLOBAL(disable) == true) {
+        return true;
+    }
+    
+    if (!AIKIDO_GLOBAL(checkedIpBypass)) {
+        AIKIDO_GLOBAL(checkedIpBypass) = true;
+        InitIpBypassCheck();
+    }
+    
+    return AIKIDO_GLOBAL(isIpBypassed);
 }
 
