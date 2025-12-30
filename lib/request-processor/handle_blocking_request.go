@@ -138,3 +138,22 @@ func OnGetAutoBlockingStatus(inst *instance.RequestProcessorInstance) string {
 
 	return ""
 }
+
+func GetBypassAction() string {
+	actionMap := map[string]interface{}{
+		"action": "bypassIp",
+	}
+	actionJson, err := json.Marshal(actionMap)
+	if err != nil {
+		return ""
+	}
+	return string(actionJson)
+}
+
+func OnGetIsIpBypassed() string {
+	log.Debugf("OnGetIsIpBypassed called!")
+	if context.IsIpBypassed() {
+		return GetBypassAction()
+	}
+	return ""
+}

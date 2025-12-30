@@ -19,6 +19,6 @@
         }
     ],
     "blockedUserIds": [],
-    "allowedIPAddresses": ["::1", "127.0.0.1"],
+    "allowedIPAddresses": ["185.245.255.211"],
     "receivedAnyStats": true
 }

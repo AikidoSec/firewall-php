@@ -62,4 +62,5 @@ using json = nlohmann::json;
 #include "HandleQueries.h"
 #include "HandlePathAccess.h"
 #include "HandleFileCompilation.h"
+#include "HandleBypassedIp.h"
 #include "HookAst.h"

@@ -16,6 +16,7 @@ void PhpLifecycle::RequestInit() {
     AIKIDO_GLOBAL(requestProcessor).RequestInit();
     AIKIDO_GLOBAL(checkedAutoBlock) = false;
     AIKIDO_GLOBAL(checkedShouldBlockRequest) = false;
+    InitIpBypassCheck();
 }
 
 void PhpLifecycle::RequestShutdown() {

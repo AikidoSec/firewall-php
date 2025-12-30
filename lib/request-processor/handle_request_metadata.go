@@ -39,29 +39,31 @@ func OnPostRequest(inst *instance.RequestProcessorInstance) string {
 	if inst.GetCurrentServer() == nil {
 		return ""
 	}
-	params := RequestShutdownParams{
-		ThreadID:       inst.GetThreadID(),
-		Token:          inst.GetCurrentToken(),
-		Method:         context.GetMethod(inst),
-		Route:          context.GetRoute(inst),
-		RouteParsed:    context.GetParsedRoute(inst),
-		StatusCode:     context.GetStatusCode(inst),
-		User:           context.GetUserId(inst),
-		UserAgent:      context.GetUserAgent(inst),
-		IP:             context.GetIp(inst),
-		Url:            context.GetUrl(inst),
-		RateLimitGroup: context.GetRateLimitGroup(inst),
-		RateLimited:    context.IsEndpointRateLimited(inst),
-		QueryParsed:    context.GetQueryParsed(inst),
-		IsIpBypassed:   context.IsIpBypassed(inst),
-		APISpec:        api_discovery.GetApiInfo(inst, inst.GetCurrentServer()),
-	}
+  if !context.IsIpBypassed() {
+  	params := RequestShutdownParams{
+	  	ThreadID:       inst.GetThreadID(),
+		  Token:          inst.GetCurrentToken(),
+  		Method:         context.GetMethod(inst),
+	  	Route:          context.GetRoute(inst),
+	  	RouteParsed:    context.GetParsedRoute(inst),
+		  StatusCode:     context.GetStatusCode(inst),
+  		User:           context.GetUserId(inst),
+	  	UserAgent:      context.GetUserAgent(inst),
+		  IP:             context.GetIp(inst),
+		  Url:            context.GetUrl(inst),
+		  RateLimitGroup: context.GetRateLimitGroup(inst),
+		  RateLimited:    context.IsEndpointRateLimited(inst),
+		  QueryParsed:    context.GetQueryParsed(inst),
+		  IsIpBypassed:   context.IsIpBypassed(inst),
+		  APISpec:        api_discovery.GetApiInfo(inst, inst.GetCurrentServer()),
+	  }
 
-	context.Clear(inst)
-
-	go func() {
-		OnRequestShutdownReporting(params)
-	}()
+	  context.Clear(inst)
+    
+	  go func() {
+		  OnRequestShutdownReporting(params)
+	  }()
+  }
 
 	return ""
 }

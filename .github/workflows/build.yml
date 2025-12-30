@@ -971,7 +971,7 @@ jobs:
           echo "dpkg -i -E \"/var/www/html/aikido-php-firewall.\$(uname -i).deb\"" > ./zen-demo-php/.fly/scripts/aikido.sh
         
       - name: Run Firewall QA Tests
-        uses: AikidoSec/firewall-tester-action@v1.0.1
+        uses: AikidoSec/firewall-tester-action@v1.0.3
         with:
           dockerfile_path: ./zen-demo-php/Dockerfile
           extra_args: '--env-file=./zen-demo-php/.env.example -e APP_KEY=base64:W2v6u6VR4lURkxuMT9xZ6pdhXSt5rxsmWTbd1HGqlIM='

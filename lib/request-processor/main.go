@@ -27,6 +27,7 @@ var eventHandlers = map[int]HandlerFunction{
 	C.EVENT_REGISTER_PARAM_MATCHER:   OnRegisterParamMatcherEvent,
 	C.EVENT_GET_AUTO_BLOCKING_STATUS: OnGetAutoBlockingStatus,
 	C.EVENT_GET_BLOCKING_STATUS:      OnGetBlockingStatus,
+	C.EVENT_GET_IS_IP_BYPASSED:       OnGetIsIpBypassed,
 	C.EVENT_PRE_OUTGOING_REQUEST:     OnPreOutgoingRequest,
 	C.EVENT_POST_OUTGOING_REQUEST:    OnPostOutgoingRequest,
 	C.EVENT_PRE_SHELL_EXECUTED:       OnPreShellExecuted,
