@@ -19,7 +19,7 @@ service Aikido {
   rpc OnMiddlewareInstalled(MiddlewareInstalledInfo) returns (google.protobuf.Empty);
   rpc OnMonitoredIpMatch(MonitoredIpMatch) returns (google.protobuf.Empty);
   rpc OnMonitoredUserAgentMatch(MonitoredUserAgentMatch) returns (google.protobuf.Empty);
-  rpc EnsureTickersStarted(ServerIdentifier) returns (google.protobuf.Empty);
+  rpc StartTickers(ServerIdentifier) returns (google.protobuf.Empty);
 }
 
 message Config {
