@@ -21,10 +21,6 @@ func OnRequestShutdownReporting(params RequestShutdownParams) {
 		return
 	}
 
-	if params.Server != nil {
-		grpc.StartTickers(params.Server)
-	}
-
 	log.InfoWithThreadID(params.ThreadID, "[RSHUTDOWN] Got request metadata: ", params.Method, " ", params.Route, " ", params.StatusCode)
 	// Only detect web scanner activity for non-bypassed IPs
 	if !params.IsIpBypassed {
@@ -63,7 +59,6 @@ func OnPostRequest(inst *instance.RequestProcessorInstance) string {
 			QueryParsed:    context.GetQueryParsed(inst),
 			IsIpBypassed:   context.IsIpBypassed(inst),
 			APISpec:        api_discovery.GetApiInfo(inst, inst.GetCurrentServer()),
-			Server:         server,
 		}
 
 		context.Clear(inst)

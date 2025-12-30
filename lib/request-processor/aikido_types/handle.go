@@ -25,5 +25,4 @@ type RequestShutdownParams struct {
 	IsWebScanner        bool
 	ShouldDiscoverRoute bool
 	IsIpBypassed        bool
-	Server              *ServerData
 }
