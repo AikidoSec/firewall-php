@@ -24,9 +24,7 @@ def run_test():
     assert_events_length_is(events, 2)
     assert_started_event_is_valid(events[0])
 
-    
-    all_users = aggregate_field_from_heartbeats("users", unique_key="id")
-    users = [u["id"] for u in all_users]
+    users = [u["id"] for u in events[1]["users"]]
     assert len(users) == 2000, f"Expected 2000 users, got {len(users)}"
     assert generated_users[0] not in users, f"User {generated_users[0]} should not be in reported users"
     assert generated_users[-1] in users, f"User {generated_users[-1]} should be in reported users"

@@ -45,9 +45,6 @@ func Register(serverKey ServerKey, requestProcessorPID int32, req *protos.Config
 	} else {
 		cloud.SendStartEvent(server)
 	}
-
-	rate_limiting.Init(server)
-	attack_wave_detection.Init(server)
 }
 
 func Unregister(serverKey ServerKey) {

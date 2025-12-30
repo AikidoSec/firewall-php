@@ -24,9 +24,7 @@ def run_test():
     assert_events_length_is(events, 2)
     assert_started_event_is_valid(events[0])
 
-    
-    all_hostnames = aggregate_field_from_heartbeats("hostnames", unique_key="hostname")
-    domains = [d["hostname"] for d in all_hostnames]
+    domains = [d["hostname"] for d in events[1]["hostnames"]]
     assert len(domains) == 2000, f"Expected 2000 domains, got {len(domains)}"
     assert generated_domains[0] + ".com" not in domains, f"Domain {generated_domains[0]} should not be in reported domains"
     assert generated_domains[-1] + ".com" in domains, f"Domain {generated_domains[-1]} should be in reported domains"

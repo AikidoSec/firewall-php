@@ -1,7 +1,6 @@
 package aikido_types
 
 import (
-	"main/constants"
 	"main/log"
 	"sync"
 	"time"
@@ -130,13 +129,13 @@ type ServerDataPolling struct {
 func NewServerDataPolling() *ServerDataPolling {
 	return &ServerDataPolling{
 		HeartbeatRoutineChannel:     make(chan struct{}),
-		HeartbeatTicker:             time.NewTicker(10 * time.Minute),
+		HeartbeatTicker:             nil, // Will be created on first request
 		ConfigPollingRoutineChannel: make(chan struct{}),
-		ConfigPollingTicker:         time.NewTicker(1 * time.Minute),
+		ConfigPollingTicker:         time.NewTicker(1 * time.Minute), // Start immediately for config updates
 		RateLimitingChannel:         make(chan struct{}),
-		RateLimitingTicker:          time.NewTicker(constants.MinRateLimitingIntervalInMs * time.Millisecond),
+		RateLimitingTicker:          nil, // Will be created on first request
 		AttackWaveChannel:           make(chan struct{}),
-		AttackWaveTicker:            time.NewTicker(1 * time.Minute),
+		AttackWaveTicker:            nil, // Will be created on first request
 	}
 }
 
@@ -214,6 +213,14 @@ type ServerData struct {
 
 	// Got some request info passed via gRPC to the Agent
 	GotTraffic uint32
+
+	// Tracks if the "started" event has been sent for this server
+	// In multi-worker mode (e.g., frankenphp-worker), only one worker should send it
+	SentStartedEvent uint32
+
+	// Ensures tickers start exactly once on first request
+	// Using sync.Once is safe to call from any context (including gRPC handlers)
+	StartTickersOnce sync.Once
 
 	// Last time this server established a gRPC connection
 	LastConnectionTime int64

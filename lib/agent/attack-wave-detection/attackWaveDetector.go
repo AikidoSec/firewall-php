@@ -3,6 +3,7 @@ package attack_wave_detection
 import (
 	. "main/aikido_types"
 	"main/utils"
+	"time"
 )
 
 func AdvanceAttackWaveQueues(server *ServerData) {
@@ -19,9 +20,11 @@ func AdvanceAttackWaveQueues(server *ServerData) {
 	}
 }
 
-func Init(server *ServerData) {
+// StartAttackWaveTicker starts the attack wave detection ticker
+// Called on first request via sync.Once
+func StartAttackWaveTicker(server *ServerData) {
+	server.PollingData.AttackWaveTicker = time.NewTicker(1 * time.Minute)
 	utils.StartPollingRoutine(server.PollingData.AttackWaveChannel, server.PollingData.AttackWaveTicker, AdvanceAttackWaveQueues, server)
-	AdvanceAttackWaveQueues(server)
 }
 
 func Uninit(server *ServerData) {

@@ -2,11 +2,12 @@ package rate_limiting
 
 import (
 	. "main/aikido_types"
+	"main/constants"
 	"main/utils"
+	"time"
 )
 
 func AdvanceRateLimitingQueues(server *ServerData) {
-
 	server.RateLimitingMutex.RLock()
 	endpoints := make([]*RateLimitingValue, 0, len(server.RateLimitingMap))
 	for _, endpoint := range server.RateLimitingMap {
@@ -23,9 +24,11 @@ func AdvanceRateLimitingQueues(server *ServerData) {
 	}
 }
 
-func Init(server *ServerData) {
+// StartRateLimitingTicker starts the rate limiting ticker
+// Called on first request via sync.Once
+func StartRateLimitingTicker(server *ServerData) {
+	server.PollingData.RateLimitingTicker = time.NewTicker(constants.MinRateLimitingIntervalInMs * time.Millisecond)
 	utils.StartPollingRoutine(server.PollingData.RateLimitingChannel, server.PollingData.RateLimitingTicker, AdvanceRateLimitingQueues, server)
-	AdvanceRateLimitingQueues(server)
 }
 
 func Uninit(server *ServerData) {

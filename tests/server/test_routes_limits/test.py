@@ -28,9 +28,7 @@ def run_test():
     assert_events_length_is(events, 2)
     assert_started_event_is_valid(events[0])
 
-    
-    all_routes = aggregate_field_from_heartbeats("routes", unique_key="path")
-    paths = [p["path"] for p in all_routes]
+    paths = [p["path"] for p in events[1]["routes"]]
     assert len(paths) == 5000, f"Expected 5000 routes, got {len(paths)}"
     assert routes[0] not in paths, f"Route {routes[0]} should not be in reported paths"
     assert routes[-1] in paths, f"Route {routes[-1]} should be in reported paths"
