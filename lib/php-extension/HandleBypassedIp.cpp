@@ -25,10 +25,6 @@ bool IsAikidoDisabledOrBypassed() {
         return true;
     }
     
-    if (!AIKIDO_GLOBAL(requestProcessor).IsRequestInitialized()) {
-        return false;
-    }
-    
     if (!AIKIDO_GLOBAL(checkedIpBypass)) {
         AIKIDO_GLOBAL(checkedIpBypass) = true;
         InitIpBypassCheck();
