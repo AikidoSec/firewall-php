@@ -70,15 +70,20 @@ func (s *GrpcServer) GetRateLimitingStatus(ctx context.Context, req *protos.Rate
 		return &protos.RateLimitingStatus{Block: false}, nil
 	}
 
+	startTickersOnce(server, "rate limiting")
+
+	log.Debugf(server.Logger, "Received rate limiting info: %s %s %s %s %s %s", req.GetMethod(), req.GetRoute(), req.GetRouteParsed(), req.GetUser(), req.GetIp(), req.GetRateLimitGroup())
+	return getRateLimitingStatus(server, req.GetMethod(), req.GetRoute(), req.GetRouteParsed(), req.GetUser(), req.GetIp(), req.GetRateLimitGroup()), nil
+}
+
+// startTickersOnce is a helper function to start tickers exactly once
+func startTickersOnce(server *ServerData, source string) {
 	server.StartTickersOnce.Do(func() {
-		log.Debugf(server.Logger, "Starting all tickers for server \"AIK_RUNTIME_***%s\" (via rate limiting)", utils.AnonymizeToken(req.GetToken()))
+		log.Debugf(server.Logger, "Starting all tickers for server \"AIK_RUNTIME_***%s\" (via %s)", utils.AnonymizeToken(server.AikidoConfig.Token), source)
 		cloud.StartAllTickers(server)
 		rate_limiting.StartRateLimitingTicker(server)
 		attack_wave_detection.StartAttackWaveTicker(server)
 	})
-
-	log.Debugf(server.Logger, "Received rate limiting info: %s %s %s %s %s %s", req.GetMethod(), req.GetRoute(), req.GetRouteParsed(), req.GetUser(), req.GetIp(), req.GetRateLimitGroup())
-	return getRateLimitingStatus(server, req.GetMethod(), req.GetRoute(), req.GetRouteParsed(), req.GetUser(), req.GetIp(), req.GetRateLimitGroup()), nil
 }
 
 func (s *GrpcServer) OnRequestShutdown(ctx context.Context, req *protos.RequestMetadataShutdown) (*emptypb.Empty, error) {
@@ -180,23 +185,13 @@ func (s *GrpcServer) OnMonitoredUserAgentMatch(ctx context.Context, req *protos.
 	return &emptypb.Empty{}, nil
 }
 
-func (s *GrpcServer) EnsureTickersStarted(ctx context.Context, req *protos.ServerIdentifier) (*emptypb.Empty, error) {
+func (s *GrpcServer) StartTickers(ctx context.Context, req *protos.ServerIdentifier) (*emptypb.Empty, error) {
 	server := globals.GetServer(ServerKey{Token: req.GetToken(), ServerPID: req.GetServerPid()})
 	if server == nil {
 		return &emptypb.Empty{}, nil
 	}
 
-	// Start all tickers on first request (exactly once via sync.Once)
-	// This is called explicitly from the request processor on the first request
-	server.StartTickersOnce.Do(func() {
-		log.Debugf(server.Logger, "Starting all tickers for server \"AIK_RUNTIME_***%s\"", utils.AnonymizeToken(req.GetToken()))
-		cloud.StartAllTickers(server)
-		rate_limiting.StartRateLimitingTicker(server)
-		attack_wave_detection.StartAttackWaveTicker(server)
-	})
-
-	// Mark that this server has received traffic
-	atomic.StoreUint32(&server.GotTraffic, 1)
+	startTickersOnce(server, "explicit request")
 
 	return &emptypb.Empty{}, nil
 }

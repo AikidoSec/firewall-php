@@ -112,8 +112,8 @@ func OnPackages(server *ServerData, packages map[string]string) {
 	log.Debugf(nil, "Packages sent via socket!")
 }
 
-/* Ensure tickers are started for the server (called on first request) */
-func EnsureTickersStarted(server *ServerData) {
+/* Start tickers on the agent side (lightweight call for simple requests) */
+func StartTickers(server *ServerData) {
 	if client == nil {
 		return
 	}
@@ -121,13 +121,13 @@ func EnsureTickersStarted(server *ServerData) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
-	_, err := client.EnsureTickersStarted(ctx, &protos.ServerIdentifier{Token: server.AikidoConfig.Token, ServerPid: globals.EnvironmentConfig.ServerPID})
+	_, err := client.StartTickers(ctx, &protos.ServerIdentifier{Token: server.AikidoConfig.Token, ServerPid: globals.EnvironmentConfig.ServerPID})
 	if err != nil {
-		log.Warnf(nil, "Could not ensure tickers started: %v", err)
+		log.Warnf(nil, "Could not start tickers: %v", err)
 		return
 	}
 
-	log.Debugf(nil, "Tickers initialization requested via socket!")
+	log.Debugf(nil, "Tickers start requested via socket!")
 }
 
 /* Send request metadata (route & method) to Aikido Agent via gRPC */

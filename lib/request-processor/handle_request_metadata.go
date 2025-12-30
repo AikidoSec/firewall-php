@@ -21,9 +21,7 @@ func OnRequestShutdownReporting(params RequestShutdownParams) {
 		return
 	}
 
-	// Ensure tickers are started on first request from a non-bypassed IP
-	// This ensures heartbeats and other background operations start when we have actual traffic to monitor
-	grpc.EnsureTickersStarted(params.Server)
+	grpc.StartTickers(params.Server)
 
 	log.InfoWithThreadID(params.ThreadID, "[RSHUTDOWN] Got request metadata: ", params.Method, " ", params.Route, " ", params.StatusCode)
 	// Only detect web scanner activity for non-bypassed IPs
@@ -31,6 +29,7 @@ func OnRequestShutdownReporting(params RequestShutdownParams) {
 		params.IsWebScanner = webscanner.IsWebScanner(params.Method, params.Route, params.QueryParsed)
 	}
 	params.ShouldDiscoverRoute = utils.ShouldDiscoverRoute(params.StatusCode, params.Route, params.Method)
+
 	if !params.RateLimited && !params.ShouldDiscoverRoute && !params.IsWebScanner {
 		return
 	}
