@@ -114,7 +114,7 @@ func OnPackages(server *ServerData, packages map[string]string) {
 
 /* Start tickers on the agent side (lightweight call for simple requests) */
 func StartTickers(server *ServerData) {
-	if client == nil {
+	if client == nil || server == nil {
 		return
 	}
 
