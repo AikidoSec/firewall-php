@@ -1,13 +1,5 @@
 #pragma once
 
-// This variable is used to check if the request is bypassed,
-// if true, all blocking checks will be skipped.
-extern bool isIpBypassed;
-
-// Initialize the IP bypass check at request start.
-// Resets state and checks if the current IP should be bypassed.
-// This should be called during request initialization.
-void InitIpBypassCheck();
-
 // Check if Aikido is disabled or the current IP is bypassed.
+// The IP bypass check is performed lazily on first call.
 bool IsAikidoDisabledOrBypassed();
