@@ -50,6 +50,7 @@ class RequestProcessor {
     void LoadConfigWithTokenFromPHPSetToken(const std::string& tokenFromMiddleware);
     void RequestShutdown();
     void Uninit();
+    bool IsRequestInitialized() const { return requestInitialized; }
 
     ~RequestProcessor();
 };
