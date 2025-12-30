@@ -44,6 +44,7 @@ class RequestProcessor {
     bool RequestInit();
     bool SendEvent(EVENT_ID eventId, std::string& output);
     bool IsBlockingEnabled();
+    bool IsRequestInitialized() const { return requestInitialized; }
     bool ReportStats();
     void LoadConfig(const std::string& previousToken, const std::string& currentToken);
     void LoadConfigFromEnvironment();
