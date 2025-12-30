@@ -55,8 +55,6 @@ func OnGetBlockingStatus(inst *instance.RequestProcessorInstance) string {
 	}
 
 	if context.IsEndpointRateLimitingEnabled(inst) {
-		grpc.EnsureTickersStarted(server)
-
 		// If request is monitored for rate limiting,
 		// do a sync call via gRPC to see if the request should be blocked or not
 		method := context.GetMethod(inst)

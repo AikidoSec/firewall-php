@@ -70,6 +70,13 @@ func (s *GrpcServer) GetRateLimitingStatus(ctx context.Context, req *protos.Rate
 		return &protos.RateLimitingStatus{Block: false}, nil
 	}
 
+	server.StartTickersOnce.Do(func() {
+		log.Debugf(server.Logger, "Starting all tickers for server \"AIK_RUNTIME_***%s\" (via rate limiting)", utils.AnonymizeToken(req.GetToken()))
+		cloud.StartAllTickers(server)
+		rate_limiting.StartRateLimitingTicker(server)
+		attack_wave_detection.StartAttackWaveTicker(server)
+	})
+
 	log.Debugf(server.Logger, "Received rate limiting info: %s %s %s %s %s %s", req.GetMethod(), req.GetRoute(), req.GetRouteParsed(), req.GetUser(), req.GetIp(), req.GetRateLimitGroup())
 	return getRateLimitingStatus(server, req.GetMethod(), req.GetRoute(), req.GetRouteParsed(), req.GetUser(), req.GetIp(), req.GetRateLimitGroup()), nil
 }
