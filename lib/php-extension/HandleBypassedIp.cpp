@@ -12,8 +12,8 @@ void InitIpBypassCheck() {
 
     try {
         std::string output;
-        requestProcessor.SendEvent(EVENT_GET_IS_IP_BYPASSED, output);
-        action.Execute(output);
+        AIKIDO_GLOBAL(requestProcessor).SendEvent(EVENT_GET_IS_IP_BYPASSED, output);
+        AIKIDO_GLOBAL(action).Execute(output);
     } catch (const std::exception &e) {
         AIKIDO_LOG_ERROR("Exception encountered in processing IP bypass check event: %s\n", e.what());
     }

@@ -150,9 +150,9 @@ func GetBypassAction() string {
 	return string(actionJson)
 }
 
-func OnGetIsIpBypassed() string {
-	log.Debugf("OnGetIsIpBypassed called!")
-	if context.IsIpBypassed() {
+func OnGetIsIpBypassed(inst *instance.RequestProcessorInstance) string {
+	log.Debugf(inst, "OnGetIsIpBypassed called!")
+	if context.IsIpBypassed(inst) {
 		return GetBypassAction()
 	}
 	return ""
