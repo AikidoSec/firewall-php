@@ -221,7 +221,6 @@ void LoadEnvironment() {
     AIKIDO_GLOBAL(trust_proxy) = GetEnvBool("AIKIDO_TRUST_PROXY", true);
     AIKIDO_GLOBAL(disk_logs) = GetEnvBool("AIKIDO_DISK_LOGS", false);
     AIKIDO_GLOBAL(sapi_name) = sapi_module.name;
-    AIKIDO_GLOBAL(is_frankenphp) = (AIKIDO_GLOBAL(sapi_name) == "frankenphp");
     AIKIDO_GLOBAL(token) = GetEnvString("AIKIDO_TOKEN", "");
     AIKIDO_GLOBAL(endpoint) = GetEnvString("AIKIDO_ENDPOINT", "https://guard.aikido.dev/");
     AIKIDO_GLOBAL(config_endpoint) = GetEnvString("AIKIDO_REALTIME_ENDPOINT", "https://runtime.aikido.dev/");

@@ -95,6 +95,8 @@ func (s *GrpcServer) OnRequestShutdown(ctx context.Context, req *protos.RequestM
 		return &emptypb.Empty{}, nil
 	}
 
+	startTickersOnce(server, "request shutdown")
+
 	log.Debugf(server.Logger, "Received request metadata: %s %s %d %s %s %v", req.GetMethod(), req.GetRouteParsed(), req.GetStatusCode(), req.GetUser(), req.GetIp(), req.GetApiSpec())
 	if req.GetShouldDiscoverRoute() || req.GetRateLimited() {
 		go storeTotalStats(server, req.GetRateLimited())
