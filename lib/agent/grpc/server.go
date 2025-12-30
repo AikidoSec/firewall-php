@@ -70,16 +70,6 @@ func (s *GrpcServer) GetRateLimitingStatus(ctx context.Context, req *protos.Rate
 		return &protos.RateLimitingStatus{Block: false}, nil
 	}
 
-	// Start all tickers on first request (exactly once via sync.Once)
-	server.StartTickersOnce.Do(func() {
-		cloud.StartAllTickers(server)
-		rate_limiting.StartRateLimitingTicker(server)
-		attack_wave_detection.StartAttackWaveTicker(server)
-	})
-
-	// Mark that this server has received traffic
-	atomic.StoreUint32(&server.GotTraffic, 1)
-
 	log.Debugf(server.Logger, "Received rate limiting info: %s %s %s %s %s %s", req.GetMethod(), req.GetRoute(), req.GetRouteParsed(), req.GetUser(), req.GetIp(), req.GetRateLimitGroup())
 	return getRateLimitingStatus(server, req.GetMethod(), req.GetRoute(), req.GetRouteParsed(), req.GetUser(), req.GetIp(), req.GetRateLimitGroup()), nil
 }
@@ -89,16 +79,6 @@ func (s *GrpcServer) OnRequestShutdown(ctx context.Context, req *protos.RequestM
 	if server == nil {
 		return &emptypb.Empty{}, nil
 	}
-
-	// Start all tickers on first request (exactly once via sync.Once)
-	server.StartTickersOnce.Do(func() {
-		cloud.StartAllTickers(server)
-		rate_limiting.StartRateLimitingTicker(server)
-		attack_wave_detection.StartAttackWaveTicker(server)
-	})
-
-	// Mark that this server has received traffic
-	atomic.StoreUint32(&server.GotTraffic, 1)
 
 	log.Debugf(server.Logger, "Received request metadata: %s %s %d %s %s %v", req.GetMethod(), req.GetRouteParsed(), req.GetStatusCode(), req.GetUser(), req.GetIp(), req.GetApiSpec())
 	if req.GetShouldDiscoverRoute() || req.GetRateLimited() {
@@ -190,6 +170,27 @@ func (s *GrpcServer) OnMonitoredUserAgentMatch(ctx context.Context, req *protos.
 	defer server.StatsData.StatsMutex.Unlock()
 
 	storeMonitoredListsMatches(&server.StatsData.UserAgentsMatches, req.GetLists())
+	return &emptypb.Empty{}, nil
+}
+
+func (s *GrpcServer) EnsureTickersStarted(ctx context.Context, req *protos.ServerIdentifier) (*emptypb.Empty, error) {
+	server := globals.GetServer(ServerKey{Token: req.GetToken(), ServerPID: req.GetServerPid()})
+	if server == nil {
+		return &emptypb.Empty{}, nil
+	}
+
+	// Start all tickers on first request (exactly once via sync.Once)
+	// This is called explicitly from the request processor on the first request
+	server.StartTickersOnce.Do(func() {
+		log.Debugf(server.Logger, "Starting all tickers for server \"AIK_RUNTIME_***%s\"", utils.AnonymizeToken(req.GetToken()))
+		cloud.StartAllTickers(server)
+		rate_limiting.StartRateLimitingTicker(server)
+		attack_wave_detection.StartAttackWaveTicker(server)
+	})
+
+	// Mark that this server has received traffic
+	atomic.StoreUint32(&server.GotTraffic, 1)
+
 	return &emptypb.Empty{}, nil
 }
 

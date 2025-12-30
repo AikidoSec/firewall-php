@@ -21,6 +21,10 @@ func OnRequestShutdownReporting(params RequestShutdownParams) {
 		return
 	}
 
+	// Ensure tickers are started on first request from a non-bypassed IP
+	// This ensures heartbeats and other background operations start when we have actual traffic to monitor
+	grpc.EnsureTickersStarted(params.Server)
+
 	log.InfoWithThreadID(params.ThreadID, "[RSHUTDOWN] Got request metadata: ", params.Method, " ", params.Route, " ", params.StatusCode)
 	// Only detect web scanner activity for non-bypassed IPs
 	if !params.IsIpBypassed {
@@ -36,9 +40,11 @@ func OnRequestShutdownReporting(params RequestShutdownParams) {
 }
 
 func OnPostRequest(inst *instance.RequestProcessorInstance) string {
-	if inst.GetCurrentServer() == nil {
+	server := inst.GetCurrentServer()
+	if server == nil {
 		return ""
 	}
+
 	if !context.IsIpBypassed(inst) {
 		params := RequestShutdownParams{
 			ThreadID:       inst.GetThreadID(),
@@ -56,6 +62,7 @@ func OnPostRequest(inst *instance.RequestProcessorInstance) string {
 			QueryParsed:    context.GetQueryParsed(inst),
 			IsIpBypassed:   context.IsIpBypassed(inst),
 			APISpec:        api_discovery.GetApiInfo(inst, inst.GetCurrentServer()),
+			Server:         server,
 		}
 
 		context.Clear(inst)
