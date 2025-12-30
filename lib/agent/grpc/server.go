@@ -59,6 +59,9 @@ func (s *GrpcServer) OnDomain(ctx context.Context, req *protos.Domain) (*emptypb
 	if server == nil {
 		return &emptypb.Empty{}, nil
 	}
+
+	startTickersOnce(server, "domain event")
+
 	log.Debugf(server.Logger, "Received domain: %s:%d", req.GetDomain(), req.GetPort())
 	storeDomain(server, req.GetDomain(), req.GetPort())
 	return &emptypb.Empty{}, nil
@@ -123,6 +126,9 @@ func (s *GrpcServer) OnUser(ctx context.Context, req *protos.User) (*emptypb.Emp
 	if server == nil {
 		return &emptypb.Empty{}, nil
 	}
+
+	startTickersOnce(server, "user event")
+
 	log.Debugf(server.Logger, "Received user event: %s", req.GetId())
 	go onUserEvent(server, req.GetId(), req.GetUsername(), req.GetIp())
 	return &emptypb.Empty{}, nil
@@ -133,6 +139,9 @@ func (s *GrpcServer) OnAttackDetected(ctx context.Context, req *protos.AttackDet
 	if server == nil {
 		return &emptypb.Empty{}, nil
 	}
+
+	startTickersOnce(server, "attack detection")
+
 	cloud.SendAttackDetectedEvent(server, req, "detected_attack")
 	storeAttackStats(server, req)
 	return &emptypb.Empty{}, nil
@@ -143,6 +152,9 @@ func (s *GrpcServer) OnMonitoredSinkStats(ctx context.Context, req *protos.Monit
 	if server == nil {
 		return &emptypb.Empty{}, nil
 	}
+
+	startTickersOnce(server, "sink stats")
+
 	storeSinkStats(server, req)
 	return &emptypb.Empty{}, nil
 }
@@ -152,6 +164,8 @@ func (s *GrpcServer) OnMiddlewareInstalled(ctx context.Context, req *protos.Midd
 	if server == nil {
 		return &emptypb.Empty{}, nil
 	}
+
+	// Note: Don't start tickers here - this is an initialization event, not runtime traffic
 	log.Debugf(server.Logger, "Received MiddlewareInstalled")
 	atomic.StoreUint32(&server.MiddlewareInstalled, 1)
 	return &emptypb.Empty{}, nil
@@ -162,6 +176,9 @@ func (s *GrpcServer) OnMonitoredIpMatch(ctx context.Context, req *protos.Monitor
 	if server == nil {
 		return &emptypb.Empty{}, nil
 	}
+
+	startTickersOnce(server, "monitored IP match")
+
 	log.Debugf(server.Logger, "Received MonitoredIpMatch: %v", req.GetLists())
 
 	server.StatsData.StatsMutex.Lock()
@@ -176,23 +193,15 @@ func (s *GrpcServer) OnMonitoredUserAgentMatch(ctx context.Context, req *protos.
 	if server == nil {
 		return &emptypb.Empty{}, nil
 	}
+
+	startTickersOnce(server, "monitored user agent match")
+
 	log.Debugf(server.Logger, "Received MonitoredUserAgentMatch: %v", req.GetLists())
 
 	server.StatsData.StatsMutex.Lock()
 	defer server.StatsData.StatsMutex.Unlock()
 
 	storeMonitoredListsMatches(&server.StatsData.UserAgentsMatches, req.GetLists())
-	return &emptypb.Empty{}, nil
-}
-
-func (s *GrpcServer) StartTickers(ctx context.Context, req *protos.ServerIdentifier) (*emptypb.Empty, error) {
-	server := globals.GetServer(ServerKey{Token: req.GetToken(), ServerPID: req.GetServerPid()})
-	if server == nil {
-		return &emptypb.Empty{}, nil
-	}
-
-	startTickersOnce(server, "explicit request")
-
 	return &emptypb.Empty{}, nil
 }
 

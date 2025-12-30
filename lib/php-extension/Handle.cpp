@@ -84,15 +84,29 @@ ZEND_NAMED_FUNCTION(aikido_generic_handler) {
             return;
         }
 
-        if (IsAikidoDisabledOrBypassed()) {
+        // For FrankenPHP, only check AIKIDO_GLOBAL(disable), not IP bypass
+        // FrankenPHP has a race condition: IP bypass check reads $_SERVER via zend_is_auto_global_str()
+        // which triggers go_register_variables() → thread.getRequestContext() without mutex lock
+        // This can access thread.handler while it's being set, causing x86_64 segfault
+        // For other SAPIs (php-fpm, apache, etc.), the full check is safe and provides better performance
+        if (!AIKIDO_GLOBAL(is_frankenphp)) {
+            // Non-FrankenPHP: Full bypass check (optimal performance)
+            if (IsAikidoDisabledOrBypassed()) {
+                if (original_handler) {
+                    original_handler(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+                }
+                if (AIKIDO_GLOBAL(disable) == true) {
+                    AIKIDO_LOG_INFO("Aikido generic handler finished earlier because AIKIDO_DISABLE is set to 1!\n");
+                } else {
+                    AIKIDO_LOG_INFO("Aikido generic handler finished earlier because IP is bypassed!\n");
+                }
+                return;
+            }
+        } else if (AIKIDO_GLOBAL(disable) == true) {
             if (original_handler) {
                 original_handler(INTERNAL_FUNCTION_PARAM_PASSTHRU);
             }
-            if (AIKIDO_GLOBAL(disable) == true) {
-                AIKIDO_LOG_INFO("Aikido generic handler finished earlier because AIKIDO_DISABLE is set to 1!\n");
-            } else {
-                AIKIDO_LOG_INFO("Aikido generic handler finished earlier because IP is bypassed!\n");
-            }
+            AIKIDO_LOG_INFO("Aikido generic handler finished earlier because AIKIDO_DISABLE is set to 1!\n");
             return;
         }
 

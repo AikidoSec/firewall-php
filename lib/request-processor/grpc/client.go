@@ -112,24 +112,6 @@ func OnPackages(server *ServerData, packages map[string]string) {
 	log.Debugf(nil, "Packages sent via socket!")
 }
 
-/* Start tickers on the agent side (lightweight call for simple requests) */
-func StartTickers(server *ServerData) {
-	if client == nil || server == nil {
-		return
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	defer cancel()
-
-	_, err := client.StartTickers(ctx, &protos.ServerIdentifier{Token: server.AikidoConfig.Token, ServerPid: globals.EnvironmentConfig.ServerPID})
-	if err != nil {
-		log.Warnf(nil, "Could not start tickers: %v", err)
-		return
-	}
-
-	log.Debugf(nil, "Tickers start requested via socket!")
-}
-
 /* Send request metadata (route & method) to Aikido Agent via gRPC */
 func GetRateLimitingStatus(inst *instance.RequestProcessorInstance, server *ServerData, method string, route string, routeParsed string, user string, ip string, rateLimitGroup string, timeout time.Duration) *protos.RateLimitingStatus {
 	if client == nil || server == nil {

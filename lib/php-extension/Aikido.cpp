@@ -107,6 +107,7 @@ PHP_GINIT_FUNCTION(aikido) {
     aikido_globals->collect_api_schema = false;
     aikido_globals->trust_proxy = false;
     aikido_globals->localhost_allowed_by_default = false;
+    aikido_globals->is_frankenphp = false;
     aikido_globals->report_stats_interval_to_agent = 0;
     aikido_globals->currentRequestStart = std::chrono::high_resolution_clock::time_point{};
     aikido_globals->totalOverheadForCurrentRequest = 0;
