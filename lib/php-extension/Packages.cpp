@@ -60,6 +60,12 @@ std::string GetComposerPackageVersion(const std::string& version) {
 unordered_map<std::string, std::string> GetComposerPackages() {
     unordered_map<std::string, std::string> packages;
 
+    // For FrankenPHP, skip if request is not initialized yet
+    // Accessing $_SERVER before RINIT triggers a race condition
+    if (AIKIDO_GLOBAL(is_frankenphp) && !AIKIDO_GLOBAL(requestProcessor).IsRequestInitialized()) {
+        return packages;
+    }
+
     std::string docRoot = AIKIDO_GLOBAL(server).GetVar("DOCUMENT_ROOT");
     if (docRoot.empty()) {
         return packages;
