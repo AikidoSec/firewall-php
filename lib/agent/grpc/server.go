@@ -45,14 +45,14 @@ func (s *GrpcServer) OnConfig(ctx context.Context, req *protos.Config) (*emptypb
 		return &emptypb.Empty{}, nil
 	}
 
-	// Server doesn't exist, create it while still holding the lock
 	log.Infof(log.MainLogger, "Client (request processor PID: %d) connected. Registering server \"AIK_RUNTIME_***%s\" (server PID: %d)...", req.GetRequestProcessorPid(), utils.AnonymizeToken(serverKey.Token), serverKey.ServerPID)
 	server = NewServerData()
+
+	server_utils.ConfigureServer(server, req)
+
+	// Now add the fully configured server to the map
 	globals.Servers[serverKey] = server
 	globals.ServersMutex.Unlock()
-
-	// Now configure the server (outside the lock to avoid holding it too long)
-	server_utils.ConfigureServer(server, req)
 
 	return &emptypb.Empty{}, nil
 }
