@@ -38,8 +38,8 @@ func (s *GrpcServer) OnConfig(ctx context.Context, req *protos.Config) (*emptypb
 	serverKey := ServerKey{Token: token, ServerPID: req.GetServerPid()}
 
 	globals.ServersMutex.Lock()
-	server := globals.Servers[serverKey]
-	if server != nil {
+	server, exists := globals.Servers[serverKey]
+	if exists {
 		globals.ServersMutex.Unlock()
 		log.Debugf(server.Logger, "Server \"AIK_RUNTIME_***%s\" already exists, skipping config update (request processor PID: %d, server PID: %d)", utils.AnonymizeToken(token), req.GetRequestProcessorPid(), req.GetServerPid())
 		return &emptypb.Empty{}, nil
@@ -48,11 +48,12 @@ func (s *GrpcServer) OnConfig(ctx context.Context, req *protos.Config) (*emptypb
 	log.Infof(log.MainLogger, "Client (request processor PID: %d) connected. Registering server \"AIK_RUNTIME_***%s\" (server PID: %d)...", req.GetRequestProcessorPid(), utils.AnonymizeToken(serverKey.Token), serverKey.ServerPID)
 	server = NewServerData()
 
-	server_utils.ConfigureServer(server, req)
+	server_utils.InitializeServerLogger(server, req)
 
-	// Now add the fully configured server to the map
 	globals.Servers[serverKey] = server
 	globals.ServersMutex.Unlock()
+
+	server_utils.CompleteServerConfiguration(server, serverKey, req)
 
 	return &emptypb.Empty{}, nil
 }

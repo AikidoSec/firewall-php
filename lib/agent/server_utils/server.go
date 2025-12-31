@@ -28,15 +28,15 @@ func storeConfig(server *ServerData, req *protos.Config) {
 	server.AikidoConfig.CollectApiSchema = req.GetCollectApiSchema()
 }
 
-func ConfigureServer(server *ServerData, req *protos.Config) {
-	serverKey := ServerKey{Token: req.GetToken(), ServerPID: req.GetServerPid()}
-
+func InitializeServerLogger(server *ServerData, req *protos.Config) {
 	storeConfig(server, req)
+	serverKey := ServerKey{Token: req.GetToken(), ServerPID: req.GetServerPid()}
 	server.Logger = log.CreateLogger(utils.AnonymizeToken(serverKey.Token), server.AikidoConfig.LogLevel, server.AikidoConfig.DiskLogs)
-
-	log.InfofMainAndServer(server.Logger, "Server \"AIK_RUNTIME_***%s\" (server PID: %d) registered successfully!", utils.AnonymizeToken(serverKey.Token), serverKey.ServerPID)
-
 	atomic.StoreInt64(&server.LastConnectionTime, utils.GetTime())
+}
+
+func CompleteServerConfiguration(server *ServerData, serverKey ServerKey, req *protos.Config) {
+	log.InfofMainAndServer(server.Logger, "Server \"AIK_RUNTIME_***%s\" (server PID: %d) registered successfully!", utils.AnonymizeToken(serverKey.Token), serverKey.ServerPID)
 
 	cloud.Init(server)
 	if globals.IsPastDeletedServer(serverKey) {
@@ -44,6 +44,12 @@ func ConfigureServer(server *ServerData, req *protos.Config) {
 	} else {
 		cloud.SendStartEvent(server)
 	}
+}
+
+func ConfigureServer(server *ServerData, req *protos.Config) {
+	serverKey := ServerKey{Token: req.GetToken(), ServerPID: req.GetServerPid()}
+	InitializeServerLogger(server, req)
+	CompleteServerConfiguration(server, serverKey, req)
 }
 
 func Register(serverKey ServerKey, requestProcessorPID int32, req *protos.Config) {
