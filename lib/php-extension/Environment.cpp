@@ -39,13 +39,6 @@ bool LoadLaravelEnvFile() {
         return true;
     }
 
-    // For FrankenPHP, skip if request is not initialized yet
-    // Accessing $_SERVER before RINIT triggers a race condition
-    if (AIKIDO_GLOBAL(is_frankenphp) && !AIKIDO_GLOBAL(requestProcessor).IsRequestInitialized()) {
-        AIKIDO_LOG_DEBUG("Skipping Laravel .env load - request not initialized yet in FrankenPHP\n");
-        return false;
-    }
-
     std::string docRoot = AIKIDO_GLOBAL(server).GetVar("DOCUMENT_ROOT");
     AIKIDO_LOG_DEBUG("Trying to load .env file, starting with DOCUMENT_ROOT: %s\n", docRoot.c_str());
     if (docRoot.empty()) {
@@ -107,19 +100,9 @@ bool LoadLaravelEnvFile() {
 /*
     FrankenPHP's Caddyfile env directive only populates $_SERVER, not the process environment.
     This function reads environment variables from $_SERVER for FrankenPHP compatibility.
-    
-    IMPORTANT: Can only be called after RINIT (request initialization) in FrankenPHP!
-    Calling this before RINIT triggers go_register_variables() race condition causing segfault on x86_64.
 */
 std::string GetFrankenEnvVariable(const std::string& env_key) {
     if (AIKIDO_GLOBAL(sapi_name) != "frankenphp") {
-        return "";
-    }
-    
-    // For FrankenPHP, skip if request is not initialized yet
-    // Accessing $_SERVER before RINIT triggers a race condition in go_register_variables()
-    if (!AIKIDO_GLOBAL(requestProcessor).IsRequestInitialized()) {
-        AIKIDO_LOG_DEBUG("franken_env[%s] = (skipped - request not initialized yet)\n", env_key.c_str());
         return "";
     }
     
