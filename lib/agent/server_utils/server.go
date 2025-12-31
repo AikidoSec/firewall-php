@@ -28,10 +28,9 @@ func storeConfig(server *ServerData, req *protos.Config) {
 	server.AikidoConfig.CollectApiSchema = req.GetCollectApiSchema()
 }
 
-func Register(serverKey ServerKey, requestProcessorPID int32, req *protos.Config) {
-	log.Infof(log.MainLogger, "Client (request processor PID: %d) connected. Registering server \"AIK_RUNTIME_***%s\" (server PID: %d)...", requestProcessorPID, utils.AnonymizeToken(serverKey.Token), serverKey.ServerPID)
+func ConfigureServer(server *ServerData, req *protos.Config) {
+	serverKey := ServerKey{Token: req.GetToken(), ServerPID: req.GetServerPid()}
 
-	server := globals.CreateServer(serverKey)
 	storeConfig(server, req)
 	server.Logger = log.CreateLogger(utils.AnonymizeToken(serverKey.Token), server.AikidoConfig.LogLevel, server.AikidoConfig.DiskLogs)
 
@@ -45,6 +44,13 @@ func Register(serverKey ServerKey, requestProcessorPID int32, req *protos.Config
 	} else {
 		cloud.SendStartEvent(server)
 	}
+}
+
+func Register(serverKey ServerKey, requestProcessorPID int32, req *protos.Config) {
+	log.Infof(log.MainLogger, "Client (request processor PID: %d) connected. Registering server \"AIK_RUNTIME_***%s\" (server PID: %d)...", requestProcessorPID, utils.AnonymizeToken(serverKey.Token), serverKey.ServerPID)
+
+	server := globals.CreateServer(serverKey)
+	ConfigureServer(server, req)
 }
 
 func Unregister(serverKey ServerKey) {

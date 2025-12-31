@@ -35,13 +35,25 @@ func (s *GrpcServer) OnConfig(ctx context.Context, req *protos.Config) (*emptypb
 		return &emptypb.Empty{}, nil
 	}
 
-	server := globals.GetServer(ServerKey{Token: token, ServerPID: req.GetServerPid()})
+	serverKey := ServerKey{Token: token, ServerPID: req.GetServerPid()}
+
+	globals.ServersMutex.Lock()
+	server := globals.Servers[serverKey]
 	if server != nil {
+		globals.ServersMutex.Unlock()
 		log.Debugf(server.Logger, "Server \"AIK_RUNTIME_***%s\" already exists, skipping config update (request processor PID: %d, server PID: %d)", utils.AnonymizeToken(token), req.GetRequestProcessorPid(), req.GetServerPid())
 		return &emptypb.Empty{}, nil
 	}
 
-	server_utils.Register(ServerKey{Token: token, ServerPID: req.GetServerPid()}, req.GetRequestProcessorPid(), req)
+	// Server doesn't exist, create it while still holding the lock
+	log.Infof(log.MainLogger, "Client (request processor PID: %d) connected. Registering server \"AIK_RUNTIME_***%s\" (server PID: %d)...", req.GetRequestProcessorPid(), utils.AnonymizeToken(serverKey.Token), serverKey.ServerPID)
+	server = NewServerData()
+	globals.Servers[serverKey] = server
+	globals.ServersMutex.Unlock()
+
+	// Now configure the server (outside the lock to avoid holding it too long)
+	server_utils.ConfigureServer(server, req)
+
 	return &emptypb.Empty{}, nil
 }
 
