@@ -4,7 +4,11 @@
 ZEND_DECLARE_MODULE_GLOBALS(aikido)
 
 PHP_MINIT_FUNCTION(aikido) {
-    LoadEnvironment();
+    // For FrankenPHP: Skip LoadEnvironment during MINIT (will be called in RINIT)
+    // For other SAPIs: Load environment during MINIT as normal
+    if (sapi_module.name != std::string("frankenphp")) {
+        LoadEnvironment();
+    }
     AIKIDO_GLOBAL(logger).Init();
 
     AIKIDO_LOG_INFO("MINIT started!\n");
