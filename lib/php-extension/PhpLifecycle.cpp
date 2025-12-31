@@ -11,13 +11,9 @@ void PhpLifecycle::ModuleInit() {
 }
 
 void PhpLifecycle::RequestInit() {
-    // For FrankenPHP: Load environment during RINIT (skipped in MINIT)
-    if (AIKIDO_GLOBAL(sapi_name) == "frankenphp") {
-        LoadEnvironment();
-    }
-    
     AIKIDO_GLOBAL(action).Reset();
     AIKIDO_GLOBAL(requestCache).Reset();
+
     AIKIDO_GLOBAL(requestProcessor).RequestInit();
     AIKIDO_GLOBAL(checkedAutoBlock) = false;
     AIKIDO_GLOBAL(checkedShouldBlockRequest) = false;
