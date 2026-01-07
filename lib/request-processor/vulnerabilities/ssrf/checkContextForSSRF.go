@@ -81,9 +81,10 @@ func CheckEffectiveHostnameForSSRF(effectiveHostname string) *utils.InterceptorR
 			// Hostname was found in user input and the effective hostname (after redirects) resolved to a private IP address -> SSRF
 			interceptorResult.Metadata["isPrivateIp"] = "true"
 		}
+		return interceptorResult
 	}
 
-	return interceptorResult
+	return nil
 }
 
 /* This is called after the request is made to check for SSRF in the resolvedIP - IP optained from the PHP library that made the request (curl) */
