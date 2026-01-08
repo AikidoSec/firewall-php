@@ -3,13 +3,11 @@ package grpc
 import (
 	"context"
 	"fmt"
-	attack_wave_detection "main/attack-wave-detection"
 	"main/cloud"
 	"main/constants"
 	"main/globals"
 	"main/ipc/protos"
 	"main/log"
-	rate_limiting "main/rate_limiting"
 	"main/server_utils"
 	"main/utils"
 	"net"
@@ -73,8 +71,6 @@ func (s *GrpcServer) OnDomain(ctx context.Context, req *protos.Domain) (*emptypb
 		return &emptypb.Empty{}, nil
 	}
 
-	startTickersOnce(server, "domain event")
-
 	log.Debugf(server.Logger, "Received domain: %s:%d", req.GetDomain(), req.GetPort())
 	storeDomain(server, req.GetDomain(), req.GetPort())
 	return &emptypb.Empty{}, nil
@@ -86,20 +82,8 @@ func (s *GrpcServer) GetRateLimitingStatus(ctx context.Context, req *protos.Rate
 		return &protos.RateLimitingStatus{Block: false}, nil
 	}
 
-	startTickersOnce(server, "rate limiting")
-
 	log.Debugf(server.Logger, "Received rate limiting info: %s %s %s %s %s %s", req.GetMethod(), req.GetRoute(), req.GetRouteParsed(), req.GetUser(), req.GetIp(), req.GetRateLimitGroup())
 	return getRateLimitingStatus(server, req.GetMethod(), req.GetRoute(), req.GetRouteParsed(), req.GetUser(), req.GetIp(), req.GetRateLimitGroup()), nil
-}
-
-// startTickersOnce is a helper function to start tickers exactly once
-func startTickersOnce(server *ServerData, source string) {
-	server.StartTickersOnce.Do(func() {
-		log.Debugf(server.Logger, "Starting all tickers for server \"AIK_RUNTIME_***%s\" (via %s)", utils.AnonymizeToken(server.AikidoConfig.Token), source)
-		cloud.StartAllTickers(server)
-		rate_limiting.StartRateLimitingTicker(server)
-		attack_wave_detection.StartAttackWaveTicker(server)
-	})
 }
 
 func (s *GrpcServer) OnRequestShutdown(ctx context.Context, req *protos.RequestMetadataShutdown) (*emptypb.Empty, error) {
@@ -107,8 +91,6 @@ func (s *GrpcServer) OnRequestShutdown(ctx context.Context, req *protos.RequestM
 	if server == nil {
 		return &emptypb.Empty{}, nil
 	}
-
-	startTickersOnce(server, "request shutdown")
 
 	log.Debugf(server.Logger, "Received request metadata: %s %s %d %s %s %v", req.GetMethod(), req.GetRouteParsed(), req.GetStatusCode(), req.GetUser(), req.GetIp(), req.GetApiSpec())
 	if req.GetShouldDiscoverRoute() || req.GetRateLimited() {
@@ -142,8 +124,6 @@ func (s *GrpcServer) OnUser(ctx context.Context, req *protos.User) (*emptypb.Emp
 		return &emptypb.Empty{}, nil
 	}
 
-	startTickersOnce(server, "user event")
-
 	log.Debugf(server.Logger, "Received user event: %s", req.GetId())
 	go onUserEvent(server, req.GetId(), req.GetUsername(), req.GetIp())
 	return &emptypb.Empty{}, nil
@@ -155,8 +135,6 @@ func (s *GrpcServer) OnAttackDetected(ctx context.Context, req *protos.AttackDet
 		return &emptypb.Empty{}, nil
 	}
 
-	startTickersOnce(server, "attack detection")
-
 	cloud.SendAttackDetectedEvent(server, req, "detected_attack")
 	storeAttackStats(server, req)
 	return &emptypb.Empty{}, nil
@@ -167,8 +145,6 @@ func (s *GrpcServer) OnMonitoredSinkStats(ctx context.Context, req *protos.Monit
 	if server == nil {
 		return &emptypb.Empty{}, nil
 	}
-
-	startTickersOnce(server, "sink stats")
 
 	storeSinkStats(server, req)
 	return &emptypb.Empty{}, nil
@@ -192,8 +168,6 @@ func (s *GrpcServer) OnMonitoredIpMatch(ctx context.Context, req *protos.Monitor
 		return &emptypb.Empty{}, nil
 	}
 
-	startTickersOnce(server, "monitored IP match")
-
 	log.Debugf(server.Logger, "Received MonitoredIpMatch: %v", req.GetLists())
 
 	server.StatsData.StatsMutex.Lock()
@@ -208,8 +182,6 @@ func (s *GrpcServer) OnMonitoredUserAgentMatch(ctx context.Context, req *protos.
 	if server == nil {
 		return &emptypb.Empty{}, nil
 	}
-
-	startTickersOnce(server, "monitored user agent match")
 
 	log.Debugf(server.Logger, "Received MonitoredUserAgentMatch: %v", req.GetLists())
 
