@@ -295,6 +295,14 @@ def apache_mod_php_process_test(test_data):
 
 
 def apache_mod_php_pre_tests():
+    # Stop any existing Apache processes first
+    subprocess.run(['pkill', apache_binary], stderr=subprocess.DEVNULL)
+    subprocess.run(['pkill', '-9', apache_binary], stderr=subprocess.DEVNULL)
+    time.sleep(1)
+    
+    # Clean up log files
+    subprocess.run(['rm', '-rf', f'/var/log/aikido-*/*'], stderr=subprocess.DEVNULL)
+    
     if not os.path.exists('/etc/httpd'):
         # Debian/Ubuntu Apache - use apache2ctl which sources /etc/apache2/envvars
         # This ensures APACHE_RUN_DIR and other variables are properly set
