@@ -67,6 +67,13 @@ PHP_MSHUTDOWN_FUNCTION(aikido) {
 PHP_RINIT_FUNCTION(aikido) {
     ScopedTimer scopedTimer("request_init", "request_op");
     
+    if (std::string(sapi_module.name) == "frankenphp") {
+        if (GetEnvBool("FRANKENPHP_WORKER", false)) {
+            AIKIDO_LOG_INFO("RINIT: Skipping FrankenPHP warm-up request\n");
+            return SUCCESS;
+        }
+    }
+    
     AIKIDO_GLOBAL(phpLifecycle).RequestInit();
 
     AIKIDO_LOG_DEBUG("RINIT finished!\n");
