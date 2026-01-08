@@ -5,6 +5,9 @@
 // Accessed via AIKIDO_GLOBAL(isIpBypassed).
 
 void InitIpBypassCheck() {
+    // Reset state for new request (so it's not cached from previous request)
+    AIKIDO_GLOBAL(isIpBypassed) = false;
+    
     ScopedTimer scopedTimer("check_ip_bypass", "aikido_op");
 
     try {

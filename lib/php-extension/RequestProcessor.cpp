@@ -250,6 +250,7 @@ void RequestProcessor::LoadConfig(const std::string& previousToken, const std::s
     if (this->requestProcessorConfigUpdateFn == nullptr || this->requestProcessorInstance == nullptr) {
         return;
     }
+
     if (currentToken.empty()) {
         AIKIDO_LOG_INFO("Current token is empty, skipping config reload...!\n");
         return;
@@ -265,9 +266,16 @@ void RequestProcessor::LoadConfig(const std::string& previousToken, const std::s
 }
 
 void RequestProcessor::LoadConfigFromEnvironment() {
+    // SKIP config load for the first frankenphp warmp-up request
+    if(sapi_module.name == "frankenphp") {
+        if(GetEnvBool("FRANKENPHP_WORKER", false) && !this->numberOfRequests) {
+            return;
+        }
+    }
+
     auto& globalToken = AIKIDO_GLOBAL(token);
     std::string previousToken = globalToken;
-        
+    
     LoadEnvironment();
     
     std::string currentToken = globalToken;
