@@ -39,6 +39,7 @@ jobs:
         cd lib
         protoc --go_out=agent --go-grpc_out=agent ipc.proto
         cd agent
+        go clean -cache -testcache
         go get main/ipc/protos
         go get google.golang.org/grpc
         go get github.com/stretchr/testify/assert
@@ -52,6 +53,7 @@ jobs:
         cd lib
         protoc --go_out=request-processor --go-grpc_out=request-processor ipc.proto
         cd request-processor
+        go clean -cache -testcache
         go mod tidy
         go get google.golang.org/grpc
         go get github.com/stretchr/testify/assert
