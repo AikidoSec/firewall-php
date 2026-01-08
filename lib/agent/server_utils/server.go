@@ -41,7 +41,7 @@ func CompleteServerConfiguration(server *ServerData, serverKey ServerKey, req *p
 	cloud.Init(server)
 	rate_limiting.StartRateLimitingTicker(server)
 	attack_wave_detection.StartAttackWaveTicker(server)
-	
+
 	if globals.IsPastDeletedServer(serverKey) {
 		log.InfofMainAndServer(server.Logger, "Server \"AIK_RUNTIME_***%s\" (server PID: %d) was registered before for this server PID, but deleted due to inactivity! Skipping start event as it was sent before...", utils.AnonymizeToken(serverKey.Token), serverKey.ServerPID)
 	} else {

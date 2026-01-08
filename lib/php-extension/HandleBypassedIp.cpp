@@ -4,10 +4,6 @@
 // If true, all blocking checks will be skipped.
 // Accessed via AIKIDO_GLOBAL(isIpBypassed).
 
-// The checkedIpBypass module global variable is used to check if IP bypass check
-// has already been called, in order to avoid multiple calls to this function.
-// Accessed via AIKIDO_GLOBAL(checkedIpBypass).
-
 void InitIpBypassCheck() {
     ScopedTimer scopedTimer("check_ip_bypass", "aikido_op");
 
@@ -21,15 +17,6 @@ void InitIpBypassCheck() {
 }
 
 bool IsAikidoDisabledOrBypassed() {
-    if (AIKIDO_GLOBAL(disable) == true) {
-        return true;
-    }
-    
-    if (!AIKIDO_GLOBAL(checkedIpBypass)) {
-        AIKIDO_GLOBAL(checkedIpBypass) = true;
-        InitIpBypassCheck();
-    }
-    
-    return AIKIDO_GLOBAL(isIpBypassed);
+    return AIKIDO_GLOBAL(disable) == true || AIKIDO_GLOBAL(isIpBypassed);
 }
 

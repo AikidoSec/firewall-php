@@ -41,7 +41,6 @@ uint64_t totalOverheadForCurrentRequest;
 bool laravelEnvLoaded;
 bool checkedAutoBlock;
 bool checkedShouldBlockRequest;
-bool checkedIpBypass;
 bool isIpBypassed;
 HashTable *global_ast_to_clean;
 void (*original_ast_process)(zend_ast *ast);
