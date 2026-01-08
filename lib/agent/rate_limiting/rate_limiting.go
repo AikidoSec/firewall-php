@@ -2,9 +2,7 @@ package rate_limiting
 
 import (
 	. "main/aikido_types"
-	"main/constants"
 	"main/utils"
-	"time"
 )
 
 func AdvanceRateLimitingQueues(server *ServerData) {
@@ -25,9 +23,7 @@ func AdvanceRateLimitingQueues(server *ServerData) {
 }
 
 // StartRateLimitingTicker starts the rate limiting ticker
-// Called on first request via sync.Once
 func StartRateLimitingTicker(server *ServerData) {
-	server.PollingData.RateLimitingTicker = time.NewTicker(constants.MinRateLimitingIntervalInMs * time.Millisecond)
 	utils.StartPollingRoutine(server.PollingData.RateLimitingChannel, server.PollingData.RateLimitingTicker, AdvanceRateLimitingQueues, server)
 }
 
