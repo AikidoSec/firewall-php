@@ -216,11 +216,14 @@ bool RequestProcessor::RequestInit() {
     }
     
     
-    const auto& sapiName = AIKIDO_GLOBAL(sapi_name);
+    std::string sapiName = sapi_module.name;
     if (sapiName == "apache2handler" || sapiName == "frankenphp") {
       // Apache-mod-php and FrankenPHP can serve multiple sites per process
       // We need to reload config each request to detect token changes
-        this->LoadConfigFromEnvironment();
+        if(!this->LoadConfigFromEnvironment()) {
+            this->numberOfRequests++;
+            return true;
+        }
     } else {
         // Server APIs that are not apache-mod-php/frankenphp (like php-fpm, cli-server, ...) 
         //  can only serve one site per process, so the config should be loaded at the first request.
@@ -265,12 +268,12 @@ void RequestProcessor::LoadConfig(const std::string& previousToken, const std::s
     this->requestProcessorConfigUpdateFn(this->requestProcessorInstance, GoCreateString(initJson));
 }
 
-void RequestProcessor::LoadConfigFromEnvironment() {
+bool RequestProcessor::LoadConfigFromEnvironment() {
     // SKIP config load for the first frankenphp warm-up request
-    if(AIKIDO_GLOBAL(sapi_name) == "frankenphp") {
+    if(std::string(sapi_module.name) == "frankenphp") {
         if(GetEnvBool("FRANKENPHP_WORKER", false) && !this->numberOfRequests) {
-            AIKIDO_LOG_INFO("FrankenPHP worker warm-up request detected, skipping config update\n");
-            return;
+            AIKIDO_LOG_INFO("FrankenPHP worker warm-up request detected, skipping RequestInit\n");
+            return false;
         }
     }
 
@@ -282,6 +285,7 @@ void RequestProcessor::LoadConfigFromEnvironment() {
     std::string currentToken = globalToken;
     
     LoadConfig(previousToken, currentToken);
+    return true; 
 }
 
 void RequestProcessor::LoadConfigWithTokenFromPHPSetToken(const std::string& tokenFromMiddleware) {

@@ -46,7 +46,7 @@ class RequestProcessor {
     bool IsBlockingEnabled();
     bool ReportStats();
     void LoadConfig(const std::string& previousToken, const std::string& currentToken);
-    void LoadConfigFromEnvironment();
+    bool LoadConfigFromEnvironment();
     void LoadConfigWithTokenFromPHPSetToken(const std::string& tokenFromMiddleware);
     void RequestShutdown();
     void Uninit();
