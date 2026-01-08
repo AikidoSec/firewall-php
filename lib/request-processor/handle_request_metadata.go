@@ -1,7 +1,6 @@
 package main
 
 import (
-	. "main/aikido_types"
 	"main/api_discovery"
 	"main/context"
 	"main/grpc"
@@ -16,12 +15,12 @@ func OnPreRequest(inst *instance.RequestProcessorInstance) string {
 	return ""
 }
 
-func OnRequestShutdownReporting(params RequestShutdownParams) {
+func OnRequestShutdownReporting(params grpc.RequestShutdownParams) {
 	if params.Method == "" || params.Route == "" || params.StatusCode == 0 {
 		return
 	}
 
-	log.InfoWithThreadID(params.ThreadID, "[RSHUTDOWN] Got request metadata: ", params.Method, " ", params.Route, " ", params.StatusCode)
+	log.Info(params.Inst, "[RSHUTDOWN] Got request metadata: ", params.Method, " ", params.Route, " ", params.StatusCode)
 	// Only detect web scanner activity for non-bypassed IPs
 	if !params.IsIpBypassed {
 		params.IsWebScanner = webscanner.IsWebScanner(params.Method, params.Route, params.QueryParsed)
@@ -32,7 +31,7 @@ func OnRequestShutdownReporting(params RequestShutdownParams) {
 		return
 	}
 
-	log.InfoWithThreadID(params.ThreadID, "[RSHUTDOWN] Got API spec: ", params.APISpec)
+	log.Info(params.Inst, "[RSHUTDOWN] Got API spec: ", params.APISpec)
 	grpc.OnRequestShutdown(params)
 }
 
@@ -43,9 +42,8 @@ func OnPostRequest(inst *instance.RequestProcessorInstance) string {
 	}
 
 	if !context.IsIpBypassed(inst) {
-		params := RequestShutdownParams{
-			ThreadID:       inst.GetThreadID(),
-			Token:          inst.GetCurrentToken(),
+		params := grpc.RequestShutdownParams{
+			Inst:           inst,
 			Method:         context.GetMethod(inst),
 			Route:          context.GetRoute(inst),
 			RouteParsed:    context.GetParsedRoute(inst),

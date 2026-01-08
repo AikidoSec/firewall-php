@@ -18,11 +18,6 @@ func OnUserEvent(inst *instance.RequestProcessorInstance) string {
 		return ""
 	}
 
-	server := inst.GetCurrentServer()
-	if server == nil {
-		return ""
-	}
-	threadID := inst.GetThreadID() // Capture threadID before goroutine
-	go grpc.OnUserEvent(threadID, server, id, username, ip)
+	go grpc.OnUserEvent(inst, id, username, ip)
 	return ""
 }

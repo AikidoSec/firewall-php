@@ -17,6 +17,25 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
+type RequestShutdownParams struct {
+	Inst                *instance.RequestProcessorInstance
+	Method              string
+	Route               string
+	RouteParsed         string
+	StatusCode          int
+	User                string
+	UserAgent           string
+	IP                  string
+	Url                 string
+	RateLimitGroup      string
+	APISpec             *protos.APISpec
+	RateLimited         bool
+	QueryParsed         map[string]interface{}
+	IsWebScanner        bool
+	ShouldDiscoverRoute bool
+	IsIpBypassed        bool
+}
+
 var conn *grpc.ClientConn
 var client protos.AikidoClient
 
@@ -77,8 +96,13 @@ func SendAikidoConfig(server *ServerData) {
 }
 
 /* Send outgoing domain to Aikido Agent via gRPC */
-func OnDomain(threadID uint64, server *ServerData, domain string, port uint32) {
+func OnDomain(inst *instance.RequestProcessorInstance, domain string, port uint32) {
 	if client == nil {
+		return
+	}
+
+	server := inst.GetCurrentServer()
+	if server == nil {
 		return
 	}
 
@@ -87,11 +111,11 @@ func OnDomain(threadID uint64, server *ServerData, domain string, port uint32) {
 
 	_, err := client.OnDomain(ctx, &protos.Domain{Token: server.AikidoConfig.Token, ServerPid: globals.EnvironmentConfig.ServerPID, Domain: domain, Port: port})
 	if err != nil {
-		log.WarnfWithThreadID(threadID, "Could not send domain %v: %v", domain, err)
+		log.Warnf(inst, "Could not send domain %v: %v", domain, err)
 		return
 	}
 
-	log.DebugfWithThreadID(threadID, "Domain sent via socket: %v:%v", domain, port)
+	log.Debugf(inst, "Domain sent via socket: %v:%v", domain, port)
 }
 
 /* Send packages to Aikido Agent via gRPC */
@@ -141,7 +165,7 @@ func OnRequestShutdown(params RequestShutdownParams) {
 	defer cancel()
 
 	_, err := client.OnRequestShutdown(ctx, &protos.RequestMetadataShutdown{
-		Token:               params.Token,
+		Token:               params.Inst.GetCurrentToken(),
 		ServerPid:           globals.EnvironmentConfig.ServerPID,
 		Method:              params.Method,
 		Route:               params.Route,
@@ -202,8 +226,13 @@ func GetCloudConfigForAllServers(timeout time.Duration) {
 	}
 }
 
-func OnUserEvent(threadID uint64, server *ServerData, id string, username string, ip string) {
+func OnUserEvent(inst *instance.RequestProcessorInstance, id string, username string, ip string) {
 	if client == nil {
+		return
+	}
+
+	server := inst.GetCurrentServer()
+	if server == nil {
 		return
 	}
 
@@ -212,11 +241,11 @@ func OnUserEvent(threadID uint64, server *ServerData, id string, username string
 
 	_, err := client.OnUser(ctx, &protos.User{Token: server.AikidoConfig.Token, ServerPid: globals.EnvironmentConfig.ServerPID, Id: id, Username: username, Ip: ip})
 	if err != nil {
-		log.WarnfWithThreadID(threadID, "Could not send user event %v %v %v: %v", id, username, ip, err)
+		log.Warnf(inst, "Could not send user event %v %v %v: %v", id, username, ip, err)
 		return
 	}
 
-	log.DebugfWithThreadID(threadID, "User event sent via socket (%v %v %v)", id, username, ip)
+	log.Debugf(inst, "User event sent via socket (%v %v %v)", id, username, ip)
 }
 
 func OnAttackDetected(inst *instance.RequestProcessorInstance, attackDetected *protos.AttackDetected) {
@@ -235,8 +264,13 @@ func OnAttackDetected(inst *instance.RequestProcessorInstance, attackDetected *p
 	log.Debugf(inst, "Attack detected event sent via socket")
 }
 
-func OnMonitoredSinkStats(threadID uint64, server *ServerData, sink, kind string, attacksDetected, attacksBlocked, interceptorThrewError, withoutContext, total int32, timings []int64) {
-	if client == nil || server == nil {
+func OnMonitoredSinkStats(inst *instance.RequestProcessorInstance, sink, kind string, attacksDetected, attacksBlocked, interceptorThrewError, withoutContext, total int32, timings []int64) {
+	if client == nil {
+		return
+	}
+
+	server := inst.GetCurrentServer()
+	if server == nil {
 		return
 	}
 
@@ -256,14 +290,19 @@ func OnMonitoredSinkStats(threadID uint64, server *ServerData, sink, kind string
 		Timings:               timings,
 	})
 	if err != nil {
-		log.WarnfWithThreadID(threadID, "Could not send monitored sink stats event")
+		log.Warnf(inst, "Could not send monitored sink stats event")
 		return
 	}
-	log.DebugfWithThreadID(threadID, "Monitored sink stats for sink \"%s\" sent via socket", sink)
+	log.Debugf(inst, "Monitored sink stats for sink \"%s\" sent via socket", sink)
 }
 
-func OnMiddlewareInstalled(threadID uint64, server *ServerData) {
-	if client == nil || server == nil {
+func OnMiddlewareInstalled(inst *instance.RequestProcessorInstance) {
+	if client == nil {
+		return
+	}
+
+	server := inst.GetCurrentServer()
+	if server == nil {
 		return
 	}
 
@@ -272,14 +311,19 @@ func OnMiddlewareInstalled(threadID uint64, server *ServerData) {
 
 	_, err := client.OnMiddlewareInstalled(ctx, &protos.MiddlewareInstalledInfo{Token: server.AikidoConfig.Token, ServerPid: globals.EnvironmentConfig.ServerPID})
 	if err != nil {
-		log.WarnfWithThreadID(threadID, "Could not call OnMiddlewareInstalled")
+		log.Warnf(inst, "Could not call OnMiddlewareInstalled")
 		return
 	}
-	log.DebugfWithThreadID(threadID, "OnMiddlewareInstalled sent via socket")
+	log.Debugf(inst, "OnMiddlewareInstalled sent via socket")
 }
 
-func OnMonitoredIpMatch(threadID uint64, server *ServerData, lists []utils.IpListMatch) {
+func OnMonitoredIpMatch(inst *instance.RequestProcessorInstance, lists []utils.IpListMatch) {
 	if client == nil || len(lists) == 0 {
+		return
+	}
+
+	server := inst.GetCurrentServer()
+	if server == nil {
 		return
 	}
 
@@ -293,14 +337,19 @@ func OnMonitoredIpMatch(threadID uint64, server *ServerData, lists []utils.IpLis
 
 	_, err := client.OnMonitoredIpMatch(ctx, &protos.MonitoredIpMatch{Token: server.AikidoConfig.Token, ServerPid: globals.EnvironmentConfig.ServerPID, Lists: protosLists})
 	if err != nil {
-		log.WarnfWithThreadID(threadID, "Could not call OnMonitoredIpMatch")
+		log.Warnf(inst, "Could not call OnMonitoredIpMatch")
 		return
 	}
-	log.DebugfWithThreadID(threadID, "OnMonitoredIpMatch sent via socket")
+	log.Debugf(inst, "OnMonitoredIpMatch sent via socket")
 }
 
-func OnMonitoredUserAgentMatch(threadID uint64, server *ServerData, lists []string) {
+func OnMonitoredUserAgentMatch(inst *instance.RequestProcessorInstance, lists []string) {
 	if client == nil || len(lists) == 0 {
+		return
+	}
+
+	server := inst.GetCurrentServer()
+	if server == nil {
 		return
 	}
 
@@ -309,8 +358,8 @@ func OnMonitoredUserAgentMatch(threadID uint64, server *ServerData, lists []stri
 
 	_, err := client.OnMonitoredUserAgentMatch(ctx, &protos.MonitoredUserAgentMatch{Token: server.AikidoConfig.Token, ServerPid: globals.EnvironmentConfig.ServerPID, Lists: lists})
 	if err != nil {
-		log.WarnfWithThreadID(threadID, "Could not call OnMonitoredUserAgentMatch")
+		log.Warnf(inst, "Could not call OnMonitoredUserAgentMatch")
 		return
 	}
-	log.DebugfWithThreadID(threadID, "OnMonitoredUserAgentMatch sent via socket")
+	log.Debugf(inst, "OnMonitoredUserAgentMatch sent via socket")
 }

@@ -16,6 +16,9 @@ type RequestProcessorInstance struct {
 	ContextInstance unsafe.Pointer // For context callbacks
 	ContextCallback unsafe.Pointer // C function pointer, must be per-instance in ZTS
 
+	RequestContext interface{}
+	EventContext   interface{}
+
 	mu    sync.Mutex // Only used when isZTS is true
 	isZTS bool
 }
@@ -104,4 +107,52 @@ func (i *RequestProcessorInstance) GetThreadID() uint64 {
 		defer i.mu.Unlock()
 	}
 	return i.threadID
+}
+
+func (i *RequestProcessorInstance) SetRequestContext(ctx interface{}) {
+	if i.isZTS {
+		i.mu.Lock()
+		defer i.mu.Unlock()
+	}
+	i.RequestContext = ctx
+}
+
+func (i *RequestProcessorInstance) GetRequestContext() interface{} {
+	if i.isZTS {
+		i.mu.Lock()
+		defer i.mu.Unlock()
+	}
+	return i.RequestContext
+}
+
+func (i *RequestProcessorInstance) SetEventContext(ctx interface{}) {
+	if i.isZTS {
+		i.mu.Lock()
+		defer i.mu.Unlock()
+	}
+	i.EventContext = ctx
+}
+
+func (i *RequestProcessorInstance) GetEventContext() interface{} {
+	if i.isZTS {
+		i.mu.Lock()
+		defer i.mu.Unlock()
+	}
+	return i.EventContext
+}
+
+func (i *RequestProcessorInstance) SetContextInstance(ptr unsafe.Pointer) {
+	if i.isZTS {
+		i.mu.Lock()
+		defer i.mu.Unlock()
+	}
+	i.ContextInstance = ptr
+}
+
+func (i *RequestProcessorInstance) GetContextInstance() unsafe.Pointer {
+	if i.isZTS {
+		i.mu.Lock()
+		defer i.mu.Unlock()
+	}
+	return i.ContextInstance
 }

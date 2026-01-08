@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"fmt"
 	. "main/aikido_types"
-	"main/globals"
 	"main/instance"
 )
 
@@ -62,18 +61,17 @@ func LoadForUnitTests(context map[string]string) *instance.RequestProcessorInsta
 		inst:     mockInst,
 		Callback: UnitTestsCallback,
 	}
-	globals.ContextData.Store(tid, ctx)
-	globals.ContextInstances.Store(tid, nil)
+	mockInst.SetRequestContext(ctx)
+	mockInst.SetContextInstance(nil)
+	mockInst.SetEventContext(&EventContextData{})
 
 	TestContext = context
 	return mockInst
 }
 
 func UnloadForUnitTests() {
-	tid := getThreadID()
-	globals.ContextData.Delete(tid)
-	globals.ContextInstances.Delete(tid)
-	globals.EventContextData.Delete(tid)
+	// Note: In the new design, contexts are stored per-instance, not globally
+	// The test instance will be garbage collected when no longer referenced
 	TestServer = nil
 	TestContext = nil
 }

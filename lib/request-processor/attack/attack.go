@@ -34,12 +34,9 @@ func GetHeadersProto(inst *instance.RequestProcessorInstance) []*protos.Header {
 
 /* Construct the AttackDetected protobuf structure to be sent via gRPC to the Agent */
 func GetAttackDetectedProto(res utils.InterceptorResult, inst *instance.RequestProcessorInstance) *protos.AttackDetected {
-	token := inst.GetCurrentToken()
-	server := inst.GetCurrentServer()
-
 	serverPID := context.GetServerPID()
 	return &protos.AttackDetected{
-		Token:     token,
+		Token:     inst.GetCurrentToken(),
 		ServerPid: serverPID,
 		Request: &protos.Request{
 			Method:    context.GetMethod(inst),
@@ -55,7 +52,7 @@ func GetAttackDetectedProto(res utils.InterceptorResult, inst *instance.RequestP
 			Kind:      string(res.Kind),
 			Operation: res.Operation,
 			Module:    context.GetModule(inst),
-			Blocked:   utils.IsBlockingEnabled(server),
+			Blocked:   utils.IsBlockingEnabled(inst.GetCurrentServer()),
 			Source:    res.Source,
 			Path:      res.PathToPayload,
 			Stack:     context.GetStackTrace(inst),

@@ -28,12 +28,8 @@ func OnPreOutgoingRequest(inst *instance.RequestProcessorInstance) string {
 
 	// Check if the domain is blocked based on cloud configuration
 	if !context.IsIpBypassed(inst) && ssrf.IsBlockedOutboundDomainWithInst(inst, hostname) {
-		server := inst.GetCurrentServer()
 		// Blocked domains should also be reported to the agent.
-		if server != nil {
-			threadID := inst.GetThreadID()
-			go grpc.OnDomain(threadID, server, hostname, port)
-		}
+		go grpc.OnDomain(inst, hostname, port)
 		message := fmt.Sprintf("Aikido firewall has blocked an outbound connection: %s(...) to %s", operation, html.EscapeString(hostname))
 		return attack.GetThrowAction(message, 500)
 	}
@@ -81,13 +77,9 @@ func OnPostOutgoingRequest(inst *instance.RequestProcessorInstance) string {
 
 	log.Info(inst, "[AFTER] Got domain: ", hostname, " port: ", port)
 
-	server := inst.GetCurrentServer()
-	if server != nil {
-		threadID := inst.GetThreadID()
-		go grpc.OnDomain(threadID, server, hostname, port)
-		if effectiveHostname != hostname {
-			go grpc.OnDomain(threadID, server, effectiveHostname, effectivePort)
-		}
+	go grpc.OnDomain(inst, hostname, port)
+	if effectiveHostname != hostname {
+		go grpc.OnDomain(inst, effectiveHostname, effectivePort)
 	}
 
 	if context.IsEndpointProtectionTurnedOff(inst) {
