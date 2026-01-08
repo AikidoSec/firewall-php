@@ -266,9 +266,10 @@ void RequestProcessor::LoadConfig(const std::string& previousToken, const std::s
 }
 
 void RequestProcessor::LoadConfigFromEnvironment() {
-    // SKIP config load for the first frankenphp warmp-up request
-    if(sapi_module.name == "frankenphp") {
+    // SKIP config load for the first frankenphp warm-up request
+    if(AIKIDO_GLOBAL(sapi_name) == "frankenphp") {
         if(GetEnvBool("FRANKENPHP_WORKER", false) && !this->numberOfRequests) {
+            AIKIDO_LOG_INFO("FrankenPHP worker warm-up request detected, skipping config update\n");
             return;
         }
     }
