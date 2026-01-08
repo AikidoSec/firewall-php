@@ -1,12 +1,12 @@
 #include "Includes.h"
 
-std::string RequestProcessor::GetInitData(const std::string& token) {
+std::string RequestProcessor::GetInitData(const std::string& userProvidedToken) {
     LoadLaravelEnvFile();
     LoadEnvironment();
 
     auto& globalToken = AIKIDO_GLOBAL(token);
-    if (!token.empty()) {
-        globalToken = token;
+    if (!userProvidedToken.empty()) {
+        globalToken = userProvidedToken;
     }
     unordered_map<std::string, std::string> packages = GetPackages();
     AIKIDO_GLOBAL(uses_symfony_http_foundation) = packages.find("symfony/http-foundation") != packages.end();
@@ -220,12 +220,6 @@ bool RequestProcessor::RequestInit() {
     if (sapiName == "apache2handler" || sapiName == "frankenphp") {
       // Apache-mod-php and FrankenPHP can serve multiple sites per process
       // We need to reload config each request to detect token changes
-      // Check disable BEFORE modifying any state (shared Go state or per-instance state)
-      // Use GetEnvBool() to read disable flag without modifying global state
-        if (GetEnvBool("AIKIDO_DISABLE", false)) {
-            AIKIDO_LOG_INFO("Request Processor initialization skipped because AIKIDO_DISABLE is set to 1!\n");
-            return true;
-        }
         this->LoadConfigFromEnvironment();
     } else {
         // Server APIs that are not apache-mod-php/frankenphp (like php-fpm, cli-server, ...) 
@@ -234,10 +228,6 @@ bool RequestProcessor::RequestInit() {
         // The user can update .env file via zero downtime deployments after the PHP server is started.
         if (AIKIDO_GLOBAL(token) == "") {
             AIKIDO_LOG_INFO("Loading Aikido config until we get a valid token for SAPI: %s...\n", AIKIDO_GLOBAL(sapi_name).c_str());
-            if (GetEnvBool("AIKIDO_DISABLE", false)) {
-                AIKIDO_LOG_INFO("Request Processor initialization skipped because AIKIDO_DISABLE is set to 1!\n");
-                return true;
-            }
             this->LoadConfigFromEnvironment();
         }
     }

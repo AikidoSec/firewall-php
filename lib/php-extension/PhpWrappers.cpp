@@ -38,13 +38,15 @@ bool CallPhpFunction(std::string function_name, unsigned int params_number, zval
 
     zval_dtor(&_function_name);
 
-    if (_result != SUCCESS) {
-        return false;
-    }
 
     if (!return_value) {
         zval_ptr_dtor(&_temp_return_value);
     }
+
+    if (_result != SUCCESS) {
+        return false;
+    }
+
     return true;
 }
 
