@@ -30,23 +30,23 @@ void helper_handle_pre_file_path_access(char *filename, EVENT_ID &eventId) {
     if (StartsWith(filenameString, "http://", false) ||
         StartsWith(filenameString, "https://", false)) {
         eventId = EVENT_PRE_OUTGOING_REQUEST;
-        eventCache.outgoingRequestUrl = filenameString;
+        eventCacheStack.Current().outgoingRequestUrl = filenameString;
     } else {
         eventId = EVENT_PRE_PATH_ACCESSED;
-        eventCache.filename = filenameString;
+        eventCacheStack.Current().filename = filenameString;
     }
 }
 
 /* Helper for handle post file path access */
 void helper_handle_post_file_path_access(EVENT_ID &eventId) {
-    if (!eventCache.outgoingRequestUrl.empty()) {
+    if (!eventCacheStack.Current().outgoingRequestUrl.empty()) {
         // If the pre handler for path access determined this was actually an URL,
         // we need to notify that the request finished.
         eventId = EVENT_POST_OUTGOING_REQUEST;
 
         // As we cannot extract the effective URL for these fopen wrappers,
         // we will just assume it's the same as the initial URL.
-        eventCache.outgoingRequestEffectiveUrl = eventCache.outgoingRequestUrl;
+        eventCacheStack.Current().outgoingRequestEffectiveUrl = eventCacheStack.Current().outgoingRequestUrl;
     }
 }
 
@@ -92,7 +92,7 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_file_path_access_2) {
 
     helper_handle_pre_file_path_access(ZSTR_VAL(filename), eventId);
     if (filename2) {
-        eventCache.filename2 = ZSTR_VAL(filename2);
+        eventCacheStack.Current().filename2 = ZSTR_VAL(filename2);
     }
 }
 

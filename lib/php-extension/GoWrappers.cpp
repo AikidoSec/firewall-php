@@ -78,51 +78,51 @@ char* GoContextCallback(int callbackId) {
                 break;
             case FUNCTION_NAME:
                 ctx = "FUNCTION_NAME";
-                ret = eventCache.functionName;
+                ret = eventCacheStack.Empty() ? "" : eventCacheStack.Current().functionName;
                 break;
             case OUTGOING_REQUEST_URL:
                 ctx = "OUTGOING_REQUEST_URL";
-                ret = eventCache.outgoingRequestUrl;
+                ret = eventCacheStack.Empty() ? "" : eventCacheStack.Current().outgoingRequestUrl;
                 break;
             case OUTGOING_REQUEST_EFFECTIVE_URL:
                 ctx = "OUTGOING_REQUEST_EFFECTIVE_URL";
-                ret = eventCache.outgoingRequestEffectiveUrl;
+                ret = eventCacheStack.Empty() ? "" : eventCacheStack.Current().outgoingRequestEffectiveUrl;
                 break;
             case OUTGOING_REQUEST_PORT:
                 ctx = "OUTGOING_REQUEST_PORT";
-                ret = eventCache.outgoingRequestPort;
+                ret = eventCacheStack.Empty() ? "" : eventCacheStack.Current().outgoingRequestPort;
                 break;
             case OUTGOING_REQUEST_EFFECTIVE_URL_PORT:
                 ctx = "OUTGOING_REQUEST_EFFECTIVE_URL_PORT";
-                ret = eventCache.outgoingRequestEffectiveUrlPort;
+                ret = eventCacheStack.Empty() ? "" : eventCacheStack.Current().outgoingRequestEffectiveUrlPort;
                 break;
             case OUTGOING_REQUEST_RESOLVED_IP:
                 ctx = "OUTGOING_REQUEST_RESOLVED_IP";
-                ret = eventCache.outgoingRequestResolvedIp;
+                ret = eventCacheStack.Empty() ? "" : eventCacheStack.Current().outgoingRequestResolvedIp;
                 break;
             case CMD:
                 ctx = "CMD";
-                ret = eventCache.cmd;
+                ret = eventCacheStack.Empty() ? "" : eventCacheStack.Current().cmd;
                 break;
             case FILENAME:
                 ctx = "FILENAME";
-                ret = eventCache.filename;
+                ret = eventCacheStack.Empty() ? "" : eventCacheStack.Current().filename;
                 break;
             case FILENAME2:
                 ctx = "FILENAME2";
-                ret = eventCache.filename2;
+                ret = eventCacheStack.Empty() ? "" : eventCacheStack.Current().filename2;
                 break;
             case SQL_QUERY:
                 ctx = "SQL_QUERY";
-                ret = eventCache.sqlQuery;
+                ret = eventCacheStack.Empty() ? "" : eventCacheStack.Current().sqlQuery;
                 break;
             case SQL_DIALECT:
                 ctx = "SQL_DIALECT";
-                ret = eventCache.sqlDialect;
+                ret = eventCacheStack.Empty() ? "" : eventCacheStack.Current().sqlDialect;
                 break;
             case MODULE:
                 ctx = "MODULE";
-                ret = eventCache.moduleName;
+                ret = eventCacheStack.Empty() ? "" : eventCacheStack.Current().moduleName;
                 break;
             case STACK_TRACE:
                 ctx = "STACK_TRACE";
@@ -130,11 +130,11 @@ char* GoContextCallback(int callbackId) {
                 break;
             case PARAM_MATCHER_PARAM:
                 ctx = "PARAM_MATCHER_PARAM";
-                ret = eventCache.paramMatcherParam;
+                ret = eventCacheStack.Empty() ? "" : eventCacheStack.Current().paramMatcherParam;
                 break;
             case PARAM_MATCHER_REGEX:
                 ctx = "PARAM_MATCHER_REGEX";
-                ret = eventCache.paramMatcherRegex;
+                ret = eventCacheStack.Empty() ? "" : eventCacheStack.Current().paramMatcherRegex;
                 break;
         }
     } catch (std::exception& e) {
