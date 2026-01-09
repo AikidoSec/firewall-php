@@ -53,6 +53,7 @@ RUN ./configure \
       --enable-mbstring \
       --enable-pcntl \
       --enable-intl \
+      --enable-sockets \
       --with-curl \
       --with-mysqli \
       --with-openssl \
