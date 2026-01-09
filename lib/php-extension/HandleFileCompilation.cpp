@@ -1,34 +1,36 @@
 #include "Includes.h"
 
 zend_op_array* handle_file_compilation(zend_file_handle* file_handle, int type) {
-    eventCache.Reset();
+    // Create a new event context for file compilation
+    ScopedEventContext scopedContext;
+    
     switch (type) {
         case ZEND_INCLUDE:
-            eventCache.functionName = "include";
+            eventCacheStack.Current().functionName = "include";
             break;
         case ZEND_INCLUDE_ONCE:
-            eventCache.functionName = "include_once";
+            eventCacheStack.Current().functionName = "include_once";
             break;
         case ZEND_REQUIRE:
-            eventCache.functionName = "require";
+            eventCacheStack.Current().functionName = "require";
             break;
         case ZEND_REQUIRE_ONCE:
-            eventCache.functionName = "require_once";
+            eventCacheStack.Current().functionName = "require_once";
             break;
         default:
             return original_file_compilation_handler(file_handle, type);
     }
 
-    ScopedTimer scopedTimer(eventCache.functionName, "fs_op");
+    ScopedTimer scopedTimer(eventCacheStack.Current().functionName, "fs_op");
 
     char* filename = PHP_GET_CHAR_PTR(file_handle->filename);
     
-    AIKIDO_LOG_DEBUG("\"%s\" called for \"%s\"!\n", eventCache.functionName.c_str(), filename);
+    AIKIDO_LOG_DEBUG("\"%s\" called for \"%s\"!\n", eventCacheStack.Current().functionName.c_str(), filename);
 
     EVENT_ID eventId = NO_EVENT_ID;
     helper_handle_pre_file_path_access(filename, eventId);
 
-    if (aikido_process_event(eventId, eventCache.functionName) == BLOCK) {
+    if (aikido_process_event(eventId, eventCacheStack.Current().functionName) == BLOCK) {
         // exit zend_compile_file handler and do not call the original handler, thus blocking the script file compilation
         return nullptr;
     }
@@ -39,7 +41,7 @@ zend_op_array* handle_file_compilation(zend_file_handle* file_handle, int type) 
 
     eventId = NO_EVENT_ID;
     helper_handle_post_file_path_access(eventId);
-    aikido_process_event(eventId, eventCache.functionName);
+    aikido_process_event(eventId, eventCacheStack.Current().functionName);
 
     return op_array;
 }

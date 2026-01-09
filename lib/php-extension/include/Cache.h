@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stack>
+
 class RequestCache {
    public:
     std::string userId;
@@ -38,5 +40,22 @@ class EventCache {
     void Reset();
 };
 
+class EventCacheStack {
+   private:
+    std::stack<EventCache> contexts;
+   public:
+    void Push();
+    void Pop();
+    EventCache& Current();
+    bool Empty();
+};
+
+// RAII wrapper for automatic push/pop of event context
+class ScopedEventContext {
+   public:
+    ScopedEventContext();
+    ~ScopedEventContext();
+};
+
 extern RequestCache requestCache;
-extern EventCache eventCache;
+extern EventCacheStack eventCacheStack;
