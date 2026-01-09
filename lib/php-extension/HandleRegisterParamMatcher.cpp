@@ -22,10 +22,13 @@ ZEND_FUNCTION(register_param_matcher) {
         RETURN_BOOL(false);
     }
 
+    auto& eventCache = AIKIDO_GLOBAL(eventCache);
     eventCache.paramMatcherParam = std::string(param, paramLength);
     eventCache.paramMatcherRegex = std::string(regex, regexLength);
 
     try {
+        auto& requestProcessor = AIKIDO_GLOBAL(requestProcessor);
+        auto& action = AIKIDO_GLOBAL(action);
         std::string outputEvent;
         requestProcessor.SendEvent(EVENT_REGISTER_PARAM_MATCHER, outputEvent);
         if (action.Execute(outputEvent) == WARNING_MESSAGE) {

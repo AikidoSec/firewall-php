@@ -6,11 +6,15 @@ ACTION_STATUS aikido_process_event(EVENT_ID& eventId, std::string& sink) {
         return CONTINUE;
     }
 
+    auto& requestProcessor = AIKIDO_GLOBAL(requestProcessor);
+    auto& action = AIKIDO_GLOBAL(action);
+    auto& statsMap = AIKIDO_GLOBAL(stats);
+
     std::string outputEvent;
     requestProcessor.SendEvent(eventId, outputEvent);
 
     if (action.IsDetection(outputEvent)) {
-        stats[sink].IncrementAttacksDetected();
+        statsMap[sink].IncrementAttacksDetected();
     }
 
     if (!requestProcessor.IsBlockingEnabled()) {
@@ -19,7 +23,7 @@ ACTION_STATUS aikido_process_event(EVENT_ID& eventId, std::string& sink) {
 
     ACTION_STATUS action_status = action.Execute(outputEvent);
     if (action_status == BLOCK) {
-        stats[sink].IncrementAttacksBlocked();
+        statsMap[sink].IncrementAttacksBlocked();
     }
     return action_status;
 }
@@ -36,6 +40,7 @@ ZEND_NAMED_FUNCTION(aikido_generic_handler) {
     std::string outputEvent;
     bool caughtException = false;
 
+    auto& eventCache = AIKIDO_GLOBAL(eventCache);
     eventCache.Reset();
 
     try {

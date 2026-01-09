@@ -20,5 +20,3 @@ class PhpLifecycle {
 
     void UnhookAll();
 };
-
-extern PhpLifecycle phpLifecycle;

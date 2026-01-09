@@ -19,9 +19,9 @@ func AdvanceAttackWaveQueues(server *ServerData) {
 	}
 }
 
-func Init(server *ServerData) {
+// StartAttackWaveTicker starts the attack wave detection ticker
+func StartAttackWaveTicker(server *ServerData) {
 	utils.StartPollingRoutine(server.PollingData.AttackWaveChannel, server.PollingData.AttackWaveTicker, AdvanceAttackWaveQueues, server)
-	AdvanceAttackWaveQueues(server)
 }
 
 func Uninit(server *ServerData) {

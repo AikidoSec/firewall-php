@@ -28,26 +28,38 @@ func storeConfig(server *ServerData, req *protos.Config) {
 	server.AikidoConfig.CollectApiSchema = req.GetCollectApiSchema()
 }
 
-func Register(serverKey ServerKey, requestProcessorPID int32, req *protos.Config) {
-	log.Infof(log.MainLogger, "Client (request processor PID: %d) connected. Registering server \"AIK_RUNTIME_***%s\" (server PID: %d)...", requestProcessorPID, utils.AnonymizeToken(serverKey.Token), serverKey.ServerPID)
-
-	server := globals.CreateServer(serverKey)
+func InitializeServerLogger(server *ServerData, req *protos.Config) {
 	storeConfig(server, req)
+	serverKey := ServerKey{Token: req.GetToken(), ServerPID: req.GetServerPid()}
 	server.Logger = log.CreateLogger(utils.AnonymizeToken(serverKey.Token), server.AikidoConfig.LogLevel, server.AikidoConfig.DiskLogs)
+	atomic.StoreInt64(&server.LastConnectionTime, utils.GetTime())
+}
 
+func CompleteServerConfiguration(server *ServerData, serverKey ServerKey, req *protos.Config) {
 	log.InfofMainAndServer(server.Logger, "Server \"AIK_RUNTIME_***%s\" (server PID: %d) registered successfully!", utils.AnonymizeToken(serverKey.Token), serverKey.ServerPID)
 
-	atomic.StoreInt64(&server.LastConnectionTime, utils.GetTime())
-
 	cloud.Init(server)
+	rate_limiting.StartRateLimitingTicker(server)
+	attack_wave_detection.StartAttackWaveTicker(server)
+
 	if globals.IsPastDeletedServer(serverKey) {
 		log.InfofMainAndServer(server.Logger, "Server \"AIK_RUNTIME_***%s\" (server PID: %d) was registered before for this server PID, but deleted due to inactivity! Skipping start event as it was sent before...", utils.AnonymizeToken(serverKey.Token), serverKey.ServerPID)
 	} else {
 		cloud.SendStartEvent(server)
 	}
+}
 
-	rate_limiting.Init(server)
-	attack_wave_detection.Init(server)
+func ConfigureServer(server *ServerData, req *protos.Config) {
+	serverKey := ServerKey{Token: req.GetToken(), ServerPID: req.GetServerPid()}
+	InitializeServerLogger(server, req)
+	CompleteServerConfiguration(server, serverKey, req)
+}
+
+func Register(serverKey ServerKey, requestProcessorPID int32, req *protos.Config) {
+	log.Infof(log.MainLogger, "Client (request processor PID: %d) connected. Registering server \"AIK_RUNTIME_***%s\" (server PID: %d)...", requestProcessorPID, utils.AnonymizeToken(serverKey.Token), serverKey.ServerPID)
+
+	server := globals.CreateServer(serverKey)
+	ConfigureServer(server, req)
 }
 
 func Unregister(serverKey ServerKey) {

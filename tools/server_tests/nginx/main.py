@@ -33,7 +33,7 @@ def get_user_of_process(process_name):
         except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
             pass
 
-nginx_conf_template = """
+nginx_conf_template = r"""
 server {{
     listen {port};
     server_name {name};
@@ -188,6 +188,9 @@ def nginx_php_fpm_process_test(test_data):
 def nginx_php_fpm_pre_tests():
     subprocess.run(['pkill', 'nginx'])
     subprocess.run(['pkill', 'php-fpm'])
+    time.sleep(2)
+    subprocess.run(['pkill', '-9', 'php-fpm'], stderr=subprocess.DEVNULL)
+    time.sleep(2)
     subprocess.run(['rm', '-rf', f'{log_dir}/nginx/*'])
     subprocess.run(['rm', '-rf', f'{log_dir}/php-fpm/*'])
     subprocess.run(['rm', '-rf', f'{log_dir}/aikido-*/*'])

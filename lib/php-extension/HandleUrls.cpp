@@ -13,6 +13,9 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_curl_exec) {
 #endif
     ZEND_PARSE_PARAMETERS_END();
 
+    auto& eventCache = AIKIDO_GLOBAL(eventCache);
+    auto& requestCache = AIKIDO_GLOBAL(requestCache);
+
     eventCache.outgoingRequestUrl = CallPhpFunctionCurlGetInfo(curlHandle, CURLINFO_EFFECTIVE_URL);
     eventCache.outgoingRequestPort = CallPhpFunctionCurlGetInfo(curlHandle, CURLINFO_PRIMARY_PORT);
 
@@ -56,6 +59,9 @@ AIKIDO_HANDLER_FUNCTION(handle_post_curl_exec) {
 
 
     eventId = EVENT_POST_OUTGOING_REQUEST;
+    auto& eventCache = AIKIDO_GLOBAL(eventCache);
+    auto& requestCache = AIKIDO_GLOBAL(requestCache);
+
     eventCache.moduleName = "curl";
     eventCache.outgoingRequestEffectiveUrl = CallPhpFunctionCurlGetInfo(curlHandle, CURLINFO_EFFECTIVE_URL);
     eventCache.outgoingRequestEffectiveUrlPort = CallPhpFunctionCurlGetInfo(curlHandle, CURLINFO_PRIMARY_PORT);

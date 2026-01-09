@@ -1,16 +1,47 @@
 package globals
 
 import (
-	. "main/aikido_types"
+	"log"
+	"os"
 	"regexp"
 	"sync"
+
+	. "main/aikido_types"
 )
+
+// ===========================
+// Server Configuration
+// ===========================
 
 var EnvironmentConfig EnvironmentConfigData
 var Servers = make(map[string]*ServerData)
 var ServersMutex sync.RWMutex
-var CurrentToken string = ""
-var CurrentServer *ServerData = nil
+
+// ===========================
+// Per-Thread Context Storage
+// ===========================
+
+// ===========================
+// Logging State
+// ===========================
+
+type LogLevel int
+
+const (
+	LogDebugLevel LogLevel = iota
+	LogInfoLevel
+	LogWarnLevel
+	LogErrorLevel
+)
+
+var (
+	CurrentLogLevel = LogErrorLevel
+	Logger          = log.New(os.Stdout, "", 0)
+	CliLogging      = true
+	LogFilePath     = ""
+	LogMutex        sync.RWMutex
+	LogFile         *os.File
+)
 
 func NewServerData() *ServerData {
 	return &ServerData{
@@ -22,10 +53,6 @@ func NewServerData() *ServerData {
 		MiddlewareInstalled: false,
 		ParamMatchers:       make(map[string]*regexp.Regexp),
 	}
-}
-
-func GetCurrentServer() *ServerData {
-	return CurrentServer
 }
 
 func GetServer(token string) *ServerData {
