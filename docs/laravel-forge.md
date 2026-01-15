@@ -8,7 +8,7 @@ You can get your token from the [Aikido Security Dashboard](https://help.aikido.
 
 Go to "Commands" and run the following by replacing the sudo password with the one that Forge displays when the server is created:
 ```
-curl -L -O https://github.com/AikidoSec/firewall-php/releases/download/v1.4.11/aikido-php-firewall.x86_64.deb && echo "YOUR_SUDO_PASSWORD_HERE" | sudo -S dpkg -i -E ./aikido-php-firewall.x86_64.deb && echo "YOUR_SUDO_PASSWORD_HERE" | sudo -S service php8.4-fpm restart
+curl -L -O https://github.com/AikidoSec/firewall-php/releases/download/v1.4.13/aikido-php-firewall.x86_64.deb && echo "YOUR_SUDO_PASSWORD_HERE" | sudo -S dpkg -i -E ./aikido-php-firewall.x86_64.deb && echo "YOUR_SUDO_PASSWORD_HERE" | sudo -S service php8.4-fpm restart
 ```
 
 ![Forge Commands](./forge-commands.png)
