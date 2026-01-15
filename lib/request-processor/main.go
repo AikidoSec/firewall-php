@@ -36,6 +36,14 @@ var eventHandlers = map[int]HandlerFunction{
 }
 
 func initializeServer(server *ServerData) {
+	server.ServerInitMutex.Lock()
+	if server.ServerInitialized {
+		server.ServerInitMutex.Unlock()
+		return
+	}
+	server.ServerInitialized = true
+	server.ServerInitMutex.Unlock()
+
 	grpc.SendAikidoConfig(server)
 	grpc.OnPackages(server, server.AikidoConfig.Packages)
 	grpc.GetCloudConfig(server, 5*time.Second)

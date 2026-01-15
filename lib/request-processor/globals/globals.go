@@ -51,6 +51,8 @@ func NewServerData() *ServerData {
 		},
 		CloudConfigMutex:    sync.Mutex{},
 		MiddlewareInstalled: false,
+		ServerInitialized:   false,
+		ServerInitMutex:     sync.Mutex{},
 		ParamMatchers:       make(map[string]*regexp.Regexp),
 	}
 }
