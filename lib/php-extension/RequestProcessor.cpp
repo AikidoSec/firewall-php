@@ -5,7 +5,7 @@ std::string RequestProcessor::GetInitData(const std::string& userProvidedToken) 
     LoadEnvironment();
 
     auto& globalToken = AIKIDO_GLOBAL(token);
-    if (!token.empty()) {
+    if (!userProvidedToken.empty()) {
         globalToken = userProvidedToken;
     }
     unordered_map<std::string, std::string> packages = GetPackages();
