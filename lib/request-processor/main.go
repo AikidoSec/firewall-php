@@ -230,10 +230,14 @@ func RequestProcessorReportStats(instancePtr unsafe.Pointer, sink, kind string, 
 		return
 	}
 
+	server := inst.GetCurrentServer()
+	if server == nil {
+		return
+	}
+
 	clonedTimings := make([]int64, len(timings))
 	copy(clonedTimings, timings)
-	threadID := inst.GetThreadID()
-	go grpc.OnMonitoredSinkStats(threadID, inst.GetCurrentServer(), strings.Clone(sink), strings.Clone(kind), attacksDetected, attacksBlocked, interceptorThrewError, withoutContext, total, clonedTimings)
+	go grpc.OnMonitoredSinkStats(inst.GetThreadID(), server, inst.GetCurrentToken(), strings.Clone(sink), strings.Clone(kind), attacksDetected, attacksBlocked, interceptorThrewError, withoutContext, total, clonedTimings)
 }
 
 //export RequestProcessorUninit
