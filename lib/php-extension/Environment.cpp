@@ -102,7 +102,7 @@ bool LoadLaravelEnvFile() {
     This function reads environment variables from $_SERVER for FrankenPHP compatibility.
 */
 std::string GetFrankenEnvVariable(const std::string& env_key) {
-    if (AIKIDO_GLOBAL(sapi_name) != "frankenphp") {
+    if (std::string(sapi_module.name) != "frankenphp") {
         return "";
     }
     

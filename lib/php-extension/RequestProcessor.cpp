@@ -1,12 +1,12 @@
 #include "Includes.h"
 
-std::string RequestProcessor::GetInitData(const std::string& token) {
+std::string RequestProcessor::GetInitData(const std::string& userProvidedToken) {
     LoadLaravelEnvFile();
     LoadEnvironment();
 
     auto& globalToken = AIKIDO_GLOBAL(token);
     if (!token.empty()) {
-        globalToken = token;
+        globalToken = userProvidedToken;
     }
     unordered_map<std::string, std::string> packages = GetPackages();
     AIKIDO_GLOBAL(uses_symfony_http_foundation) = packages.find("symfony/http-foundation") != packages.end();
@@ -183,6 +183,14 @@ bool RequestProcessor::Init() {
 }
 
 bool RequestProcessor::RequestInit() {
+    std::string sapiName = sapi_module.name;
+    if (sapiName == "frankenphp") {
+        if (GetEnvBool("FRANKENPHP_WORKER", false)) {
+            AIKIDO_LOG_INFO("FrankenPHP worker warm-up request detected, skipping RequestInit\n");
+            return true;
+        }
+    }
+
     if (!this->Init()) {
         AIKIDO_LOG_ERROR("Failed to initialize the request processor: %s!\n", dlerror());
         return false;
@@ -215,8 +223,6 @@ bool RequestProcessor::RequestInit() {
         AIKIDO_LOG_INFO("RequestProcessorInit called successfully\n");
     }
     
-    
-    const auto& sapiName = AIKIDO_GLOBAL(sapi_name);
     if (sapiName == "apache2handler" || sapiName == "frankenphp") {
       // Apache-mod-php and FrankenPHP can serve multiple sites per process
       // We need to reload config each request to detect token changes
