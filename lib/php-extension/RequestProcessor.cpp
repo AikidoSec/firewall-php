@@ -196,18 +196,18 @@ bool RequestProcessor::RequestInit() {
         return false;
     }
     if (this->requestProcessorInstance == nullptr && this->createInstanceFn != nullptr) {
-        uint64_t threadId = GetThreadID(); 
+        this->threadId = GetThreadID();
         #ifdef ZTS
                 bool isZTS = true;
         #else
                 bool isZTS = false;
         #endif
-        this->requestProcessorInstance = this->createInstanceFn(threadId, isZTS);
+        this->requestProcessorInstance = this->createInstanceFn(this->threadId, isZTS);
         if (this->requestProcessorInstance == nullptr) {
             AIKIDO_LOG_ERROR("Failed to create Go RequestProcessorInstance!\n");
             return false;
         }
-        AIKIDO_LOG_INFO("Created Go RequestProcessorInstance (threadId: %lu, isZTS: %d)\n", threadId, isZTS);
+        AIKIDO_LOG_INFO("Created Go RequestProcessorInstance (threadId: %lu, isZTS: %d)\n", this->threadId, isZTS);
         
         if (this->requestProcessorInitFn == nullptr) {
             AIKIDO_LOG_ERROR("RequestProcessorInitFn is not loaded!\n");
@@ -311,9 +311,13 @@ void RequestProcessor::Uninit() {
         AIKIDO_LOG_INFO("Calling uninit for Aikido Request Processor...\n");
         this->requestProcessorUninitFn(this->requestProcessorInstance);
     }
+    if (this->destroyInstanceFn && this->requestProcessorInstance != nullptr) {
+        AIKIDO_LOG_INFO("Destroying Go RequestProcessorInstance (threadId: %lu)...\n", this->threadId);
+        this->destroyInstanceFn(this->threadId);
+        this->requestProcessorInstance = nullptr;
+    }
     dlclose(this->libHandle);
     this->libHandle = nullptr;
-    this->requestProcessorInstance = nullptr;
     AIKIDO_LOG_INFO("Aikido Request Processor unloaded!\n");
 }
 

@@ -58,22 +58,28 @@ func Init(instPtr unsafe.Pointer, callback CallbackFunction) bool {
 		return false
 	}
 
-	tid := inst.GetThreadID()
-
-	globals.ContextInstances.Store(tid, instPtr)
+	inst.SetContextInstance(instPtr)
 
 	ctx := &RequestContextData{
-		inst:     inst, // Store instance in context for fast access
+		inst:     inst,
 		Callback: callback,
 	}
-	globals.ContextData.Store(tid, ctx)
+	inst.SetRequestContext(ctx)
+
+	inst.SetEventContext(&EventContextData{})
 
 	return true
 }
 
 func GetContext(inst *instance.RequestProcessorInstance) *RequestContextData {
-	tid := inst.GetThreadID()
-	return globals.GetFromThreadStorage[*RequestContextData](tid, &globals.ContextData)
+	if inst == nil {
+		return nil
+	}
+	ctx := inst.GetRequestContext()
+	if ctx == nil {
+		return nil
+	}
+	return ctx.(*RequestContextData)
 }
 
 func (ctx *RequestContextData) GetInstance() *instance.RequestProcessorInstance {

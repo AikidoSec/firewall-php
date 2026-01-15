@@ -3,7 +3,6 @@ package context
 // #include "../../API.h"
 import "C"
 import (
-	"main/globals"
 	"main/instance"
 	"main/utils"
 )
@@ -21,18 +20,19 @@ func getEventContext(inst *instance.RequestProcessorInstance) *EventContextData 
 	if inst == nil {
 		return nil
 	}
-	tid := inst.GetThreadID()
-	// Create new event context if it doesn't exist
-	newCtx := &EventContextData{}
-	return globals.LoadOrStoreInThreadStorage(tid, newCtx, &globals.EventContextData)
+
+	ctx := inst.GetEventContext()
+	if ctx == nil {
+		return nil
+	}
+	return ctx.(*EventContextData)
 }
 
 func ResetEventContext(inst *instance.RequestProcessorInstance) bool {
 	if inst == nil {
 		return false
 	}
-	tid := inst.GetThreadID()
-	globals.StoreInThreadStorage(tid, &EventContextData{}, &globals.EventContextData)
+	inst.SetEventContext(&EventContextData{})
 	return true
 }
 

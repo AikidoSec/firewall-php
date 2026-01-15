@@ -19,6 +19,7 @@ class RequestProcessor {
     void* libHandle = nullptr;
     void* requestProcessorInstance = nullptr; 
     uint64_t numberOfRequests = 0;
+    uint64_t threadId = 0;
     
     // Function pointers to Go-exported functions
     CreateInstanceFn createInstanceFn = nullptr;
