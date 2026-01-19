@@ -21,7 +21,6 @@ class RequestProcessor {
     uint64_t numberOfRequests = 0;
     uint64_t threadId = 0;
     
-    // Function pointers to Go-exported functions
     CreateInstanceFn createInstanceFn = nullptr;
     DestroyInstanceFn destroyInstanceFn = nullptr;
     RequestProcessorInitFn requestProcessorInitFn = nullptr;

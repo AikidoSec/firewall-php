@@ -35,11 +35,6 @@ func GetAgentInfo(server *ServerData) AgentInfo {
 }
 
 func ResetHeartbeatTicker(server *ServerData) {
-	// HeartbeatTicker is created on first request, so it may be nil during initial config fetch
-	if server.PollingData.HeartbeatTicker == nil {
-		return
-	}
-
 	if !server.CloudConfig.ReceivedAnyStats {
 		log.Info(server.Logger, "Resetting HeartbeatTicker to 1m!")
 		server.PollingData.HeartbeatTicker.Reset(1 * time.Minute)

@@ -22,7 +22,7 @@ func OnRequestShutdownReporting(params RequestShutdownParams) {
 	}
 
 	log.InfoWithThreadID(params.ThreadID, "[RSHUTDOWN] Got request metadata: ", params.Method, " ", params.Route, " ", params.StatusCode)
-	// Only detect web scanner activity for non-bypassed IPs
+
 	if !params.IsIpBypassed {
 		params.IsWebScanner = webscanner.IsWebScanner(params.Method, params.Route, params.QueryParsed)
 	}

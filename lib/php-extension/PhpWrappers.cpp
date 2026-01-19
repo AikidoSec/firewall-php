@@ -60,7 +60,6 @@ bool CallPhpFunctionWithOneParam(std::string function_name, std::string first_pa
 
     bool ret = CallPhpFunction(function_name, 1, _params, return_value, object);
 
-    // Clean up the zval properly - this will handle the string refcount
     zval_dtor(&_params[0]);
 
     return ret;

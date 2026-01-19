@@ -22,7 +22,6 @@ func AdvanceRateLimitingQueues(server *ServerData) {
 	}
 }
 
-// StartRateLimitingTicker starts the rate limiting ticker
 func StartRateLimitingTicker(server *ServerData) {
 	utils.StartPollingRoutine(server.PollingData.RateLimitingChannel, server.PollingData.RateLimitingTicker, AdvanceRateLimitingQueues, server)
 }

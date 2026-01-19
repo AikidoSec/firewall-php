@@ -13,16 +13,8 @@ import (
 
 func UpdateToken(inst *instance.RequestProcessorInstance, token string) bool {
 	server := globals.GetServer(token)
-	if server == nil {
-		log.Debugf(inst, "Server not found for token \"AIK_RUNTIME_***%s\"", utils.AnonymizeToken(token))
-		return false
-	}
-
 	if token == inst.GetCurrentToken() {
-		if inst.GetCurrentServer() == nil {
-			inst.SetCurrentServer(server)
-		}
-		log.Debugf(inst, "Token is the same as previous one, skipping config reload...")
+		log.Debugf(inst, "Server not found for token \"AIK_RUNTIME_***%s\"", utils.AnonymizeToken(token))
 		return false
 	}
 

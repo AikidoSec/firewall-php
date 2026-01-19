@@ -23,7 +23,6 @@ type RequestProcessorInstance struct {
 	isZTS bool
 }
 
-// NewRequestProcessorInstance creates an instance. Pass isZTS=true for FrankenPHP.
 func NewRequestProcessorInstance(threadID uint64, isZTS bool) *RequestProcessorInstance {
 	return &RequestProcessorInstance{
 		CurrentToken:  "",

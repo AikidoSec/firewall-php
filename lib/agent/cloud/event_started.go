@@ -11,7 +11,6 @@ func SendStartEvent(server *ServerData) {
 	// In multi-worker mode (e.g., frankenphp-worker), ensure only one worker sends the started event
 	// Use atomic compare-and-swap to guarantee exactly-once semantics
 	if !atomic.CompareAndSwapUint32(&server.SentStartedEvent, 0, 1) {
-		// Another worker already sent the started event
 		return
 	}
 

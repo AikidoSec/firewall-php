@@ -12,8 +12,6 @@ func IsBlockedOutboundDomain(hostname string) bool {
 	return IsBlockedOutboundDomainWithInst(nil, hostname)
 }
 
-// IsBlockedOutboundDomainWithInst checks if an outbound request to a hostname should be blocked
-// based on the cloud configuration for blocked/allowed domains
 func IsBlockedOutboundDomainWithInst(inst *instance.RequestProcessorInstance, hostname string) bool {
 	var server *ServerData
 	if inst != nil {

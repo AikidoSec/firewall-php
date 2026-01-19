@@ -48,7 +48,6 @@ func OnPreOutgoingRequest(inst *instance.RequestProcessorInstance) string {
 	}
 
 	log.Info(inst, "[BEFORE] Got domain: ", hostname)
-	//TODO: check if domain is blacklisted
 	return ""
 }
 

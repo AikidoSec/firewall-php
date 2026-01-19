@@ -181,7 +181,6 @@ func ContextSetEndpointConfig(inst *instance.RequestProcessorInstance) {
 		return
 	}
 
-	// Per-thread isolation via sync.Map prevents context bleeding
 	server := c.inst.GetCurrentServer()
 	if server == nil {
 		return
