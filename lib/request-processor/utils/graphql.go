@@ -37,12 +37,14 @@ func IsGraphQLOverHTTP(
 	return false
 }
 
-// isGraphQLRoute checks if the URL ends with /graphql
+// isGraphQLRoute checks if the URL path contains graphql
+// Matches common patterns like /graphql, /api/graphql, /graphql/api, etc.
 func isGraphQLRoute(url string) bool {
 	if url == "" {
 		return false
 	}
-	return strings.HasSuffix(url, "/graphql")
+	urlLower := strings.ToLower(url)
+	return strings.Contains(urlLower, "/graphql") || strings.Contains(urlLower, "graphql/")
 }
 
 // isJSONContentType checks if the content type is JSON

@@ -207,11 +207,21 @@ func TestExtractTopLevelFields(t *testing.T) {
 }
 
 func TestIsGraphQLRoute(t *testing.T) {
+	// Standard patterns
 	assert.True(t, isGraphQLRoute("/graphql"))
 	assert.True(t, isGraphQLRoute("/api/graphql"))
 	assert.True(t, isGraphQLRoute("/v1/graphql"))
+
+	// GraphQL in the middle of path
+	assert.True(t, isGraphQLRoute("/graphql/api"))
+	assert.True(t, isGraphQLRoute("/index.php?p=admin/actions/graphql/api"))
+
+	// Case insensitive
+	assert.True(t, isGraphQLRoute("/GraphQL"))
+	assert.True(t, isGraphQLRoute("/api/GRAPHQL"))
+
+	// Should NOT match
 	assert.False(t, isGraphQLRoute("/api/users"))
-	assert.False(t, isGraphQLRoute("/graphql/schema"))
 	assert.False(t, isGraphQLRoute(""))
 }
 

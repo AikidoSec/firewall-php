@@ -4,7 +4,7 @@ Test SSRF detection in GraphQL with variables containing private IP
 --ENV--
 AIKIDO_LOG_LEVEL=DEBUG
 AIKIDO_BLOCK=1
-REQUEST_URI=/graphql
+REQUEST_URI=/index.php?p=admin/actions/graphql/api
 HTTP_HOST=test.local
 REQUEST_METHOD=POST
 
