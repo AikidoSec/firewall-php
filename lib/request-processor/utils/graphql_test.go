@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -222,4 +223,37 @@ func TestIsJSONContentType(t *testing.T) {
 	assert.False(t, isJSONContentType("text/plain"))
 	assert.False(t, isJSONContentType("application/xml"))
 	assert.False(t, isJSONContentType(""))
+}
+
+func TestExtractStringValuesFromDocument_DeeplyNested(t *testing.T) {
+	// Test with a deeply nested query to ensure recursion limit works
+	// Without a limit, extremely nested queries could cause stack overflow
+	query := `{ user(id: "level0") {`
+
+	// Add many nested levels (well beyond what's reasonable)
+	for i := 1; i <= 150; i++ {
+		query += ` friends { user(id: "level` + strconv.Itoa(i) + `") {`
+	}
+
+	// Close with a field selection
+	query += ` id`
+
+	// Close all braces
+	for i := 0; i <= 150; i++ {
+		query += ` }}`
+	}
+
+	// Should not crash - the recursion limit protects against stack overflow
+	inputs := extractStringValuesFromDocument(query)
+
+	// Should extract values from at least the first levels before hitting the limit
+	assert.NotEmpty(t, inputs, "Should extract values from nested query")
+	assert.Contains(t, inputs, "level0", "Should extract value from first level")
+	assert.Contains(t, inputs, "level10", "Should extract value from early levels")
+
+	// Should NOT extract all 150 levels - the recursion limit should stop it
+	assert.Less(t, len(inputs), 150, "Recursion limit should prevent extracting all levels")
+
+	// But should extract a reasonable number before hitting the limit
+	assert.Greater(t, len(inputs), 10, "Should extract values before hitting limit")
 }

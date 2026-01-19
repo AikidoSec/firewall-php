@@ -181,46 +181,58 @@ func extractStringValuesFromDocument(queryString string) []string {
 	}
 
 	// Recursively visit all nodes in the AST and extract string values
-	visitNode(doc, &inputs)
+	// Start with depth 0
+	visitNode(doc, &inputs, 0)
 
 	return inputs
 }
 
+const maxGraphQLRecursionDepth = 100
+
 // visitNode recursively visits AST nodes and extracts string values
-func visitNode(node interface{}, inputs *[]string) {
+// depth tracking prevents stack overflow from malicious deeply nested queries
+func visitNode(node interface{}, inputs *[]string, depth int) {
 	if node == nil {
 		return
 	}
 
+	// Prevent excessive recursion
+	if depth > maxGraphQLRecursionDepth {
+		log.Warnf("GraphQL query exceeds maximum recursion depth of %d", maxGraphQLRecursionDepth)
+		return
+	}
+
+	nextDepth := depth + 1
+
 	switch n := node.(type) {
 	case *ast.Document:
 		for _, def := range n.Definitions {
-			visitNode(def, inputs)
+			visitNode(def, inputs, nextDepth)
 		}
 	case *ast.OperationDefinition:
 		if n.SelectionSet != nil {
-			visitNode(n.SelectionSet, inputs)
+			visitNode(n.SelectionSet, inputs, nextDepth)
 		}
 		for _, varDef := range n.VariableDefinitions {
-			visitNode(varDef, inputs)
+			visitNode(varDef, inputs, nextDepth)
 		}
 	case *ast.VariableDefinition:
 		if n.DefaultValue != nil {
-			visitNode(n.DefaultValue, inputs)
+			visitNode(n.DefaultValue, inputs, nextDepth)
 		}
 	case *ast.SelectionSet:
 		for _, sel := range n.Selections {
-			visitNode(sel, inputs)
+			visitNode(sel, inputs, nextDepth)
 		}
 	case *ast.Field:
 		for _, arg := range n.Arguments {
-			visitNode(arg, inputs)
+			visitNode(arg, inputs, nextDepth)
 		}
 		if n.SelectionSet != nil {
-			visitNode(n.SelectionSet, inputs)
+			visitNode(n.SelectionSet, inputs, nextDepth)
 		}
 	case *ast.Argument:
-		visitNode(n.Value, inputs)
+		visitNode(n.Value, inputs, nextDepth)
 	case *ast.StringValue:
 		*inputs = append(*inputs, n.Value)
 	case *ast.IntValue:
@@ -233,23 +245,23 @@ func visitNode(node interface{}, inputs *[]string) {
 		// Skip enum values
 	case *ast.ListValue:
 		for _, val := range n.Values {
-			visitNode(val, inputs)
+			visitNode(val, inputs, nextDepth)
 		}
 	case *ast.ObjectValue:
 		for _, field := range n.Fields {
-			visitNode(field, inputs)
+			visitNode(field, inputs, nextDepth)
 		}
 	case *ast.ObjectField:
-		visitNode(n.Value, inputs)
+		visitNode(n.Value, inputs, nextDepth)
 	case *ast.Variable:
 		// Skip variables (they are handled separately)
 	case *ast.FragmentDefinition:
 		if n.SelectionSet != nil {
-			visitNode(n.SelectionSet, inputs)
+			visitNode(n.SelectionSet, inputs, nextDepth)
 		}
 	case *ast.InlineFragment:
 		if n.SelectionSet != nil {
-			visitNode(n.SelectionSet, inputs)
+			visitNode(n.SelectionSet, inputs, nextDepth)
 		}
 	case *ast.FragmentSpread:
 		// Skip fragment spreads
@@ -317,4 +329,3 @@ func ExtractTopLevelFields(queryString string, operationName string) (operationT
 
 	return operationType, fields
 }
-
