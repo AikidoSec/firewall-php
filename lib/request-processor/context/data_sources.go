@@ -11,4 +11,5 @@ var SOURCES = []Source{
 	{"headers", GetHeadersParsedFlattened},
 	{"cookies", GetCookiesParsedFlattened},
 	{"routeParams", GetRouteParamsParsedFlattened},
+	{"graphql", GetGraphQLParsedFlattened},
 }

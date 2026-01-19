@@ -8,6 +8,7 @@ import (
 	"main/log"
 	"main/utils"
 	"strconv"
+	"strings"
 )
 
 /*
@@ -247,4 +248,48 @@ func ContextSetIsEndpointIpAllowed() {
 
 func ContextSetIsEndpointRateLimited() {
 	Context.IsEndpointRateLimited = true
+}
+
+func ContextSetGraphQL() {
+	if Context.GraphQLParsedFlattened != nil {
+		return
+	}
+
+	// Check if this is a GraphQL request
+	method := GetMethod()
+	url := GetUrl()
+
+	// Get content-type from headers
+	var contentType string
+	headers := GetHeadersParsed()
+	contentType, ok := headers["content_type"].(string)
+	if !ok {
+		isGraphQL := false
+		Context.IsGraphQLRequest = &isGraphQL
+		emptyMap := make(map[string]string)
+		Context.GraphQLParsedFlattened = &emptyMap
+		return
+	}
+	contentType = strings.ToLower(strings.TrimSpace(contentType))
+
+	body := GetBodyParsed()
+	query := GetQueryParsed()
+
+	isGraphQL := utils.IsGraphQLOverHTTP(method, url, contentType, body, query)
+	Context.IsGraphQLRequest = &isGraphQL
+
+	if !isGraphQL {
+		// Not a GraphQL request, return empty map
+		emptyMap := make(map[string]string)
+		Context.GraphQLParsedFlattened = &emptyMap
+		return
+	}
+
+	log.Debug("Detected GraphQL request")
+
+	// Extract GraphQL inputs
+	graphqlInputs := utils.ExtractInputsFromGraphQL(body, query, method)
+	Context.GraphQLParsedFlattened = &graphqlInputs
+
+	log.Debugf("Extracted %d GraphQL inputs", len(graphqlInputs))
 }
