@@ -23,8 +23,8 @@ ZEND_FUNCTION(register_param_matcher) {
         RETURN_BOOL(false);
     }
 
-    eventCacheStack.Current().paramMatcherParam = std::string(param, paramLength);
-    eventCacheStack.Current().paramMatcherRegex = std::string(regex, regexLength);
+    eventCacheStack.Top().paramMatcherParam = std::string(param, paramLength);
+    eventCacheStack.Top().paramMatcherRegex = std::string(regex, regexLength);
 
     try {
         std::string outputEvent;
@@ -39,6 +39,6 @@ ZEND_FUNCTION(register_param_matcher) {
         RETURN_BOOL(false);
     }
 
-    AIKIDO_LOG_INFO("Registered param matcher %s -> %s\n", eventCacheStack.Current().paramMatcherParam.c_str(), eventCacheStack.Current().paramMatcherRegex.c_str());
+    AIKIDO_LOG_INFO("Registered param matcher %s -> %s\n", eventCacheStack.Top().paramMatcherParam.c_str(), eventCacheStack.Top().paramMatcherRegex.c_str());
     RETURN_BOOL(true);
 }

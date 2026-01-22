@@ -90,7 +90,7 @@ ZEND_NAMED_FUNCTION(aikido_generic_handler) {
             return;
         }
 
-        eventCacheStack.Current().functionName = scope_name;
+        eventCacheStack.Top().functionName = scope_name;
         sink = scope_name;
 
         AIKIDO_LOG_DEBUG("Calling handler for \"%s\"!\n", scope_name.c_str());

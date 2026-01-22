@@ -46,7 +46,7 @@ class EventCacheStack {
    public:
     void Push();
     void Pop();
-    EventCache& Current();
+    EventCache& Top();
     bool Empty();
 };
 

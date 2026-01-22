@@ -21,7 +21,7 @@ void EventCacheStack::Pop() {
     }
 }
 
-EventCache& EventCacheStack::Current() {
+EventCache& EventCacheStack::Top() {
     return contexts.top();
 }
 
