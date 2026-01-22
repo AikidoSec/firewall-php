@@ -184,3 +184,93 @@ return Application::configure(basePath: dirname(__DIR__))
 
 // ...
 ```
+
+## Symfony
+
+1. Create an EventSubscriber in `src/EventSubscriber/AikidoEventSubscriber.php`:
+
+```php
+<?php
+
+namespace App\EventSubscriber;
+
+use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Symfony\Component\HttpKernel\Event\RequestEvent;
+use Symfony\Component\HttpKernel\KernelEvents;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Bundle\SecurityBundle\Security;
+
+class AikidoEventSubscriber implements EventSubscriberInterface
+{
+    public function __construct(
+        private readonly Security $security
+    ) {
+    }
+
+    public static function getSubscribedEvents(): array
+    {
+        return [
+            KernelEvents::REQUEST => ['onKernelRequest', 10],
+        ];
+    }
+
+    public function onKernelRequest(RequestEvent $event): void
+    {
+        // Only handle the main request
+        if (!$event->isMainRequest()) {
+            return;
+        }
+
+        // Check if Aikido extension is loaded
+        if (!extension_loaded('aikido')) {
+            return;
+        }
+
+        // You can pass in the Aikido token here
+        // \aikido\set_token("your token here");
+
+        // Get the authenticated user from Symfony's Security component
+        $user = $this->security->getUser();
+
+        // If a user is authenticated, set the user in Aikido Zen context
+        if ($user) {
+            $userId = $user->getUserIdentifier();
+            \aikido\set_user($userId);
+            // If you want to set the user's name in Aikido Zen context, you can change the above to:
+            // \aikido\set_user($userId, $user->getUsername());
+        }
+
+        // Check blocking decision from Aikido
+        $decision = \aikido\should_block_request();
+
+        if ($decision->block) {
+            if ($decision->type == "blocked") {
+                if ($decision->trigger == "user") {
+                    $event->setResponse(new JsonResponse(
+                        ['message' => 'Your user is blocked!'],
+                        403
+                    ));
+                    return;
+                }
+            }
+            else if ($decision->type == "ratelimited") {
+                $message = '';
+                if ($decision->trigger == "user") {
+                    $message = 'Your user exceeded the rate limit for this endpoint!';
+                }
+                else if ($decision->trigger == "ip") {
+                    $message = "Your IP ({$decision->ip}) exceeded the rate limit for this endpoint!";
+                }
+                else if ($decision->trigger == "group") {
+                    $message = "Your group exceeded the rate limit for this endpoint!";
+                }
+                
+                $event->setResponse(new JsonResponse(
+                    ['message' => $message],
+                    429
+                ));
+                return;
+            }
+        }
+    }
+}
