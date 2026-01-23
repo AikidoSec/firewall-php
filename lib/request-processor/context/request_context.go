@@ -43,7 +43,6 @@ type RequestContextData struct {
 	RouteParamsParsed             *map[string]interface{}
 	RouteParamsParsedFlattened    *map[string]string
 	GraphQLParsedFlattened        *map[string]string
-	IsGraphQLRequest              *bool
 }
 
 var Context RequestContextData
@@ -145,10 +144,6 @@ func GetHeadersParsedFlattened() map[string]string {
 
 func GetGraphQLParsedFlattened() map[string]string {
 	return GetFromCache(ContextSetGraphQL, &Context.GraphQLParsedFlattened)
-}
-
-func IsGraphQLRequest() bool {
-	return GetFromCache(ContextSetGraphQL, &Context.IsGraphQLRequest)
 }
 
 func GetUserAgent() string {
