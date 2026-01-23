@@ -255,6 +255,10 @@ func ContextSetGraphQL() {
 		return
 	}
 
+	// Default to not a GraphQL request with empty inputs
+	isGraphQL := false
+	emptyMap := make(map[string]string)
+
 	// Check if this is a GraphQL request
 	method := GetMethod()
 	url := GetUrl()
@@ -263,33 +267,27 @@ func ContextSetGraphQL() {
 	var contentType string
 	headers := GetHeadersParsed()
 	contentType, ok := headers["content_type"].(string)
-	if !ok {
-		isGraphQL := false
-		Context.IsGraphQLRequest = &isGraphQL
-		emptyMap := make(map[string]string)
-		Context.GraphQLParsedFlattened = &emptyMap
-		return
+	if ok {
+		contentType = strings.ToLower(strings.TrimSpace(contentType))
+		body := GetBodyParsed()
+		query := GetQueryParsed()
+
+		isGraphQL = utils.IsGraphQLOverHTTP(method, url, contentType, body, query)
+
+		if isGraphQL {
+			log.Debug("Detected GraphQL request")
+
+			// Extract GraphQL inputs
+			graphqlInputs := utils.ExtractInputsFromGraphQL(body, query, method)
+			Context.GraphQLParsedFlattened = &graphqlInputs
+			Context.IsGraphQLRequest = &isGraphQL
+
+			log.Debugf("Extracted %d GraphQL inputs", len(graphqlInputs))
+			return
+		}
 	}
-	contentType = strings.ToLower(strings.TrimSpace(contentType))
 
-	body := GetBodyParsed()
-	query := GetQueryParsed()
-
-	isGraphQL := utils.IsGraphQLOverHTTP(method, url, contentType, body, query)
+	// Not a GraphQL request or missing content-type
 	Context.IsGraphQLRequest = &isGraphQL
-
-	if !isGraphQL {
-		// Not a GraphQL request, return empty map
-		emptyMap := make(map[string]string)
-		Context.GraphQLParsedFlattened = &emptyMap
-		return
-	}
-
-	log.Debug("Detected GraphQL request")
-
-	// Extract GraphQL inputs
-	graphqlInputs := utils.ExtractInputsFromGraphQL(body, query, method)
-	Context.GraphQLParsedFlattened = &graphqlInputs
-
-	log.Debugf("Extracted %d GraphQL inputs", len(graphqlInputs))
+	Context.GraphQLParsedFlattened = &emptyMap
 }
