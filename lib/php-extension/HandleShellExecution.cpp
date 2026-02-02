@@ -1,7 +1,7 @@
 #include "Includes.h"
 
 void helper_handle_pre_shell_execution(std::string cmd, EVENT_ID &eventId) {
-    eventCache.cmd = cmd;
+    eventCacheStack.Top().cmd = cmd;
     eventId = EVENT_PRE_SHELL_EXECUTED;
 }
 

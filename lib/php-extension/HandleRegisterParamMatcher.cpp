@@ -2,6 +2,7 @@
 
 ZEND_FUNCTION(register_param_matcher) {
     ScopedTimer scopedTimer("register_param_matcher", "aikido_op");
+    ScopedEventContext scopedContext; // Push context for eventCacheStack
 
     if (IsAikidoDisabledOrBypassed()) {
         RETURN_BOOL(false);
@@ -22,8 +23,8 @@ ZEND_FUNCTION(register_param_matcher) {
         RETURN_BOOL(false);
     }
 
-    eventCache.paramMatcherParam = std::string(param, paramLength);
-    eventCache.paramMatcherRegex = std::string(regex, regexLength);
+    eventCacheStack.Top().paramMatcherParam = std::string(param, paramLength);
+    eventCacheStack.Top().paramMatcherRegex = std::string(regex, regexLength);
 
     try {
         std::string outputEvent;
@@ -38,6 +39,6 @@ ZEND_FUNCTION(register_param_matcher) {
         RETURN_BOOL(false);
     }
 
-    AIKIDO_LOG_INFO("Registered param matcher %s -> %s\n", eventCache.paramMatcherParam.c_str(), eventCache.paramMatcherRegex.c_str());
+    AIKIDO_LOG_INFO("Registered param matcher %s -> %s\n", eventCacheStack.Top().paramMatcherParam.c_str(), eventCacheStack.Top().paramMatcherRegex.c_str());
     RETURN_BOOL(true);
 }

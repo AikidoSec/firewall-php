@@ -13,12 +13,12 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_curl_exec) {
 #endif
     ZEND_PARSE_PARAMETERS_END();
 
-    eventCache.outgoingRequestUrl = CallPhpFunctionCurlGetInfo(curlHandle, CURLINFO_EFFECTIVE_URL);
-    eventCache.outgoingRequestPort = CallPhpFunctionCurlGetInfo(curlHandle, CURLINFO_PRIMARY_PORT);
+    eventCacheStack.Top().outgoingRequestUrl = CallPhpFunctionCurlGetInfo(curlHandle, CURLINFO_EFFECTIVE_URL);
+    eventCacheStack.Top().outgoingRequestPort = CallPhpFunctionCurlGetInfo(curlHandle, CURLINFO_PRIMARY_PORT);
 
     // if requestCache.outgoingRequestUrl is not empty, we check if it's a redirect
     if (!requestCache.outgoingRequestUrl.empty()) {
-        json outgoingRequestUrlJson = CallPhpFunctionParseUrl(eventCache.outgoingRequestUrl);
+        json outgoingRequestUrlJson = CallPhpFunctionParseUrl(eventCacheStack.Top().outgoingRequestUrl);
         json outgoingRequestRedirectUrlJson = CallPhpFunctionParseUrl(requestCache.outgoingRequestRedirectUrl);
 
         // if the host and port are the same, we use the initial URL, otherwise we use the effective URL
@@ -26,7 +26,7 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_curl_exec) {
             outgoingRequestUrlJson["host"] == outgoingRequestRedirectUrlJson["host"] && 
             outgoingRequestUrlJson["port"] == outgoingRequestRedirectUrlJson["port"]) {
 
-            eventCache.outgoingRequestUrl = requestCache.outgoingRequestUrl;
+            eventCacheStack.Top().outgoingRequestUrl = requestCache.outgoingRequestUrl;
         } else {
             // if previous outgoingRequestRedirectUrl it's different from outgoingRequestUrl it means that it's a new request 
             // so we reset the outgoingRequestUrl
@@ -34,10 +34,10 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_curl_exec) {
         }
     }
 
-    if (eventCache.outgoingRequestUrl.empty()) return;
+    if (eventCacheStack.Top().outgoingRequestUrl.empty()) return;
 
     eventId = EVENT_PRE_OUTGOING_REQUEST;
-    eventCache.moduleName = "curl";
+    eventCacheStack.Top().moduleName = "curl";
 }
 
 AIKIDO_HANDLER_FUNCTION(handle_post_curl_exec) {
@@ -56,10 +56,10 @@ AIKIDO_HANDLER_FUNCTION(handle_post_curl_exec) {
 
 
     eventId = EVENT_POST_OUTGOING_REQUEST;
-    eventCache.moduleName = "curl";
-    eventCache.outgoingRequestEffectiveUrl = CallPhpFunctionCurlGetInfo(curlHandle, CURLINFO_EFFECTIVE_URL);
-    eventCache.outgoingRequestEffectiveUrlPort = CallPhpFunctionCurlGetInfo(curlHandle, CURLINFO_PRIMARY_PORT);
-    eventCache.outgoingRequestResolvedIp = CallPhpFunctionCurlGetInfo(curlHandle, CURLINFO_PRIMARY_IP);
+    eventCacheStack.Top().moduleName = "curl";
+    eventCacheStack.Top().outgoingRequestEffectiveUrl = CallPhpFunctionCurlGetInfo(curlHandle, CURLINFO_EFFECTIVE_URL);
+    eventCacheStack.Top().outgoingRequestEffectiveUrlPort = CallPhpFunctionCurlGetInfo(curlHandle, CURLINFO_PRIMARY_PORT);
+    eventCacheStack.Top().outgoingRequestResolvedIp = CallPhpFunctionCurlGetInfo(curlHandle, CURLINFO_PRIMARY_IP);
     std::string outgoingRequestResponseCode = CallPhpFunctionCurlGetInfo(curlHandle, CURLINFO_RESPONSE_CODE);
     
     // if outgoingRequestResponseCode starts with 3, it's a redirect 
@@ -68,7 +68,7 @@ AIKIDO_HANDLER_FUNCTION(handle_post_curl_exec) {
   
         // if it's the first redirect
         if (requestCache.outgoingRequestUrl.empty()) {
-            requestCache.outgoingRequestUrl = eventCache.outgoingRequestEffectiveUrl;
+            requestCache.outgoingRequestUrl = eventCacheStack.Top().outgoingRequestEffectiveUrl;
         }
     } 
     else {
