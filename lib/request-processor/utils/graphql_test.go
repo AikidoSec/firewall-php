@@ -87,23 +87,6 @@ func TestExtractInputsFromGraphQL_POST(t *testing.T) {
 	assert.Contains(t, result, "123")
 	assert.Contains(t, result, "John")
 
-	// Test with variables
-	bodyWithVariables := map[string]interface{}{
-		"query": `query GetUser($id: ID!) { user(id: $id) { id name } }`,
-		"variables": map[string]interface{}{
-			"id":    "456",
-			"name":  "Jane",
-			"age":   30, // Non-string should be handled
-			"email": "jane@example.com",
-		},
-	}
-	result = ExtractInputsFromGraphQL(bodyWithVariables, nil, "POST")
-
-	// Should extract string variables
-	assert.Contains(t, result, "456")
-	assert.Contains(t, result, "Jane")
-	assert.Contains(t, result, "jane@example.com")
-
 	//  "query": "mutation { uploadFile(url: \"http://localhost/secrets\") { success } }",
 	bodyWithMutation := map[string]interface{}{
 		"query": "mutation { uploadFile(url: \"http://localhost/secrets\") { success } }",
@@ -113,13 +96,10 @@ func TestExtractInputsFromGraphQL_POST(t *testing.T) {
 
 	// Test with variables
 	bodyWithVariablesMutation := map[string]interface{}{
-		"query": "mutation { uploadFile(url: \"http://localhost/secrets\") { success } }",
-		"variables": map[string]interface{}{
-			"url": "http://localhost/secrets",
-		},
+		"query": "mutation { uploadFile(url: \"http://localhost2/secrets\") { success } }",
 	}
 	result = ExtractInputsFromGraphQL(bodyWithVariablesMutation, nil, "POST")
-	assert.Contains(t, result, "http://localhost/secrets")
+	assert.Contains(t, result, "http://localhost2/secrets")
 }
 
 func TestExtractInputsFromGraphQL_GET(t *testing.T) {

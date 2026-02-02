@@ -9,10 +9,10 @@ import (
 	"github.com/graphql-go/graphql/language/ast"
 	"github.com/graphql-go/graphql/language/parser"
 	"github.com/graphql-go/graphql/language/source"
+	"github.com/graphql-go/graphql/language/visitor"
 )
 
 // IsGraphQLOverHTTP checks if the current request is a GraphQL over HTTP request
-// Similar to firewall-node/library/sources/graphql/isGraphQLOverHTTP.ts
 func IsGraphQLOverHTTP(
 	method string,
 	url string,
@@ -112,7 +112,6 @@ func looksLikeGraphQLQuery(query string) bool {
 // This includes:
 // - String values from the GraphQL document AST
 // - Variable values (strings only)
-// Similar to firewall-node/library/sources/graphql/extractInputsFromDocument.ts
 func ExtractInputsFromGraphQL(
 	body map[string]interface{},
 	query map[string]interface{},
@@ -126,11 +125,7 @@ func ExtractInputsFromGraphQL(
 	// Extract query and variables based on method
 	if method == "POST" && body != nil {
 		queryString = getQueryString(body)
-		if varsField, exists := body["variables"]; exists {
-			if varsMap, ok := varsField.(map[string]interface{}); ok {
-				variables = varsMap
-			}
-		}
+		// We don't extract variables from body, because they are already in sources (body.variables)
 	} else if method == "GET" && query != nil {
 		queryString = getQueryStringFromQueryParams(query)
 		if varsField, exists := query["variables"]; exists {
@@ -165,6 +160,8 @@ func ExtractInputsFromGraphQL(
 	return result
 }
 
+const maxGraphQLRecursionDepth = 200
+
 // extractStringValuesFromDocument parses a GraphQL document and extracts all string values
 // This is similar to the Node.js implementation using visit()
 func extractStringValuesFromDocument(queryString string) []string {
@@ -184,95 +181,34 @@ func extractStringValuesFromDocument(queryString string) []string {
 
 	// Recursively visit all nodes in the AST and extract string values
 	// Start with depth 0
-	visitNode(doc, &inputs, 0)
+	//	visitNode(doc, &inputs, 0)
+	// Walk AST and collect string values
+	// Walk AST with depth tracking
+	depth := 0
+	visitor.Visit(doc, &visitor.VisitorOptions{
+		Enter: func(p visitor.VisitFuncParams) (string, interface{}) {
+			depth++
+			if depth > maxGraphQLRecursionDepth {
+				return visitor.ActionSkip, nil
+			}
+
+			if node, ok := p.Node.(*ast.StringValue); ok {
+				inputs = append(inputs, node.Value)
+			}
+
+			return visitor.ActionNoChange, nil
+		},
+		Leave: func(p visitor.VisitFuncParams) (string, interface{}) {
+			depth--
+			return visitor.ActionNoChange, nil
+		},
+	}, nil)
 
 	return inputs
 }
 
-const maxGraphQLRecursionDepth = 100
-
-// visitNode recursively visits AST nodes and extracts string values
-// depth tracking prevents stack overflow from malicious deeply nested queries
-func visitNode(node interface{}, inputs *[]string, depth int) {
-	if node == nil {
-		return
-	}
-
-	// Prevent excessive recursion
-	if depth > maxGraphQLRecursionDepth {
-		log.Warnf("GraphQL query exceeds maximum recursion depth of %d", maxGraphQLRecursionDepth)
-		return
-	}
-
-	nextDepth := depth + 1
-
-	switch n := node.(type) {
-	case *ast.Document:
-		for _, def := range n.Definitions {
-			visitNode(def, inputs, nextDepth)
-		}
-	case *ast.OperationDefinition:
-		if n.SelectionSet != nil {
-			visitNode(n.SelectionSet, inputs, nextDepth)
-		}
-		for _, varDef := range n.VariableDefinitions {
-			visitNode(varDef, inputs, nextDepth)
-		}
-	case *ast.VariableDefinition:
-		if n.DefaultValue != nil {
-			visitNode(n.DefaultValue, inputs, nextDepth)
-		}
-	case *ast.SelectionSet:
-		for _, sel := range n.Selections {
-			visitNode(sel, inputs, nextDepth)
-		}
-	case *ast.Field:
-		for _, arg := range n.Arguments {
-			visitNode(arg, inputs, nextDepth)
-		}
-		if n.SelectionSet != nil {
-			visitNode(n.SelectionSet, inputs, nextDepth)
-		}
-	case *ast.Argument:
-		visitNode(n.Value, inputs, nextDepth)
-	case *ast.StringValue:
-		*inputs = append(*inputs, n.Value)
-	case *ast.IntValue:
-		// Skip int values
-	case *ast.FloatValue:
-		// Skip float values
-	case *ast.BooleanValue:
-		// Skip boolean values
-	case *ast.EnumValue:
-		// Skip enum values
-	case *ast.ListValue:
-		for _, val := range n.Values {
-			visitNode(val, inputs, nextDepth)
-		}
-	case *ast.ObjectValue:
-		for _, field := range n.Fields {
-			visitNode(field, inputs, nextDepth)
-		}
-	case *ast.ObjectField:
-		visitNode(n.Value, inputs, nextDepth)
-	case *ast.Variable:
-		// Skip variables (they are handled separately)
-	case *ast.FragmentDefinition:
-		if n.SelectionSet != nil {
-			visitNode(n.SelectionSet, inputs, nextDepth)
-		}
-	case *ast.InlineFragment:
-		if n.SelectionSet != nil {
-			visitNode(n.SelectionSet, inputs, nextDepth)
-		}
-	case *ast.FragmentSpread:
-		// Skip fragment spreads
-	}
-}
-
 // ExtractTopLevelFields extracts the top-level fields from a GraphQL document
 // Returns the operation type (query/mutation) and field names
-// Similar to firewall-node/library/sources/graphql/extractTopLevelFieldsFromDocument.ts
 func ExtractTopLevelFields(queryString string, operationName string) (operationType string, fields []string) {
 	if queryString == "" {
 		return "", nil
