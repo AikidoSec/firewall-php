@@ -24,11 +24,11 @@ func IsGraphQLOverHTTP(
 		return isGraphQLRoute(url) &&
 			isJSONContentType(contentType) &&
 			hasGraphQLQuery(body) &&
-			looksLikeGraphQLQuery(getQueryString(body))
+			looksLikeGraphQLQuery(extractQueryString(body))
 	}
 
 	if method == "GET" {
-		queryStr := getQueryStringFromQueryParams(query)
+		queryStr := extractQueryString(query)
 		return isGraphQLRoute(url) &&
 			queryStr != "" &&
 			looksLikeGraphQLQuery(queryStr)
@@ -70,28 +70,12 @@ func hasGraphQLQuery(body map[string]interface{}) bool {
 	return ok
 }
 
-// getQueryString extracts the query string from the body
-func getQueryString(body map[string]interface{}) string {
-	if body == nil {
+// extractQueryString extracts the query string from a map (body or query params)
+func extractQueryString(data map[string]interface{}) string {
+	if data == nil {
 		return ""
 	}
-	queryField, exists := body["query"]
-	if !exists {
-		return ""
-	}
-	queryStr, ok := queryField.(string)
-	if !ok {
-		return ""
-	}
-	return queryStr
-}
-
-// getQueryStringFromQueryParams extracts the query string from query parameters
-func getQueryStringFromQueryParams(query map[string]interface{}) string {
-	if query == nil {
-		return ""
-	}
-	queryField, exists := query["query"]
+	queryField, exists := data["query"]
 	if !exists {
 		return ""
 	}
@@ -124,10 +108,10 @@ func ExtractInputsFromGraphQL(
 
 	// Extract query and variables based on method
 	if method == "POST" && body != nil {
-		queryString = getQueryString(body)
+		queryString = extractQueryString(body)
 		// We don't extract variables from body, because they are already in sources (body.variables)
 	} else if method == "GET" && query != nil {
-		queryString = getQueryStringFromQueryParams(query)
+		queryString = extractQueryString(query)
 		if varsField, exists := query["variables"]; exists {
 			// Variables in GET requests might be JSON-encoded strings
 			if varsStr, ok := varsField.(string); ok {
@@ -181,7 +165,6 @@ func extractStringValuesFromDocument(queryString string) []string {
 
 	// Recursively visit all nodes in the AST and extract string values
 	// Start with depth 0
-	//	visitNode(doc, &inputs, 0)
 	// Walk AST and collect string values
 	// Walk AST with depth tracking
 	depth := 0

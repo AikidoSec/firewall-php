@@ -282,7 +282,6 @@ func ContextSetGraphQL() {
 		graphqlInputs := utils.ExtractInputsFromGraphQL(body, query, method)
 		Context.GraphQLParsedFlattened = &graphqlInputs
 
-		log.Debugf("Extracted %d GraphQL inputs", len(graphqlInputs))
 		return
 	}
 
