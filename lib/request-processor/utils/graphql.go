@@ -145,7 +145,7 @@ func ExtractInputsFromGraphQL(
 	if queryString != "" {
 		inputs := extractStringValuesFromDocument(queryString)
 		for _, input := range inputs {
-			result[input] = ".graphql.query"
+			result[input] = ".query"
 		}
 	}
 
@@ -153,7 +153,7 @@ func ExtractInputsFromGraphQL(
 	if variables != nil {
 		varInputs := helpers.ExtractStringsFromUserInput(variables, []helpers.PathPart{{Type: "object", Key: "graphql.variables"}}, 0)
 		for k, v := range varInputs {
-			result[k] = ".graphql.variables" + v
+			result[k] = ".variables" + v
 		}
 	}
 

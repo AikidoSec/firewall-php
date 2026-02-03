@@ -255,10 +255,8 @@ func ContextSetGraphQL() {
 		return
 	}
 
-	// Default to not a GraphQL request with empty inputs
 	Context.GraphQLParsedFlattened = &map[string]string{}
 
-	// Check if this is a GraphQL request
 	method := GetMethod()
 	url := GetUrl()
 
