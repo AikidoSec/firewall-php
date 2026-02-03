@@ -13,10 +13,7 @@ REQUEST_METHOD=POST
 Content-Type: application/json
 
 {
-  "query": "query GetUser($userId: String!) { user(id: $userId) { name } }",
-  "variables": {
-    "userId": "1' OR '1'='1"
-  }
+  "query": "query GetUser($userId: String!) { user(id: \"1' OR '1'='1\") { name } }"
 }
 
 --FILE--
@@ -30,10 +27,7 @@ try {
         name TEXT NOT NULL
     )");
 
-    $input = file_get_contents('php://input');
-    $data = json_decode($input, true);
-    
-    $userId = $data['variables']['userId'] ?? '';
+    $userId = "1' OR '1'='1";
     
     // Vulnerable SQL query
     $query = "SELECT * FROM users WHERE id = '" . $userId . "'";

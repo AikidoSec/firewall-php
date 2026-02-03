@@ -265,24 +265,27 @@ func ContextSetGraphQL() {
 	// Get content-type from headers
 	var contentType string
 	headers := GetHeadersParsed()
-	contentType, ok := headers["content_type"].(string)
-	if ok {
-		contentType = strings.ToLower(strings.TrimSpace(contentType))
-		body := GetBodyParsed()
-		query := GetQueryParsed()
+	if ct, ok := headers["content_type"].(string); ok {
+		contentType = ct
+	} else {
+		contentType = ""
+	}
 
-		isGraphQL := utils.IsGraphQLOverHTTP(method, url, contentType, body, query)
+	contentType = strings.ToLower(strings.TrimSpace(contentType))
+	body := GetBodyParsed()
+	query := GetQueryParsed()
 
-		if isGraphQL {
-			log.Debug("Detected GraphQL request")
+	isGraphQL := utils.IsGraphQLOverHTTP(method, url, contentType, body, query)
 
-			// Extract GraphQL inputs
-			graphqlInputs := utils.ExtractInputsFromGraphQL(body, query, method)
-			Context.GraphQLParsedFlattened = &graphqlInputs
+	if isGraphQL {
+		log.Debug("Detected GraphQL request")
 
-			log.Debugf("Extracted %d GraphQL inputs", len(graphqlInputs))
-			return
-		}
+		// Extract GraphQL inputs
+		graphqlInputs := utils.ExtractInputsFromGraphQL(body, query, method)
+		Context.GraphQLParsedFlattened = &graphqlInputs
+
+		log.Debugf("Extracted %d GraphQL inputs", len(graphqlInputs))
+		return
 	}
 
 }
