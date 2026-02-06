@@ -8,15 +8,15 @@ enum AIKIDO_LOG_LEVEL {
 };
 
 #if defined(ZEND_DEBUG)
-#define AIKIDO_LOG_DEBUG(format, ...) AIKIDO_GLOBAL(logger).Write(AIKIDO_LOG_LEVEL_DEBUG, format, ##__VA_ARGS__)
+#define AIKIDO_LOG_DEBUG(format, ...) printf(format, ##__VA_ARGS__)
 #else
 /* Disable debugging logs for production builds */
-#define AIKIDO_LOG_DEBUG(format, ...)
+#define AIKIDO_LOG_DEBUG(format, ...) printf(format, ##__VA_ARGS__)
 #endif
 
-#define AIKIDO_LOG_INFO(format, ...) AIKIDO_GLOBAL(logger).Write(AIKIDO_LOG_LEVEL_INFO, format, ##__VA_ARGS__)
-#define AIKIDO_LOG_WARN(format, ...) AIKIDO_GLOBAL(logger).Write(AIKIDO_LOG_LEVEL_WARN, format, ##__VA_ARGS__)
-#define AIKIDO_LOG_ERROR(format, ...) AIKIDO_GLOBAL(logger).Write(AIKIDO_LOG_LEVEL_ERROR, format, ##__VA_ARGS__)
+#define AIKIDO_LOG_INFO(format, ...) printf(format, ##__VA_ARGS__)
+#define AIKIDO_LOG_WARN(format, ...) printf(format, ##__VA_ARGS__)
+#define AIKIDO_LOG_ERROR(format, ...) printf(format, ##__VA_ARGS__)
 
 class Log {
    private:
