@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - zts_test
   pull_request:
     branches:
       - main
