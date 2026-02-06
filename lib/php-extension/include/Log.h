@@ -15,6 +15,7 @@ enum AIKIDO_LOG_LEVEL {
 #endif
 
 #define AIKIDO_LOG_INFO(format, ...) printf(format, ##__VA_ARGS__)
+
 #define AIKIDO_LOG_WARN(format, ...) printf(format, ##__VA_ARGS__)
 #define AIKIDO_LOG_ERROR(format, ...) printf(format, ##__VA_ARGS__)
 
