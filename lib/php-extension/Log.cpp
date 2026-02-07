@@ -28,23 +28,14 @@ void Log::Write(AIKIDO_LOG_LEVEL level, const char* format, ...) {
         return;
     }
 
-    FILE* logFile = stdout;
-    if (AIKIDO_GLOBAL(disk_logs)) {
-        logFile = this->logFile;
-    }
-
-    if (!this->logFile) {
-        return;
-    }
-
-    fprintf(logFile, "[AIKIDO][%s][%d][%lu][%s] ", ToString(level).c_str(), getpid(), GetThreadID(), GetTime().c_str());
+    printf("[AIKIDO][%s][%d][%lu][%s] ", ToString(level).c_str(), getpid(), GetThreadID(), GetTime().c_str());
 
     va_list args;
     va_start(args, format);
-    vfprintf(logFile, format, args);
+    vprintf(format, args);
     va_end(args);
 
-    fflush(logFile);
+    fflush(stdout);
 }
 
 std::string Log::ToString(AIKIDO_LOG_LEVEL level) {
