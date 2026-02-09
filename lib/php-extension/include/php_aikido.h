@@ -55,7 +55,7 @@ std::string token;
 std::string endpoint;
 std::string config_endpoint;
 RequestCache requestCache;
-EventCacheStack eventCacheStack
+EventCacheStack eventCacheStack;
 EventCache eventCache;
 Agent agent;
 Log logger;
