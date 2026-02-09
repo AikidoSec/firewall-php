@@ -15,6 +15,7 @@ GoSlice GoCreateSlice(const std::vector<int64_t>& v) {
     Returns empty string if stack is empty, otherwise returns the field value.
 */
 static inline std::string GetEventCacheField(std::string EventCache::*field) {
+    auto& eventCacheStack = AIKIDO_GLOBAL(eventCacheStack);
     return eventCacheStack.Empty() ? "" : eventCacheStack.Top().*field;
 }
 
