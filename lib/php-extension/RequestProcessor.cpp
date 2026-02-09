@@ -183,27 +183,20 @@ bool RequestProcessor::Init() {
 }
 
 bool RequestProcessor::RequestInit() {
-    AIKIDO_LOG_INFO(">>> RequestProcessor::RequestInit() called\n");
     std::string sapiName = sapi_module.name;
-    AIKIDO_LOG_INFO("SAPI name: %s\n", sapiName.c_str());
     if (sapiName == "frankenphp") {
-        AIKIDO_LOG_INFO("Detected FrankenPHP SAPI, checking FRANKENPHP_WORKER environment variable\n");
         if (GetEnvBool("FRANKENPHP_WORKER", false)) {
+            AIKIDO_GLOBAL(isWorkerMode) = true;
             AIKIDO_LOG_INFO("FrankenPHP worker warm-up request detected, skipping RequestInit\n");
             return true;
         }
-        AIKIDO_LOG_INFO("FRANKENPHP_WORKER not set or false, proceeding with initialization\n");
     }
 
-    AIKIDO_LOG_INFO("Calling Init()...\n");
     if (!this->Init()) {
         AIKIDO_LOG_ERROR("Failed to initialize the request processor: %s!\n", dlerror());
         return false;
     }
-    AIKIDO_LOG_INFO("Init() succeeded\n");
-    AIKIDO_LOG_INFO("Checking if requestProcessorInstance is nullptr: %s\n", (this->requestProcessorInstance == nullptr ? "YES" : "NO"));
     if (this->requestProcessorInstance == nullptr && this->createInstanceFn != nullptr) {
-        AIKIDO_LOG_INFO("Creating new Go RequestProcessorInstance...\n");
         this->threadId = GetThreadID();
         #ifdef ZTS
                 bool isZTS = true;
@@ -222,7 +215,7 @@ bool RequestProcessor::RequestInit() {
             return false;
         }
         
-        AIKIDO_LOG_INFO("Calling RequestProcessorInitFn...\n");
+        
         std::string initDataString = this->GetInitData();
         if (!this->requestProcessorInitFn(this->requestProcessorInstance, GoCreateString(initDataString))) {
             AIKIDO_LOG_ERROR("Failed to initialize Aikido Request Processor!\n");
@@ -231,7 +224,6 @@ bool RequestProcessor::RequestInit() {
         AIKIDO_LOG_INFO("RequestProcessorInit called successfully\n");
     }
     
-    AIKIDO_LOG_INFO("Loading config from environment...\n");
     if (sapiName == "apache2handler" || sapiName == "frankenphp") {
       // Apache-mod-php and FrankenPHP can serve multiple sites per process
       // We need to reload config each request to detect token changes
@@ -257,16 +249,12 @@ bool RequestProcessor::RequestInit() {
     this->requestInitialized = true;
     this->numberOfRequests++;
 
-    AIKIDO_LOG_INFO("Calling ContextInit()...\n");
     ContextInit();
-    AIKIDO_LOG_INFO("Calling SendPreRequestEvent()...\n");
     SendPreRequestEvent();
 
     if ((this->numberOfRequests % AIKIDO_GLOBAL(report_stats_interval_to_agent)) == 0) {
-        AIKIDO_LOG_INFO("Reporting stats to agent (request #%d)\n", this->numberOfRequests);
         AIKIDO_GLOBAL(requestProcessor).ReportStats();
     }
-    AIKIDO_LOG_INFO("<<< RequestProcessor::RequestInit() completed successfully\n");
     return true;
 }
 

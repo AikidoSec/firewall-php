@@ -43,6 +43,7 @@ bool checkedAutoBlock;
 bool checkedShouldBlockRequest;
 bool checkedIpBypass;
 bool isIpBypassed;
+bool isWorkerMode;
 HashTable *global_ast_to_clean;
 void (*original_ast_process)(zend_ast *ast);
 // IMPORTANT: The order of these objects MUST NOT be changed due to object interdependencies.
