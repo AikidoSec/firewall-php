@@ -31,5 +31,5 @@ ScopedEventContext::ScopedEventContext() {
 }
 
 ScopedEventContext::~ScopedEventContext() {
-    eventCacheStack.Pop();
+    AIKIDO_GLOBAL(eventCacheStack).Pop();
 }
