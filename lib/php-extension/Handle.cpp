@@ -30,6 +30,7 @@ ACTION_STATUS aikido_process_event(EVENT_ID& eventId, std::string& sink) {
 
 ZEND_NAMED_FUNCTION(aikido_generic_handler) {
     ScopedTimer scopedTimer;
+    ScopedEventContext scopedContext; // RAII: auto push/pop event context
 
     AIKIDO_LOG_DEBUG("Aikido generic handler started!\n");
 
@@ -40,8 +41,7 @@ ZEND_NAMED_FUNCTION(aikido_generic_handler) {
     std::string outputEvent;
     bool caughtException = false;
 
-    auto& eventCache = AIKIDO_GLOBAL(eventCache);
-    eventCache.Reset();
+    auto& eventCacheStack = AIKIDO_GLOBAL(eventCacheStack);
 
     try {
         zend_execute_data* exec_data = EG(current_execute_data);
@@ -96,7 +96,7 @@ ZEND_NAMED_FUNCTION(aikido_generic_handler) {
             return;
         }
 
-        eventCache.functionName = scope_name;
+        eventCacheStack.Top().functionName = scope_name;
         sink = scope_name;
 
         AIKIDO_LOG_DEBUG("Calling handler for \"%s\"!\n", scope_name.c_str());

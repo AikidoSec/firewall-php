@@ -1,7 +1,8 @@
 #include "Includes.h"
 
 void helper_handle_pre_shell_execution(std::string cmd, EVENT_ID &eventId) {
-    AIKIDO_GLOBAL(eventCache).cmd = cmd;
+    auto& eventCacheStack = AIKIDO_GLOBAL(eventCacheStack);
+    eventCacheStack.Top().cmd = cmd;
     eventId = EVENT_PRE_SHELL_EXECUTED;
 }
 

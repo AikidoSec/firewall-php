@@ -186,12 +186,16 @@ PHP_GINIT_FUNCTION(aikido) {
     new (&aikido_globals->requestProcessor) RequestProcessor();
     new (&aikido_globals->action) Action();
     new (&aikido_globals->requestCache) RequestCache();
+    new (&aikido_globals->eventCacheStack) EventCacheStack();
     new (&aikido_globals->eventCache) EventCache();
     new (&aikido_globals->phpLifecycle) PhpLifecycle();
     new (&aikido_globals->stats) std::unordered_map<std::string, SinkStats>();
     new (&aikido_globals->laravelEnv) std::unordered_map<std::string, std::string>();
 #endif
 }
+new (&aikido_globals->requestCache) RequestCache();
+new (&aikido_globals->eventCacheStack) EventCacheStack();
+new (&aikido_globals->eventCache) EventCache();
 
 PHP_GSHUTDOWN_FUNCTION(aikido) {
 #ifdef ZTS
@@ -204,6 +208,7 @@ PHP_GSHUTDOWN_FUNCTION(aikido) {
     aikido_globals->logger.~Log();
     aikido_globals->agent.~Agent();
     aikido_globals->eventCache.~EventCache();
+    aikido_globals->eventCacheStack.~EventCacheStack();
     aikido_globals->requestCache.~RequestCache();
     aikido_globals->config_endpoint.~string();
     aikido_globals->endpoint.~string();

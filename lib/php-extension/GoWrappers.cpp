@@ -9,6 +9,15 @@ GoSlice GoCreateSlice(const std::vector<int64_t>& v) {
                     static_cast<GoInt>(v.size()),
                     static_cast<GoInt>(v.capacity()) };
 }
+
+/*
+    Helper function to safely get a string field from EventCache.
+    Returns empty string if stack is empty, otherwise returns the field value.
+*/
+static inline std::string GetEventCacheField(std::string EventCache::*field) {
+    return eventCacheStack.Empty() ? "" : eventCacheStack.Top().*field;
+}
+
 /*
     Callback wrapper called by the RequestProcessor (GO) whenever it needs data from PHP (C++ extension).
 */
@@ -18,7 +27,6 @@ char* GoContextCallback(int callbackId) {
 
     auto& server = AIKIDO_GLOBAL(server);
     const auto& requestCache = AIKIDO_GLOBAL(requestCache);
-    const auto& eventCache = AIKIDO_GLOBAL(eventCache);
 
     try {
         switch (callbackId) {
@@ -84,51 +92,51 @@ char* GoContextCallback(int callbackId) {
                 break;
             case FUNCTION_NAME:
                 ctx = "FUNCTION_NAME";
-                ret = eventCache.functionName;
+                ret = GetEventCacheField(&EventCache::functionName);
                 break;
             case OUTGOING_REQUEST_URL:
                 ctx = "OUTGOING_REQUEST_URL";
-                ret = eventCache.outgoingRequestUrl;
+                ret = GetEventCacheField(&EventCache::outgoingRequestUrl);
                 break;
             case OUTGOING_REQUEST_EFFECTIVE_URL:
                 ctx = "OUTGOING_REQUEST_EFFECTIVE_URL";
-                ret = eventCache.outgoingRequestEffectiveUrl;
+                ret = GetEventCacheField(&EventCache::outgoingRequestEffectiveUrl);
                 break;
             case OUTGOING_REQUEST_PORT:
                 ctx = "OUTGOING_REQUEST_PORT";
-                ret = eventCache.outgoingRequestPort;
+                ret = GetEventCacheField(&EventCache::outgoingRequestPort);
                 break;
             case OUTGOING_REQUEST_EFFECTIVE_URL_PORT:
                 ctx = "OUTGOING_REQUEST_EFFECTIVE_URL_PORT";
-                ret = eventCache.outgoingRequestEffectiveUrlPort;
+                ret = GetEventCacheField(&EventCache::outgoingRequestEffectiveUrlPort);
                 break;
             case OUTGOING_REQUEST_RESOLVED_IP:
                 ctx = "OUTGOING_REQUEST_RESOLVED_IP";
-                ret = eventCache.outgoingRequestResolvedIp;
+                ret = GetEventCacheField(&EventCache::outgoingRequestResolvedIp);
                 break;
             case CMD:
                 ctx = "CMD";
-                ret = eventCache.cmd;
+                ret = GetEventCacheField(&EventCache::cmd);
                 break;
             case FILENAME:
                 ctx = "FILENAME";
-                ret = eventCache.filename;
+                ret = GetEventCacheField(&EventCache::filename);
                 break;
             case FILENAME2:
                 ctx = "FILENAME2";
-                ret = eventCache.filename2;
+                ret = GetEventCacheField(&EventCache::filename2);
                 break;
             case SQL_QUERY:
                 ctx = "SQL_QUERY";
-                ret = eventCache.sqlQuery;
+                ret = GetEventCacheField(&EventCache::sqlQuery);
                 break;
             case SQL_DIALECT:
                 ctx = "SQL_DIALECT";
-                ret = eventCache.sqlDialect;
+                ret = GetEventCacheField(&EventCache::sqlDialect);
                 break;
             case MODULE:
                 ctx = "MODULE";
-                ret = eventCache.moduleName;
+                ret = GetEventCacheField(&EventCache::moduleName);
                 break;
             case STACK_TRACE:
                 ctx = "STACK_TRACE";
@@ -136,11 +144,11 @@ char* GoContextCallback(int callbackId) {
                 break;
             case PARAM_MATCHER_PARAM:
                 ctx = "PARAM_MATCHER_PARAM";
-                ret = eventCache.paramMatcherParam;
+                ret = GetEventCacheField(&EventCache::paramMatcherParam);
                 break;
             case PARAM_MATCHER_REGEX:
                 ctx = "PARAM_MATCHER_REGEX";
-                ret = eventCache.paramMatcherRegex;
+                ret = GetEventCacheField(&EventCache::paramMatcherRegex);
                 break;
         }
     } catch (std::exception& e) {
