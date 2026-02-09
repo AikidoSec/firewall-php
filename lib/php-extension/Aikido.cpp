@@ -77,48 +77,6 @@ static void aikido_do_request_shutdown() {
     }
 }
 
-// PHP function: \aikido\worker_rinit()
-// Because FrankenPHP doesn't call RINIT for each request in worker mode, 
-// we need to call it manually at the start of each request.
-// Only works with FrankenPHP worker mode
-PHP_FUNCTION(worker_rinit) {
-    ZEND_PARSE_PARAMETERS_NONE();
-    
-    // Only allow this function in FrankenPHP worker mode
-    if (!AIKIDO_GLOBAL(isWorkerMode)) {
-        zend_throw_exception(
-            spl_ce_RuntimeException,
-            "aikido\\worker_rinit() can only be called in FrankenPHP worker mode", 0);
-        RETURN_FALSE;
-    }
-    
-    AIKIDO_LOG_INFO("aikido\\worker_rinit() called from PHP\n");
-    aikido_do_request_init();
-    
-    RETURN_TRUE;
-}
-
-// PHP function: \aikido\worker_rshutdown()
-// Because FrankenPHP doesn't call RSHUTDOWN for each request in worker mode,
-// we need to call it manually at the end of each request.
-// Only works with FrankenPHP worker mode
-PHP_FUNCTION(worker_rshutdown) {
-    ZEND_PARSE_PARAMETERS_NONE();
-    
-    // Only allow this function in FrankenPHP worker mode
-    if (!AIKIDO_GLOBAL(isWorkerMode)) {
-        zend_throw_exception(
-            spl_ce_RuntimeException,
-            "aikido\\worker_rshutdown() can only be called in FrankenPHP worker mode", 0);
-        RETURN_FALSE;
-    }
-    
-    AIKIDO_LOG_INFO("aikido\\worker_rshutdown() called from PHP\n");
-    aikido_do_request_shutdown();
-    
-    RETURN_TRUE;
-}
-
 PHP_RINIT_FUNCTION(aikido) {
     ScopedTimer scopedTimer("request_init", "request_op");
     
@@ -137,6 +95,46 @@ PHP_RSHUTDOWN_FUNCTION(aikido) {
     
     AIKIDO_LOG_DEBUG("RSHUTDOWN finished!\n");
     return SUCCESS;
+}
+
+// PHP function: \aikido\worker_rinit()
+// Because FrankenPHP doesn't call RINIT for each request in worker mode, 
+// we need to call it manually at the start of each request.
+// Only works with FrankenPHP worker mode
+PHP_FUNCTION(worker_rinit) {
+    ZEND_PARSE_PARAMETERS_NONE();
+    
+    // Only allow this function in FrankenPHP worker mode
+    if (std::string(AIKIDO_GLOBAL(sapi_name)) != "frankenphp" || !AIKIDO_GLOBAL(isWorkerMode)) {
+        zend_throw_exception(
+            GetFirewallDefaultExceptionCe(),
+            "aikido\\worker_rinit() can only be called in FrankenPHP worker mode", 0);
+        RETURN_FALSE;
+    }
+    
+    aikido_do_request_init();
+    
+    RETURN_TRUE;
+}
+
+// PHP function: \aikido\worker_rshutdown()
+// Because FrankenPHP doesn't call RSHUTDOWN for each request in worker mode,
+// we need to call it manually at the end of each request.
+// Only works with FrankenPHP worker mode
+PHP_FUNCTION(worker_rshutdown) {
+    ZEND_PARSE_PARAMETERS_NONE();
+    
+    // Only allow this function in FrankenPHP worker mode
+    if (std::string(AIKIDO_GLOBAL(sapi_name)) != "frankenphp" || !AIKIDO_GLOBAL(isWorkerMode)) {
+        zend_throw_exception(
+            GetFirewallDefaultExceptionCe(),
+            "aikido\\worker_rshutdown() can only be called in FrankenPHP worker mode", 0);
+        RETURN_FALSE;
+    }
+    
+    aikido_do_request_shutdown();
+    
+    RETURN_TRUE;
 }
 
 PHP_MINFO_FUNCTION(aikido) {
