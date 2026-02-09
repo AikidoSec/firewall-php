@@ -193,9 +193,6 @@ PHP_GINIT_FUNCTION(aikido) {
     new (&aikido_globals->laravelEnv) std::unordered_map<std::string, std::string>();
 #endif
 }
-new (&aikido_globals->requestCache) RequestCache();
-new (&aikido_globals->eventCacheStack) EventCacheStack();
-new (&aikido_globals->eventCache) EventCache();
 
 PHP_GSHUTDOWN_FUNCTION(aikido) {
 #ifdef ZTS
