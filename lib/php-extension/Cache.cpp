@@ -27,7 +27,7 @@ bool EventCacheStack::Empty() {
 }
 
 ScopedEventContext::ScopedEventContext() {
-    eventCacheStack.Push();
+    AIKIDO_GLOBAL(eventCacheStack).Push();
 }
 
 ScopedEventContext::~ScopedEventContext() {
