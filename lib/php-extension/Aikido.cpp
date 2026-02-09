@@ -104,6 +104,9 @@ PHP_RSHUTDOWN_FUNCTION(aikido) {
 PHP_FUNCTION(worker_rinit) {
     ZEND_PARSE_PARAMETERS_NONE();
     
+    AIKIDO_LOG_INFO("worker_rinit() - SAPI name: %s, isWorkerMode: %d\n", 
+                    AIKIDO_GLOBAL(sapi_name).c_str(), AIKIDO_GLOBAL(isWorkerMode));
+    
     // Only allow this function in FrankenPHP worker mode
     if (std::string(AIKIDO_GLOBAL(sapi_name)) != "frankenphp" || !AIKIDO_GLOBAL(isWorkerMode)) {
         zend_throw_exception(
