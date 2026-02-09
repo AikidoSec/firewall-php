@@ -8,12 +8,12 @@ import (
 	"strings"
 )
 
-func CheckContextForPathTraversal(inst *instance.RequestProcessorInstance, filename string, operation string, checkPathStart bool) *utils.InterceptorResult {
+func CheckContextForPathTraversal(instance *instance.RequestProcessorInstance, filename string, operation string, checkPathStart bool) *utils.InterceptorResult {
 	trimmedFilename := helpers.TrimInvisible(filename)
 	sanitizedPath := SanitizePath(trimmedFilename)
 
 	for _, source := range context.SOURCES {
-		mapss := source.CacheGet(inst)
+		mapss := source.CacheGet(instance)
 
 		for str, path := range mapss {
 			trimmedInputString := helpers.TrimInvisible(str)

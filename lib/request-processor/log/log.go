@@ -59,7 +59,7 @@ func initLogFile() {
 	globals.Logger.SetOutput(globals.LogFile)
 }
 
-func logMessage(inst *instance.RequestProcessorInstance, level globals.LogLevel, args ...interface{}) {
+func logMessage(instance *instance.RequestProcessorInstance, level globals.LogLevel, args ...interface{}) {
 	globals.LogMutex.RLock()
 	lvl := globals.CurrentLogLevel
 	globals.LogMutex.RUnlock()
@@ -69,15 +69,15 @@ func logMessage(inst *instance.RequestProcessorInstance, level globals.LogLevel,
 		formatter := &AikidoFormatter{}
 		message := fmt.Sprint(args...)
 		threadID := uint64(0)
-		if inst != nil {
-			threadID = inst.GetThreadID()
+		if instance != nil {
+			threadID = instance.GetThreadID()
 		}
 		formattedMessage := formatter.Format(level, threadID, message)
 		globals.Logger.Print(formattedMessage)
 	}
 }
 
-func logMessagef(inst *instance.RequestProcessorInstance, level globals.LogLevel, format string, args ...interface{}) {
+func logMessagef(instance *instance.RequestProcessorInstance, level globals.LogLevel, format string, args ...interface{}) {
 	globals.LogMutex.RLock()
 	lvl := globals.CurrentLogLevel
 	globals.LogMutex.RUnlock()
@@ -87,47 +87,47 @@ func logMessagef(inst *instance.RequestProcessorInstance, level globals.LogLevel
 		formatter := &AikidoFormatter{}
 		message := fmt.Sprintf(format, args...)
 		threadID := uint64(0)
-		if inst != nil {
-			threadID = inst.GetThreadID()
+		if instance != nil {
+			threadID = instance.GetThreadID()
 		}
 		formattedMessage := formatter.Format(level, threadID, message)
 		globals.Logger.Print(formattedMessage)
 	}
 }
 
-func Debug(inst *instance.RequestProcessorInstance, args ...interface{}) {
-	logMessage(inst, globals.LogDebugLevel, args...)
+func Debug(instance *instance.RequestProcessorInstance, args ...interface{}) {
+	logMessage(instance, globals.LogDebugLevel, args...)
 }
 
-func Info(inst *instance.RequestProcessorInstance, args ...interface{}) {
-	logMessage(inst, globals.LogInfoLevel, args...)
+func Info(instance *instance.RequestProcessorInstance, args ...interface{}) {
+	logMessage(instance, globals.LogInfoLevel, args...)
 }
 
-func Warn(inst *instance.RequestProcessorInstance, args ...interface{}) {
-	logMessage(inst, globals.LogWarnLevel, args...)
+func Warn(instance *instance.RequestProcessorInstance, args ...interface{}) {
+	logMessage(instance, globals.LogWarnLevel, args...)
 }
 
-func Error(inst *instance.RequestProcessorInstance, args ...interface{}) {
-	logMessage(inst, globals.LogErrorLevel, args...)
+func Error(instance *instance.RequestProcessorInstance, args ...interface{}) {
+	logMessage(instance, globals.LogErrorLevel, args...)
 }
 
-func Debugf(inst *instance.RequestProcessorInstance, format string, args ...interface{}) {
-	logMessagef(inst, globals.LogDebugLevel, format, args...)
+func Debugf(instance *instance.RequestProcessorInstance, format string, args ...interface{}) {
+	logMessagef(instance, globals.LogDebugLevel, format, args...)
 }
 
-func Infof(inst *instance.RequestProcessorInstance, format string, args ...interface{}) {
-	logMessagef(inst, globals.LogInfoLevel, format, args...)
+func Infof(instance *instance.RequestProcessorInstance, format string, args ...interface{}) {
+	logMessagef(instance, globals.LogInfoLevel, format, args...)
 }
 
-func Warnf(inst *instance.RequestProcessorInstance, format string, args ...interface{}) {
-	logMessagef(inst, globals.LogWarnLevel, format, args...)
+func Warnf(instance *instance.RequestProcessorInstance, format string, args ...interface{}) {
+	logMessagef(instance, globals.LogWarnLevel, format, args...)
 }
 
-func Errorf(inst *instance.RequestProcessorInstance, format string, args ...interface{}) {
-	logMessagef(inst, globals.LogErrorLevel, format, args...)
+func Errorf(instance *instance.RequestProcessorInstance, format string, args ...interface{}) {
+	logMessagef(instance, globals.LogErrorLevel, format, args...)
 }
 
-// Direct threadID logging (for goroutines where inst cannot be safely passed)
+// Direct threadID logging (for goroutines where instance cannot be safely passed)
 func logMessageWithThreadID(threadID uint64, level globals.LogLevel, args ...interface{}) {
 	globals.LogMutex.RLock()
 	lvl := globals.CurrentLogLevel

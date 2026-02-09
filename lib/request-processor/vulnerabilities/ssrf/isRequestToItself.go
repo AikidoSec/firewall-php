@@ -11,12 +11,12 @@ import (
 // This includes a special case for HTTP/HTTPS: if the server is running on HTTP (port 80) and makes a request
 // to HTTPS (port 443) of the same hostname, or vice versa, it's considered a request to itself.
 // This prevents false positives when a server makes requests to itself via different protocols.
-func IsRequestToItself(inst *instance.RequestProcessorInstance, outboundHostname string, outboundPort uint32) bool {
-	if inst == nil {
+func IsRequestToItself(instance *instance.RequestProcessorInstance, outboundHostname string, outboundPort uint32) bool {
+	if instance == nil {
 		return false
 	}
 
-	server := inst.GetCurrentServer()
+	server := instance.GetCurrentServer()
 
 	// Check if trust proxy is enabled
 	// If not enabled, we don't consider requests to itself as safe
@@ -25,7 +25,7 @@ func IsRequestToItself(inst *instance.RequestProcessorInstance, outboundHostname
 	}
 
 	// Get the current server URL from the incoming request
-	serverURL := context.GetUrl(inst)
+	serverURL := context.GetUrl(instance)
 	if serverURL == "" {
 		return false
 	}

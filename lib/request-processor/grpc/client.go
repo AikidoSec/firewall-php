@@ -117,7 +117,7 @@ func OnPackages(server *ServerData, packages map[string]string) {
 }
 
 /* Send request metadata (route & method) to Aikido Agent via gRPC */
-func GetRateLimitingStatus(inst *instance.RequestProcessorInstance, server *ServerData, method string, route string, routeParsed string, user string, ip string, rateLimitGroup string, timeout time.Duration) *protos.RateLimitingStatus {
+func GetRateLimitingStatus(instance *instance.RequestProcessorInstance, server *ServerData, method string, route string, routeParsed string, user string, ip string, rateLimitGroup string, timeout time.Duration) *protos.RateLimitingStatus {
 	if client == nil || server == nil {
 		return nil
 	}
@@ -127,11 +127,11 @@ func GetRateLimitingStatus(inst *instance.RequestProcessorInstance, server *Serv
 
 	RateLimitingStatus, err := client.GetRateLimitingStatus(ctx, &protos.RateLimitingInfo{Token: server.AikidoConfig.Token, ServerPid: globals.EnvironmentConfig.ServerPID, Method: method, Route: route, RouteParsed: routeParsed, User: user, Ip: ip, RateLimitGroup: rateLimitGroup})
 	if err != nil {
-		log.Warnf(inst, "Cannot get rate limiting status %v %v: %v", method, route, err)
+		log.Warnf(instance, "Cannot get rate limiting status %v %v: %v", method, route, err)
 		return nil
 	}
 
-	log.Debugf(inst, "Rate limiting status for (%v %v) sent via socket and got reply (%v)", method, route, RateLimitingStatus)
+	log.Debugf(instance, "Rate limiting status for (%v %v) sent via socket and got reply (%v)", method, route, RateLimitingStatus)
 	return RateLimitingStatus
 }
 
@@ -227,7 +227,7 @@ func OnUserEvent(threadID uint64, server *ServerData, token string, id string, u
 	log.DebugfWithThreadID(threadID, "User event sent via socket (%v %v %v)", id, username, ip)
 }
 
-func OnAttackDetected(inst *instance.RequestProcessorInstance, attackDetected *protos.AttackDetected) {
+func OnAttackDetected(instance *instance.RequestProcessorInstance, attackDetected *protos.AttackDetected) {
 	if client == nil {
 		return
 	}
@@ -237,10 +237,10 @@ func OnAttackDetected(inst *instance.RequestProcessorInstance, attackDetected *p
 
 	_, err := client.OnAttackDetected(ctx, attackDetected)
 	if err != nil {
-		log.Warnf(inst, "Could not send attack detected event")
+		log.Warnf(instance, "Could not send attack detected event")
 		return
 	}
-	log.Debugf(inst, "Attack detected event sent via socket")
+	log.Debugf(instance, "Attack detected event sent via socket")
 }
 
 func OnMonitoredSinkStats(threadID uint64, server *ServerData, token string, sink, kind string, attacksDetected, attacksBlocked, interceptorThrewError, withoutContext, total int32, timings []int64) {

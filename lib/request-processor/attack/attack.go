@@ -21,9 +21,9 @@ func GetMetadataProto(metadata map[string]string) []*protos.Metadata {
 }
 
 /* Convert headers map to protobuf structure to be sent via gRPC to the Agent */
-func GetHeadersProto(inst *instance.RequestProcessorInstance) []*protos.Header {
+func GetHeadersProto(instance *instance.RequestProcessorInstance) []*protos.Header {
 	var headersProto []*protos.Header
-	for key, value := range context.GetHeadersParsed(inst) {
+	for key, value := range context.GetHeadersParsed(instance) {
 		valueStr, ok := value.(string)
 		if ok {
 			headersProto = append(headersProto, &protos.Header{Key: key, Value: valueStr})
@@ -33,35 +33,35 @@ func GetHeadersProto(inst *instance.RequestProcessorInstance) []*protos.Header {
 }
 
 /* Construct the AttackDetected protobuf structure to be sent via gRPC to the Agent */
-func GetAttackDetectedProto(res utils.InterceptorResult, inst *instance.RequestProcessorInstance) *protos.AttackDetected {
-	token := inst.GetCurrentToken()
-	server := inst.GetCurrentServer()
+func GetAttackDetectedProto(res utils.InterceptorResult, instance *instance.RequestProcessorInstance) *protos.AttackDetected {
+	token := instance.GetCurrentToken()
+	server := instance.GetCurrentServer()
 
 	serverPID := context.GetServerPID()
 	return &protos.AttackDetected{
 		Token:     token,
 		ServerPid: serverPID,
 		Request: &protos.Request{
-			Method:    context.GetMethod(inst),
-			IpAddress: context.GetIp(inst),
-			UserAgent: context.GetUserAgent(inst),
-			Url:       context.GetUrl(inst),
-			Headers:   GetHeadersProto(inst),
-			Body:      context.GetBodyRaw(inst),
+			Method:    context.GetMethod(instance),
+			IpAddress: context.GetIp(instance),
+			UserAgent: context.GetUserAgent(instance),
+			Url:       context.GetUrl(instance),
+			Headers:   GetHeadersProto(instance),
+			Body:      context.GetBodyRaw(instance),
 			Source:    "php",
-			Route:     context.GetRoute(inst),
+			Route:     context.GetRoute(instance),
 		},
 		Attack: &protos.Attack{
 			Kind:      string(res.Kind),
 			Operation: res.Operation,
-			Module:    context.GetModule(inst),
+			Module:    context.GetModule(instance),
 			Blocked:   utils.IsBlockingEnabled(server),
 			Source:    res.Source,
 			Path:      res.PathToPayload,
-			Stack:     context.GetStackTrace(inst),
+			Stack:     context.GetStackTrace(instance),
 			Payload:   res.Payload,
 			Metadata:  GetMetadataProto(res.Metadata),
-			UserId:    context.GetUserId(inst),
+			UserId:    context.GetUserId(instance),
 		},
 	}
 }
@@ -91,11 +91,11 @@ func GetAttackDetectedAction(result utils.InterceptorResult) string {
 	return GetThrowAction(BuildAttackDetectedMessage(result), 500)
 }
 
-func ReportAttackDetected(res *utils.InterceptorResult, inst *instance.RequestProcessorInstance) string {
+func ReportAttackDetected(res *utils.InterceptorResult, instance *instance.RequestProcessorInstance) string {
 	if res == nil {
 		return ""
 	}
 
-	grpc.OnAttackDetected(inst, GetAttackDetectedProto(*res, inst))
+	grpc.OnAttackDetected(instance, GetAttackDetectedProto(*res, instance))
 	return GetAttackDetectedAction(*res)
 }

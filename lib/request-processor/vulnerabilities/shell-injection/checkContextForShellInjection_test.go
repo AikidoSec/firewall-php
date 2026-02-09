@@ -8,7 +8,7 @@ import (
 
 func TestCheckContextForShellInjection(t *testing.T) {
 	t.Run("it detects shell injection", func(t *testing.T) {
-		inst := context.LoadForUnitTests(map[string]string{
+		instance := context.LoadForUnitTests(map[string]string{
 			"remoteAddress": "ip",
 			"method":        "POST",
 			"url":           "url",
@@ -19,7 +19,7 @@ func TestCheckContextForShellInjection(t *testing.T) {
 			"route":  "/",
 		})
 		operation := "child_process.exec"
-		result := CheckContextForShellInjection(inst, "binary --domain www.example`whoami`.com", operation)
+		result := CheckContextForShellInjection(instance, "binary --domain www.example`whoami`.com", operation)
 
 		if result == nil {
 			t.Errorf("expected result, got nil")
@@ -48,7 +48,7 @@ func TestCheckContextForShellInjection(t *testing.T) {
 
 	t.Run("it detects shell injection from route params", func(t *testing.T) {
 		operation := "child_process.exec"
-		inst := context.LoadForUnitTests(map[string]string{
+		instance := context.LoadForUnitTests(map[string]string{
 			"remoteAddress": "ip",
 			"method":        "POST",
 			"url":           "url",
@@ -59,7 +59,7 @@ func TestCheckContextForShellInjection(t *testing.T) {
 			"route":  "/",
 		})
 
-		result := CheckContextForShellInjection(inst, "binary --domain www.example`whoami`.com", operation)
+		result := CheckContextForShellInjection(instance, "binary --domain www.example`whoami`.com", operation)
 
 		if result == nil {
 			t.Errorf("expected result, got nil")

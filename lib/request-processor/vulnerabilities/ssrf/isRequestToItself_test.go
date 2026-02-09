@@ -30,30 +30,30 @@ func setupTestContext(serverURL string, trustProxy bool) (*instance.RequestProce
 }
 
 func TestIsRequestToItself_ReturnsFalseIfHostnamesDifferent(t *testing.T) {
-	inst, cleanup := setupTestContext("http://aikido.dev:4000", true)
+	instance, cleanup := setupTestContext("http://aikido.dev:4000", true)
 	defer cleanup()
 
-	result := IsRequestToItself(inst, "google.com", 4000)
+	result := IsRequestToItself(instance, "google.com", 4000)
 	if result != false {
 		t.Errorf("Expected false when hostnames are different, got %v", result)
 	}
 }
 
 func TestIsRequestToItself_ReturnsFalseIfHostnamesDifferentHTTPS(t *testing.T) {
-	inst, cleanup := setupTestContext("https://aikido.dev", true)
+	instance, cleanup := setupTestContext("https://aikido.dev", true)
 	defer cleanup()
 
-	result := IsRequestToItself(inst, "google.com", 443)
+	result := IsRequestToItself(instance, "google.com", 443)
 	if result != false {
 		t.Errorf("Expected false when hostnames are different (HTTPS), got %v", result)
 	}
 }
 
 func TestIsRequestToItself_ReturnsFalseIfHostnamesDifferentWithCustomPort(t *testing.T) {
-	inst, cleanup := setupTestContext("https://aikido.dev:4000", true)
+	instance, cleanup := setupTestContext("https://aikido.dev:4000", true)
 	defer cleanup()
 
-	result := IsRequestToItself(inst, "google.com", 443)
+	result := IsRequestToItself(instance, "google.com", 443)
 	if result != false {
 		t.Errorf("Expected false when hostnames are different (custom port), got %v", result)
 	}
@@ -94,10 +94,10 @@ func TestIsRequestToItself_ReturnsTrueIfServerDoesRequestToItself(t *testing.T) 
 
 	for _, tt := range tests {
 		t.Run(tt.description, func(t *testing.T) {
-			inst, cleanup := setupTestContext(tt.serverURL, true)
+			instance, cleanup := setupTestContext(tt.serverURL, true)
 			defer cleanup()
 
-			result := IsRequestToItself(inst, tt.outboundHostname, tt.outboundPort)
+			result := IsRequestToItself(instance, tt.outboundHostname, tt.outboundPort)
 			if result != true {
 				t.Errorf("Expected true for %s, got %v", tt.description, result)
 			}
@@ -128,10 +128,10 @@ func TestIsRequestToItself_ReturnsTrueForSpecialCaseHTTPHTTPS(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.description, func(t *testing.T) {
-			inst, cleanup := setupTestContext(tt.serverURL, true)
+			instance, cleanup := setupTestContext(tt.serverURL, true)
 			defer cleanup()
 
-			result := IsRequestToItself(inst, tt.outboundHostname, tt.outboundPort)
+			result := IsRequestToItself(instance, tt.outboundHostname, tt.outboundPort)
 			if result != true {
 				t.Errorf("Expected true for special case %s, got %v", tt.description, result)
 			}
@@ -162,10 +162,10 @@ func TestIsRequestToItself_ReturnsFalseIfTrustProxyIsFalse(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.description, func(t *testing.T) {
-			inst, cleanup := setupTestContext(tt.serverURL, false) // Trust proxy is false
+			instance, cleanup := setupTestContext(tt.serverURL, false) // Trust proxy is false
 			defer cleanup()
 
-			result := IsRequestToItself(inst, tt.outboundHostname, tt.outboundPort)
+			result := IsRequestToItself(instance, tt.outboundHostname, tt.outboundPort)
 			if result != false {
 				t.Errorf("Expected false when trust proxy is disabled for %s, got %v", tt.description, result)
 			}

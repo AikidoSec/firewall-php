@@ -8,60 +8,60 @@ import (
 	"net/url"
 )
 
-func GetOutgoingRequestHostnameAndPort(inst *instance.RequestProcessorInstance) (string, uint32) {
-	return getHostNameAndPort(inst, C.OUTGOING_REQUEST_URL, C.OUTGOING_REQUEST_PORT)
+func GetOutgoingRequestHostnameAndPort(instance *instance.RequestProcessorInstance) (string, uint32) {
+	return getHostNameAndPort(instance, C.OUTGOING_REQUEST_URL, C.OUTGOING_REQUEST_PORT)
 }
 
-func GetOutgoingRequestEffectiveHostnameAndPort(inst *instance.RequestProcessorInstance) (string, uint32) {
-	return getHostNameAndPort(inst, C.OUTGOING_REQUEST_EFFECTIVE_URL, C.OUTGOING_REQUEST_EFFECTIVE_URL_PORT)
+func GetOutgoingRequestEffectiveHostnameAndPort(instance *instance.RequestProcessorInstance) (string, uint32) {
+	return getHostNameAndPort(instance, C.OUTGOING_REQUEST_EFFECTIVE_URL, C.OUTGOING_REQUEST_EFFECTIVE_URL_PORT)
 }
 
-func GetOutgoingRequestResolvedIp(inst *instance.RequestProcessorInstance) string {
-	return GetContext(inst).Callback(inst, C.OUTGOING_REQUEST_RESOLVED_IP)
+func GetOutgoingRequestResolvedIp(instance *instance.RequestProcessorInstance) string {
+	return GetContext(instance).Callback(instance, C.OUTGOING_REQUEST_RESOLVED_IP)
 }
 
-func GetFunctionName(inst *instance.RequestProcessorInstance) string {
-	return GetContext(inst).Callback(inst, C.FUNCTION_NAME)
+func GetFunctionName(instance *instance.RequestProcessorInstance) string {
+	return GetContext(instance).Callback(instance, C.FUNCTION_NAME)
 }
 
-func GetCmd(inst *instance.RequestProcessorInstance) string {
-	return GetContext(inst).Callback(inst, C.CMD)
+func GetCmd(instance *instance.RequestProcessorInstance) string {
+	return GetContext(instance).Callback(instance, C.CMD)
 }
 
-func GetFilename(inst *instance.RequestProcessorInstance) string {
-	return GetContext(inst).Callback(inst, C.FILENAME)
+func GetFilename(instance *instance.RequestProcessorInstance) string {
+	return GetContext(instance).Callback(instance, C.FILENAME)
 }
 
-func GetFilename2(inst *instance.RequestProcessorInstance) string {
-	return GetContext(inst).Callback(inst, C.FILENAME2)
+func GetFilename2(instance *instance.RequestProcessorInstance) string {
+	return GetContext(instance).Callback(instance, C.FILENAME2)
 }
 
-func GetSqlQuery(inst *instance.RequestProcessorInstance) string {
-	return GetContext(inst).Callback(inst, C.SQL_QUERY)
+func GetSqlQuery(instance *instance.RequestProcessorInstance) string {
+	return GetContext(instance).Callback(instance, C.SQL_QUERY)
 }
 
-func GetSqlDialect(inst *instance.RequestProcessorInstance) string {
-	return GetContext(inst).Callback(inst, C.SQL_DIALECT)
+func GetSqlDialect(instance *instance.RequestProcessorInstance) string {
+	return GetContext(instance).Callback(instance, C.SQL_DIALECT)
 }
 
-func GetModule(inst *instance.RequestProcessorInstance) string {
-	return GetContext(inst).Callback(inst, C.MODULE)
+func GetModule(instance *instance.RequestProcessorInstance) string {
+	return GetContext(instance).Callback(instance, C.MODULE)
 }
 
-func GetStackTrace(inst *instance.RequestProcessorInstance) string {
-	return GetContext(inst).Callback(inst, C.STACK_TRACE)
+func GetStackTrace(instance *instance.RequestProcessorInstance) string {
+	return GetContext(instance).Callback(instance, C.STACK_TRACE)
 }
 
-func GetParamMatcher(inst *instance.RequestProcessorInstance) (string, string) {
-	ctx := GetContext(inst)
-	param := ctx.Callback(inst, C.PARAM_MATCHER_PARAM)
-	regex := ctx.Callback(inst, C.PARAM_MATCHER_REGEX)
+func GetParamMatcher(instance *instance.RequestProcessorInstance) (string, string) {
+	ctx := GetContext(instance)
+	param := ctx.Callback(instance, C.PARAM_MATCHER_PARAM)
+	regex := ctx.Callback(instance, C.PARAM_MATCHER_REGEX)
 	return param, regex
 }
 
-func getHostNameAndPort(inst *instance.RequestProcessorInstance, urlCallbackId int, portCallbackId int) (string, uint32) {
-	ctx := GetContext(inst)
-	urlStr := ctx.Callback(inst, urlCallbackId)
+func getHostNameAndPort(instance *instance.RequestProcessorInstance, urlCallbackId int, portCallbackId int) (string, uint32) {
+	ctx := GetContext(instance)
+	urlStr := ctx.Callback(instance, urlCallbackId)
 	urlParsed, err := url.Parse(urlStr)
 	if err != nil {
 		return "", 0
@@ -69,7 +69,7 @@ func getHostNameAndPort(inst *instance.RequestProcessorInstance, urlCallbackId i
 	hostname := urlParsed.Hostname()
 	portFromURL := helpers.GetPortFromURL(urlParsed)
 
-	portStr := ctx.Callback(inst, portCallbackId)
+	portStr := ctx.Callback(instance, portCallbackId)
 	port := helpers.ParsePort(portStr)
 	if port == 0 {
 		port = portFromURL

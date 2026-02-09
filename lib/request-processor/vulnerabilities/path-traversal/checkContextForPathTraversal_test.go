@@ -9,7 +9,7 @@ import (
 func TestCheckContextForPathTraversal(t *testing.T) {
 
 	t.Run("it detects path traversal from body parameter", func(t *testing.T) {
-		inst := context.LoadForUnitTests(map[string]string{
+		instance := context.LoadForUnitTests(map[string]string{
 			"remoteAddress": "ip",
 			"method":        "POST",
 			"url":           "url",
@@ -18,7 +18,7 @@ func TestCheckContextForPathTraversal(t *testing.T) {
 		})
 
 		operation := "operation"
-		result := CheckContextForPathTraversal(inst, "../file/test.txt", operation, true)
+		result := CheckContextForPathTraversal(instance, "../file/test.txt", operation, true)
 
 		if result == nil {
 			t.Errorf("expected result, got nil")
@@ -47,7 +47,7 @@ func TestCheckContextForPathTraversal(t *testing.T) {
 
 	t.Run("it does not flag safe operation", func(t *testing.T) {
 		operation := "path.normalize"
-		inst := context.LoadForUnitTests(map[string]string{
+		instance := context.LoadForUnitTests(map[string]string{
 			"url":    "/_next/static/RjAvHy_jB1ciRT_xBrSyI/_ssgManifest.js",
 			"method": "GET",
 			"headers": context.GetJsonString(map[string]interface{}{
@@ -72,12 +72,12 @@ func TestCheckContextForPathTraversal(t *testing.T) {
 				"x-forwarded-proto":  "http",
 				"x-forwarded-for":    "127.0.0.1",
 			}),
-		"source":        "http.createServer",
-		"cookies":       context.GetJsonString(map[string]interface{}{"Phpstorm-8262f4a6": "6a1925f9-2f0e-45ea-8336-a6988d56b1aa"}),
-		"remoteAddress": "127.0.0.1",
-	})
+			"source":        "http.createServer",
+			"cookies":       context.GetJsonString(map[string]interface{}{"Phpstorm-8262f4a6": "6a1925f9-2f0e-45ea-8336-a6988d56b1aa"}),
+			"remoteAddress": "127.0.0.1",
+		})
 
-	result := CheckContextForPathTraversal(inst, "../../web/spec-extension/cookies", operation, true)
+		result := CheckContextForPathTraversal(instance, "../../web/spec-extension/cookies", operation, true)
 		if result != nil {
 			t.Errorf("expected nil, got %v", result)
 		}

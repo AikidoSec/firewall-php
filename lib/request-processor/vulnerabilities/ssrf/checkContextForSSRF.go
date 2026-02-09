@@ -8,17 +8,17 @@ import (
 )
 
 /* This is called before a request is made to check for SSRF and block the request (not execute it) if SSRF found */
-func CheckContextForSSRF(inst *instance.RequestProcessorInstance, hostname string, port uint32, operation string) *utils.InterceptorResult {
+func CheckContextForSSRF(instance *instance.RequestProcessorInstance, hostname string, port uint32, operation string) *utils.InterceptorResult {
 	trimmedHostname := helpers.TrimInvisible(hostname)
 
 	// Check if this is a request to the server itself (including HTTP/HTTPS special case)
 	// If so, don't block it as it's not an SSRF attack
-	if IsRequestToItself(inst, trimmedHostname, port) {
+	if IsRequestToItself(instance, trimmedHostname, port) {
 		return nil
 	}
 
 	for _, source := range context.SOURCES {
-		mapss := source.CacheGet(inst)
+		mapss := source.CacheGet(instance)
 
 		for str, path := range mapss {
 			trimmedInputString := helpers.TrimInvisible(str)
@@ -38,7 +38,7 @@ func CheckContextForSSRF(inst *instance.RequestProcessorInstance, hostname strin
 					return &interceptorResult
 				}
 
-				resolvedIpStatus := getResolvedIpStatusForHostname(inst, trimmedHostname)
+				resolvedIpStatus := getResolvedIpStatusForHostname(instance, trimmedHostname)
 				if resolvedIpStatus != nil {
 					interceptorResult.Metadata["resolvedIp"] = resolvedIpStatus.ip
 					if resolvedIpStatus.isIMDS {
@@ -52,10 +52,10 @@ func CheckContextForSSRF(inst *instance.RequestProcessorInstance, hostname strin
 					return &interceptorResult
 				}
 
-			// Hostname matched in the user input but we did not managed to determine if it's a SSRF attack at this point.
-			// Storing the matching information (interceptor result) in order to use it once the request completes,
-			// as at that point we might have more information to determine if SSRF or not.
-			context.EventContextSetCurrentSsrfInterceptorResult(inst, &interceptorResult)
+				// Hostname matched in the user input but we did not managed to determine if it's a SSRF attack at this point.
+				// Storing the matching information (interceptor result) in order to use it once the request completes,
+				// as at that point we might have more information to determine if SSRF or not.
+				context.EventContextSetCurrentSsrfInterceptorResult(instance, &interceptorResult)
 			}
 		}
 	}
@@ -63,15 +63,15 @@ func CheckContextForSSRF(inst *instance.RequestProcessorInstance, hostname strin
 }
 
 /* This is called after the request is made to check for SSRF in the effective hostname - hostname optained after redirects from the PHP library that made the request (curl) */
-func CheckEffectiveHostnameForSSRF(inst *instance.RequestProcessorInstance, effectiveHostname string) *utils.InterceptorResult {
-	interceptorResult := context.GetCurrentSsrfInterceptorResult(inst)
+func CheckEffectiveHostnameForSSRF(instance *instance.RequestProcessorInstance, effectiveHostname string) *utils.InterceptorResult {
+	interceptorResult := context.GetCurrentSsrfInterceptorResult(instance)
 	if interceptorResult == nil {
 		// The initially requested hostname was not found in the user input -> no SSRF
 		return nil
 	}
 
 	interceptorResult.Metadata["effectiveHostname"] = effectiveHostname
-	resolvedIpStatus := getResolvedIpStatusForHostname(inst, effectiveHostname)
+	resolvedIpStatus := getResolvedIpStatusForHostname(instance, effectiveHostname)
 	if resolvedIpStatus != nil {
 		interceptorResult.Metadata["resolvedIp"] = resolvedIpStatus.ip
 		if resolvedIpStatus.isIMDS {
@@ -89,8 +89,8 @@ func CheckEffectiveHostnameForSSRF(inst *instance.RequestProcessorInstance, effe
 }
 
 /* This is called after the request is made to check for SSRF in the resolvedIP - IP optained from the PHP library that made the request (curl) */
-func CheckResolvedIpForSSRF(inst *instance.RequestProcessorInstance, resolvedIp string) *utils.InterceptorResult {
-	interceptorResult := context.GetCurrentSsrfInterceptorResult(inst)
+func CheckResolvedIpForSSRF(instance *instance.RequestProcessorInstance, resolvedIp string) *utils.InterceptorResult {
+	interceptorResult := context.GetCurrentSsrfInterceptorResult(instance)
 	if interceptorResult == nil {
 		// The initially requested hostname was not found in the user input -> no SSRF
 		return nil

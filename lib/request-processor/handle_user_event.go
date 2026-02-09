@@ -7,22 +7,22 @@ import (
 	"main/log"
 )
 
-func OnUserEvent(inst *instance.RequestProcessorInstance) string {
-	id := context.GetUserId(inst)
-	username := context.GetUserName(inst)
-	ip := context.GetIp(inst)
+func OnUserEvent(instance *instance.RequestProcessorInstance) string {
+	id := context.GetUserId(instance)
+	username := context.GetUserName(instance)
+	ip := context.GetIp(instance)
 
-	log.Infof(inst, "Got user event!")
+	log.Infof(instance, "Got user event!")
 
 	if id == "" || ip == "" {
 		return ""
 	}
 
-	server := inst.GetCurrentServer()
+	server := instance.GetCurrentServer()
 	if server == nil {
 		return ""
 	}
 
-	go grpc.OnUserEvent(inst.GetThreadID(), server, inst.GetCurrentToken(), id, username, ip)
+	go grpc.OnUserEvent(instance.GetThreadID(), server, instance.GetCurrentToken(), id, username, ip)
 	return ""
 }

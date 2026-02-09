@@ -11,8 +11,8 @@ import (
 	webscanner "main/vulnerabilities/web-scanner"
 )
 
-func OnPreRequest(inst *instance.RequestProcessorInstance) string {
-	context.Clear(inst)
+func OnPreRequest(instance *instance.RequestProcessorInstance) string {
+	context.Clear(instance)
 	return ""
 }
 
@@ -36,32 +36,32 @@ func OnRequestShutdownReporting(params RequestShutdownParams) {
 	grpc.OnRequestShutdown(params)
 }
 
-func OnPostRequest(inst *instance.RequestProcessorInstance) string {
-	server := inst.GetCurrentServer()
+func OnPostRequest(instance *instance.RequestProcessorInstance) string {
+	server := instance.GetCurrentServer()
 	if server == nil {
 		return ""
 	}
 
-	if !context.IsIpBypassed(inst) {
+	if !context.IsIpBypassed(instance) {
 		params := RequestShutdownParams{
-			ThreadID:       inst.GetThreadID(),
-			Token:          inst.GetCurrentToken(),
-			Method:         context.GetMethod(inst),
-			Route:          context.GetRoute(inst),
-			RouteParsed:    context.GetParsedRoute(inst),
-			StatusCode:     context.GetStatusCode(inst),
-			User:           context.GetUserId(inst),
-			UserAgent:      context.GetUserAgent(inst),
-			IP:             context.GetIp(inst),
-			Url:            context.GetUrl(inst),
-			RateLimitGroup: context.GetRateLimitGroup(inst),
-			RateLimited:    context.IsEndpointRateLimited(inst),
-			QueryParsed:    context.GetQueryParsed(inst),
-			IsIpBypassed:   context.IsIpBypassed(inst),
-			APISpec:        api_discovery.GetApiInfo(inst, inst.GetCurrentServer()),
+			ThreadID:       instance.GetThreadID(),
+			Token:          instance.GetCurrentToken(),
+			Method:         context.GetMethod(instance),
+			Route:          context.GetRoute(instance),
+			RouteParsed:    context.GetParsedRoute(instance),
+			StatusCode:     context.GetStatusCode(instance),
+			User:           context.GetUserId(instance),
+			UserAgent:      context.GetUserAgent(instance),
+			IP:             context.GetIp(instance),
+			Url:            context.GetUrl(instance),
+			RateLimitGroup: context.GetRateLimitGroup(instance),
+			RateLimited:    context.IsEndpointRateLimited(instance),
+			QueryParsed:    context.GetQueryParsed(instance),
+			IsIpBypassed:   context.IsIpBypassed(instance),
+			APISpec:        api_discovery.GetApiInfo(instance, instance.GetCurrentServer()),
 		}
 
-		context.Clear(inst)
+		context.Clear(instance)
 
 		go func() {
 			OnRequestShutdownReporting(params)

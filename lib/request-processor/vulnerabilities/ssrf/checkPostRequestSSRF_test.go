@@ -7,23 +7,23 @@ import (
 )
 
 func TestCheckResolvedIpForSSRF_NoStoredInterceptorResult_ReturnsNil(t *testing.T) {
-	inst := context.LoadForUnitTests(map[string]string{})
-	context.ResetEventContext(inst)
+	instance := context.LoadForUnitTests(map[string]string{})
+	context.ResetEventContext(instance)
 	t.Cleanup(func() {
-		context.ResetEventContext(inst)
+		context.ResetEventContext(instance)
 		context.UnloadForUnitTests()
 	})
 
-	if res := CheckResolvedIpForSSRF(inst, "127.0.0.1"); res != nil {
+	if res := CheckResolvedIpForSSRF(instance, "127.0.0.1"); res != nil {
 		t.Fatalf("expected nil, got %#v", res)
 	}
 }
 
 func TestCheckResolvedIpForSSRF_PublicIp_ReturnsNil(t *testing.T) {
-	inst := context.LoadForUnitTests(map[string]string{})
-	context.ResetEventContext(inst)
+	instance := context.LoadForUnitTests(map[string]string{})
+	context.ResetEventContext(instance)
 	t.Cleanup(func() {
-		context.ResetEventContext(inst)
+		context.ResetEventContext(instance)
 		context.UnloadForUnitTests()
 	})
 
@@ -34,9 +34,9 @@ func TestCheckResolvedIpForSSRF_PublicIp_ReturnsNil(t *testing.T) {
 		Metadata:  map[string]string{},
 		Payload:   "http://example.test",
 	}
-	context.EventContextSetCurrentSsrfInterceptorResult(inst, ir)
+	context.EventContextSetCurrentSsrfInterceptorResult(instance, ir)
 
-	if res := CheckResolvedIpForSSRF(inst, "8.8.8.8"); res != nil {
+	if res := CheckResolvedIpForSSRF(instance, "8.8.8.8"); res != nil {
 		t.Fatalf("expected nil, got %#v", res)
 	}
 	if _, ok := ir.Metadata["isPrivateIp"]; ok {
@@ -48,10 +48,10 @@ func TestCheckResolvedIpForSSRF_PublicIp_ReturnsNil(t *testing.T) {
 }
 
 func TestCheckResolvedIpForSSRF_PrivateIp_ReturnsInterceptorResultWithMetadata(t *testing.T) {
-	inst := context.LoadForUnitTests(map[string]string{})
-	context.ResetEventContext(inst)
+	instance := context.LoadForUnitTests(map[string]string{})
+	context.ResetEventContext(instance)
 	t.Cleanup(func() {
-		context.ResetEventContext(inst)
+		context.ResetEventContext(instance)
 		context.UnloadForUnitTests()
 	})
 
@@ -62,9 +62,9 @@ func TestCheckResolvedIpForSSRF_PrivateIp_ReturnsInterceptorResultWithMetadata(t
 		Metadata:  map[string]string{},
 		Payload:   "http://example.test",
 	}
-	context.EventContextSetCurrentSsrfInterceptorResult(inst, ir)
+	context.EventContextSetCurrentSsrfInterceptorResult(instance, ir)
 
-	res := CheckResolvedIpForSSRF(inst, "127.0.0.1")
+	res := CheckResolvedIpForSSRF(instance, "127.0.0.1")
 	if res == nil {
 		t.Fatalf("expected non-nil interceptor result")
 	}
@@ -80,10 +80,10 @@ func TestCheckResolvedIpForSSRF_PrivateIp_ReturnsInterceptorResultWithMetadata(t
 }
 
 func TestCheckEffectiveHostnameForSSRF_PrivateIpHostname_ReturnsInterceptorResultWithMetadata(t *testing.T) {
-	inst := context.LoadForUnitTests(map[string]string{})
-	context.ResetEventContext(inst)
+	instance := context.LoadForUnitTests(map[string]string{})
+	context.ResetEventContext(instance)
 	t.Cleanup(func() {
-		context.ResetEventContext(inst)
+		context.ResetEventContext(instance)
 		context.UnloadForUnitTests()
 	})
 
@@ -94,9 +94,9 @@ func TestCheckEffectiveHostnameForSSRF_PrivateIpHostname_ReturnsInterceptorResul
 		Metadata:  map[string]string{},
 		Payload:   "http://example.test",
 	}
-	context.EventContextSetCurrentSsrfInterceptorResult(inst, ir)
+	context.EventContextSetCurrentSsrfInterceptorResult(instance, ir)
 
-	res := CheckEffectiveHostnameForSSRF(inst, "127.0.0.1")
+	res := CheckEffectiveHostnameForSSRF(instance, "127.0.0.1")
 	if res == nil {
 		t.Fatalf("expected non-nil interceptor result")
 	}
@@ -115,10 +115,10 @@ func TestCheckEffectiveHostnameForSSRF_PrivateIpHostname_ReturnsInterceptorResul
 }
 
 func TestCheckEffectiveHostnameForSSRF_IMDSHostname_ReturnsInterceptorResultWithIMDSMetadata(t *testing.T) {
-	inst := context.LoadForUnitTests(map[string]string{})
-	context.ResetEventContext(inst)
+	instance := context.LoadForUnitTests(map[string]string{})
+	context.ResetEventContext(instance)
 	t.Cleanup(func() {
-		context.ResetEventContext(inst)
+		context.ResetEventContext(instance)
 		context.UnloadForUnitTests()
 	})
 
@@ -129,9 +129,9 @@ func TestCheckEffectiveHostnameForSSRF_IMDSHostname_ReturnsInterceptorResultWith
 		Metadata:  map[string]string{},
 		Payload:   "http://example.test",
 	}
-	context.EventContextSetCurrentSsrfInterceptorResult(inst, ir)
+	context.EventContextSetCurrentSsrfInterceptorResult(instance, ir)
 
-	res := CheckEffectiveHostnameForSSRF(inst, "169.254.169.254")
+	res := CheckEffectiveHostnameForSSRF(instance, "169.254.169.254")
 	if res == nil {
 		t.Fatalf("expected non-nil interceptor result")
 	}

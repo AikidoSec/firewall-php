@@ -11,16 +11,16 @@ import (
 	"os"
 )
 
-func UpdateToken(inst *instance.RequestProcessorInstance, token string) bool {
+func UpdateToken(instance *instance.RequestProcessorInstance, token string) bool {
 	server := globals.GetServer(token)
-	if token == inst.GetCurrentToken() {
-		log.Debugf(inst, "Server not found for token \"AIK_RUNTIME_***%s\"", utils.AnonymizeToken(token))
+	if token == instance.GetCurrentToken() {
+		log.Debugf(instance, "Server not found for token \"AIK_RUNTIME_***%s\"", utils.AnonymizeToken(token))
 		return false
 	}
 
-	inst.SetCurrentToken(token)
-	inst.SetCurrentServer(server)
-	log.Infof(inst, "Token changed to \"AIK_RUNTIME_***%s\"", utils.AnonymizeToken(token))
+	instance.SetCurrentToken(token)
+	instance.SetCurrentServer(server)
+	log.Infof(instance, "Token changed to \"AIK_RUNTIME_***%s\"", utils.AnonymizeToken(token))
 	return true
 }
 
@@ -33,7 +33,7 @@ const (
 	ReloadWithPastSeenToken
 )
 
-func ReloadAikidoConfig(inst *instance.RequestProcessorInstance, conf *AikidoConfigData, initJson string) ReloadResult {
+func ReloadAikidoConfig(instance *instance.RequestProcessorInstance, conf *AikidoConfigData, initJson string) ReloadResult {
 	err := json.Unmarshal([]byte(initJson), conf)
 	if err != nil {
 		return ReloadError
@@ -48,18 +48,18 @@ func ReloadAikidoConfig(inst *instance.RequestProcessorInstance, conf *AikidoCon
 	}
 
 	if globals.ServerExists(conf.Token) {
-		if !UpdateToken(inst, conf.Token) {
+		if !UpdateToken(instance, conf.Token) {
 			return ReloadWithSameToken
 		}
 		return ReloadWithPastSeenToken
 	}
 	server := globals.CreateServer(conf.Token)
 	server.AikidoConfig = *conf
-	UpdateToken(inst, conf.Token)
+	UpdateToken(instance, conf.Token)
 	return ReloadWithNewToken
 }
 
-func Init(inst *instance.RequestProcessorInstance, initJson string) {
+func Init(instance *instance.RequestProcessorInstance, initJson string) {
 	err := json.Unmarshal([]byte(initJson), &globals.EnvironmentConfig)
 	if err != nil {
 		panic(fmt.Sprintf("Error parsing JSON to EnvironmentConfig: %s", err))
@@ -69,7 +69,7 @@ func Init(inst *instance.RequestProcessorInstance, initJson string) {
 	globals.EnvironmentConfig.RequestProcessorPID = int32(os.Getpid())
 
 	conf := AikidoConfigData{}
-	ReloadAikidoConfig(inst, &conf, initJson)
+	ReloadAikidoConfig(instance, &conf, initJson)
 	log.Init(conf.DiskLogs)
 }
 

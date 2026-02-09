@@ -9,24 +9,24 @@ import (
 	"reflect"
 )
 
-func GetApiInfo(inst *instance.RequestProcessorInstance, server *ServerData) *protos.APISpec {
+func GetApiInfo(instance *instance.RequestProcessorInstance, server *ServerData) *protos.APISpec {
 	if !server.AikidoConfig.CollectApiSchema {
-		log.Debug(inst, "AIKIDO_FEATURE_COLLECT_API_SCHEMA is not enabled -> no API schema!")
+		log.Debug(instance, "AIKIDO_FEATURE_COLLECT_API_SCHEMA is not enabled -> no API schema!")
 		return nil
 	}
 
 	var bodyInfo *protos.APIBodyInfo
 	var queryInfo *protos.DataSchema
 
-	body := context.GetBodyParsed(inst)
-	headers := context.GetHeadersParsed(inst)
-	query := context.GetQueryParsed(inst)
+	body := context.GetBodyParsed(instance)
+	headers := context.GetHeadersParsed(instance)
+	query := context.GetQueryParsed(instance)
 
 	// Check body data
 	if body != nil && isObject(body) && len(body) > 0 {
 		bodyType := getBodyDataType(headers)
 		if bodyType == Undefined {
-			log.Debug(inst, "Body type is undefined -> no API schema!")
+			log.Debug(instance, "Body type is undefined -> no API schema!")
 			return nil
 		}
 
@@ -44,10 +44,10 @@ func GetApiInfo(inst *instance.RequestProcessorInstance, server *ServerData) *pr
 	}
 
 	// Get Auth Info
-	authInfo := GetApiAuthType(inst)
+	authInfo := GetApiAuthType(instance)
 
 	if bodyInfo == nil && queryInfo == nil && authInfo == nil {
-		log.Debug(inst, "All sub-schemas are empty -> no API schema!")
+		log.Debug(instance, "All sub-schemas are empty -> no API schema!")
 		return nil
 	}
 

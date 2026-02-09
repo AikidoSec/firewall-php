@@ -7,10 +7,10 @@ import (
 	"main/utils"
 )
 
-func CheckContextForShellInjection(inst *instance.RequestProcessorInstance, command string, operation string) *utils.InterceptorResult {
+func CheckContextForShellInjection(instance *instance.RequestProcessorInstance, command string, operation string) *utils.InterceptorResult {
 	trimmedCommand := helpers.TrimInvisible(command)
 	for _, source := range context.SOURCES {
-		mapss := source.CacheGet(inst)
+		mapss := source.CacheGet(instance)
 
 		for str, path := range mapss {
 			trimmedInputString := helpers.TrimInvisible(str)

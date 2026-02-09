@@ -26,8 +26,8 @@ func setupTestServerForBlockedDomains(blockNewOutgoingRequests bool, outboundDom
 	}
 
 	// Create a test instance with the server
-	inst := instance.NewRequestProcessorInstance(0, false)
-	inst.SetCurrentServer(server)
+	instance := instance.NewRequestProcessorInstance(0, false)
+	instance.SetCurrentServer(server)
 
 	// Setup test context with request IP
 	contextData := map[string]string{}
@@ -37,7 +37,7 @@ func setupTestServerForBlockedDomains(blockNewOutgoingRequests bool, outboundDom
 	context.LoadForUnitTests(contextData)
 
 	// Return instance and cleanup function
-	return inst, func() {
+	return instance, func() {
 		context.UnloadForUnitTests()
 	}
 }
@@ -47,10 +47,10 @@ func TestIsBlockedOutboundDomain_ExplicitlyBlockedDomain(t *testing.T) {
 	outboundDomains := map[string]bool{
 		"evil.com": true,
 	}
-	inst, cleanup := setupTestServerForBlockedDomains(false, outboundDomains, nil, "")
+	instance, cleanup := setupTestServerForBlockedDomains(false, outboundDomains, nil, "")
 	defer cleanup()
 
-	isBlocked := IsBlockedOutboundDomainWithInst(inst, "evil.com")
+	isBlocked := IsBlockedOutboundDomainWithInst(instance, "evil.com")
 
 	if !isBlocked {
 		t.Error("Expected blocked domain to be blocked, but it was allowed")
@@ -64,10 +64,10 @@ func TestIsBlockedOutboundDomain_ExplicitlyBlockedDomainRegardlessOfFlag(t *test
 		"evil.com": true,
 		"safe.com": false,
 	}
-	inst, cleanup := setupTestServerForBlockedDomains(false, outboundDomains, nil, "")
+	instance, cleanup := setupTestServerForBlockedDomains(false, outboundDomains, nil, "")
 	defer cleanup()
 
-	isBlocked := IsBlockedOutboundDomainWithInst(inst, "evil.com")
+	isBlocked := IsBlockedOutboundDomainWithInst(instance, "evil.com")
 
 	if !isBlocked {
 		t.Error("Expected blocked domain to be blocked regardless of blockNewOutgoingRequests flag")
@@ -79,10 +79,10 @@ func TestIsBlockedOutboundDomain_AllowedDomainWithBlockNewEnabled(t *testing.T) 
 	outboundDomains := map[string]bool{
 		"safe.com": false,
 	}
-	inst, cleanup := setupTestServerForBlockedDomains(true, outboundDomains, nil, "")
+	instance, cleanup := setupTestServerForBlockedDomains(true, outboundDomains, nil, "")
 	defer cleanup()
 
-	isBlocked := IsBlockedOutboundDomainWithInst(inst, "safe.com")
+	isBlocked := IsBlockedOutboundDomainWithInst(instance, "safe.com")
 
 	if isBlocked {
 		t.Error("Expected allowed domain to be allowed when blockNewOutgoingRequests is true")
@@ -94,10 +94,10 @@ func TestIsBlockedOutboundDomain_NewDomainBlockedWhenFlagEnabled(t *testing.T) {
 	outboundDomains := map[string]bool{
 		"safe.com": false,
 	}
-	inst, cleanup := setupTestServerForBlockedDomains(true, outboundDomains, nil, "")
+	instance, cleanup := setupTestServerForBlockedDomains(true, outboundDomains, nil, "")
 	defer cleanup()
 
-	isBlocked := IsBlockedOutboundDomainWithInst(inst, "unknown.com")
+	isBlocked := IsBlockedOutboundDomainWithInst(instance, "unknown.com")
 
 	if !isBlocked {
 		t.Error("Expected unknown domain to be blocked when blockNewOutgoingRequests is true")
@@ -110,10 +110,10 @@ func TestIsBlockedOutboundDomain_NewDomainAllowedWhenFlagDisabled(t *testing.T) 
 	outboundDomains := map[string]bool{
 		"safe.com": false,
 	}
-	inst, cleanup := setupTestServerForBlockedDomains(false, outboundDomains, nil, "")
+	instance, cleanup := setupTestServerForBlockedDomains(false, outboundDomains, nil, "")
 	defer cleanup()
 
-	isBlocked := IsBlockedOutboundDomainWithInst(inst, "unknown.com")
+	isBlocked := IsBlockedOutboundDomainWithInst(instance, "unknown.com")
 
 	if isBlocked {
 		t.Error("Expected unknown domain to be allowed when blockNewOutgoingRequests is false")
@@ -125,18 +125,18 @@ func TestIsBlockedOutboundDomain_CaseInsensitiveHostname(t *testing.T) {
 	outboundDomains := map[string]bool{
 		"evil.com": true,
 	}
-	inst, cleanup := setupTestServerForBlockedDomains(false, outboundDomains, nil, "")
+	instance, cleanup := setupTestServerForBlockedDomains(false, outboundDomains, nil, "")
 	defer cleanup()
 
 	// Test with uppercase hostname
-	isBlocked := IsBlockedOutboundDomainWithInst(inst, "EVIL.COM")
+	isBlocked := IsBlockedOutboundDomainWithInst(instance, "EVIL.COM")
 
 	if !isBlocked {
 		t.Error("Expected uppercase hostname to be blocked (case-insensitive matching)")
 	}
 
 	// Test with mixed case
-	isBlocked = IsBlockedOutboundDomainWithInst(inst, "Evil.Com")
+	isBlocked = IsBlockedOutboundDomainWithInst(instance, "Evil.Com")
 
 	if !isBlocked {
 		t.Error("Expected mixed case hostname to be blocked (case-insensitive matching)")
@@ -145,10 +145,10 @@ func TestIsBlockedOutboundDomain_CaseInsensitiveHostname(t *testing.T) {
 
 func TestIsBlockedOutboundDomain_NoServerReturnsNil(t *testing.T) {
 	// Test that function returns false when there's no server
-	inst := instance.NewRequestProcessorInstance(0, false)
-	// Don't set a server, so inst.GetCurrentServer() will return nil
+	instance := instance.NewRequestProcessorInstance(0, false)
+	// Don't set a server, so instance.GetCurrentServer() will return nil
 
-	isBlocked := IsBlockedOutboundDomainWithInst(inst, "evil.com")
+	isBlocked := IsBlockedOutboundDomainWithInst(instance, "evil.com")
 
 	if isBlocked {
 		t.Error("Expected nil isBlocked when there's no server")
@@ -158,10 +158,10 @@ func TestIsBlockedOutboundDomain_NoServerReturnsNil(t *testing.T) {
 func TestIsBlockedOutboundDomain_EmptyDomainsListWithBlockNewEnabled(t *testing.T) {
 	// Test that all domains are blocked when the list is empty and blockNewOutgoingRequests is true
 	outboundDomains := map[string]bool{}
-	inst, cleanup := setupTestServerForBlockedDomains(true, outboundDomains, nil, "")
+	instance, cleanup := setupTestServerForBlockedDomains(true, outboundDomains, nil, "")
 	defer cleanup()
 
-	isBlocked := IsBlockedOutboundDomainWithInst(inst, "example.com")
+	isBlocked := IsBlockedOutboundDomainWithInst(instance, "example.com")
 
 	if !isBlocked {
 		t.Error("Expected domain to be blocked when domains list is empty and blockNewOutgoingRequests is true")
@@ -171,10 +171,10 @@ func TestIsBlockedOutboundDomain_EmptyDomainsListWithBlockNewEnabled(t *testing.
 func TestIsBlockedOutboundDomain_EmptyDomainsListWithBlockNewDisabled(t *testing.T) {
 	// Test that all domains are allowed when the list is empty and blockNewOutgoingRequests is false
 	outboundDomains := map[string]bool{}
-	inst, cleanup := setupTestServerForBlockedDomains(false, outboundDomains, nil, "")
+	instance, cleanup := setupTestServerForBlockedDomains(false, outboundDomains, nil, "")
 	defer cleanup()
 
-	isBlocked := IsBlockedOutboundDomainWithInst(inst, "example.com")
+	isBlocked := IsBlockedOutboundDomainWithInst(instance, "example.com")
 
 	if isBlocked {
 		t.Error("Expected domain to be allowed when domains list is empty and blockNewOutgoingRequests is false")
@@ -190,11 +190,11 @@ func TestIsBlockedOutboundDomain_PunycodeBypass_BlockedUnicodeRequestedAsPunycod
 	outboundDomains := map[string]bool{
 		"münchen.de": true,
 	}
-	inst, cleanup := setupTestServerForBlockedDomains(false, outboundDomains, nil, "")
+	instance, cleanup := setupTestServerForBlockedDomains(false, outboundDomains, nil, "")
 	defer cleanup()
 
 	// Attacker tries to bypass by using Punycode encoding
-	isBlocked := IsBlockedOutboundDomainWithInst(inst, "xn--mnchen-3ya.de")
+	isBlocked := IsBlockedOutboundDomainWithInst(instance, "xn--mnchen-3ya.de")
 
 	if !isBlocked {
 		t.Error("Expected Punycode hostname to be blocked when Unicode equivalent is in blocked list")
@@ -207,11 +207,11 @@ func TestIsBlockedOutboundDomain_PunycodeBypass_BlockedPunycodeRequestedAsUnicod
 	outboundDomains := map[string]bool{
 		"xn--mnchen-3ya.de": true,
 	}
-	inst, cleanup := setupTestServerForBlockedDomains(false, outboundDomains, nil, "")
+	instance, cleanup := setupTestServerForBlockedDomains(false, outboundDomains, nil, "")
 	defer cleanup()
 
 	// Attacker tries to bypass by using Unicode
-	isBlocked := IsBlockedOutboundDomainWithInst(inst, "münchen.de")
+	isBlocked := IsBlockedOutboundDomainWithInst(instance, "münchen.de")
 
 	if !isBlocked {
 		t.Error("Expected Unicode hostname to be blocked when Punycode equivalent is in blocked list")
@@ -223,11 +223,11 @@ func TestIsBlockedOutboundDomain_PunycodeBypass_AllowedUnicodeRequestedAsPunycod
 	outboundDomains := map[string]bool{
 		"münchen.de": false,
 	}
-	inst, cleanup := setupTestServerForBlockedDomains(true, outboundDomains, nil, "")
+	instance, cleanup := setupTestServerForBlockedDomains(true, outboundDomains, nil, "")
 	defer cleanup()
 
 	// Request using Punycode encoding
-	isBlocked := IsBlockedOutboundDomainWithInst(inst, "xn--mnchen-3ya.de")
+	isBlocked := IsBlockedOutboundDomainWithInst(instance, "xn--mnchen-3ya.de")
 
 	if isBlocked {
 		t.Error("Expected Punycode hostname to be allowed when Unicode equivalent is in allow list")
@@ -239,11 +239,11 @@ func TestIsBlockedOutboundDomain_PunycodeBypass_AllowedPunycodeRequestedAsUnicod
 	outboundDomains := map[string]bool{
 		"xn--mnchen-3ya.de": false,
 	}
-	inst, cleanup := setupTestServerForBlockedDomains(true, outboundDomains, nil, "")
+	instance, cleanup := setupTestServerForBlockedDomains(true, outboundDomains, nil, "")
 	defer cleanup()
 
 	// Request using Unicode
-	isBlocked := IsBlockedOutboundDomainWithInst(inst, "münchen.de")
+	isBlocked := IsBlockedOutboundDomainWithInst(instance, "münchen.de")
 
 	if isBlocked {
 		t.Error("Expected Unicode hostname to be allowed when Punycode equivalent is in allow list")
@@ -255,11 +255,11 @@ func TestIsBlockedOutboundDomain_PunycodeBypass_MixedSubdomains(t *testing.T) {
 	outboundDomains := map[string]bool{
 		"böse.evil.com": true,
 	}
-	inst, cleanup := setupTestServerForBlockedDomains(false, outboundDomains, nil, "")
+	instance, cleanup := setupTestServerForBlockedDomains(false, outboundDomains, nil, "")
 	defer cleanup()
 
 	// Attacker tries with Punycode subdomain (xn--bse-sna = böse)
-	isBlocked := IsBlockedOutboundDomainWithInst(inst, "xn--bse-sna.evil.com")
+	isBlocked := IsBlockedOutboundDomainWithInst(instance, "xn--bse-sna.evil.com")
 
 	if !isBlocked {
 		t.Error("Expected Punycode subdomain to be blocked when Unicode equivalent is in blocked list")
@@ -271,11 +271,11 @@ func TestIsBlockedOutboundDomain_PunycodeBypass_RussianDomain(t *testing.T) {
 	outboundDomains := map[string]bool{
 		"москва.ru": true,
 	}
-	inst, cleanup := setupTestServerForBlockedDomains(false, outboundDomains, nil, "")
+	instance, cleanup := setupTestServerForBlockedDomains(false, outboundDomains, nil, "")
 	defer cleanup()
 
 	// Attacker tries with Punycode
-	isBlocked := IsBlockedOutboundDomainWithInst(inst, "xn--80adxhks.ru")
+	isBlocked := IsBlockedOutboundDomainWithInst(instance, "xn--80adxhks.ru")
 
 	if !isBlocked {
 		t.Error("Expected Punycode Cyrillic hostname to be blocked when Unicode equivalent is in blocked list")
@@ -287,11 +287,11 @@ func TestIsBlockedOutboundDomain_PunycodeBypass_ChineseDomain(t *testing.T) {
 	outboundDomains := map[string]bool{
 		"中文.com": true,
 	}
-	inst, cleanup := setupTestServerForBlockedDomains(false, outboundDomains, nil, "")
+	instance, cleanup := setupTestServerForBlockedDomains(false, outboundDomains, nil, "")
 	defer cleanup()
 
 	// Attacker tries with Punycode
-	isBlocked := IsBlockedOutboundDomainWithInst(inst, "xn--fiq228c.com")
+	isBlocked := IsBlockedOutboundDomainWithInst(instance, "xn--fiq228c.com")
 
 	if !isBlocked {
 		t.Error("Expected Punycode Chinese hostname to be blocked when Unicode equivalent is in blocked list")
@@ -303,11 +303,11 @@ func TestIsBlockedOutboundDomain_PunycodeBypass_WithPortStripped(t *testing.T) {
 	outboundDomains := map[string]bool{
 		"münchen.de": true,
 	}
-	inst, cleanup := setupTestServerForBlockedDomains(false, outboundDomains, nil, "")
+	instance, cleanup := setupTestServerForBlockedDomains(false, outboundDomains, nil, "")
 	defer cleanup()
 
 	// Just the hostname without port
-	isBlocked := IsBlockedOutboundDomainWithInst(inst, "xn--mnchen-3ya.de")
+	isBlocked := IsBlockedOutboundDomainWithInst(instance, "xn--mnchen-3ya.de")
 
 	if !isBlocked {
 		t.Error("Expected Punycode hostname to be blocked")

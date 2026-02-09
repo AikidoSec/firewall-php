@@ -8,22 +8,22 @@ import (
 	sql_injection "main/vulnerabilities/sql-injection"
 )
 
-func OnPreSqlQueryExecuted(inst *instance.RequestProcessorInstance) string {
-	query := context.GetSqlQuery(inst)
-	dialect := context.GetSqlDialect(inst)
-	operation := context.GetFunctionName(inst)
+func OnPreSqlQueryExecuted(instance *instance.RequestProcessorInstance) string {
+	query := context.GetSqlQuery(instance)
+	dialect := context.GetSqlDialect(instance)
+	operation := context.GetFunctionName(instance)
 	if query == "" || dialect == "" {
 		return ""
 	}
 
-	if context.IsEndpointProtectionTurnedOff(inst) {
-		log.Infof(inst, "Protection is turned off -> will not run detection logic!")
+	if context.IsEndpointProtectionTurnedOff(instance) {
+		log.Infof(instance, "Protection is turned off -> will not run detection logic!")
 		return ""
 	}
 
-	res := sql_injection.CheckContextForSqlInjection(inst, query, operation, dialect)
+	res := sql_injection.CheckContextForSqlInjection(instance, query, operation, dialect)
 	if res != nil {
-		return attack.ReportAttackDetected(res, inst)
+		return attack.ReportAttackDetected(res, instance)
 	}
 	return ""
 }

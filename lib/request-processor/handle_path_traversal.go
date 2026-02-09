@@ -8,29 +8,29 @@ import (
 	path_traversal "main/vulnerabilities/path-traversal"
 )
 
-func OnPrePathAccessed(inst *instance.RequestProcessorInstance) string {
-	filename := context.GetFilename(inst)
-	filename2 := context.GetFilename2(inst)
-	operation := context.GetFunctionName(inst)
+func OnPrePathAccessed(instance *instance.RequestProcessorInstance) string {
+	filename := context.GetFilename(instance)
+	filename2 := context.GetFilename2(instance)
+	operation := context.GetFunctionName(instance)
 
 	if filename == "" || operation == "" {
 		return ""
 	}
 
-	if context.IsEndpointProtectionTurnedOff(inst) {
-		log.Infof(inst, "Protection is turned off -> will not run detection logic!")
+	if context.IsEndpointProtectionTurnedOff(instance) {
+		log.Infof(instance, "Protection is turned off -> will not run detection logic!")
 		return ""
 	}
 
-	res := path_traversal.CheckContextForPathTraversal(inst, filename, operation, true)
+	res := path_traversal.CheckContextForPathTraversal(instance, filename, operation, true)
 	if res != nil {
-		return attack.ReportAttackDetected(res, inst)
+		return attack.ReportAttackDetected(res, instance)
 	}
 
 	if filename2 != "" {
-		res = path_traversal.CheckContextForPathTraversal(inst, filename2, operation, true)
+		res = path_traversal.CheckContextForPathTraversal(instance, filename2, operation, true)
 		if res != nil {
-			return attack.ReportAttackDetected(res, inst)
+			return attack.ReportAttackDetected(res, instance)
 		}
 	}
 	return ""

@@ -14,7 +14,7 @@ import (
 var TestContext map[string]string
 var TestServer *ServerData // Test server for unit tests
 
-func UnitTestsCallback(inst *instance.RequestProcessorInstance, context_id int) string {
+func UnitTestsCallback(instance *instance.RequestProcessorInstance, context_id int) string {
 	switch context_id {
 	case C.CONTEXT_REMOTE_ADDRESS:
 		return TestContext["remoteAddress"]
@@ -58,7 +58,7 @@ func LoadForUnitTests(context map[string]string) *instance.RequestProcessorInsta
 	}
 
 	ctx := &RequestContextData{
-		inst:     mockInst,
+		instance: mockInst,
 		Callback: UnitTestsCallback,
 	}
 	mockInst.SetRequestContext(ctx)
@@ -74,13 +74,13 @@ func UnloadForUnitTests() {
 	TestContext = nil
 }
 
-func SetTestServer(inst *instance.RequestProcessorInstance, server *ServerData) {
+func SetTestServer(instance *instance.RequestProcessorInstance, server *ServerData) {
 	TestServer = server
 
-	c := GetContext(inst)
-	if c != nil && c.inst != nil && server != nil {
-		c.inst.SetCurrentServer(server)
-		c.inst.SetCurrentToken(server.AikidoConfig.Token)
+	c := GetContext(instance)
+	if c != nil && c.instance != nil && server != nil {
+		c.instance.SetCurrentServer(server)
+		c.instance.SetCurrentToken(server.AikidoConfig.Token)
 	}
 }
 

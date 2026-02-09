@@ -12,10 +12,10 @@ func IsBlockedOutboundDomain(hostname string) bool {
 	return IsBlockedOutboundDomainWithInst(nil, hostname)
 }
 
-func IsBlockedOutboundDomainWithInst(inst *instance.RequestProcessorInstance, hostname string) bool {
+func IsBlockedOutboundDomainWithInst(instance *instance.RequestProcessorInstance, hostname string) bool {
 	var server *ServerData
-	if inst != nil {
-		server = inst.GetCurrentServer()
+	if instance != nil {
+		server = instance.GetCurrentServer()
 	}
 	if server == nil {
 		return false

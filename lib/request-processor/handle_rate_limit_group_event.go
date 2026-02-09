@@ -6,9 +6,9 @@ import (
 	"main/log"
 )
 
-func OnRateLimitGroupEvent(inst *instance.RequestProcessorInstance) string {
-	context.ContextSetRateLimitGroup(inst)
-	group := context.GetRateLimitGroup(inst)
-	log.Infof(inst, "Got rate limit group: %s", group)
+func OnRateLimitGroupEvent(instance *instance.RequestProcessorInstance) string {
+	context.ContextSetRateLimitGroup(instance)
+	group := context.GetRateLimitGroup(instance)
+	log.Infof(instance, "Got rate limit group: %s", group)
 	return ""
 }

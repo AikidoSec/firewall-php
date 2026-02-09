@@ -12,34 +12,34 @@ import (
 func TestDetectAuthorizationHeader(t *testing.T) {
 	assert := assert.New(t)
 
-	inst := context.LoadForUnitTests(map[string]string{
+	instance := context.LoadForUnitTests(map[string]string{
 		"headers": context.GetJsonString(map[string]interface{}{
 			"authorization": "Bearer token",
 		}),
 	})
 	assert.Equal([]*protos.APIAuthType{
 		{Type: "http", Scheme: "bearer"},
-	}, GetApiAuthType(inst))
+	}, GetApiAuthType(instance))
 	context.UnloadForUnitTests()
 
-	inst = context.LoadForUnitTests(map[string]string{
+	instance = context.LoadForUnitTests(map[string]string{
 		"headers": context.GetJsonString(map[string]interface{}{
 			"authorization": "Basic base64",
 		}),
 	})
 	assert.Equal([]*protos.APIAuthType{
 		{Type: "http", Scheme: "basic"},
-	}, GetApiAuthType(inst))
+	}, GetApiAuthType(instance))
 	context.UnloadForUnitTests()
 
-	inst = context.LoadForUnitTests(map[string]string{
+	instance = context.LoadForUnitTests(map[string]string{
 		"headers": context.GetJsonString(map[string]interface{}{
 			"authorization": "custom",
 		}),
 	})
 	assert.Equal([]*protos.APIAuthType{
 		{Type: "apiKey", In: "header", Name: "Authorization"},
-	}, GetApiAuthType(inst))
+	}, GetApiAuthType(instance))
 	context.UnloadForUnitTests()
 }
 
@@ -47,24 +47,24 @@ func TestDetectAuthorizationHeader(t *testing.T) {
 func TestDetectApiKeys(t *testing.T) {
 	assert := assert.New(t)
 
-	inst := context.LoadForUnitTests(map[string]string{
+	instance := context.LoadForUnitTests(map[string]string{
 		"headers": context.GetJsonString(map[string]interface{}{
 			"x_api_key": "token",
 		}),
 	})
 	assert.Equal([]*protos.APIAuthType{
 		{Type: "apiKey", In: ("header"), Name: ("x-api-key")},
-	}, GetApiAuthType(inst))
+	}, GetApiAuthType(instance))
 	context.UnloadForUnitTests()
 
-	inst = context.LoadForUnitTests(map[string]string{
+	instance = context.LoadForUnitTests(map[string]string{
 		"headers": context.GetJsonString(map[string]interface{}{
 			"api_key": "token",
 		}),
 	})
 	assert.Equal([]*protos.APIAuthType{
 		{Type: "apiKey", In: ("header"), Name: ("api-key")},
-	}, GetApiAuthType(inst))
+	}, GetApiAuthType(instance))
 	context.UnloadForUnitTests()
 }
 
@@ -72,20 +72,20 @@ func TestDetectApiKeys(t *testing.T) {
 func TestDetectAuthCookies(t *testing.T) {
 	assert := assert.New(t)
 
-	inst := context.LoadForUnitTests(map[string]string{
+	instance := context.LoadForUnitTests(map[string]string{
 		"cookies": "api-key=token",
 	})
 	assert.Equal([]*protos.APIAuthType{
 		{Type: "apiKey", In: ("cookie"), Name: ("api-key")},
-	}, GetApiAuthType(inst))
+	}, GetApiAuthType(instance))
 	context.UnloadForUnitTests()
 
-	inst = context.LoadForUnitTests(map[string]string{
+	instance = context.LoadForUnitTests(map[string]string{
 		"cookies": "session=test",
 	})
 	assert.Equal([]*protos.APIAuthType{
 		{Type: "apiKey", In: ("cookie"), Name: ("session")},
-	}, GetApiAuthType(inst))
+	}, GetApiAuthType(instance))
 	context.UnloadForUnitTests()
 }
 
@@ -93,21 +93,21 @@ func TestDetectAuthCookies(t *testing.T) {
 func TestNoAuth(t *testing.T) {
 	assert := assert.New(t)
 
-	inst := context.LoadForUnitTests(map[string]string{})
-	assert.Empty(GetApiAuthType(inst))
+	instance := context.LoadForUnitTests(map[string]string{})
+	assert.Empty(GetApiAuthType(instance))
 	context.UnloadForUnitTests()
 
-	inst = context.LoadForUnitTests(map[string]string{
+	instance = context.LoadForUnitTests(map[string]string{
 		"headers": context.GetJsonString(map[string]interface{}{}),
 	})
-	assert.Empty(GetApiAuthType(inst))
+	assert.Empty(GetApiAuthType(instance))
 	context.UnloadForUnitTests()
 
-	inst = context.LoadForUnitTests(map[string]string{
+	instance = context.LoadForUnitTests(map[string]string{
 		"headers": context.GetJsonString(map[string]interface{}{
 			"authorization": "",
 		}),
 	})
-	assert.Empty(GetApiAuthType(inst))
+	assert.Empty(GetApiAuthType(instance))
 	context.UnloadForUnitTests()
 }
