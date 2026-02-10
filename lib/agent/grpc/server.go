@@ -33,26 +33,13 @@ func (s *GrpcServer) OnConfig(ctx context.Context, req *protos.Config) (*emptypb
 		return &emptypb.Empty{}, nil
 	}
 
-	serverKey := ServerKey{Token: token, ServerPID: req.GetServerPid()}
-
-	globals.ServersMutex.Lock()
-	server, exists := globals.Servers[serverKey]
-	if exists {
-		globals.ServersMutex.Unlock()
+	server := globals.GetServer(ServerKey{Token: token, ServerPID: req.GetServerPid()})
+	if server != nil {
 		log.Debugf(server.Logger, "Server \"AIK_RUNTIME_***%s\" already exists, skipping config update (request processor PID: %d, server PID: %d)", utils.AnonymizeToken(token), req.GetRequestProcessorPid(), req.GetServerPid())
 		return &emptypb.Empty{}, nil
 	}
 
-	log.Infof(log.MainLogger, "Client (request processor PID: %d) connected. Registering server \"AIK_RUNTIME_***%s\" (server PID: %d)...", req.GetRequestProcessorPid(), utils.AnonymizeToken(serverKey.Token), serverKey.ServerPID)
-	server = NewServerData()
-
-	server_utils.InitializeServerLogger(server, req)
-
-	globals.Servers[serverKey] = server
-	globals.ServersMutex.Unlock()
-
-	server_utils.CompleteServerConfiguration(server, serverKey, req)
-
+	server_utils.Register(ServerKey{Token: token, ServerPID: req.GetServerPid()}, req.GetRequestProcessorPid(), req)
 	return &emptypb.Empty{}, nil
 }
 
@@ -70,7 +57,6 @@ func (s *GrpcServer) OnDomain(ctx context.Context, req *protos.Domain) (*emptypb
 	if server == nil {
 		return &emptypb.Empty{}, nil
 	}
-
 	log.Debugf(server.Logger, "Received domain: %s:%d", req.GetDomain(), req.GetPort())
 	storeDomain(server, req.GetDomain(), req.GetPort())
 	return &emptypb.Empty{}, nil
@@ -81,7 +67,6 @@ func (s *GrpcServer) GetRateLimitingStatus(ctx context.Context, req *protos.Rate
 	if server == nil {
 		return &protos.RateLimitingStatus{Block: false}, nil
 	}
-
 	log.Debugf(server.Logger, "Received rate limiting info: %s %s %s %s %s %s", req.GetMethod(), req.GetRoute(), req.GetRouteParsed(), req.GetUser(), req.GetIp(), req.GetRateLimitGroup())
 	return getRateLimitingStatus(server, req.GetMethod(), req.GetRoute(), req.GetRouteParsed(), req.GetUser(), req.GetIp(), req.GetRateLimitGroup()), nil
 }
@@ -91,7 +76,6 @@ func (s *GrpcServer) OnRequestShutdown(ctx context.Context, req *protos.RequestM
 	if server == nil {
 		return &emptypb.Empty{}, nil
 	}
-
 	log.Debugf(server.Logger, "Received request metadata: %s %s %d %s %s %v", req.GetMethod(), req.GetRouteParsed(), req.GetStatusCode(), req.GetUser(), req.GetIp(), req.GetApiSpec())
 	if req.GetShouldDiscoverRoute() || req.GetRateLimited() {
 		go storeTotalStats(server, req.GetRateLimited())
@@ -99,6 +83,7 @@ func (s *GrpcServer) OnRequestShutdown(ctx context.Context, req *protos.RequestM
 	}
 	go updateAttackWaveCountsAndDetect(server, req.GetIsWebScanner(), req.GetIp(), req.GetUser(), req.GetUserAgent(), req.GetMethod(), req.GetUrl())
 
+	atomic.StoreUint32(&server.GotTraffic, 1)
 	return &emptypb.Empty{}, nil
 }
 
@@ -123,7 +108,6 @@ func (s *GrpcServer) OnUser(ctx context.Context, req *protos.User) (*emptypb.Emp
 	if server == nil {
 		return &emptypb.Empty{}, nil
 	}
-
 	log.Debugf(server.Logger, "Received user event: %s", req.GetId())
 	go onUserEvent(server, req.GetId(), req.GetUsername(), req.GetIp())
 	return &emptypb.Empty{}, nil
@@ -134,7 +118,6 @@ func (s *GrpcServer) OnAttackDetected(ctx context.Context, req *protos.AttackDet
 	if server == nil {
 		return &emptypb.Empty{}, nil
 	}
-
 	cloud.SendAttackDetectedEvent(server, req, "detected_attack")
 	storeAttackStats(server, req)
 	return &emptypb.Empty{}, nil
@@ -145,7 +128,6 @@ func (s *GrpcServer) OnMonitoredSinkStats(ctx context.Context, req *protos.Monit
 	if server == nil {
 		return &emptypb.Empty{}, nil
 	}
-
 	storeSinkStats(server, req)
 	return &emptypb.Empty{}, nil
 }
@@ -155,8 +137,6 @@ func (s *GrpcServer) OnMiddlewareInstalled(ctx context.Context, req *protos.Midd
 	if server == nil {
 		return &emptypb.Empty{}, nil
 	}
-
-	// Note: Don't start tickers here - this is an initialization event, not runtime traffic
 	log.Debugf(server.Logger, "Received MiddlewareInstalled")
 	atomic.StoreUint32(&server.MiddlewareInstalled, 1)
 	return &emptypb.Empty{}, nil
@@ -167,7 +147,6 @@ func (s *GrpcServer) OnMonitoredIpMatch(ctx context.Context, req *protos.Monitor
 	if server == nil {
 		return &emptypb.Empty{}, nil
 	}
-
 	log.Debugf(server.Logger, "Received MonitoredIpMatch: %v", req.GetLists())
 
 	server.StatsData.StatsMutex.Lock()

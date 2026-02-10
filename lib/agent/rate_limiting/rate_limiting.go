@@ -22,7 +22,7 @@ func AdvanceRateLimitingQueues(server *ServerData) {
 	}
 }
 
-func StartRateLimitingTicker(server *ServerData) {
+func Init(server *ServerData) {
 	utils.StartPollingRoutine(server.PollingData.RateLimitingChannel, server.PollingData.RateLimitingTicker, AdvanceRateLimitingQueues, server)
 }
 

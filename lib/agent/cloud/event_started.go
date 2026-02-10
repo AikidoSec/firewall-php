@@ -4,16 +4,9 @@ import (
 	. "main/aikido_types"
 	"main/constants"
 	"main/utils"
-	"sync/atomic"
 )
 
 func SendStartEvent(server *ServerData) {
-	// In multi-worker mode (e.g., frankenphp-worker), ensure only one worker sends the started event
-	// Use atomic compare-and-swap to guarantee exactly-once semantics
-	if !atomic.CompareAndSwapUint32(&server.SentStartedEvent, 0, 1) {
-		return
-	}
-
 	startedEvent := Started{
 		Type:  "started",
 		Agent: GetAgentInfo(server),

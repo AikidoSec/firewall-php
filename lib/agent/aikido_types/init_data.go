@@ -215,10 +215,6 @@ type ServerData struct {
 	// Got some request info passed via gRPC to the Agent
 	GotTraffic uint32
 
-	// Tracks if the "started" event has been sent for this server
-	// In multi-worker mode (e.g., frankenphp-worker), only one worker should send it
-	SentStartedEvent uint32
-
 	// Last time this server established a gRPC connection
 	LastConnectionTime int64
 
