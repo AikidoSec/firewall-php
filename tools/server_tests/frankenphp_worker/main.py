@@ -54,6 +54,7 @@ worker_script_template = """<?php
 $test_dir = '{test_dir}';
 
 $handler = function() use ($test_dir) {{
+    \\aikido\\worker_request_init();
     $uri = $_SERVER['REQUEST_URI'] ?? '/';
     $path = parse_url($uri, PHP_URL_PATH) ?: '/';
     
@@ -72,6 +73,7 @@ $handler = function() use ($test_dir) {{
         http_response_code(404);
         echo "Not Found";
     }}
+    \\aikido\\worker_rshutdown();
 }};
 
 for ($nbWorkers = frankenphp_handle_request($handler); $nbWorkers > 0; $nbWorkers = frankenphp_handle_request($handler)) {{

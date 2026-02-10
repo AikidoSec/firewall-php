@@ -5,6 +5,7 @@ import pwd
 import grp
 import psutil
 import time
+import glob
 
 if os.path.exists('/etc/httpd'):
     # Centos
@@ -295,6 +296,21 @@ def apache_mod_php_process_test(test_data):
 
 
 def apache_mod_php_pre_tests():
+    # Kill any existing Apache processes first (important for test retries)
+    subprocess.run(['pkill', apache_binary], check=False)
+    
+    # Clean up stale PID files
+    pid_files = glob.glob(f"{apache_run_folder}/{apache_binary}-*.pid")
+    for pid_file in pid_files:
+        try:
+            os.remove(pid_file)
+            print(f"Removed stale PID file: {pid_file}")
+        except Exception as e:
+            print(f"Failed to remove PID file {pid_file}: {e}")
+    
+    # Wait a moment for processes to fully terminate
+    time.sleep(3)
+    
     if not os.path.exists('/etc/httpd'):
         # Debian/Ubuntu Apache - use apache2ctl which sources /etc/apache2/envvars
         # This ensures APACHE_RUN_DIR and other variables are properly set

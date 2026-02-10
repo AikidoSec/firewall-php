@@ -65,34 +65,44 @@ PHP_MSHUTDOWN_FUNCTION(aikido) {
 }
 // Common request initialization logic shared between RINIT and aikido_worker_rinit
 static void aikido_do_request_init() {
+    ScopedTimer scopedTimer("request_init", "request_op");
+
+    AIKIDO_LOG_DEBUG("RINIT started!\n");
+
     AIKIDO_GLOBAL(phpLifecycle).RequestInit();
+
+    AIKIDO_LOG_DEBUG("RINIT finished!\n");
 }
 
 // Common request shutdown logic shared between RSHUTDOWN and aikidoworker_rshutdown
 static void aikido_do_request_shutdown() {
-    if (AIKIDO_GLOBAL(disable) != true) {
-        DestroyAstToClean();
-        AIKIDO_GLOBAL(phpLifecycle).RequestShutdown();
-    }
-}
-
-PHP_RINIT_FUNCTION(aikido) {
-    ScopedTimer scopedTimer("request_init", "request_op");
-    
-    aikido_do_request_init();
-
-    AIKIDO_LOG_DEBUG("RINIT finished!\n");
-    return SUCCESS;
-}
-
-PHP_RSHUTDOWN_FUNCTION(aikido) {
     ScopedTimer scopedTimer("request_shutdown", "request_op");
 
     AIKIDO_LOG_DEBUG("RSHUTDOWN started!\n");
 
-    aikido_do_request_shutdown();
-    
+    if (AIKIDO_GLOBAL(disable) != true) {
+        DestroyAstToClean();
+        AIKIDO_GLOBAL(phpLifecycle).RequestShutdown();
+    }
+
     AIKIDO_LOG_DEBUG("RSHUTDOWN finished!\n");
+}
+
+PHP_RINIT_FUNCTION(aikido) {
+    // If we are in FrankenPHP worker mode, worker_rinit is called by the worker script, so we don't need to do anything here. (RINIT is called sometimes by the worker script when it includes other files, but we don't want to do anything in that case.)
+    if (std::string(sapi_module.name) == "frankenphp" && AIKIDO_GLOBAL(isWorkerMode)) {
+        return SUCCESS;
+    }
+    aikido_do_request_init();
+    return SUCCESS;
+}
+
+PHP_RSHUTDOWN_FUNCTION(aikido) {
+    // If we are in FrankenPHP worker mode, worker_rshutdown is called by the worker script, so we don't need to do anything here. (RINIT is called sometimes by the worker script when it includes other files, but we don't want to do anything in that case.)
+    if (std::string(sapi_module.name) == "frankenphp" && AIKIDO_GLOBAL(isWorkerMode)) {
+        return SUCCESS;
+    }
+    aikido_do_request_shutdown();
     return SUCCESS;
 }
 
