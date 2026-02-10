@@ -1,5 +1,5 @@
 Name:           aikido-php-firewall
-Version:        1.4.13
+Version:        1.5.0
 Release:        1
 Summary:        Aikido PHP Extension
 License:        GPL
@@ -59,7 +59,7 @@ fi
 FRANKENPHP_PHP_VERSION=""
 if command -v frankenphp >/dev/null 2>&1; then
     FRANKENPHP_PHP_VERSION=$(frankenphp -v 2>/dev/null | grep -oP 'PHP \K\d+\.\d+' | head -n 1)
-    
+
     if [ -n "$FRANKENPHP_PHP_VERSION" ]; then
         echo "Found FrankenPHP with embedded PHP $FRANKENPHP_PHP_VERSION"
     else
@@ -145,10 +145,10 @@ done
 
 if [ -n "$FRANKENPHP_PHP_VERSION" ]; then
     echo "Installing for FrankenPHP with PHP $FRANKENPHP_PHP_VERSION... ZTS (Thread Safe)"
-    
+
     FRANKENPHP_EXT_DIR="/usr/lib/frankenphp/modules"
     FRANKENPHP_INI_DIR="/etc/frankenphp/php.d"
-    
+
     if [ -d "$FRANKENPHP_EXT_DIR" ]; then
         echo "Installing new Aikido extension in $FRANKENPHP_EXT_DIR/aikido-%{version}.so..."
         ln -sf /opt/aikido-%{version}/aikido-extension-php-$FRANKENPHP_PHP_VERSION-zts.so $FRANKENPHP_EXT_DIR/aikido-%{version}.so
@@ -157,7 +157,7 @@ if [ -n "$FRANKENPHP_PHP_VERSION" ]; then
         mkdir -p $FRANKENPHP_EXT_DIR
         ln -sf /opt/aikido-%{version}/aikido-extension-php-$FRANKENPHP_PHP_VERSION-zts.so $FRANKENPHP_EXT_DIR/aikido-%{version}.so
     fi
-    
+
     if [ -d "$FRANKENPHP_INI_DIR" ]; then
         echo "Installing new Aikido mod in $FRANKENPHP_INI_DIR/zz-aikido-%{version}.ini..."
         ln -sf /opt/aikido-%{version}/aikido.ini $FRANKENPHP_INI_DIR/zz-aikido-%{version}.ini
@@ -268,12 +268,12 @@ done
 
 if [ -d "$FRANKENPHP_EXT_DIR" ] || [ -d "$FRANKENPHP_INI_DIR" ]; then
     echo "Uninstalling for FrankenPHP..."
-    
+
     if [ -f "$FRANKENPHP_EXT_DIR/aikido-%{version}.so" ]; then
         echo "Uninstalling Aikido extension from $FRANKENPHP_EXT_DIR/aikido-%{version}.so..."
         rm -f $FRANKENPHP_EXT_DIR/aikido-%{version}.so
     fi
-    
+
     if [ -f "$FRANKENPHP_INI_DIR/zz-aikido-%{version}.ini" ]; then
         echo "Uninstalling Aikido mod from $FRANKENPHP_INI_DIR/zz-aikido-%{version}.ini..."
         rm -f $FRANKENPHP_INI_DIR/zz-aikido-%{version}.ini
