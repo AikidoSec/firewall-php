@@ -19,10 +19,13 @@ void EventCache::Reset() {
 
 /*
     EventCacheStack implementation:
+
+    The stack holds per-hook event context. Each hook invocation pushes a new
+    EventCache onto the stack, and pops it when the hook scope ends.
     
-    Each hook invocation pushes a new context onto the stack. Nested hooks get their own
-    isolated contexts without corrupting outer contexts. The POST handler always receives
-    valid context data for SSRF redirect validation.
+    This allows nested hooks (one hooked function calling another) to each have
+    their own independent context without interfering with each other. Code that
+    needs the current event context always reads from Top().
     
     Example flow:
     1. PRE handler: Push() -> Top().outgoingRequestUrl = "http://example.com"
