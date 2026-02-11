@@ -21,7 +21,7 @@ func AdvanceAttackWaveQueues(server *ServerData) {
 
 func Init(server *ServerData) {
 	utils.StartPollingRoutine(server.PollingData.AttackWaveChannel, server.PollingData.AttackWaveTicker, AdvanceAttackWaveQueues, server)
-	AdvanceAttackWaveQueues(server)
+	//[test] AdvanceAttackWaveQueues(server)
 }
 
 func Uninit(server *ServerData) {

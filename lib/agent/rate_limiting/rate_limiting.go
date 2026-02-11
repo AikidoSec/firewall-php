@@ -25,7 +25,7 @@ func AdvanceRateLimitingQueues(server *ServerData) {
 
 func Init(server *ServerData) {
 	utils.StartPollingRoutine(server.PollingData.RateLimitingChannel, server.PollingData.RateLimitingTicker, AdvanceRateLimitingQueues, server)
-	AdvanceRateLimitingQueues(server)
+	//[test] AdvanceRateLimitingQueues(server)
 }
 
 func Uninit(server *ServerData) {
