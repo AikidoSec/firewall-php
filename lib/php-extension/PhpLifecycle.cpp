@@ -19,6 +19,7 @@ void PhpLifecycle::RequestInit() {
     AIKIDO_GLOBAL(checkedShouldBlockRequest) = false;
     AIKIDO_GLOBAL(checkedIpBypass) = false;
     AIKIDO_GLOBAL(isIpBypassed) = false;
+    InitIpBypassCheck();
 }
 
 void PhpLifecycle::RequestShutdown() {
