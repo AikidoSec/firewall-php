@@ -22,13 +22,15 @@ RUN yum install -y nano
 RUN yum install -y lsof
 RUN yum install -y jq
 RUN yum install -y libcurl-devel
-RUN curl -O https://dl.google.com/go/go1.23.3.linux-arm64.tar.gz
+RUN curl -O https://dl.google.com/go/go1.23.3.linux-arm64.tar.gz && \
+     echo "1f7cbd7f668ea32a107ecd41b6488aaee1f5d77a66efd885b175494439d4e1ce go1.23.3.linux-arm64.tar.gz" | sha256sum -c
 RUN tar -C /usr/local -xzf go1.23.3.linux-arm64.tar.gz
 ENV PATH="/usr/local/go/bin:${PATH}"
 RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
 RUN go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 ENV PROTOC_ZIP=protoc-30.2-linux-aarch_64.zip
-RUN curl -OL https://github.com/protocolbuffers/protobuf/releases/download/v30.2/$PROTOC_ZIP
+RUN curl -OL https://github.com/protocolbuffers/protobuf/releases/download/v30.2/$PROTOC_ZIP && \
+     echo "a3173ea338ef91b1605b88c4f8120d6c8ccf36f744d9081991d595d0d4352996 $PROTOC_ZIP" | sha256sum -c
 RUN unzip -o $PROTOC_ZIP -d /usr/local bin/protoc
 RUN unzip -o $PROTOC_ZIP -d /usr/local include/*
 RUN rm -f $PROTOC_ZIP
