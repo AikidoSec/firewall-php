@@ -94,7 +94,7 @@ func OnGetAutoBlockingStatus() string {
 
 	if !utils.IsIpAllowed(server, ip) {
 		log.Infof("IP \"%s\" is not found in allow lists!", ip)
-		return GetAction("exit", "blocked", "ip", "not in allow lists", ip, 403)
+		return GetAction("exit", "blocked", "ip", "not allowed to access this resource", ip, 403)
 	}
 
 	if ipMonitored, ipMonitoredMatches := utils.IsIpMonitored(server, ip); ipMonitored {
