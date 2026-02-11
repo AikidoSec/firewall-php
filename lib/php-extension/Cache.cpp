@@ -1,14 +1,31 @@
 #include "Includes.h"
 
 /*
-    Global cache instances for request and event-level context.
-    
-    RequestCache: Per-request context that persists across the entire PHP request lifecycle.
-    EventCacheStack: Stack-based event context that handles nested hook invocations safely.
+    Cache objects used by the PHP extension to share state with the Go request processor.
+
+    - RequestCache stores data that is scoped to a single incoming HTTP request
+      (method, route, user id, rate-limit group, ...). The Go side calls into the
+      extension once per request to populate and later clear this structure
+      (see context.Init / context.Clear in the Go code).
+
+    - EventCacheStack stores data that is scoped to a single *event*, where an event
+      is one hooked PHP function call (e.g. curl_exec, file_get_contents, exec,
+      PDO::query, ...). Each hook invocation pushes a new EventCache on the stack
+      when it starts and pops it when it finishes, so nested hooks have independent
+      contexts.
 */
 RequestCache requestCache;
 EventCacheStack eventCacheStack;
 
+/*
+    Reset helpers:
+
+    These functions re-initialize the cache structs to their default state instead
+    of reallocating them. The PHP extension code runs inside long-lived PHP/Apache/FPM
+    processes that handle many HTTP requests. Because these cache objects live for
+    the lifetime of the process, we must explicitly reset them so that no state
+    from one request or event can leak into the next.
+*/
 void RequestCache::Reset() {
     *this = RequestCache();
 }
