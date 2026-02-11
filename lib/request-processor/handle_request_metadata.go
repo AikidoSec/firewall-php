@@ -42,6 +42,7 @@ func OnPostRequest(instance *instance.RequestProcessorInstance) string {
 		return ""
 	}
 
+	// Only send request metadata if the IP is not bypassed
 	if !context.IsIpBypassed(instance) {
 		params := RequestShutdownParams{
 			ThreadID:       instance.GetThreadID(),

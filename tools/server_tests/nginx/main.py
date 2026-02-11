@@ -61,6 +61,7 @@ group = {user}
 listen = {run_dir}/php-fpm-{name}.sock
 listen.owner = {user}
 listen.group = {user}
+listen.mode = 0660
 pm = dynamic
 pm.max_children = 5
 pm.start_servers = 2
@@ -189,9 +190,14 @@ def nginx_php_fpm_pre_tests():
     subprocess.run(['pkill', 'nginx'])
     subprocess.run(['pkill', '-9', 'php-fpm'])
     time.sleep(2)
+    
     subprocess.run(['rm', '-rf', f'{log_dir}/nginx/*'])
     subprocess.run(['rm', '-rf', f'{log_dir}/php-fpm/*'])
     subprocess.run(['rm', '-rf', f'{log_dir}/aikido-*/*'])
+    subprocess.run(['rm', '-rf', f'{php_fpm_run_dir}/*'])
+    subprocess.run(['rm', '-f', '/var/run/php-fpm.pid'])
+    subprocess.run(['rm', '-f', '/run/php-fpm.pid'])
+    
     create_folder(php_fpm_run_dir)
     create_folder(f'{log_dir}/php-fpm')
     modify_nginx_conf(nginx_global_conf)
