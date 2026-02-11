@@ -5,8 +5,6 @@
 // Accessed via AIKIDO_GLOBAL(isIpBypassed).
 
 void InitIpBypassCheck() {
-    AIKIDO_GLOBAL(isIpBypassed) = false;
-
     ScopedTimer scopedTimer("check_ip_bypass", "aikido_op");
 
     try {
@@ -20,5 +18,14 @@ void InitIpBypassCheck() {
 
 
 bool IsAikidoDisabledOrBypassed() {
-    return AIKIDO_GLOBAL(disable) == true || AIKIDO_GLOBAL(isIpBypassed);
+    if (AIKIDO_GLOBAL(disable) == true) {
+        return true;
+    }
+    
+    if (!AIKIDO_GLOBAL(checkedIpBypass)) {
+        AIKIDO_GLOBAL(checkedIpBypass) = true;
+        InitIpBypassCheck();
+    }
+    
+    return AIKIDO_GLOBAL(isIpBypassed);
 }
