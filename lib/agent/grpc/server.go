@@ -161,7 +161,6 @@ func (s *GrpcServer) OnMonitoredUserAgentMatch(ctx context.Context, req *protos.
 	if server == nil {
 		return &emptypb.Empty{}, nil
 	}
-
 	log.Debugf(server.Logger, "Received MonitoredUserAgentMatch: %v", req.GetLists())
 
 	server.StatsData.StatsMutex.Lock()

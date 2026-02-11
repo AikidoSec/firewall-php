@@ -7,11 +7,11 @@ import (
 
 func AdvanceRateLimitingQueues(server *ServerData) {
 	server.RateLimitingMutex.RLock()
+	defer server.RateLimitingMutex.RUnlock()
 	endpoints := make([]*RateLimitingValue, 0, len(server.RateLimitingMap))
 	for _, endpoint := range server.RateLimitingMap {
 		endpoints = append(endpoints, endpoint)
 	}
-	server.RateLimitingMutex.RUnlock()
 
 	for _, endpoint := range endpoints {
 		endpoint.Mutex.Lock()
