@@ -179,7 +179,6 @@ PHP_GINIT_FUNCTION(aikido) {
     aikido_globals->laravelEnvLoaded = false;
     aikido_globals->checkedAutoBlock = false;
     aikido_globals->checkedShouldBlockRequest = false;
-    aikido_globals->checkedIpBypass = false;
     aikido_globals->isIpBypassed = false;
     aikido_globals->isWorkerMode = false;
     aikido_globals->global_ast_to_clean = nullptr;

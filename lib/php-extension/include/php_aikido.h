@@ -41,7 +41,8 @@ uint64_t totalOverheadForCurrentRequest;
 bool laravelEnvLoaded;
 bool checkedAutoBlock;
 bool checkedShouldBlockRequest;
-bool checkedIpBypass;
+// This variable is used to check if the request is bypassed,
+// if true, all blocking checks will be skipped.
 bool isIpBypassed;
 bool isWorkerMode;
 HashTable *global_ast_to_clean;
