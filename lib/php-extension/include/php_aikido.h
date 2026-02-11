@@ -45,7 +45,7 @@ bool checkedShouldBlockRequest;
 // if true, all blocking checks will be skipped.
 bool isIpBypassed;
 bool isWorkerMode;
-HashTable *global_ast_to_clean;
+HashTable *globalAstToClean;
 void (*original_ast_process)(zend_ast *ast);
 // IMPORTANT: The order of these objects MUST NOT be changed due to object interdependencies.
 // This ensures proper construction/destruction order in both ZTS and non-ZTS modes.

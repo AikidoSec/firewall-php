@@ -8,7 +8,7 @@ import (
 
 // RequestProcessorInstance holds per-request state for each PHP thread.
 // In NTS mode (standard PHP), there's one global instance.
-// In ZTS mode (FrankenPHP), each thread gets its own instance with locking.
+// In ZTS mode (FrankenPHP), each thread gets its own instance.
 type RequestProcessorInstance struct {
 	CurrentToken    string
 	CurrentServer   *ServerData

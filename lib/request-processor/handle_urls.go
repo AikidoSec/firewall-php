@@ -27,7 +27,7 @@ func OnPreOutgoingRequest(instance *instance.RequestProcessorInstance) string {
 	operation := context.GetFunctionName(instance)
 
 	// Check if the domain is blocked based on cloud configuration
-	if !context.IsIpBypassed(instance) && ssrf.IsBlockedOutboundDomainWithInst(instance, hostname) {
+	if !context.IsIpBypassed(instance) && ssrf.IsBlockedOutboundDomain(instance, hostname) {
 		server := instance.GetCurrentServer()
 		// Blocked domains should also be reported to the agent.
 		if server != nil {

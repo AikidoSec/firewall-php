@@ -7,8 +7,8 @@ import (
 )
 
 // Stores instances keyed by thread ID:
-// - NTS (standard PHP): threadID is always 0, single instance
-// - ZTS (FrankenPHP): threadID is pthread_self(), one per thread
+// - NTS (standard PHP): single instance
+// - ZTS (FrankenPHP): 	 one per thread
 var (
 	instances      = make(map[uint64]*RequestProcessorInstance)
 	instancesMutex sync.RWMutex

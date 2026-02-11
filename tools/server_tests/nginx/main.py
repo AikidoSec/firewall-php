@@ -187,7 +187,8 @@ def nginx_php_fpm_process_test(test_data):
 
 def nginx_php_fpm_pre_tests():
     subprocess.run(['pkill', 'nginx'])
-    subprocess.run(['pkill', 'php-fpm'])
+    subprocess.run(['pkill', '-9', 'php-fpm'])
+    time.sleep(2)
     subprocess.run(['rm', '-rf', f'{log_dir}/nginx/*'])
     subprocess.run(['rm', '-rf', f'{log_dir}/php-fpm/*'])
     subprocess.run(['rm', '-rf', f'{log_dir}/aikido-*/*'])

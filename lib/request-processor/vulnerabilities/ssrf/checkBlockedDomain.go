@@ -8,11 +8,7 @@ import (
 
 // IsBlockedOutboundDomain checks if an outbound request to a hostname should be blocked
 // based on the cloud configuration for blocked/allowed domains
-func IsBlockedOutboundDomain(hostname string) bool {
-	return IsBlockedOutboundDomainWithInst(nil, hostname)
-}
-
-func IsBlockedOutboundDomainWithInst(instance *instance.RequestProcessorInstance, hostname string) bool {
+func IsBlockedOutboundDomain(instance *instance.RequestProcessorInstance, hostname string) bool {
 	var server *ServerData
 	if instance != nil {
 		server = instance.GetCurrentServer()

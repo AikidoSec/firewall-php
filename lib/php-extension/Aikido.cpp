@@ -80,10 +80,13 @@ static void aikido_do_request_shutdown() {
 
     AIKIDO_LOG_DEBUG("RSHUTDOWN started!\n");
 
-    if (AIKIDO_GLOBAL(disable) != true) {
-        DestroyAstToClean();
-        AIKIDO_GLOBAL(phpLifecycle).RequestShutdown();
+    if (AIKIDO_GLOBAL(disable) == true) {
+        AIKIDO_LOG_DEBUG("RSHUTDOWN finished earlier because AIKIDO_DISABLE is set to 1!\n");
+        return;
     }
+    
+    DestroyAstToClean();
+    AIKIDO_GLOBAL(phpLifecycle).RequestShutdown();
 
     AIKIDO_LOG_DEBUG("RSHUTDOWN finished!\n");
 }
@@ -181,7 +184,7 @@ PHP_GINIT_FUNCTION(aikido) {
     aikido_globals->checkedShouldBlockRequest = false;
     aikido_globals->isIpBypassed = false;
     aikido_globals->isWorkerMode = false;
-    aikido_globals->global_ast_to_clean = nullptr;
+    aikido_globals->globalAstToClean = nullptr;
     aikido_globals->original_ast_process = nullptr;
 #ifdef ZTS
     new (&aikido_globals->log_level_str) std::string();

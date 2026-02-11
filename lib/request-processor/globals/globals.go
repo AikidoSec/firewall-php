@@ -9,21 +9,9 @@ import (
 	. "main/aikido_types"
 )
 
-// ===========================
-// Server Configuration
-// ===========================
-
 var EnvironmentConfig EnvironmentConfigData
 var Servers = make(map[string]*ServerData)
 var ServersMutex sync.RWMutex
-
-// ===========================
-// Per-Thread Context Storage
-// ===========================
-
-// ===========================
-// Logging State
-// ===========================
 
 type LogLevel int
 

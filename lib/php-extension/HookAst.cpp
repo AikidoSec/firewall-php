@@ -10,7 +10,7 @@ void ast_to_clean_dtor(zval *zv) {
 } 
 
 void ensure_ast_hashtable_initialized() {
-    auto& globalAstToClean = AIKIDO_GLOBAL(global_ast_to_clean);
+    auto& globalAstToClean = AIKIDO_GLOBAL(globalAstToClean);
     if (!globalAstToClean) {
         ALLOC_HASHTABLE(globalAstToClean);
         zend_hash_init(globalAstToClean, 8, NULL, ast_to_clean_dtor, 0);
@@ -20,7 +20,7 @@ void ensure_ast_hashtable_initialized() {
 zend_ast *create_ast_call(const char *name) {
     ensure_ast_hashtable_initialized();
 
-    auto& globalAstToClean = AIKIDO_GLOBAL(global_ast_to_clean);
+    auto& globalAstToClean = AIKIDO_GLOBAL(globalAstToClean);
     zend_ast *call;
     zend_ast_zval *name_var;
     zend_ast_list *arg_list;
@@ -107,7 +107,7 @@ void insert_call_to_ast(zend_ast *ast) {
     block->children = 2;
     block->child[0] = call;
     block->child[1] = stmt_list->child[insertion_point];
-    auto& globalAstToClean = AIKIDO_GLOBAL(global_ast_to_clean);
+    auto& globalAstToClean = AIKIDO_GLOBAL(globalAstToClean);
     zend_hash_next_index_insert_ptr(globalAstToClean, block);
 
     stmt_list->child[insertion_point] = (zend_ast*)block;
@@ -149,7 +149,7 @@ void UnhookAstProcess() {
 }
 
 void DestroyAstToClean() {
-    auto& globalAstToClean = AIKIDO_GLOBAL(global_ast_to_clean);
+    auto& globalAstToClean = AIKIDO_GLOBAL(globalAstToClean);
     if (globalAstToClean) {
         zend_hash_destroy(globalAstToClean);
         FREE_HASHTABLE(globalAstToClean);
