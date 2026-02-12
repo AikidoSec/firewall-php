@@ -111,6 +111,12 @@ func TestDetectPathTraversal(t *testing.T) {
 		if detectPathTraversal("/etc/passwd", "/etc/passwd", true) != true {
 			t.Error("expected true")
 		}
+		if detectPathTraversal("/code/binaries/test", "/code/binaries", true) != true {
+			t.Error("expected true")
+		}
+		if detectPathTraversal("/app/.env", "/app/.env", true) != true {
+			t.Error("expected true")
+		}
 	})
 
 	t.Run("linux user directory", func(t *testing.T) {
