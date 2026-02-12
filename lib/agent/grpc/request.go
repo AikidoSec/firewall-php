@@ -311,11 +311,11 @@ func isRateLimitingThresholdExceededAndIncrement(rateLimitingDataMatch *RateLimi
 	rateLimitingDataMatch.Mutex.Lock()
 	defer rateLimitingDataMatch.Mutex.Unlock()
 
-	incrementSlidingWindowEntry(countsMap, key)
-
 	if isRateLimitingThresholdExceeded(&rateLimitingDataMatch.Config, countsMap, key) {
 		return true
 	}
+
+	incrementSlidingWindowEntry(countsMap, key)
 
 	return false
 }
