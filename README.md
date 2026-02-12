@@ -39,25 +39,25 @@ Prerequisites:
 
 ##### x86_64
 ```
-rpm -Uvh --oldpackage https://github.com/AikidoSec/firewall-php/releases/download/v1.5.0/aikido-php-firewall.x86_64.rpm
+rpm -Uvh --oldpackage https://github.com/AikidoSec/firewall-php/releases/download/v1.5.1/aikido-php-firewall.x86_64.rpm
 ```
 
 ##### arm64 / aarch64
 ```
-rpm -Uvh --oldpackage https://github.com/AikidoSec/firewall-php/releases/download/v1.5.0/aikido-php-firewall.aarch64.rpm
+rpm -Uvh --oldpackage https://github.com/AikidoSec/firewall-php/releases/download/v1.5.1/aikido-php-firewall.aarch64.rpm
 ```
 
 #### For Debian-based Systems (Debian, Ubuntu)
 
 ##### x86_64
 ```
-curl -L -O https://github.com/AikidoSec/firewall-php/releases/download/v1.5.0/aikido-php-firewall.x86_64.deb
+curl -L -O https://github.com/AikidoSec/firewall-php/releases/download/v1.5.1/aikido-php-firewall.x86_64.deb
 dpkg -i -E ./aikido-php-firewall.x86_64.deb
 ```
 
 ##### arm64 / aarch64
 ```
-curl -L -O https://github.com/AikidoSec/firewall-php/releases/download/v1.5.0/aikido-php-firewall.aarch64.deb
+curl -L -O https://github.com/AikidoSec/firewall-php/releases/download/v1.5.1/aikido-php-firewall.aarch64.deb
 dpkg -i -E ./aikido-php-firewall.aarch64.deb
 ```
 
