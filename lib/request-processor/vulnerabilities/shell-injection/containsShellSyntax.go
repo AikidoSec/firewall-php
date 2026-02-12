@@ -35,6 +35,8 @@ var dangerousChars = []string{
 	"\n",
 	"\t",
 	"~",
+	"\r",
+	"\f",
 }
 var commands = []string{
 	"sleep",
@@ -100,7 +102,7 @@ var pathPrefixes = []string{
 	"/usr/local/sbin/",
 }
 
-var separators = []string{" ", "\t", "\n", ";", "&", "|", "(", ")", "<", ">"}
+var separators = []string{" ", "\t", "\n", ";", "&", "|", "(", ")", "<", ">", "\r", "\f"}
 
 // "killall" should be matched before "kill"
 func byLength(a, b string) bool {

@@ -129,4 +129,36 @@ func TestDetectShellInjection(t *testing.T) {
 	t.Run("detects subshell execution within backticks inside double quotes", func(t *testing.T) {
 		isShellInjection(t, "ls \"$(echo `whoami`)\"", "`whoami`")
 	})
+
+	t.Run("carriage return in user input is flagged", func(t *testing.T) {
+		isShellInjection(t, "ls \rrm", "\rrm")
+		isShellInjection(t, "ls \rrm -rf", "\rrm -rf")
+	})
+
+	t.Run("form feed in user input is flagged", func(t *testing.T) {
+		isShellInjection(t, "ls \frm", "\frm")
+		isShellInjection(t, "ls \frm -rf", "\frm -rf")
+	})
+
+	t.Run("carriage return in user input is flagged when user input is command", func(t *testing.T) {
+		isShellInjection(t, "sleep\r10", "sleep\r10")
+		isShellInjection(t, "shutdown\r-h\rnow", "shutdown\r-h\rnow")
+	})
+
+	t.Run("form feed in user input is flagged when user input is command", func(t *testing.T) {
+		isShellInjection(t, "sleep\f10", "sleep\f10")
+		isShellInjection(t, "shutdown\f-h\fnow", "shutdown\f-h\fnow")
+	})
+
+	t.Run("carriage return as separator between commands", func(t *testing.T) {
+		isShellInjection(t, "ls\rrm", "rm")
+		isShellInjection(t, "echo test\rrm -rf /", "rm")
+		isShellInjection(t, "rm\rls", "rm")
+	})
+
+	t.Run("form feed as separator between commands", func(t *testing.T) {
+		isShellInjection(t, "ls\frm", "rm")
+		isShellInjection(t, "echo test\frm -rf /", "rm")
+		isShellInjection(t, "rm\fls", "rm")
+	})
 }

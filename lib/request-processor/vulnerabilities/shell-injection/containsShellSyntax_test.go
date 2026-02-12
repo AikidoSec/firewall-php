@@ -83,6 +83,54 @@ func TestContainsShellSyntax(t *testing.T) {
 		}
 	})
 
+	t.Run("it detects newline as separator", func(t *testing.T) {
+		if !containsShellSyntax("ls\nrm", "rm") {
+			t.Errorf("Expected true for newline separator")
+		}
+		if !containsShellSyntax("echo test\nrm -rf /", "rm") {
+			t.Errorf("Expected true for newline separator in command")
+		}
+		if !containsShellSyntax("rm\nls", "rm") {
+			t.Errorf("Expected true for newline separator after command")
+		}
+	})
+
+	t.Run("it detects tab as separator", func(t *testing.T) {
+		if !containsShellSyntax("ls\trm", "rm") {
+			t.Errorf("Expected true for tab separator")
+		}
+		if !containsShellSyntax("echo test\trm -rf /", "rm") {
+			t.Errorf("Expected true for tab separator in command")
+		}
+		if !containsShellSyntax("rm\tls", "rm") {
+			t.Errorf("Expected true for tab separator after command")
+		}
+	})
+
+	t.Run("it detects carriage return as separator", func(t *testing.T) {
+		if !containsShellSyntax("ls\rrm", "rm") {
+			t.Errorf("Expected true for carriage return separator")
+		}
+		if !containsShellSyntax("echo test\rrm -rf /", "rm") {
+			t.Errorf("Expected true for carriage return separator in command")
+		}
+		if !containsShellSyntax("rm\rls", "rm") {
+			t.Errorf("Expected true for carriage return separator after command")
+		}
+	})
+
+	t.Run("it detects form feed as separator", func(t *testing.T) {
+		if !containsShellSyntax("ls\frm", "rm") {
+			t.Errorf("Expected true for form feed separator")
+		}
+		if !containsShellSyntax("echo test\frm -rf /", "rm") {
+			t.Errorf("Expected true for form feed separator in command")
+		}
+		if !containsShellSyntax("rm\fls", "rm") {
+			t.Errorf("Expected true for form feed separator after command")
+		}
+	})
+
 	t.Run("it flags input as shell injection", func(t *testing.T) {
 		expected := true
 		result := containsShellSyntax("command -disable-update-check -target https://examplx.com|curl+https://cde-123.abc.domain.com+%23 -json-export /tmp/5891/8526757.json -tags microsoft,windows,exchange,iis,gitlab,oracle,cisco,joomla -stats -stats-interval 3 -retries 3 -no-stdin", "https://examplx.com|curl+https://cde-123.abc.domain.com+%23")
