@@ -280,6 +280,9 @@ func getWildcardMatchingRateLimitingValues(server *ServerData, method, route, ro
 }
 
 func getRateLimitingDataForEndpoint(server *ServerData, method, route, routeParsed string) *RateLimitingValue {
+	server.RateLimitingMutex.RLock()
+	defer server.RateLimitingMutex.RUnlock()
+
 	// Check for exact match first
 	rateLimitingDataMatch := getRateLimitingValue(server, method, routeParsed)
 	if rateLimitingDataMatch != nil {
@@ -308,11 +311,12 @@ func isRateLimitingThresholdExceededAndIncrement(rateLimitingDataMatch *RateLimi
 	rateLimitingDataMatch.Mutex.Lock()
 	defer rateLimitingDataMatch.Mutex.Unlock()
 
+	incrementSlidingWindowEntry(countsMap, key)
+
 	if isRateLimitingThresholdExceeded(&rateLimitingDataMatch.Config, countsMap, key) {
 		return true
 	}
 
-	incrementSlidingWindowEntry(countsMap, key)
 	return false
 }
 
@@ -321,9 +325,7 @@ func getRateLimitingStatus(server *ServerData, method, route, routeParsed, user,
 		return nil
 	}
 
-	server.RateLimitingMutex.RLock()
 	rateLimitingDataMatch := getRateLimitingDataForEndpoint(server, method, route, routeParsed)
-	server.RateLimitingMutex.RUnlock()
 
 	if rateLimitingDataMatch == nil {
 		return &protos.RateLimitingStatus{Block: false}
