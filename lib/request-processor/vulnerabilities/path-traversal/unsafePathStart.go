@@ -25,6 +25,9 @@ var linuxRootFolders = []string{
 	"/tmp/",
 	"/usr/",
 	"/var/",
+	// More common in docker apps :
+	"/app/",
+	"/code/",
 }
 
 var dangerousPathStarts = linuxRootFolders
