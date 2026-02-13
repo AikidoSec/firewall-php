@@ -158,8 +158,9 @@ static std::string ConvertBoundParamsToJson(HashTable *bound_params) {
         paramsJson = json::array();
     }
 
-    struct pdo_bound_param_data *param;
-    ZEND_HASH_FOREACH_PTR(bound_params, param) {
+    zval *bound_zval;
+    ZEND_HASH_FOREACH_VAL(bound_params, bound_zval) {
+        auto *param = (struct pdo_bound_param_data *)Z_PTR_P(bound_zval);
         std::string valueStr;
         bool resolved = ZvalToString(&param->parameter, valueStr);
 
