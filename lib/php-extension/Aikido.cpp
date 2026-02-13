@@ -94,6 +94,9 @@ static const zend_function_entry ext_functions[] = {
     ZEND_NS_FE("aikido", set_token, arginfo_aikido_set_token)
     ZEND_NS_FE("aikido", set_rate_limit_group, arginfo_aikido_set_rate_limit_group)
     ZEND_NS_FE("aikido", register_param_matcher, arginfo_aikido_register_param_matcher)
+    ZEND_NS_FE("aikido", enable_idor_protection, arginfo_aikido_enable_idor_protection)
+    ZEND_NS_FE("aikido", set_tenant_id, arginfo_aikido_set_tenant_id)
+    ZEND_NS_FE("aikido", without_idor_protection, arginfo_aikido_without_idor_protection)
     ZEND_FE_END
 };
 

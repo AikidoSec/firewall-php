@@ -9,6 +9,8 @@ class RequestCache {
     std::string rateLimitGroup;
     std::string outgoingRequestUrl;
     std::string outgoingRequestRedirectUrl;
+    std::string tenantId;
+    bool idorDisabled = false;
 
     RequestCache() = default;
     void Reset();
@@ -32,9 +34,13 @@ class EventCache {
 
     std::string sqlQuery;
     std::string sqlDialect;
+    std::string sqlParams;
 
     std::string paramMatcherParam;
     std::string paramMatcherRegex;
+
+    std::string idorTenantColumnName;
+    std::string idorExcludedTables;
 
     EventCache() = default;
     void Reset();
