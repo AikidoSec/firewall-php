@@ -3,6 +3,7 @@ package log
 import (
 	"errors"
 	"fmt"
+	"syscall"
 
 	"main/globals"
 	"main/instance"
@@ -71,6 +72,8 @@ func logMessage(instance *instance.RequestProcessorInstance, level globals.LogLe
 		threadID := uint64(0)
 		if instance != nil {
 			threadID = instance.GetThreadID()
+		} else {
+			threadID = uint64(syscall.Gettid())
 		}
 		formattedMessage := formatter.Format(level, threadID, message)
 		globals.Logger.Print(formattedMessage)
@@ -89,6 +92,8 @@ func logMessagef(instance *instance.RequestProcessorInstance, level globals.LogL
 		threadID := uint64(0)
 		if instance != nil {
 			threadID = instance.GetThreadID()
+		} else {
+			threadID = uint64(syscall.Gettid())
 		}
 		formattedMessage := formatter.Format(level, threadID, message)
 		globals.Logger.Print(formattedMessage)
@@ -125,67 +130,6 @@ func Warnf(instance *instance.RequestProcessorInstance, format string, args ...i
 
 func Errorf(instance *instance.RequestProcessorInstance, format string, args ...interface{}) {
 	logMessagef(instance, globals.LogErrorLevel, format, args...)
-}
-
-// Direct threadID logging (for goroutines where instance cannot be safely passed)
-func logMessageWithThreadID(threadID uint64, level globals.LogLevel, args ...interface{}) {
-	globals.LogMutex.RLock()
-	lvl := globals.CurrentLogLevel
-	globals.LogMutex.RUnlock()
-
-	if level >= lvl {
-		initLogFile()
-		formatter := &AikidoFormatter{}
-		message := fmt.Sprint(args...)
-		formattedMessage := formatter.Format(level, threadID, message)
-		globals.Logger.Print(formattedMessage)
-	}
-}
-
-func logMessagefWithThreadID(threadID uint64, level globals.LogLevel, format string, args ...interface{}) {
-	globals.LogMutex.RLock()
-	lvl := globals.CurrentLogLevel
-	globals.LogMutex.RUnlock()
-
-	if level >= lvl {
-		initLogFile()
-		formatter := &AikidoFormatter{}
-		message := fmt.Sprintf(format, args...)
-		formattedMessage := formatter.Format(level, threadID, message)
-		globals.Logger.Print(formattedMessage)
-	}
-}
-
-func DebugWithThreadID(threadID uint64, args ...interface{}) {
-	logMessageWithThreadID(threadID, globals.LogDebugLevel, args...)
-}
-
-func InfoWithThreadID(threadID uint64, args ...interface{}) {
-	logMessageWithThreadID(threadID, globals.LogInfoLevel, args...)
-}
-
-func WarnWithThreadID(threadID uint64, args ...interface{}) {
-	logMessageWithThreadID(threadID, globals.LogWarnLevel, args...)
-}
-
-func ErrorWithThreadID(threadID uint64, args ...interface{}) {
-	logMessageWithThreadID(threadID, globals.LogErrorLevel, args...)
-}
-
-func DebugfWithThreadID(threadID uint64, format string, args ...interface{}) {
-	logMessagefWithThreadID(threadID, globals.LogDebugLevel, format, args...)
-}
-
-func InfofWithThreadID(threadID uint64, format string, args ...interface{}) {
-	logMessagefWithThreadID(threadID, globals.LogInfoLevel, format, args...)
-}
-
-func WarnfWithThreadID(threadID uint64, format string, args ...interface{}) {
-	logMessagefWithThreadID(threadID, globals.LogWarnLevel, format, args...)
-}
-
-func ErrorfWithThreadID(threadID uint64, format string, args ...interface{}) {
-	logMessagefWithThreadID(threadID, globals.LogErrorLevel, format, args...)
 }
 
 // SetLogLevel changes the current log level (thread-safe)

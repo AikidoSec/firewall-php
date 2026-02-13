@@ -37,7 +37,7 @@ func OnGetBlockingStatus(instance *instance.RequestProcessorInstance) string {
 		return ""
 	}
 	if !server.MiddlewareInstalled {
-		go grpc.OnMiddlewareInstalled(instance.GetThreadID(), server, instance.GetCurrentToken())
+		go grpc.OnMiddlewareInstalled(server, instance.GetCurrentToken())
 		server.MiddlewareInstalled = true
 	}
 
@@ -108,23 +108,23 @@ func OnGetAutoBlockingStatus(instance *instance.RequestProcessorInstance) string
 
 	if ipMonitored, ipMonitoredMatches := utils.IsIpMonitored(instance, server, ip); ipMonitored {
 		log.Infof(instance, "IP \"%s\" found in monitored lists: %v!", ip, ipMonitoredMatches)
-		go grpc.OnMonitoredIpMatch(instance.GetThreadID(), server, instance.GetCurrentToken(), ipMonitoredMatches)
+		go grpc.OnMonitoredIpMatch(server, instance.GetCurrentToken(), ipMonitoredMatches)
 	}
 
 	if ipBlocked, ipBlockedMatches := utils.IsIpBlocked(instance, server, ip); ipBlocked {
 		log.Infof(instance, "IP \"%s\" found in blocked lists: %v!", ip, ipBlockedMatches)
-		go grpc.OnMonitoredIpMatch(instance.GetThreadID(), server, instance.GetCurrentToken(), ipBlockedMatches)
+		go grpc.OnMonitoredIpMatch(server, instance.GetCurrentToken(), ipBlockedMatches)
 		return GetAction("exit", "blocked", "ip", ipBlockedMatches[0].Description, ip, 403)
 	}
 
 	if userAgentMonitored, userAgentMonitoredDescriptions := utils.IsUserAgentMonitored(server, userAgent); userAgentMonitored {
 		log.Infof(instance, "User Agent \"%s\" found in monitored lists: %v!", userAgent, userAgentMonitoredDescriptions)
-		go grpc.OnMonitoredUserAgentMatch(instance.GetThreadID(), server, instance.GetCurrentToken(), userAgentMonitoredDescriptions)
+		go grpc.OnMonitoredUserAgentMatch(server, instance.GetCurrentToken(), userAgentMonitoredDescriptions)
 	}
 
 	if userAgentBlocked, userAgentBlockedDescriptions := utils.IsUserAgentBlocked(server, userAgent); userAgentBlocked {
 		log.Infof(instance, "User Agent \"%s\" found in blocked lists: %v!", userAgent, userAgentBlockedDescriptions)
-		go grpc.OnMonitoredUserAgentMatch(instance.GetThreadID(), server, instance.GetCurrentToken(), userAgentBlockedDescriptions)
+		go grpc.OnMonitoredUserAgentMatch(server, instance.GetCurrentToken(), userAgentBlockedDescriptions)
 
 		description := "unknown"
 		if len(userAgentBlockedDescriptions) > 0 {

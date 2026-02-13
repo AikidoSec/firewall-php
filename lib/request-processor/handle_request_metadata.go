@@ -21,7 +21,7 @@ func OnRequestShutdownReporting(params RequestShutdownParams) {
 		return
 	}
 
-	log.InfoWithThreadID(params.ThreadID, "[RSHUTDOWN] Got request metadata: ", params.Method, " ", params.Route, " ", params.StatusCode)
+	log.Info(nil, "[RSHUTDOWN] Got request metadata: ", params.Method, " ", params.Route, " ", params.StatusCode)
 
 	if !params.IsIpBypassed {
 		params.IsWebScanner = webscanner.IsWebScanner(params.Method, params.Route, params.QueryParsed)
@@ -32,7 +32,7 @@ func OnRequestShutdownReporting(params RequestShutdownParams) {
 		return
 	}
 
-	log.InfoWithThreadID(params.ThreadID, "[RSHUTDOWN] Got API spec: ", params.APISpec)
+	log.Info(nil, "[RSHUTDOWN] Got API spec: ", params.APISpec)
 	grpc.OnRequestShutdown(params)
 }
 

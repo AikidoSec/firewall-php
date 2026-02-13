@@ -23,6 +23,6 @@ func OnUserEvent(instance *instance.RequestProcessorInstance) string {
 		return ""
 	}
 
-	go grpc.OnUserEvent(instance.GetThreadID(), server, instance.GetCurrentToken(), id, username, ip)
+	go grpc.OnUserEvent(server, instance.GetCurrentToken(), id, username, ip)
 	return ""
 }

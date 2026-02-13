@@ -31,7 +31,7 @@ func OnPreOutgoingRequest(instance *instance.RequestProcessorInstance) string {
 		server := instance.GetCurrentServer()
 		// Blocked domains should also be reported to the agent.
 		if server != nil {
-			go grpc.OnDomain(instance.GetThreadID(), server, instance.GetCurrentToken(), hostname, port)
+			go grpc.OnDomain(server, instance.GetCurrentToken(), hostname, port)
 		}
 		message := fmt.Sprintf("Aikido firewall has blocked an outbound connection: %s(...) to %s", operation, html.EscapeString(hostname))
 		return attack.GetThrowAction(message, 500)
@@ -81,9 +81,9 @@ func OnPostOutgoingRequest(instance *instance.RequestProcessorInstance) string {
 
 	server := instance.GetCurrentServer()
 	if server != nil {
-		go grpc.OnDomain(instance.GetThreadID(), server, instance.GetCurrentToken(), hostname, port)
+		go grpc.OnDomain(server, instance.GetCurrentToken(), hostname, port)
 		if effectiveHostname != hostname {
-			go grpc.OnDomain(instance.GetThreadID(), server, instance.GetCurrentToken(), effectiveHostname, effectivePort)
+			go grpc.OnDomain(server, instance.GetCurrentToken(), effectiveHostname, effectivePort)
 		}
 	}
 

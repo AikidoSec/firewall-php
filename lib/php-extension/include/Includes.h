@@ -13,6 +13,7 @@
 #include <sys/utsname.h>
 #include <sys/wait.h>
 #include <sys/syscall.h>
+#include <unistd.h>
 #include <inttypes.h>
 #include <pthread.h>
 

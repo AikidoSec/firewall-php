@@ -34,7 +34,7 @@ std::string GetDateTime() {
 }
 
 uint64_t GetThreadID() {
-    return (uint64_t)pthread_self();
+    return (uint64_t)syscall(SYS_gettid);
 }
 const char* GetEventName(EVENT_ID event) {
     switch (event) {
