@@ -85,7 +85,7 @@ ZEND_FUNCTION(without_idor_protection) {
     ZVAL_UNDEF(&retval);
     fci.retval = &retval;
 
-    zend_result result = zend_call_function(&fci, &fci_cache);
+    zend_result result = (zend_result)zend_call_function(&fci, &fci_cache);
 
     requestCache.idorDisabled = false;
 
