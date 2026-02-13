@@ -16,6 +16,9 @@ type RequestProcessorInstance struct {
 	ContextInstance unsafe.Pointer // For context callbacks
 	ContextCallback unsafe.Pointer // C function pointer, must be per-instance in ZTS
 
+	// Stored as interface{} to avoid circular imports with context package
+	// RequestContext is *RequestContextData, EventContext is *EventContextData
+	// (event_context.go, request_context.go)
 	RequestContext interface{}
 	EventContext   interface{}
 

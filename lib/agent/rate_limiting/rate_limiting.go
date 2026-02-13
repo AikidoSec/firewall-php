@@ -8,12 +8,8 @@ import (
 func AdvanceRateLimitingQueues(server *ServerData) {
 	server.RateLimitingMutex.RLock()
 	defer server.RateLimitingMutex.RUnlock()
-	endpoints := make([]*RateLimitingValue, 0, len(server.RateLimitingMap))
-	for _, endpoint := range server.RateLimitingMap {
-		endpoints = append(endpoints, endpoint)
-	}
 
-	for _, endpoint := range endpoints {
+	for _, endpoint := range server.RateLimitingMap {
 		endpoint.Mutex.Lock()
 		AdvanceSlidingWindowMap(endpoint.UserCounts, endpoint.Config.WindowSizeInMinutes)
 		AdvanceSlidingWindowMap(endpoint.IpCounts, endpoint.Config.WindowSizeInMinutes)
@@ -24,6 +20,7 @@ func AdvanceRateLimitingQueues(server *ServerData) {
 
 func Init(server *ServerData) {
 	utils.StartPollingRoutine(server.PollingData.RateLimitingChannel, server.PollingData.RateLimitingTicker, AdvanceRateLimitingQueues, server)
+	AdvanceRateLimitingQueues(server)
 }
 
 func Uninit(server *ServerData) {
