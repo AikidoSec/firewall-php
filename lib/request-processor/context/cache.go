@@ -8,6 +8,7 @@ import (
 	"main/log"
 	"main/utils"
 	"strconv"
+	"strings"
 )
 
 /*
@@ -247,4 +248,41 @@ func ContextSetIsEndpointIpAllowed() {
 
 func ContextSetIsEndpointRateLimited() {
 	Context.IsEndpointRateLimited = true
+}
+
+func ContextSetGraphQL() {
+	if Context.GraphQLParsedFlattened != nil {
+		return
+	}
+
+	Context.GraphQLParsedFlattened = &map[string]string{}
+
+	method := GetMethod()
+	url := GetUrl()
+
+	// Get content-type from headers
+	var contentType string
+	headers := GetHeadersParsed()
+	if ct, ok := headers["content_type"].(string); ok {
+		contentType = ct
+	} else {
+		contentType = ""
+	}
+
+	contentType = strings.ToLower(strings.TrimSpace(contentType))
+	body := GetBodyParsed()
+	query := GetQueryParsed()
+
+	isGraphQL := utils.IsGraphQLOverHTTP(method, url, contentType, body, query)
+
+	if isGraphQL {
+		log.Debug("Detected GraphQL request")
+
+		// Extract GraphQL inputs
+		graphqlInputs := utils.ExtractInputsFromGraphQL(body, query, method)
+		Context.GraphQLParsedFlattened = &graphqlInputs
+
+		return
+	}
+
 }
