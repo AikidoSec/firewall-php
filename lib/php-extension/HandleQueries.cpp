@@ -193,31 +193,31 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_pdostatement_execute) {
         return;
     }
 
+    eventId = EVENT_PRE_SQL_QUERY_EXECUTED;
+    eventCacheStack.Top().moduleName = "PDOStatement";
+    eventCacheStack.Top().sqlQuery = PHP_GET_CHAR_PTR(stmt->query_string);
+
+#if PHP_VERSION_ID >= 80500
+    if (!stmt->database_object_handle) {
+        eventCacheStack.Top().sqlDialect = "unknown";
+    } else {
+        eventCacheStack.Top().sqlDialect = GetSqlDialectFromPdo(stmt->database_object_handle);
+    }
+#else
+    eventCacheStack.Top().sqlDialect = GetSqlDialectFromPdo(&stmt->database_object_handle);
+#endif
+
     zval *inputParams = NULL;
     ZEND_PARSE_PARAMETERS_START(0, 1)
         Z_PARAM_OPTIONAL
         Z_PARAM_ARRAY(inputParams)
     ZEND_PARSE_PARAMETERS_END();
 
-    eventId = EVENT_PRE_SQL_QUERY_EXECUTED;
-    eventCacheStack.Top().moduleName = "PDOStatement";
-    eventCacheStack.Top().sqlQuery = PHP_GET_CHAR_PTR(stmt->query_string);
-
     std::string sqlParams = ConvertParamsToJson(inputParams);
     if (sqlParams.empty() && stmt->bound_params) {
         sqlParams = ConvertBoundParamsToJson(stmt->bound_params);
     }
     eventCacheStack.Top().sqlParams = sqlParams;
-
-#if PHP_VERSION_ID >= 80500
-    if (!stmt->database_object_handle) {
-        eventCacheStack.Top().sqlDialect = "unknown";
-        return;
-    }
-    eventCacheStack.Top().sqlDialect = GetSqlDialectFromPdo(stmt->database_object_handle);
-#else
-    eventCacheStack.Top().sqlDialect = GetSqlDialectFromPdo(&stmt->database_object_handle);
-#endif
 }
 
 zend_class_entry* helper_load_mysqli_link_class_entry() {
