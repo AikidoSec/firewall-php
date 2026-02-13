@@ -131,7 +131,7 @@ static std::string ConvertParamsToJson(zval *params) {
         (void)idx;
     } ZEND_HASH_FOREACH_END();
 
-    return paramsJson.dump();
+    return paramsJson.dump(-1, ' ', false, json::error_handler_t::replace);
 }
 
 /* Fallback for when execute() is called without inline params (bindValue/bindParam). */
@@ -177,7 +177,7 @@ static std::string ConvertBoundParamsToJson(HashTable *bound_params) {
         }
     } ZEND_HASH_FOREACH_END();
 
-    return paramsJson.dump();
+    return paramsJson.dump(-1, ' ', false, json::error_handler_t::replace);
 }
 
 AIKIDO_HANDLER_FUNCTION(handle_pre_pdostatement_execute) {
@@ -207,21 +207,17 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_pdostatement_execute) {
     eventCacheStack.Top().sqlDialect = GetSqlDialectFromPdo(&stmt->database_object_handle);
 #endif
 
-    try {
-        zval *inputParams = NULL;
-        ZEND_PARSE_PARAMETERS_START(0, 1)
-            Z_PARAM_OPTIONAL
-            Z_PARAM_ARRAY(inputParams)
-        ZEND_PARSE_PARAMETERS_END();
+    zval *inputParams = NULL;
+    ZEND_PARSE_PARAMETERS_START(0, 1)
+        Z_PARAM_OPTIONAL
+        Z_PARAM_ARRAY(inputParams)
+    ZEND_PARSE_PARAMETERS_END();
 
-        std::string sqlParams = ConvertParamsToJson(inputParams);
-        if (sqlParams.empty() && stmt->bound_params) {
-            sqlParams = ConvertBoundParamsToJson(stmt->bound_params);
-        }
-        eventCacheStack.Top().sqlParams = sqlParams;
-    } catch (const std::exception &e) {
-        AIKIDO_LOG_DEBUG("Failed to extract SQL params: %s\n", e.what());
+    std::string sqlParams = ConvertParamsToJson(inputParams);
+    if (sqlParams.empty() && stmt->bound_params) {
+        sqlParams = ConvertBoundParamsToJson(stmt->bound_params);
     }
+    eventCacheStack.Top().sqlParams = sqlParams;
 }
 
 zend_class_entry* helper_load_mysqli_link_class_entry() {
