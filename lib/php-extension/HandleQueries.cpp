@@ -207,17 +207,21 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_pdostatement_execute) {
     eventCacheStack.Top().sqlDialect = GetSqlDialectFromPdo(&stmt->database_object_handle);
 #endif
 
-    zval *inputParams = NULL;
-    ZEND_PARSE_PARAMETERS_START(0, 1)
-        Z_PARAM_OPTIONAL
-        Z_PARAM_ARRAY(inputParams)
-    ZEND_PARSE_PARAMETERS_END();
+    try {
+        zval *inputParams = NULL;
+        ZEND_PARSE_PARAMETERS_START(0, 1)
+            Z_PARAM_OPTIONAL
+            Z_PARAM_ARRAY(inputParams)
+        ZEND_PARSE_PARAMETERS_END();
 
-    std::string sqlParams = ConvertParamsToJson(inputParams);
-    if (sqlParams.empty() && stmt->bound_params) {
-        sqlParams = ConvertBoundParamsToJson(stmt->bound_params);
+        std::string sqlParams = ConvertParamsToJson(inputParams);
+        if (sqlParams.empty() && stmt->bound_params) {
+            sqlParams = ConvertBoundParamsToJson(stmt->bound_params);
+        }
+        eventCacheStack.Top().sqlParams = sqlParams;
+    } catch (const std::exception &e) {
+        AIKIDO_LOG_DEBUG("Failed to extract SQL params: %s\n", e.what());
     }
-    eventCacheStack.Top().sqlParams = sqlParams;
 }
 
 zend_class_entry* helper_load_mysqli_link_class_entry() {
