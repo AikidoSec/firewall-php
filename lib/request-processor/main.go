@@ -13,11 +13,15 @@ import (
 	"main/utils"
 	zen_internals "main/vulnerabilities/zen-internals"
 	"strings"
+	"sync"
 	"time"
 	"unsafe"
 )
 
 type HandlerFunction func(*instance.RequestProcessorInstance) string
+
+var grpcInitOnce sync.Once
+var zenInternalsInitOnce sync.Once
 
 var eventHandlers = map[int]HandlerFunction{
 	C.EVENT_PRE_REQUEST:              OnPreRequest,
@@ -36,14 +40,6 @@ var eventHandlers = map[int]HandlerFunction{
 }
 
 func initializeServer(server *ServerData) {
-	server.ServerInitMutex.Lock()
-	if server.ServerInitialized {
-		server.ServerInitMutex.Unlock()
-		return
-	}
-	server.ServerInitialized = true
-	server.ServerInitMutex.Unlock()
-
 	grpc.SendAikidoConfig(server)
 	grpc.OnPackages(server, server.AikidoConfig.Packages)
 	grpc.GetCloudConfig(server, 5*time.Second)
@@ -85,14 +81,31 @@ func RequestProcessorInit(instancePtr unsafe.Pointer, initJson string) (initOk b
 	log.Debugf(instance, "Started with token: \"AIK_RUNTIME_***%s\"", utils.AnonymizeToken(instance.GetCurrentToken()))
 
 	if globals.EnvironmentConfig.PlatformName != "cli" {
-		grpc.Init()
 		server := instance.GetCurrentServer()
+
 		if server != nil {
+			server.ServerInitMutex.Lock()
+			defer server.ServerInitMutex.Unlock()
+
+			if server.ServerInitialized {
+				server.ServerInitMutex.Unlock()
+				return true
+			}
 			initializeServer(server)
+			server.ServerInitialized = true
+
 		}
-		grpc.StartCloudConfigRoutine()
+		grpcInitOnce.Do(func() {
+			grpc.Init()
+			grpc.StartCloudConfigRoutine()
+		})
 	}
-	if !zen_internals.Init() {
+
+	var zenInternalsInitSuccess = true
+	zenInternalsInitOnce.Do(func() {
+		zenInternalsInitSuccess = zen_internals.Init()
+	})
+	if !zenInternalsInitSuccess {
 		log.Error(instance, "Error initializing zen-internals library!")
 		return false
 	}

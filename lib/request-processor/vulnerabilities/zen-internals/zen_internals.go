@@ -25,27 +25,17 @@ import (
 	"main/globals"
 	"main/log"
 	"main/utils"
-	"sync"
 	"unsafe"
 )
 
 type ZenInternalsLibrary struct {
 	handle             unsafe.Pointer
 	detectSqlInjection C.detect_sql_injection_func
-	mu                 sync.RWMutex
-	initialized        bool
 }
 
 var zenLib = &ZenInternalsLibrary{}
 
 func Init() bool {
-	zenLib.mu.Lock()
-	defer zenLib.mu.Unlock()
-
-	if zenLib.initialized {
-		return true
-	}
-
 	zenInternalsLibPath := C.CString(fmt.Sprintf("/opt/aikido-%s/libzen_internals_%s-unknown-linux-gnu.so", globals.Version, utils.GetArch()))
 	defer C.free(unsafe.Pointer(zenInternalsLibPath))
 
@@ -67,34 +57,22 @@ func Init() bool {
 
 	zenLib.handle = handle
 	zenLib.detectSqlInjection = (C.detect_sql_injection_func)(vDetectSqlInjection)
-	zenLib.initialized = true
 	log.Debugf(nil, "Loaded zen-internals library!")
 	return true
 }
 
 func Uninit() {
-	zenLib.mu.Lock()
-	defer zenLib.mu.Unlock()
-
-	if !zenLib.initialized {
-		return
-	}
-
 	zenLib.detectSqlInjection = nil
 
 	if zenLib.handle != nil {
 		C.dlclose(zenLib.handle)
 		zenLib.handle = nil
 	}
-
-	zenLib.initialized = false
 }
 
 // DetectSQLInjection performs SQL injection detection using the loaded library
 func DetectSQLInjection(query string, user_input string, dialect int) int {
-	zenLib.mu.RLock()
 	detectFn := zenLib.detectSqlInjection
-	zenLib.mu.RUnlock()
 
 	if detectFn == nil {
 		return 0
