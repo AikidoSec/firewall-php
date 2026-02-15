@@ -51,14 +51,14 @@ func CreateServer(ServerKey ServerKey) *ServerData {
 	return Servers[ServerKey]
 }
 
-func GetOrCreateServer(serverKey ServerKey) (*ServerData, bool) {
+func GetOrCreateServer(ServerKey ServerKey) (*ServerData, bool) {
 	ServersMutex.Lock()
 	defer ServersMutex.Unlock()
 
-	server, exists := Servers[serverKey]
+	server, exists := Servers[ServerKey]
 	if !exists {
-		Servers[serverKey] = NewServerData()
-		server = Servers[serverKey]
+		Servers[ServerKey] = NewServerData()
+		server = Servers[ServerKey]
 	}
 	return server, exists
 }
