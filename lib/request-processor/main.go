@@ -84,6 +84,9 @@ func RequestProcessorInit(instancePtr unsafe.Pointer, initJson string) (initOk b
 		server := instance.GetCurrentServer()
 
 		if server != nil {
+			grpcInitOnce.Do(func() {
+				grpc.Init()
+			})
 			server.ServerInitMutex.Lock()
 			defer server.ServerInitMutex.Unlock()
 
@@ -92,13 +95,9 @@ func RequestProcessorInit(instancePtr unsafe.Pointer, initJson string) (initOk b
 				return true
 			}
 			initializeServer(server)
-			server.ServerInitialized = true
-
-		}
-		grpcInitOnce.Do(func() {
-			grpc.Init()
 			grpc.StartCloudConfigRoutine()
-		})
+			server.ServerInitialized = true
+		}
 	}
 
 	var zenInternalsInitSuccess = true
