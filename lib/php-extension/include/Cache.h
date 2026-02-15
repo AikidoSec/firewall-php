@@ -11,6 +11,16 @@ class RequestCache {
     std::string outgoingRequestRedirectUrl;
 
     RequestCache() = default;
+
+/*
+    Reset helper:
+
+    This function re-initialize the cache structs to their default state instead
+    of reallocating them. The PHP extension code runs inside long-lived PHP/Apache/FPM
+    processes that handle many HTTP requests. Because these cache objects live for
+    the lifetime of the process, we must explicitly reset them so that no state
+    from one request or event can leak into the next.
+*/
     void Reset();
 };
 

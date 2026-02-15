@@ -185,7 +185,7 @@ PHP_GINIT_FUNCTION(aikido) {
     aikido_globals->isIpBypassed = false;
     aikido_globals->isWorkerMode = false;
     aikido_globals->globalAstToClean = nullptr;
-    aikido_globals->original_ast_process = nullptr;
+    aikido_globals->originalAstProcess = nullptr;
 #ifdef ZTS
     new (&aikido_globals->log_level_str) std::string();
     new (&aikido_globals->sapi_name) std::string();

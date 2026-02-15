@@ -46,7 +46,7 @@ bool checkedShouldBlockRequest;
 bool isIpBypassed;
 bool isWorkerMode;
 HashTable *globalAstToClean;
-void (*original_ast_process)(zend_ast *ast);
+void (*originalAstProcess)(zend_ast *ast);
 // IMPORTANT: The order of these objects MUST NOT be changed due to object interdependencies.
 // This ensures proper construction/destruction order in both ZTS and non-ZTS modes.
 // Objects are constructed in this order and destroyed in reverse order.
@@ -71,16 +71,6 @@ std::string config_endpoint;
 */
 RequestCache requestCache;
 EventCacheStack eventCacheStack;
-
-/*
-    Reset helpers:
-
-    These functions re-initialize the cache structs to their default state instead
-    of reallocating them. The PHP extension code runs inside long-lived PHP/Apache/FPM
-    processes that handle many HTTP requests. Because these cache objects live for
-    the lifetime of the process, we must explicitly reset them so that no state
-    from one request or event can leak into the next.
-*/
 EventCache eventCache;
 Agent agent;
 Log logger;

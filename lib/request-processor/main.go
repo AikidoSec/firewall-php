@@ -83,10 +83,11 @@ func RequestProcessorInit(instancePtr unsafe.Pointer, initJson string) (initOk b
 	if globals.EnvironmentConfig.PlatformName != "cli" {
 		server := instance.GetCurrentServer()
 
+		grpcInitOnce.Do(func() {
+			grpc.Init()
+		})
+
 		if server != nil {
-			grpcInitOnce.Do(func() {
-				grpc.Init()
-			})
 			server.ServerInitMutex.Lock()
 			defer server.ServerInitMutex.Unlock()
 
