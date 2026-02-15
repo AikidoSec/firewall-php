@@ -29,16 +29,20 @@ func storeConfig(server *ServerData, req *protos.Config) {
 }
 
 func Register(serverKey ServerKey, requestProcessorPID int32, req *protos.Config) {
+	globals.ServersMutex.RLock()
 
-	server := globals.GetServer(serverKey)
-	if server != nil {
+	server, exists := globals.Servers[serverKey]
+	if exists {
 		log.Debugf(server.Logger, "Server \"AIK_RUNTIME_***%s\" already exists, skipping registration (request processor PID: %d, server PID: %d)", utils.AnonymizeToken(serverKey.Token), requestProcessorPID, serverKey.ServerPID)
 		return
 	}
 
 	log.Infof(log.MainLogger, "Client (request processor PID: %d) connected. Registering server \"AIK_RUNTIME_***%s\" (server PID: %d)...", requestProcessorPID, utils.AnonymizeToken(serverKey.Token), serverKey.ServerPID)
 
-	server = globals.CreateServer(serverKey)
+	globals.Servers[serverKey] = NewServerData()
+
+	globals.ServersMutex.RUnlock()
+
 	storeConfig(server, req)
 	server.Logger = log.CreateLogger(utils.AnonymizeToken(serverKey.Token), server.AikidoConfig.LogLevel, server.AikidoConfig.DiskLogs)
 
