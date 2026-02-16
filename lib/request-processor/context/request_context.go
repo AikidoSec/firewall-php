@@ -192,5 +192,6 @@ func IsEndpointRateLimited() bool {
 }
 
 func GetIdorConfig() *IdorConfig {
-	return GetFromCache(ContextSetIdorConfig, &Context.IdorConfig)
+	ContextSetIdorConfig()
+	return Context.IdorConfig
 }

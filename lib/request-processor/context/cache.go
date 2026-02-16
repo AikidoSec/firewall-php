@@ -4,7 +4,6 @@ package context
 import "C"
 import (
 	"encoding/json"
-	"main/context"
 	"main/globals"
 	"main/helpers"
 	"main/log"
@@ -257,7 +256,7 @@ func ContextSetIdorConfig() {
 	if Context.IdorConfig != nil {
 		return
 	}
-	idorConfigJson := context.GetIdorConfigJson()
+	idorConfigJson := GetIdorConfigJson()
 	if idorConfigJson == "" {
 		return
 	}
