@@ -208,7 +208,7 @@ bool RequestProcessorInstance::RequestInit() {
     if (this->requestProcessorInstance == nullptr && requestProcessor.createInstanceFn != nullptr) {
         this->threadId = GetThreadID();
 
-        this->requestProcessorInstance = requestProcessor.createInstanceFn(this->threadId);
+        this->requestProcessorInstance = requestProcessor.createInstanceFn(this->threadId, GoCreateString(requestProcessor.GetInitData()));
         if (this->requestProcessorInstance == nullptr) {
             AIKIDO_LOG_ERROR("Failed to create Go RequestProcessorInstance!\n");
             return false;
