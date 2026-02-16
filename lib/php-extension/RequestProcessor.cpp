@@ -199,7 +199,7 @@ bool RequestProcessorInstance::RequestInit() {
     }
 
     #ifndef ZTS
-    if (!requestprocessor.Init()) {
+    if (!requestProcessor.Init()) {
         AIKIDO_LOG_ERROR("Failed to initialize the request processor: %s!\n", dlerror());
         return false;
     }
