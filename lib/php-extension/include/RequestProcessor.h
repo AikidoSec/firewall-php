@@ -1,6 +1,6 @@
 #pragma once
 
-typedef void* (*CreateInstanceFn)(uint64_t threadId);
+typedef void* (*CreateInstanceFn)(uint64_t threadId, GoString initJson);
 typedef void (*DestroyInstanceFn)(uint64_t threadId);
 
 // Updated typedefs with instance pointer as first parameter
