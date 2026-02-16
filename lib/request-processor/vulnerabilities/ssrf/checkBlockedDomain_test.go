@@ -26,7 +26,7 @@ func setupTestServerForBlockedDomains(blockNewOutgoingRequests bool, outboundDom
 	}
 
 	// Create a test instance with the server
-	instance := instance.NewRequestProcessorInstance(0, false)
+	instance := instance.NewRequestProcessorInstance(0)
 	instance.SetCurrentServer(server)
 
 	// Setup test context with request IP
@@ -145,7 +145,7 @@ func TestIsBlockedOutboundDomain_CaseInsensitiveHostname(t *testing.T) {
 
 func TestIsBlockedOutboundDomain_NoServerReturnsNil(t *testing.T) {
 	// Test that function returns false when there's no server
-	instance := instance.NewRequestProcessorInstance(0, false)
+	instance := instance.NewRequestProcessorInstance(0)
 	// Don't set a server, so instance.GetCurrentServer() will return nil
 
 	isBlocked := IsBlockedOutboundDomain(instance, "evil.com")

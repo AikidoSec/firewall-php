@@ -51,7 +51,7 @@ func getThreadID() uint64 {
 func LoadForUnitTests(context map[string]string) *instance.RequestProcessorInstance {
 	tid := getThreadID()
 
-	mockInst := instance.NewRequestProcessorInstance(tid, false)
+	mockInst := instance.NewRequestProcessorInstance(tid)
 	if TestServer != nil {
 		mockInst.SetCurrentServer(TestServer)
 		mockInst.SetCurrentToken(TestServer.AikidoConfig.Token)

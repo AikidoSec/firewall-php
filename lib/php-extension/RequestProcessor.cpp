@@ -1,5 +1,7 @@
 #include "Includes.h"
 
+RequestProcessor requestProcessor;
+
 std::string RequestProcessor::GetInitData(const std::string& userProvidedToken) {
     LoadLaravelEnvFile();
     LoadEnvironment();
@@ -26,21 +28,21 @@ std::string RequestProcessor::GetInitData(const std::string& userProvidedToken) 
     return NormalizeAndDumpJson(initData);
 }
 
-bool RequestProcessor::ContextInit() {
-    if (!this->requestInitialized || this->requestProcessorContextInitFn == nullptr || this->requestProcessorInstance == nullptr) {
+bool RequestProcessorInstance::ContextInit() {
+    if (!this->requestInitialized || requestProcessor.requestProcessorContextInitFn == nullptr || this->requestProcessorInstance == nullptr) {
         return false;
     }
-    return this->requestProcessorContextInitFn(this->requestProcessorInstance, GoContextCallback);
+    return requestProcessor.requestProcessorContextInitFn(this->requestProcessorInstance, GoContextCallback);
 }
 
-bool RequestProcessor::SendEvent(EVENT_ID eventId, std::string& output) {
-    if (!this->requestInitialized || this->requestProcessorOnEventFn == nullptr || this->requestProcessorInstance == nullptr) {
+bool RequestProcessorInstance::SendEvent(EVENT_ID eventId, std::string& output) {
+    if (!this->requestInitialized || requestProcessor.requestProcessorOnEventFn == nullptr || this->requestProcessorInstance == nullptr) {
         return false;
     }
 
     AIKIDO_LOG_DEBUG("Sending event %s...\n", GetEventName(eventId));
 
-    char* charPtr = this->requestProcessorOnEventFn(this->requestProcessorInstance, eventId);
+    char* charPtr = requestProcessor.requestProcessorOnEventFn(this->requestProcessorInstance, eventId);
     if (!charPtr) {
         AIKIDO_LOG_DEBUG("Got event reply: nullptr\n");
         return true;
@@ -53,7 +55,7 @@ bool RequestProcessor::SendEvent(EVENT_ID eventId, std::string& output) {
     return true;
 }
 
-void RequestProcessor::SendPreRequestEvent() {
+void RequestProcessorInstance::SendPreRequestEvent() {
     try {
         std::string outputEvent;
         SendEvent(EVENT_PRE_REQUEST, outputEvent);
@@ -63,7 +65,7 @@ void RequestProcessor::SendPreRequestEvent() {
     }
 }
 
-void RequestProcessor::SendPostRequestEvent() {
+void RequestProcessorInstance::SendPostRequestEvent() {
     try {
         std::string outputEvent;
         SendEvent(EVENT_POST_REQUEST, outputEvent);
@@ -77,11 +79,11 @@ void RequestProcessor::SendPostRequestEvent() {
     If the blocking mode is set from agent (different than -1), return that.
         Otherwise, return the env variable AIKIDO_BLOCK.
 */
-bool RequestProcessor::IsBlockingEnabled() {
-    if (!this->requestInitialized || this->requestProcessorGetBlockingModeFn == nullptr || this->requestProcessorInstance == nullptr) {
+bool RequestProcessorInstance::IsBlockingEnabled() {
+    if (!this->requestInitialized || requestProcessor.requestProcessorGetBlockingModeFn == nullptr || this->requestProcessorInstance == nullptr) {
         return false;
     }
-    int ret = this->requestProcessorGetBlockingModeFn(this->requestProcessorInstance);
+    int ret = requestProcessor.requestProcessorGetBlockingModeFn(this->requestProcessorInstance);
     if (ret == -1) {
         ret = AIKIDO_GLOBAL(blocking);
     }
@@ -91,8 +93,8 @@ bool RequestProcessor::IsBlockingEnabled() {
     return ret;
 }
 
-bool RequestProcessor::ReportStats() {
-    if (this->requestProcessorReportStatsFn == nullptr) {
+bool RequestProcessorInstance::ReportStats() {
+    if (requestProcessor.requestProcessorReportStatsFn == nullptr) {
         return false;
     }
     AIKIDO_LOG_INFO("Reporting stats to Aikido Request Processor...\n");
@@ -102,7 +104,7 @@ bool RequestProcessor::ReportStats() {
         const std::string& sink = it->first;
         const SinkStats& sinkStats = it->second;
         AIKIDO_LOG_INFO("Reporting stats for sink \"%s\" to Aikido Request Processor...\n", sink.c_str());
-        requestProcessorReportStatsFn(
+        requestProcessor.requestProcessorReportStatsFn(
             this->requestProcessorInstance,
             GoCreateString(sink),
             GoCreateString(sinkStats.kind),
@@ -174,7 +176,11 @@ bool RequestProcessor::Init() {
         return false;
     }
 
-    this->requestProcessorInitFn = requestProcessorInitFn;
+    if (!requestProcessorInitFn(GoCreateString(initDataString))) {
+        AIKIDO_LOG_ERROR("Failed to initialize Aikido Request Processor!\n");
+        this->initFailed = true;
+        return false;
+    }
 
     AIKIDO_GLOBAL(logger).Init();
 
@@ -182,7 +188,7 @@ bool RequestProcessor::Init() {
     return true;
 }
 
-bool RequestProcessor::RequestInit() {
+bool RequestProcessorInstance::RequestInit() {
     std::string sapiName = sapi_module.name;
     if (sapiName == "frankenphp") {
         if (GetEnvBool("FRANKENPHP_WORKER", false)) {
@@ -192,36 +198,22 @@ bool RequestProcessor::RequestInit() {
         }
     }
 
+    #ifndef ZTS
     if (!this->Init()) {
         AIKIDO_LOG_ERROR("Failed to initialize the request processor: %s!\n", dlerror());
         return false;
     }
-    if (this->requestProcessorInstance == nullptr && this->createInstanceFn != nullptr) {
+    #endif
+    
+    if (this->requestProcessorInstance == nullptr && requestProcessor.createInstanceFn != nullptr) {
         this->threadId = GetThreadID();
-        #ifdef ZTS
-                bool isZTS = true;
-        #else
-                bool isZTS = false;
-        #endif
-        this->requestProcessorInstance = this->createInstanceFn(this->threadId, isZTS);
+
+        this->requestProcessorInstance = requestProcessor.createInstanceFn(this->threadId);
         if (this->requestProcessorInstance == nullptr) {
             AIKIDO_LOG_ERROR("Failed to create Go RequestProcessorInstance!\n");
             return false;
         }
-        AIKIDO_LOG_INFO("Created Go RequestProcessorInstance (threadId: %lu, isZTS: %d)\n", this->threadId, isZTS);
-        
-        if (this->requestProcessorInitFn == nullptr) {
-            AIKIDO_LOG_ERROR("RequestProcessorInitFn is not loaded!\n");
-            return false;
-        }
-        
-        
-        std::string initDataString = this->GetInitData();
-        if (!this->requestProcessorInitFn(this->requestProcessorInstance, GoCreateString(initDataString))) {
-            AIKIDO_LOG_ERROR("Failed to initialize Aikido Request Processor!\n");
-            return false;
-        }
-        AIKIDO_LOG_INFO("RequestProcessorInit called successfully\n");
+        AIKIDO_LOG_INFO("Created Go RequestProcessorInstance (threadId: %lu)\n", this->threadId);
     }
     
     if (sapiName == "apache2handler" || sapiName == "frankenphp") {
@@ -253,13 +245,13 @@ bool RequestProcessor::RequestInit() {
     SendPreRequestEvent();
 
     if ((this->numberOfRequests % AIKIDO_GLOBAL(report_stats_interval_to_agent)) == 0) {
-        AIKIDO_GLOBAL(requestProcessor).ReportStats();
+        AIKIDO_GLOBAL(requestProcessorInstance).ReportStats();
     }
     return true;
 }
 
-void RequestProcessor::LoadConfig(const std::string& previousToken, const std::string& currentToken) {
-    if (this->requestProcessorConfigUpdateFn == nullptr || this->requestProcessorInstance == nullptr) {
+void RequestProcessorInstance::LoadConfig(const std::string& previousToken, const std::string& currentToken) {
+    if (requestProcessor.requestProcessorConfigUpdateFn == nullptr || this->requestProcessorInstance == nullptr) {
         return;
     }
     if (currentToken.empty()) {
@@ -272,11 +264,11 @@ void RequestProcessor::LoadConfig(const std::string& previousToken, const std::s
     }
 
     AIKIDO_LOG_INFO("Reloading Aikido config...\n");
-    std::string initJson = this->GetInitData(currentToken);
-    this->requestProcessorConfigUpdateFn(this->requestProcessorInstance, GoCreateString(initJson));
+    std::string initJson = requestProcessor.GetInitData(currentToken);
+    requestProcessor.requestProcessorConfigUpdateFn(this->requestProcessorInstance, GoCreateString(initJson));
 }
 
-void RequestProcessor::LoadConfigFromEnvironment() {
+void RequestProcessorInstance::LoadConfigFromEnvironment() {
     auto& globalToken = AIKIDO_GLOBAL(token);
     std::string previousToken = globalToken;
         
@@ -287,36 +279,39 @@ void RequestProcessor::LoadConfigFromEnvironment() {
     LoadConfig(previousToken, currentToken);
 }
 
-void RequestProcessor::LoadConfigWithTokenFromPHPSetToken(const std::string& tokenFromMiddleware) {
+void RequestProcessorInstance::LoadConfigWithTokenFromPHPSetToken(const std::string& tokenFromMiddleware) {
     LoadConfig(AIKIDO_GLOBAL(token), tokenFromMiddleware);
 }
 
-void RequestProcessor::RequestShutdown() {
+void RequestProcessorInstance::RequestShutdown() {
     SendPostRequestEvent();
     this->requestInitialized = false;
 }
 
 void RequestProcessor::Uninit() {
-    if (!this->libHandle) {
+    if (!requestProcessor.libHandle) {
         return;
-    }
-    if (!this->initFailed && this->requestProcessorUninitFn && this->requestProcessorInstance != nullptr) {
-        AIKIDO_LOG_INFO("Reporting final stats to Aikido Request Processor...\n");
-        this->ReportStats();
-
-        AIKIDO_LOG_INFO("Calling uninit for Aikido Request Processor...\n");
-        this->requestProcessorUninitFn(this->requestProcessorInstance);
-    }
-    if (this->destroyInstanceFn && this->requestProcessorInstance != nullptr) {
-        AIKIDO_LOG_INFO("Destroying Go RequestProcessorInstance (threadId: %lu)...\n", this->threadId);
-        this->destroyInstanceFn(this->threadId);
-        this->requestProcessorInstance = nullptr;
     }
     dlclose(this->libHandle);
     this->libHandle = nullptr;
     AIKIDO_LOG_INFO("Aikido Request Processor unloaded!\n");
 }
 
-RequestProcessor::~RequestProcessor() {
-    this->Uninit();
+RequestProcessorInstance::~RequestProcessorInstance() {
+    if (!requestProcessor.initFailed && requestProcessor.requestProcessorUninitFn && this->requestProcessorInstance != nullptr) {
+        AIKIDO_LOG_INFO("Reporting final stats to Aikido Request Processor...\n");
+        this->ReportStats();
+
+        AIKIDO_LOG_INFO("Calling uninit for Aikido Request Processor...\n");
+        requestProcessor.requestProcessorUninitFn(this->requestProcessorInstance);
+    }
+    if (requestProcessor.destroyInstanceFn && this->requestProcessorInstance != nullptr) {
+        AIKIDO_LOG_INFO("Destroying Go RequestProcessorInstance (threadId: %lu)...\n", this->threadId);
+        requestProcessor.destroyInstanceFn(this->threadId);
+        this->requestProcessorInstance = nullptr;
+    }
+
+    #ifndef ZTS
+        this->Uninit();
+    #endif
 }

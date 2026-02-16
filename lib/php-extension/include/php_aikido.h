@@ -76,7 +76,7 @@ Agent agent;
 Log logger;
 Server server;
 std::unordered_map<std::string, SinkStats> stats;
-RequestProcessor requestProcessor;
+RequestProcessorInstance requestProcessorInstance;
 Action action;
 PhpLifecycle phpLifecycle;
 std::unordered_map<std::string, std::string> laravelEnv;

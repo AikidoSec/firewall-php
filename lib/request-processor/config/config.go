@@ -59,18 +59,22 @@ func ReloadAikidoConfig(instance *instance.RequestProcessorInstance, conf *Aikid
 	return ReloadWithNewToken
 }
 
-func Init(instance *instance.RequestProcessorInstance, initJson string) {
+func Init(initJson string) {
 	err := json.Unmarshal([]byte(initJson), &globals.EnvironmentConfig)
 	if err != nil {
 		panic(fmt.Sprintf("Error parsing JSON to EnvironmentConfig: %s", err))
 	}
-
 	globals.EnvironmentConfig.ServerPID = int32(os.Getppid())
 	globals.EnvironmentConfig.RequestProcessorPID = int32(os.Getpid())
+}
 
+func InitInstance(instance *instance.RequestProcessorInstance, initJson string) bool {
 	conf := AikidoConfigData{}
-	ReloadAikidoConfig(instance, &conf, initJson)
+	if ReloadAikidoConfig(instance, &conf, initJson) == ReloadError {
+		return false
+	}
 	log.Init(conf.DiskLogs)
+	return true
 }
 
 func Uninit() {

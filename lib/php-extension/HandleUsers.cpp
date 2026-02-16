@@ -6,7 +6,7 @@ bool SendUserEvent(std::string id, std::string username) {
     requestCache.userName = username;
 
     try {
-        auto& requestProcessor = AIKIDO_GLOBAL(requestProcessor);
+        auto& requestProcessor = AIKIDO_GLOBAL(requestProcessorInstance);
         auto& action = AIKIDO_GLOBAL(action);
         std::string output;
         requestProcessor.SendEvent(EVENT_SET_USER, output);

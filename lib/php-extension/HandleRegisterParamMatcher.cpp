@@ -28,7 +28,7 @@ ZEND_FUNCTION(register_param_matcher) {
     eventCacheStack.Top().paramMatcherRegex = std::string(regex, regexLength);
 
     try {
-        auto& requestProcessor = AIKIDO_GLOBAL(requestProcessor);
+        auto& requestProcessor = AIKIDO_GLOBAL(requestProcessorInstance);
         auto& action = AIKIDO_GLOBAL(action);
         std::string outputEvent;
         requestProcessor.SendEvent(EVENT_REGISTER_PARAM_MATCHER, outputEvent);

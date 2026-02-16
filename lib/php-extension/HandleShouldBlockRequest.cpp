@@ -18,10 +18,10 @@ bool CheckBlocking(EVENT_ID eventId, bool& checkedBlocking) {
     ScopedTimer scopedTimer("check_blocking", "aikido_op");
 
     try {
-        auto& requestProcessor = AIKIDO_GLOBAL(requestProcessor);
+        auto& requestProcessorInstance = AIKIDO_GLOBAL(requestProcessorInstance);
         auto& action = AIKIDO_GLOBAL(action);
         std::string output;
-        requestProcessor.SendEvent(eventId, output);
+        requestProcessorInstance.SendEvent(eventId, output);
         action.Execute(output);
         checkedBlocking = true;
         return true;

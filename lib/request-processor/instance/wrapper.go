@@ -2,7 +2,6 @@ package instance
 
 import (
 	. "main/aikido_types"
-	"sync"
 	"unsafe"
 )
 
@@ -21,140 +20,72 @@ type RequestProcessorInstance struct {
 	// (event_context.go, request_context.go)
 	RequestContext interface{}
 	EventContext   interface{}
-
-	mu    sync.Mutex // Only used when isZTS is true
-	isZTS bool
 }
 
-func NewRequestProcessorInstance(threadID uint64, isZTS bool) *RequestProcessorInstance {
+func NewRequestProcessorInstance(threadID uint64) *RequestProcessorInstance {
 	return &RequestProcessorInstance{
 		CurrentToken:  "",
 		CurrentServer: nil,
 		threadID:      threadID,
-		isZTS:         isZTS,
 	}
 }
 
 func (i *RequestProcessorInstance) SetCurrentServer(server *ServerData) {
-	if i.isZTS {
-		i.mu.Lock()
-		defer i.mu.Unlock()
-	}
 	i.CurrentServer = server
 }
 
 func (i *RequestProcessorInstance) GetCurrentServer() *ServerData {
-	if i.isZTS {
-		i.mu.Lock()
-		defer i.mu.Unlock()
-	}
 	return i.CurrentServer
 }
 
 func (i *RequestProcessorInstance) SetCurrentToken(token string) {
-	if i.isZTS {
-		i.mu.Lock()
-		defer i.mu.Unlock()
-	}
 	i.CurrentToken = token
 }
 
 func (i *RequestProcessorInstance) GetCurrentToken() string {
-	if i.isZTS {
-		i.mu.Lock()
-		defer i.mu.Unlock()
-	}
 	return i.CurrentToken
 }
 
 func (i *RequestProcessorInstance) IsInitialized() bool {
-	if i.isZTS {
-		i.mu.Lock()
-		defer i.mu.Unlock()
-	}
 	return i.CurrentServer != nil
 }
 
-func (i *RequestProcessorInstance) IsZTS() bool {
-	return i.isZTS
-}
-
 func (i *RequestProcessorInstance) SetContextCallback(callback unsafe.Pointer) {
-	if i.isZTS {
-		i.mu.Lock()
-		defer i.mu.Unlock()
-	}
 	i.ContextCallback = callback
 }
 
 func (i *RequestProcessorInstance) GetContextCallback() unsafe.Pointer {
-	if i.isZTS {
-		i.mu.Lock()
-		defer i.mu.Unlock()
-	}
 	return i.ContextCallback
 }
 
 func (i *RequestProcessorInstance) SetThreadID(tid uint64) {
-	if i.isZTS {
-		i.mu.Lock()
-		defer i.mu.Unlock()
-	}
 	i.threadID = tid
 }
 
 func (i *RequestProcessorInstance) GetThreadID() uint64 {
-	if i.isZTS {
-		i.mu.Lock()
-		defer i.mu.Unlock()
-	}
 	return i.threadID
 }
 
 func (i *RequestProcessorInstance) SetRequestContext(ctx interface{}) {
-	if i.isZTS {
-		i.mu.Lock()
-		defer i.mu.Unlock()
-	}
 	i.RequestContext = ctx
 }
 
 func (i *RequestProcessorInstance) GetRequestContext() interface{} {
-	if i.isZTS {
-		i.mu.Lock()
-		defer i.mu.Unlock()
-	}
 	return i.RequestContext
 }
 
 func (i *RequestProcessorInstance) SetEventContext(ctx interface{}) {
-	if i.isZTS {
-		i.mu.Lock()
-		defer i.mu.Unlock()
-	}
 	i.EventContext = ctx
 }
 
 func (i *RequestProcessorInstance) GetEventContext() interface{} {
-	if i.isZTS {
-		i.mu.Lock()
-		defer i.mu.Unlock()
-	}
 	return i.EventContext
 }
 
 func (i *RequestProcessorInstance) SetContextInstance(ptr unsafe.Pointer) {
-	if i.isZTS {
-		i.mu.Lock()
-		defer i.mu.Unlock()
-	}
 	i.ContextInstance = ptr
 }
 
 func (i *RequestProcessorInstance) GetContextInstance() unsafe.Pointer {
-	if i.isZTS {
-		i.mu.Lock()
-		defer i.mu.Unlock()
-	}
 	return i.ContextInstance
 }

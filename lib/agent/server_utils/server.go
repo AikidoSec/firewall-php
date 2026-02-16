@@ -29,6 +29,9 @@ func storeConfig(server *ServerData, req *protos.Config) {
 }
 
 func Register(serverKey ServerKey, requestProcessorPID int32, req *protos.Config) {
+	globals.ServersMutex.Lock()
+	defer globals.ServersMutex.Unlock()
+
 	server, exists := globals.GetOrCreateServer(serverKey)
 	if exists {
 		log.Debugf(log.MainLogger, "Server \"AIK_RUNTIME_***%s\" already exists, skipping registration (request processor PID: %d, server PID: %d)", utils.AnonymizeToken(serverKey.Token), requestProcessorPID, serverKey.ServerPID)

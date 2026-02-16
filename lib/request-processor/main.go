@@ -13,15 +13,11 @@ import (
 	"main/utils"
 	zen_internals "main/vulnerabilities/zen-internals"
 	"strings"
-	"sync"
 	"time"
 	"unsafe"
 )
 
 type HandlerFunction func(*instance.RequestProcessorInstance) string
-
-var grpcInitOnce sync.Once
-var zenInternalsInitOnce sync.Once
 
 var eventHandlers = map[int]HandlerFunction{
 	C.EVENT_PRE_REQUEST:              OnPreRequest,
@@ -46,8 +42,30 @@ func initializeServer(server *ServerData) {
 }
 
 //export CreateInstance
-func CreateInstance(threadID uint64, isZTS bool) unsafe.Pointer {
-	return instance.CreateInstance(threadID, isZTS)
+func CreateInstance(threadID uint64, initJson string) unsafe.Pointer {
+	instancePtr := instance.CreateInstance(threadID)
+
+	instanceObject := instance.GetInstance(instancePtr)
+	if !config.InitInstance(instanceObject, initJson) {
+		instance.DestroyInstance(threadID)
+		return nil
+	}
+	log.Debugf(instanceObject, "Init data: %s", initJson)
+	log.Debugf(instanceObject, "Started with token: \"AIK_RUNTIME_***%s\"", utils.AnonymizeToken(instanceObject.GetCurrentToken()))
+
+	if globals.EnvironmentConfig.PlatformName != "cli" {
+		server := instanceObject.GetCurrentServer()
+		if server != nil {
+			server.ServerInitMutex.Lock()
+			defer server.ServerInitMutex.Unlock()
+			if server.ServerInitialized {
+				return instancePtr
+			}
+			initializeServer(server)
+			server.ServerInitialized = true
+		}
+	}
+	return instancePtr
 }
 
 //export DestroyInstance
@@ -56,59 +74,31 @@ func DestroyInstance(threadID uint64) {
 }
 
 //export RequestProcessorInit
-func RequestProcessorInit(instancePtr unsafe.Pointer, initJson string) (initOk bool) {
-	instance := instance.GetInstance(instancePtr)
+func RequestProcessorInit(initJson string) (initOk bool) {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Warn(instance, "Recovered from panic:", r)
+			log.Warn(nil, "Recovered from panic:", r)
 			initOk = false
 		}
 	}()
 
-	if instance == nil {
+	config.Init(initJson)
+
+	if globals.EnvironmentConfig.PlatformName != "cli" {
+		grpc.Init()
+		grpc.StartCloudConfigRoutine()
+	}
+	if !zen_internals.Init() {
+		log.Error(nil, "Error initializing zen-internals library!")
 		return false
 	}
 
-	config.Init(instance, initJson)
-
-	log.Debugf(instance, "Aikido Request Processor v%s (server PID: %d, request processor PID: %d) started in \"%s\" mode!",
+	log.Debugf(nil, "Aikido Request Processor v%s (server PID: %d, request processor PID: %d) started in \"%s\" mode!",
 		globals.Version,
 		globals.EnvironmentConfig.ServerPID,
 		globals.EnvironmentConfig.RequestProcessorPID,
 		globals.EnvironmentConfig.PlatformName,
 	)
-	log.Debugf(instance, "Init data: %s", initJson)
-	log.Debugf(instance, "Started with token: \"AIK_RUNTIME_***%s\"", utils.AnonymizeToken(instance.GetCurrentToken()))
-
-	if globals.EnvironmentConfig.PlatformName != "cli" {
-		server := instance.GetCurrentServer()
-
-		grpcInitOnce.Do(func() {
-			grpc.Init()
-		})
-
-		if server != nil {
-			server.ServerInitMutex.Lock()
-			defer server.ServerInitMutex.Unlock()
-
-			if server.ServerInitialized {
-				server.ServerInitMutex.Unlock()
-				return true
-			}
-			initializeServer(server)
-			grpc.StartCloudConfigRoutine()
-			server.ServerInitialized = true
-		}
-	}
-
-	var zenInternalsInitSuccess = true
-	zenInternalsInitOnce.Do(func() {
-		zenInternalsInitSuccess = zen_internals.Init()
-	})
-	if !zenInternalsInitSuccess {
-		log.Error(instance, "Error initializing zen-internals library!")
-		return false
-	}
 	return true
 }
 

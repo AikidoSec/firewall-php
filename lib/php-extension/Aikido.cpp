@@ -195,7 +195,7 @@ PHP_GINIT_FUNCTION(aikido) {
     new (&aikido_globals->logger) Log();
     new (&aikido_globals->agent) Agent();
     new (&aikido_globals->server) Server();
-    new (&aikido_globals->requestProcessor) RequestProcessor();
+    new (&aikido_globals->requestProcessorInstance) RequestProcessorInstance();
     new (&aikido_globals->action) Action();
     new (&aikido_globals->requestCache) RequestCache();
     new (&aikido_globals->eventCacheStack) EventCacheStack();
@@ -211,7 +211,7 @@ PHP_GSHUTDOWN_FUNCTION(aikido) {
     aikido_globals->laravelEnv.~unordered_map();
     aikido_globals->phpLifecycle.~PhpLifecycle();
     aikido_globals->action.~Action();
-    aikido_globals->requestProcessor.~RequestProcessor();
+    aikido_globals->requestProcessorInstance.~RequestProcessorInstance();
     aikido_globals->stats.~unordered_map();
     aikido_globals->server.~Server();
     aikido_globals->logger.~Log();

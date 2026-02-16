@@ -19,6 +19,6 @@ ZEND_FUNCTION(set_token) {
         RETURN_BOOL(false);
     }
 
-    AIKIDO_GLOBAL(requestProcessor).LoadConfigWithTokenFromPHPSetToken(std::string(token, tokenLength));
+    AIKIDO_GLOBAL(requestProcessorInstance).LoadConfigWithTokenFromPHPSetToken(std::string(token, tokenLength));
     RETURN_BOOL(true);
 }

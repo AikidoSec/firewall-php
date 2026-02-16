@@ -6,18 +6,18 @@ ACTION_STATUS aikido_process_event(EVENT_ID& eventId, std::string& sink) {
         return CONTINUE;
     }
 
-    auto& requestProcessor = AIKIDO_GLOBAL(requestProcessor);
+    auto& requestProcessorInstance = AIKIDO_GLOBAL(requestProcessorInstance);
     auto& action = AIKIDO_GLOBAL(action);
     auto& statsMap = AIKIDO_GLOBAL(stats);
 
     std::string outputEvent;
-    requestProcessor.SendEvent(eventId, outputEvent);
+    requestProcessorInstance.SendEvent(eventId, outputEvent);
 
     if (action.IsDetection(outputEvent)) {
         statsMap[sink].IncrementAttacksDetected();
     }
 
-    if (!requestProcessor.IsBlockingEnabled()) {
+    if (!requestProcessorInstance.IsBlockingEnabled()) {
         return CONTINUE;
     }
 

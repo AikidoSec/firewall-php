@@ -17,7 +17,7 @@ var (
 
 // CreateInstance creates or reuses an instance for the given thread.
 // Returns an unsafe.Pointer for C++ to store.
-func CreateInstance(threadID uint64, isZTS bool) unsafe.Pointer {
+func CreateInstance(threadID uint64) unsafe.Pointer {
 	instancesMutex.Lock()
 	defer instancesMutex.Unlock()
 
@@ -25,7 +25,7 @@ func CreateInstance(threadID uint64, isZTS bool) unsafe.Pointer {
 		return unsafe.Pointer(existingInstance)
 	}
 
-	instance := NewRequestProcessorInstance(threadID, isZTS)
+	instance := NewRequestProcessorInstance(threadID)
 	instances[threadID] = instance
 
 	// Pin to prevent GC while C++ holds the pointer
