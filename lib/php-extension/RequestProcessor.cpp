@@ -154,7 +154,7 @@ bool RequestProcessor::Init() {
 
     this->createInstanceFn = (CreateInstanceFn)dlsym(libHandle, "CreateInstance");
     this->destroyInstanceFn = (DestroyInstanceFn)dlsym(libHandle, "DestroyInstance");
-    
+
     RequestProcessorInitFn requestProcessorInitFn = (RequestProcessorInitFn)dlsym(libHandle, "RequestProcessorInit");
     this->requestProcessorContextInitFn = (RequestProcessorContextInitFn)dlsym(libHandle, "RequestProcessorContextInit");
     this->requestProcessorConfigUpdateFn = (RequestProcessorConfigUpdateFn)dlsym(libHandle, "RequestProcessorConfigUpdate");
@@ -312,6 +312,6 @@ RequestProcessorInstance::~RequestProcessorInstance() {
     }
 
     #ifndef ZTS
-        this->Uninit();
+        requestProcessor.Uninit();
     #endif
 }
