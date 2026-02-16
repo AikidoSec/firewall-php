@@ -46,10 +46,8 @@ func CreateInstance(threadID uint64, initJson string) unsafe.Pointer {
 	instancePtr := instance.CreateInstance(threadID)
 
 	instanceObject := instance.GetInstance(instancePtr)
-	if !config.InitInstance(instanceObject, initJson) {
-		instance.DestroyInstance(threadID)
-		return nil
-	}
+	config.InitInstance(instanceObject, initJson)
+
 	log.Debugf(instanceObject, "Init data: %s", initJson)
 	log.Debugf(instanceObject, "Started with token: \"AIK_RUNTIME_***%s\"", utils.AnonymizeToken(instanceObject.GetCurrentToken()))
 

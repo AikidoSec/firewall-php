@@ -68,13 +68,10 @@ func Init(initJson string) {
 	globals.EnvironmentConfig.RequestProcessorPID = int32(os.Getpid())
 }
 
-func InitInstance(instance *instance.RequestProcessorInstance, initJson string) bool {
+func InitInstance(instance *instance.RequestProcessorInstance, initJson string) {
 	conf := AikidoConfigData{}
-	if ReloadAikidoConfig(instance, &conf, initJson) == ReloadError {
-		return false
-	}
+	ReloadAikidoConfig(instance, &conf, initJson)
 	log.Init(conf.DiskLogs)
-	return true
 }
 
 func Uninit() {

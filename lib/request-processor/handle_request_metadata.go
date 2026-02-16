@@ -23,11 +23,9 @@ func OnRequestShutdownReporting(params RequestShutdownParams) {
 
 	log.Info(nil, "[RSHUTDOWN] Got request metadata: ", params.Method, " ", params.Route, " ", params.StatusCode)
 
-	if !params.IsIpBypassed {
-		params.IsWebScanner = webscanner.IsWebScanner(params.Method, params.Route, params.QueryParsed)
-	}
-	params.ShouldDiscoverRoute = utils.ShouldDiscoverRoute(params.StatusCode, params.Route, params.Method)
+	params.IsWebScanner = webscanner.IsWebScanner(params.Method, params.Route, params.QueryParsed)
 
+	params.ShouldDiscoverRoute = utils.ShouldDiscoverRoute(params.StatusCode, params.Route, params.Method)
 	if !params.RateLimited && !params.ShouldDiscoverRoute && !params.IsWebScanner {
 		return
 	}
@@ -58,7 +56,6 @@ func OnPostRequest(instance *instance.RequestProcessorInstance) string {
 			RateLimitGroup: context.GetRateLimitGroup(instance),
 			RateLimited:    context.IsEndpointRateLimited(instance),
 			QueryParsed:    context.GetQueryParsed(instance),
-			IsIpBypassed:   context.IsIpBypassed(instance),
 			APISpec:        api_discovery.GetApiInfo(instance, instance.GetCurrentServer()),
 		}
 
