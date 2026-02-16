@@ -2,8 +2,7 @@
 
 ZEND_FUNCTION(enable_idor_protection) {
     ScopedTimer scopedTimer("enable_idor_protection", "aikido_op");
-    ScopedEventContext scopedContext;
-
+    
     if (IsAikidoDisabledOrBypassed()) {
         RETURN_BOOL(false);
     }
@@ -23,8 +22,6 @@ ZEND_FUNCTION(enable_idor_protection) {
         RETURN_BOOL(false);
     }
 
-    eventCacheStack.Top().idorTenantColumnName = std::string(tenantColumnName, tenantColumnNameLength);
-
     json excludedTablesJson = json::array();
     if (excludedTablesZval) {
         HashTable *ht = Z_ARRVAL_P(excludedTablesZval);
@@ -35,16 +32,12 @@ ZEND_FUNCTION(enable_idor_protection) {
             }
         } ZEND_HASH_FOREACH_END();
     }
-    eventCacheStack.Top().idorExcludedTables = excludedTablesJson.dump();
 
-    try {
-        std::string outputEvent;
-        requestProcessor.SendEvent(EVENT_ENABLE_IDOR_PROTECTION, outputEvent);
-        action.Execute(outputEvent);
-    } catch (const std::exception &e) {
-        AIKIDO_LOG_ERROR("Exception encountered in enable_idor_protection: %s\n", e.what());
-        RETURN_BOOL(false);
-    }
+    json idorConfig = {
+        {"column_name", std::string(tenantColumnName, tenantColumnNameLength)},
+        {"excluded_tables", excludedTablesJson}
+    };
+    requestCache.idorConfigJson = idorConfig.dump();
 
     AIKIDO_LOG_INFO("Enabled IDOR protection with tenant column '%s'\n", tenantColumnName);
     RETURN_BOOL(true);

@@ -69,12 +69,8 @@ func IsIdorDisabled() bool {
 	return Context.Callback(C.CONTEXT_IDOR_DISABLED) == "1"
 }
 
-func GetIdorTenantColumnName() string {
-	return Context.Callback(C.CONTEXT_IDOR_TENANT_COLUMN_NAME)
-}
-
-func GetIdorExcludedTables() string {
-	return Context.Callback(C.CONTEXT_IDOR_EXCLUDED_TABLES)
+func GetIdorConfigJson() string {
+	return Context.Callback(C.CONTEXT_IDOR_CONFIG)
 }
 
 func getHostNameAndPort(urlCallbackId int, portCallbackId int) (string, uint32) { // urlcallbackid is the type of data we request, eg C.OUTGOING_REQUEST_URL

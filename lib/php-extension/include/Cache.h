@@ -11,7 +11,8 @@ class RequestCache {
     std::string outgoingRequestRedirectUrl;
     std::string tenantId;
     bool idorDisabled = false;
-
+    std::string idorConfigJson;
+    
     RequestCache() = default;
     void Reset();
 };
@@ -38,9 +39,6 @@ class EventCache {
 
     std::string paramMatcherParam;
     std::string paramMatcherRegex;
-
-    std::string idorTenantColumnName;
-    std::string idorExcludedTables;
 
     EventCache() = default;
     void Reset();

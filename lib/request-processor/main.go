@@ -29,8 +29,7 @@ var eventHandlers = map[int]HandlerFunction{
 	C.EVENT_POST_OUTGOING_REQUEST:    OnPostOutgoingRequest,
 	C.EVENT_PRE_SHELL_EXECUTED:       OnPreShellExecuted,
 	C.EVENT_PRE_PATH_ACCESSED:        OnPrePathAccessed,
-	C.EVENT_PRE_SQL_QUERY_EXECUTED:   OnPreSqlQueryExecuted,
-	C.EVENT_ENABLE_IDOR_PROTECTION:   OnEnableIdorProtection,
+	C.EVENT_PRE_SQL_QUERY_EXECUTED:   OnPreSqlQueryExecuted
 }
 
 func initializeServer(server *ServerData) {

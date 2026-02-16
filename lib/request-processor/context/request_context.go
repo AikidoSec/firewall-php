@@ -9,6 +9,11 @@ import (
 
 type CallbackFunction func(int) string
 
+type IdorConfig struct {
+	TenantColumnName string
+	ExcludedTables   []string
+}
+
 /* Request level context cache (changes on each PHP request) */
 type RequestContextData struct {
 	Callback                      CallbackFunction // callback to access data from the PHP layer (C++ extension) about the current request and current event
@@ -27,6 +32,7 @@ type RequestContextData struct {
 	IsEndpointProtectionTurnedOff *bool
 	IsEndpointIpAllowed           *bool
 	IsEndpointRateLimited         bool
+	IdorConfig                    *IdorConfig
 	UserAgent                     *string
 	UserId                        *string
 	UserName                      *string
@@ -183,4 +189,8 @@ func IsEndpointProtectionTurnedOff() bool {
 
 func IsEndpointRateLimited() bool {
 	return Context.IsEndpointRateLimited
+}
+
+func GetIdorConfig() *IdorConfig {
+	return GetFromCache(ContextSetIdorConfig, &Context.IdorConfig)
 }
