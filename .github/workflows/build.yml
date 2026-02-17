@@ -461,7 +461,7 @@ jobs:
           cd lib/php-extension/
           phpize
           cd ../../
-          AIKIDO_DEBUG=1 php lib/php-extension/run-tests.php ./tests/cli
+          php lib/php-extension/run-tests.php ./tests/cli
 
       - name: Run ${{ matrix.server }} server tests
         run: |
