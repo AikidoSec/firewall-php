@@ -156,6 +156,7 @@ bool RequestProcessor::Init() {
     this->destroyInstanceFn = (DestroyInstanceFn)dlsym(libHandle, "DestroyInstance");
 
     RequestProcessorInitFn requestProcessorInitFn = (RequestProcessorInitFn)dlsym(libHandle, "RequestProcessorInit");
+    this->initInstanceFn = (InitInstanceFn)dlsym(libHandle, "InitInstance");
     this->requestProcessorContextInitFn = (RequestProcessorContextInitFn)dlsym(libHandle, "RequestProcessorContextInit");
     this->requestProcessorConfigUpdateFn = (RequestProcessorConfigUpdateFn)dlsym(libHandle, "RequestProcessorConfigUpdate");
     this->requestProcessorOnEventFn = (RequestProcessorOnEventFn)dlsym(libHandle, "RequestProcessorOnEvent");
@@ -163,6 +164,7 @@ bool RequestProcessor::Init() {
     this->requestProcessorReportStatsFn = (RequestProcessorReportStats)dlsym(libHandle, "RequestProcessorReportStats");
     this->requestProcessorUninitFn = (RequestProcessorUninitFn)dlsym(libHandle, "RequestProcessorUninit");
     if (!this->createInstanceFn ||
+        !this->initInstanceFn ||
         !this->destroyInstanceFn ||
         !requestProcessorInitFn ||
         !this->requestProcessorContextInitFn ||
@@ -208,11 +210,16 @@ bool RequestProcessorInstance::RequestInit() {
     if (this->requestProcessorInstance == nullptr && requestProcessor.createInstanceFn != nullptr) {
         this->threadId = GetThreadID();
 
-        this->requestProcessorInstance = requestProcessor.createInstanceFn(this->threadId, GoCreateString(requestProcessor.GetInitData()));
+        this->requestProcessorInstance = requestProcessor.createInstanceFn(this->threadId);
         if (this->requestProcessorInstance == nullptr) {
             AIKIDO_LOG_ERROR("Failed to create Go RequestProcessorInstance!\n");
             return false;
         }
+        if(!requestProcessor.initInstanceFn(this->requestProcessorInstance, GoCreateString(requestProcessor.GetInitData()))) {
+            AIKIDO_LOG_ERROR("Failed to initialize Go RequestProcessorInstance!\n");
+            return false;
+        }
+
         AIKIDO_LOG_INFO("Created Go RequestProcessorInstance (threadId: %lu)\n", this->threadId);
     }
     

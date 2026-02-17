@@ -1,6 +1,7 @@
 #pragma once
 
-typedef void* (*CreateInstanceFn)(uint64_t threadId, GoString initJson);
+typedef void* (*CreateInstanceFn)(uint64_t threadId);
+typedef GoUint8 (*InitInstanceFn)(void* instancePtr, GoString initJson);
 typedef void (*DestroyInstanceFn)(uint64_t threadId);
 
 // Updated typedefs with instance pointer as first parameter
@@ -18,6 +19,7 @@ class RequestProcessor {
     void* libHandle = nullptr;
 
     CreateInstanceFn createInstanceFn = nullptr;
+    InitInstanceFn initInstanceFn = nullptr;
     DestroyInstanceFn destroyInstanceFn = nullptr;
     RequestProcessorContextInitFn requestProcessorContextInitFn = nullptr;
     RequestProcessorConfigUpdateFn requestProcessorConfigUpdateFn = nullptr;

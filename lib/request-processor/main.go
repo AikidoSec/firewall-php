@@ -42,10 +42,17 @@ func initializeServer(server *ServerData) {
 }
 
 //export CreateInstance
-func CreateInstance(threadID uint64, initJson string) unsafe.Pointer {
-	instancePtr := instance.CreateInstance(threadID)
+func CreateInstance(threadID uint64) unsafe.Pointer {
+	return instance.CreateInstance(threadID)
+}
 
+//export InitInstance
+func InitInstance(instancePtr unsafe.Pointer, initJson string) bool {
+	// We need to init the instance in a separate function because we pin only the instance pointer, not the instance itself(all members).
 	instanceObject := instance.GetInstance(instancePtr)
+	if instanceObject == nil {
+		return false
+	}
 	config.InitInstance(instanceObject, initJson)
 
 	log.Debugf(instanceObject, "Init data: %s", initJson)
@@ -57,13 +64,13 @@ func CreateInstance(threadID uint64, initJson string) unsafe.Pointer {
 			server.ServerInitMutex.Lock()
 			defer server.ServerInitMutex.Unlock()
 			if server.ServerInitialized {
-				return instancePtr
+				return true
 			}
 			initializeServer(server)
 			server.ServerInitialized = true
 		}
 	}
-	return instancePtr
+	return true
 }
 
 //export DestroyInstance
