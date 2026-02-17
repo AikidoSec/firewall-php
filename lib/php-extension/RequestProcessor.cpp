@@ -129,7 +129,6 @@ bool RequestProcessor::Init() {
         return true;
     }
 
-    std::string initDataString = this->GetInitData();
     if (AIKIDO_GLOBAL(disable) == true && AIKIDO_GLOBAL(sapi_name) != "apache2handler" && AIKIDO_GLOBAL(sapi_name) != "frankenphp") {
         /* 
             As you can set AIKIDO_DISABLE per site, in an apache-mod-php or frankenphp setup, as a process can serve multiple sites,
@@ -178,7 +177,7 @@ bool RequestProcessor::Init() {
         return false;
     }
 
-    if (!requestProcessorInitFn(GoCreateString(initDataString))) {
+    if (!requestProcessorInitFn(GoCreateString(AIKIDO_GLOBAL(sapi_name)))) {
         AIKIDO_LOG_ERROR("Failed to initialize Aikido Request Processor!\n");
         this->initFailed = true;
         return false;

@@ -28,10 +28,10 @@ ZEND_FUNCTION(register_param_matcher) {
     eventCacheStack.Top().paramMatcherRegex = std::string(regex, regexLength);
 
     try {
-        auto& requestProcessor = AIKIDO_GLOBAL(requestProcessorInstance);
+        auto& requestProcessorInstance = AIKIDO_GLOBAL(requestProcessorInstance);
         auto& action = AIKIDO_GLOBAL(action);
         std::string outputEvent;
-        requestProcessor.SendEvent(EVENT_REGISTER_PARAM_MATCHER, outputEvent);
+        requestProcessorInstance.SendEvent(EVENT_REGISTER_PARAM_MATCHER, outputEvent);
         if (action.Execute(outputEvent) == WARNING_MESSAGE) {
             // If a warning message is returned, it means that the parameters are invalid, so we return false.
             RETURN_BOOL(false);

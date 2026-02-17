@@ -2,7 +2,6 @@ package config
 
 import (
 	"encoding/json"
-	"fmt"
 	. "main/aikido_types"
 	"main/globals"
 	"main/instance"
@@ -59,13 +58,10 @@ func ReloadAikidoConfig(instance *instance.RequestProcessorInstance, conf *Aikid
 	return ReloadWithNewToken
 }
 
-func Init(initJson string) {
-	err := json.Unmarshal([]byte(initJson), &globals.EnvironmentConfig)
-	if err != nil {
-		panic(fmt.Sprintf("Error parsing JSON to EnvironmentConfig: %s", err))
-	}
+func Init(platformName string) {
 	globals.EnvironmentConfig.ServerPID = int32(os.Getppid())
 	globals.EnvironmentConfig.RequestProcessorPID = int32(os.Getpid())
+	globals.EnvironmentConfig.PlatformName = platformName
 }
 
 func InitInstance(instance *instance.RequestProcessorInstance, initJson string) {

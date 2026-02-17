@@ -5,7 +5,7 @@ typedef GoUint8 (*InitInstanceFn)(void* instancePtr, GoString initJson);
 typedef void (*DestroyInstanceFn)(uint64_t threadId);
 
 // Updated typedefs with instance pointer as first parameter
-typedef GoUint8 (*RequestProcessorInitFn)(GoString initJson);
+typedef GoUint8 (*RequestProcessorInitFn)(GoString platformName);
 typedef GoUint8 (*RequestProcessorContextInitFn)(void* instancePtr, ContextCallback);
 typedef GoUint8 (*RequestProcessorConfigUpdateFn)(void* instancePtr, GoString initJson);
 typedef char* (*RequestProcessorOnEventFn)(void* instancePtr, GoInt eventId);

@@ -6,10 +6,10 @@ bool SendUserEvent(std::string id, std::string username) {
     requestCache.userName = username;
 
     try {
-        auto& requestProcessor = AIKIDO_GLOBAL(requestProcessorInstance);
+        auto& requestProcessorInstance = AIKIDO_GLOBAL(requestProcessorInstance);
         auto& action = AIKIDO_GLOBAL(action);
         std::string output;
-        requestProcessor.SendEvent(EVENT_SET_USER, output);
+        requestProcessorInstance.SendEvent(EVENT_SET_USER, output);
         action.Execute(output);
         return true;
     } catch (const std::exception &e) {
