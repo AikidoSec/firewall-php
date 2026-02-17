@@ -33,8 +33,10 @@ void PhpLifecycle::ModuleShutdown() {
         AIKIDO_GLOBAL(agent).Uninit();
         UnhookAll();
     } else {
-        AIKIDO_LOG_INFO("Module shutdown NOT called on main PID. Uninitializing Aikido Request Processor...\n");
-        requestProcessor.Uninit();
+        #ifndef ZTS
+            AIKIDO_LOG_INFO("Module shutdown NOT called on main PID. Uninitializing Aikido Request Processor...\n");
+            requestProcessor.Uninit();
+        #endif
     }
 }
 
