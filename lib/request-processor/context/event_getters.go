@@ -43,6 +43,10 @@ func GetSqlDialect() string {
 	return Context.Callback(C.SQL_DIALECT)
 }
 
+func GetSqlParams() string {
+	return Context.Callback(C.SQL_PARAMS)
+}
+
 func GetModule() string {
 	return Context.Callback(C.MODULE)
 }
@@ -55,6 +59,18 @@ func GetParamMatcher() (string, string) {
 	param := Context.Callback(C.PARAM_MATCHER_PARAM)
 	regex := Context.Callback(C.PARAM_MATCHER_REGEX)
 	return param, regex
+}
+
+func GetTenantId() string {
+	return Context.Callback(C.CONTEXT_TENANT_ID)
+}
+
+func IsIdorDisabled() bool {
+	return Context.Callback(C.CONTEXT_IDOR_DISABLED) == "1"
+}
+
+func GetIdorConfigJson() string {
+	return Context.Callback(C.CONTEXT_IDOR_CONFIG)
 }
 
 func getHostNameAndPort(urlCallbackId int, portCallbackId int) (string, uint32) { // urlcallbackid is the type of data we request, eg C.OUTGOING_REQUEST_URL

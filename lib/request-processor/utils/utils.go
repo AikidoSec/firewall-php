@@ -440,7 +440,7 @@ func GetSqlDialectFromString(dialect string) int {
 		return int(MySQL)
 	case "sqlite":
 		return int(SQLite)
-	case "postgres":
+	case "postgres", "pgsql":
 		return int(PostgreSQL)
 	default:
 		return int(Generic)

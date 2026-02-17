@@ -3,6 +3,7 @@ package context
 // #include "../../API.h"
 import "C"
 import (
+	"encoding/json"
 	"main/globals"
 	"main/helpers"
 	"main/log"
@@ -247,4 +248,35 @@ func ContextSetIsEndpointIpAllowed() {
 
 func ContextSetIsEndpointRateLimited() {
 	Context.IsEndpointRateLimited = true
+}
+
+// ContextSetIdorConfig loads IDOR config lazily (on first GetIdorConfig() use)
+// from PHP via CONTEXT_IDOR_CONFIG callback.
+func ContextSetIdorConfig() {
+	if Context.IdorConfig != nil {
+		return
+	}
+	idorConfigJson := GetIdorConfigJson()
+	if idorConfigJson == "" {
+		return
+	}
+
+	var payload struct {
+		ColumnName     string   `json:"column_name"`
+		ExcludedTables []string `json:"excluded_tables"`
+	}
+	if err := json.Unmarshal([]byte(idorConfigJson), &payload); err != nil {
+		log.Warnf("enable_idor_protection: failed to parse IDOR config: %s", err)
+		return
+	}
+	if payload.ColumnName == "" {
+		log.Warn("enable_idor_protection: tenant column name is empty!")
+		return
+	}
+	idorConfig := IdorConfig{
+		TenantColumnName: payload.ColumnName,
+		ExcludedTables:   payload.ExcludedTables,
+	}
+	ptr := &idorConfig
+	Context.IdorConfig = &ptr
 }
