@@ -310,8 +310,4 @@ RequestProcessorInstance::~RequestProcessorInstance() {
         requestProcessor.destroyInstanceFn(this->threadId);
         this->requestProcessorInstance = nullptr;
     }
-
-    #ifndef ZTS
-        requestProcessor.Uninit();
-    #endif
 }
