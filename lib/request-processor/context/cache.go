@@ -273,9 +273,10 @@ func ContextSetIdorConfig() {
 		log.Warn("enable_idor_protection: tenant column name is empty!")
 		return
 	}
-
-	Context.IdorConfig = &IdorConfig{
+	idorConfig := IdorConfig{
 		TenantColumnName: payload.ColumnName,
 		ExcludedTables:   payload.ExcludedTables,
 	}
+	ptr := &idorConfig
+	Context.IdorConfig = &ptr
 }

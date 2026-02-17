@@ -32,7 +32,7 @@ type RequestContextData struct {
 	IsEndpointProtectionTurnedOff *bool
 	IsEndpointIpAllowed           *bool
 	IsEndpointRateLimited         bool
-	IdorConfig                    *IdorConfig
+	IdorConfig                    **IdorConfig
 	UserAgent                     *string
 	UserId                        *string
 	UserName                      *string
@@ -192,6 +192,5 @@ func IsEndpointRateLimited() bool {
 }
 
 func GetIdorConfig() *IdorConfig {
-	ContextSetIdorConfig()
-	return Context.IdorConfig
+	return GetFromCache(ContextSetIdorConfig, &Context.IdorConfig)
 }
