@@ -25,17 +25,12 @@ PHP_MINIT_FUNCTION(aikido) {
 
     AIKIDO_GLOBAL(phpLifecycle).HookAll();
 
+    AIKIDO_GLOBAL(phpLifecycle).ModuleInit();
+
     if(!requestProcessor.Init()) {
         AIKIDO_LOG_ERROR("Failed to initialize the request processor!\n");
     }
 
-    /* If SAPI name is "cli" run in "simple" mode */
-    if (AIKIDO_GLOBAL(sapi_name) == "cli") {
-        AIKIDO_LOG_INFO("MINIT finished earlier because we run in CLI mode!\n");
-        return SUCCESS;
-    }
-
-    AIKIDO_GLOBAL(phpLifecycle).ModuleInit();
     AIKIDO_LOG_INFO("MINIT finished!\n");
     return SUCCESS;
 }
