@@ -157,13 +157,9 @@ char* GoContextCallback(int callbackId) {
                 ctx = "IDOR_DISABLED";
                 ret = requestCache.idorDisabled ? "1" : "";
                 break;
-            case CONTEXT_IDOR_TENANT_COLUMN_NAME:
-                ctx = "IDOR_TENANT_COLUMN_NAME";
-                ret = GetEventCacheField(&EventCache::idorTenantColumnName);
-                break;
-            case CONTEXT_IDOR_EXCLUDED_TABLES:
-                ctx = "IDOR_EXCLUDED_TABLES";
-                ret = GetEventCacheField(&EventCache::idorExcludedTables);
+            case CONTEXT_IDOR_CONFIG:
+                ctx = "IDOR_CONFIG";
+                ret = requestCache.idorConfigJson;
                 break;
         }
     } catch (std::exception& e) {

@@ -26,7 +26,7 @@ func OnPreSqlQueryExecuted() string {
 		return attack.ReportAttackDetected(res)
 	}
 
-	if idor.IsIdorEnabled() && !context.IsIdorDisabled() {
+	if context.GetIdorConfig() != nil && !context.IsIdorDisabled() {
 		tenantId := context.GetTenantId()
 		sqlParams := context.GetSqlParams()
 		idorResult := idor.CheckForIdorViolation(query, dialect, tenantId, sqlParams)
