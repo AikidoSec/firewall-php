@@ -204,7 +204,7 @@ bool RequestProcessorInstance::RequestInit() {
             }
         }
     #else
-        if(!requestProcessor.Init())
+        if(!requestProcessor.Init()){
             return false;
         } 
     #endif
