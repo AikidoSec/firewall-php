@@ -19,7 +19,7 @@ void PhpLifecycle::ModuleInit() {
 void PhpLifecycle::RequestInit() {
     AIKIDO_GLOBAL(action).Reset();
     AIKIDO_GLOBAL(requestCache).Reset();
-
+    
     AIKIDO_GLOBAL(requestProcessorInstance).RequestInit();
     AIKIDO_GLOBAL(checkedAutoBlock) = false;
     AIKIDO_GLOBAL(checkedShouldBlockRequest) = false;

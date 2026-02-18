@@ -190,14 +190,18 @@ bool RequestProcessor::Init() {
 }
 
 bool RequestProcessorInstance::RequestInit() {
-    std::string sapiName = sapi_module.name;
-    if (sapiName == "frankenphp") {
-        if (GetEnvBool("FRANKENPHP_WORKER", false)) {
-            AIKIDO_GLOBAL(isWorkerMode) = true;
-            AIKIDO_LOG_INFO("FrankenPHP worker warm-up request detected, skipping RequestInit\n");
-            return true;
+    #ifdef ZTS
+        std::string sapiName = sapi_module.name;
+        if (sapiName == "frankenphp") {
+            if (GetEnvBool("FRANKENPHP_WORKER", false)) {
+                AIKIDO_GLOBAL(isWorkerMode) = true;
+                AIKIDO_LOG_INFO("FrankenPHP worker warm-up request detected, skipping RequestInit\n");
+                return true;
+            }
         }
-    }
+    #else
+        requestProcessor.Init();
+    #endif
     
     if (this->requestProcessorInstance == nullptr && requestProcessor.createInstanceFn != nullptr) {
         this->threadId = GetThreadID();

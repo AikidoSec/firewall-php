@@ -27,9 +27,14 @@ PHP_MINIT_FUNCTION(aikido) {
 
     AIKIDO_GLOBAL(phpLifecycle).ModuleInit();
 
-    if(!requestProcessor.Init()) {
-        AIKIDO_LOG_ERROR("Failed to initialize the request processor!\n");
-    }
+    // Initialize the request processor only if we are in ZTS mode(In NTS mode php-fpm forks the main process for workers
+    // and this can lead to crash as the request processor is a go library that brings in the Go runtime, which (once initialized) 
+    // can start threads, install signal handlers, set up GC, etc)
+    #ifdef ZTS
+        if(!requestProcessor.Init()) {
+            AIKIDO_LOG_ERROR("Failed to initialize the request processor!\n");
+        }
+    #endif
 
     AIKIDO_LOG_INFO("MINIT finished!\n");
     return SUCCESS;
