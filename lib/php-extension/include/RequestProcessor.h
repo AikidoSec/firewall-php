@@ -34,7 +34,7 @@ class RequestProcessor {
     RequestProcessorUninitFn requestProcessorUninitFn = nullptr;
 
     RequestProcessor() = default;
-    ~RequestProcessor();
+    ~RequestProcessor() = default;
 
     std::string GetInitData(const std::string& userProvidedToken = "");
 

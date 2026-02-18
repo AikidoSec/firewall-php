@@ -111,9 +111,6 @@ void RequestProcessor::Uninit() {
     this->libHandle = nullptr;
     AIKIDO_LOG_INFO("Aikido Request Processor unloaded!\n");
 }
-RequestProcessor::~RequestProcessor() {
-    this->Uninit();
-}
 
 bool RequestProcessorInstance::ContextInit() {
     if (!this->requestInitialized || requestProcessor.requestProcessorContextInitFn == nullptr || this->requestProcessorInstance == nullptr) {
@@ -324,4 +321,5 @@ RequestProcessorInstance::~RequestProcessorInstance() {
         requestProcessor.destroyInstanceFn(this->threadId);
         this->requestProcessorInstance = nullptr;
     }
+    requestProcessor.Uninit();
 }
