@@ -193,6 +193,9 @@ bool RequestProcessorInstance::RequestInit() {
     std::string sapiName = sapi_module.name;
 
     #ifdef ZTS
+        if(requestProcessor.initFailed) {
+            return false;
+        }
         if (sapiName == "frankenphp") {
             if (GetEnvBool("FRANKENPHP_WORKER", false)) {
                 AIKIDO_GLOBAL(isWorkerMode) = true;
@@ -201,7 +204,9 @@ bool RequestProcessorInstance::RequestInit() {
             }
         }
     #else
-        requestProcessor.Init();
+        if(!requestProcessor.Init())
+            return false;
+        } 
     #endif
     
     if (this->requestProcessorInstance == nullptr && requestProcessor.createInstanceFn != nullptr) {
