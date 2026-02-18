@@ -21,7 +21,8 @@ var conn *grpc.ClientConn
 var client protos.AikidoClient
 
 func Init() {
-	conn, err := grpc.Dial(
+	var err error
+	conn, err = grpc.Dial(
 		"unix://"+globals.SocketPath,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithDefaultCallOptions(
