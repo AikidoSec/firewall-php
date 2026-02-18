@@ -81,7 +81,7 @@ jobs:
   build_php_extension:
     name: Build php${{ matrix.php_version }} extension${{ matrix.arch }}
     runs-on: ubuntu-24.04${{ matrix.arch }}
-    container: ghcr.io/aikidosec/firewall-php-build-extension:${{ matrix.php_version }}-v1
+    container: ghcr.io/aikidosec/firewall-php-build-extension:${{ matrix.php_version }}-v1.0.1
     strategy:
       matrix:
         php_version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4', '8.5']

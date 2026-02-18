@@ -34,6 +34,7 @@ using json = nlohmann::json;
 #include "php.h"
 #include "zend_exceptions.h"
 #include "zend_builtin_functions.h"
+#include "ext/sockets/php_sockets.h"
 
 #include "GoCGO.h"
 #include "GoWrappers.h"

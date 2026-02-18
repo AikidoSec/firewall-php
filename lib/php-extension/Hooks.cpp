@@ -3,6 +3,9 @@
 unordered_map<std::string, PHP_HANDLERS> HOOKED_FUNCTIONS = {
     /* Outgoing request */
     AIKIDO_REGISTER_FUNCTION_HANDLER_WITH_POST(curl_exec),
+    AIKIDO_REGISTER_FUNCTION_HANDLER_WITH_POST_EX(socket_connect, handle_pre_socket_connect, handle_post_socket_connect),
+    AIKIDO_REGISTER_FUNCTION_HANDLER_WITH_POST_EX(fsockopen, handle_pre_fsockopen, handle_post_fsockopen),
+    AIKIDO_REGISTER_FUNCTION_HANDLER_WITH_POST_EX(stream_socket_client, handle_pre_stream_socket_client, handle_post_stream_socket_client),
 
     /* Shell execution */
     AIKIDO_REGISTER_FUNCTION_HANDLER_EX(exec, handle_shell_execution),
