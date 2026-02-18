@@ -219,7 +219,9 @@ bool RequestProcessorInstance::RequestInit() {
             }
         }
     #else
+        // Initialize the request processor only once(lazy) during RINIT because in NTS mode php-fpm forks the main process for workers and we need to load the library after the worker process is forked.
         if(!requestProcessor.Init()){
+            AIKIDO_LOG_ERROR("Failed to initialize Aikido Request Processor!\n");
             return false;
         } 
     #endif

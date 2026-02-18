@@ -11,11 +11,16 @@ import (
 )
 
 func UpdateToken(instance *instance.RequestProcessorInstance, token string) bool {
-	server := globals.GetServer(token)
-	if server == nil {
+	if instance.GetCurrentToken() == token {
+		log.Debugf(instance, "Token is the same as previous one, skipping config reload...")
 		return false
 	}
 
+	server := globals.GetServer(token)
+	if server == nil {
+		log.Debugf(instance, "Server not found for token \"AIK_RUNTIME_***%s\"", utils.AnonymizeToken(token))
+		return false
+	}
 	instance.SetCurrentToken(token)
 	instance.SetCurrentServer(server)
 	log.Infof(instance, "Token changed to \"AIK_RUNTIME_***%s\"", utils.AnonymizeToken(token))
