@@ -65,7 +65,6 @@ RUN a2dismod mpm_event || true && \
     a2dismod mpm_worker || true && \
     a2enmod mpm_prefork rewrite cgi cgid || true
 
-# Copy lexbor static library and headers from base stage (includes lexbor if PHP 8.4+)
 ARG PHP_VERSION
 COPY --from=base /usr/local/include /usr/local/include
 COPY --from=base /usr/local/lib /usr/local/lib
@@ -98,17 +97,6 @@ RUN ./configure \
 && make -j"$(nproc)" \
 && make install \
 && strip /usr/local/bin/php /usr/local/sbin/php-fpm || true
-
-# Verify lexbor symbols are embedded in libphp.so (only for PHP 8.4+)
-ARG PHP_VERSION
-RUN if [ "$(echo "${PHP_VERSION}" | cut -d. -f1)" -ge 8 ] && [ "$(echo "${PHP_VERSION}" | cut -d. -f2)" -ge 4 ]; then \
-        echo "Checking if libphp.so has EMBEDDED lexbor symbols (PHP ${PHP_VERSION}):" && \
-        nm /usr/local/lib/libphp.so | grep lxb_ | head -n 5 && \
-        echo "✓ Lexbor symbols found - static linking successful!" || \
-        echo "✗ WARNING: No lexbor symbols found in libphp.so"; \
-    else \
-        echo "Skipping lexbor verification for PHP ${PHP_VERSION} (< 8.4)"; \
-    fi
 
 WORKDIR /usr/src
 RUN git clone https://github.com/e-dant/watcher.git
