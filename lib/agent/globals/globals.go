@@ -10,7 +10,6 @@ var Machine MachineData
 var Servers = make(map[ServerKey]*ServerData)
 var PastDeletedServers = make(map[ServerKey]bool)
 var ServersMutex sync.RWMutex
-var RegisteredServersMutex sync.RWMutex
 
 func GetServer(serverKey ServerKey) *ServerData {
 	ServersMutex.RLock()
