@@ -70,17 +70,7 @@ ARG PHP_VERSION
 COPY --from=base /usr/local/include /usr/local/include
 COPY --from=base /usr/local/lib /usr/local/lib
 
-# Build PHP with ZTS enabled and conditionally link lexbor for PHP 8.4+
-RUN if [ -f /usr/local/lib/liblexbor_static.a ]; then \
-        echo "Building PHP ${PHP_VERSION} with static lexbor (8.4+)"; \
-        export CFLAGS="-I/usr/local/include"; \
-        export LDFLAGS="-L/usr/local/lib"; \
-        export LIBS="/usr/local/lib/liblexbor_static.a"; \
-        ls -lh /usr/local/lib/liblexbor* || true; \
-    else \
-        echo "Building PHP ${PHP_VERSION} without lexbor (< 8.4)"; \
-    fi && \
-    ./configure \
+RUN ./configure \
       --prefix=/usr/local \
       --with-config-file-path=/usr/local/lib \
       --with-config-file-scan-dir=/usr/local/etc/php/conf.d \
