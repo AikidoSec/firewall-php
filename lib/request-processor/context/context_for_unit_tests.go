@@ -1,15 +1,20 @@
 package context
 
 // #include "../../API.h"
+// #include <pthread.h>
+// static unsigned long get_thread_id() { return (unsigned long)pthread_self(); }
 import "C"
 import (
 	"encoding/json"
 	"fmt"
+	. "main/aikido_types"
+	"main/instance"
 )
 
 var TestContext map[string]string
+var TestServer *ServerData // Test server for unit tests
 
-func UnitTestsCallback(context_id int) string {
+func UnitTestsCallback(instance *instance.RequestProcessorInstance, context_id int) string {
 	switch context_id {
 	case C.CONTEXT_REMOTE_ADDRESS:
 		return TestContext["remoteAddress"]
@@ -39,14 +44,49 @@ func UnitTestsCallback(context_id int) string {
 	return ""
 }
 
-func LoadForUnitTests(context map[string]string) {
-	Context.Callback = UnitTestsCallback
+func getThreadID() uint64 {
+	return uint64(C.get_thread_id())
+}
+
+func LoadForUnitTests(context map[string]string) *instance.RequestProcessorInstance {
+	tid := getThreadID()
+
+	mockInst := instance.NewRequestProcessorInstance(tid)
+	if TestServer != nil {
+		mockInst.SetCurrentServer(TestServer)
+		mockInst.SetCurrentToken(TestServer.AikidoConfig.Token)
+	}
+
+	ctx := &RequestContextData{
+		instance: mockInst,
+		Callback: UnitTestsCallback,
+	}
+	mockInst.SetRequestContext(ctx)
+	mockInst.SetContextInstance(nil)
+	mockInst.SetEventContext(&EventContextData{})
+
 	TestContext = context
+	return mockInst
 }
 
 func UnloadForUnitTests() {
-	Context = RequestContextData{}
-	EventContext = EventContextData{}
+	TestServer = nil
+	TestContext = nil
+}
+
+func SetTestServer(instance *instance.RequestProcessorInstance, server *ServerData) {
+	TestServer = server
+
+	c := GetContext(instance)
+	if c != nil && c.instance != nil && server != nil {
+		c.instance.SetCurrentServer(server)
+		c.instance.SetCurrentToken(server.AikidoConfig.Token)
+	}
+}
+
+// GetTestServer returns the current test server, or nil if not set
+func GetTestServer() *ServerData {
+	return TestServer
 }
 
 func GetJsonString(m map[string]interface{}) string {

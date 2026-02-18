@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"html"
 	"main/context"
-	"main/globals"
 	"main/grpc"
+	"main/instance"
 	"main/log"
 	"main/utils"
 	"time"
@@ -29,41 +29,45 @@ func GetAction(actionHandling, actionType, trigger, description, data string, re
 	return string(actionJson)
 }
 
-func OnGetBlockingStatus() string {
-	log.Debugf("OnGetBlockingStatus called!")
+func OnGetBlockingStatus(instance *instance.RequestProcessorInstance) string {
+	log.Debugf(instance, "OnGetBlockingStatus called!")
 
-	server := globals.GetCurrentServer()
+	server := instance.GetCurrentServer()
 	if server == nil {
 		return ""
 	}
 	if !server.MiddlewareInstalled {
-		go grpc.OnMiddlewareInstalled(server)
+		go grpc.OnMiddlewareInstalled(server, instance.GetCurrentToken())
 		server.MiddlewareInstalled = true
 	}
 
-	userId := context.GetUserId()
+	userId := context.GetUserId(instance)
 	if utils.IsUserBlocked(server, userId) {
-		log.Infof("User \"%s\" is blocked!", userId)
+		log.Infof(instance, "User \"%s\" is blocked!", userId)
 		return GetAction("store", "blocked", "user", "user blocked from config", userId, 403)
 	}
 
-	autoBlockingStatus := OnGetAutoBlockingStatus()
+	autoBlockingStatus := OnGetAutoBlockingStatus(instance)
 
-	if context.IsEndpointRateLimitingEnabled() {
+	if context.IsIpBypassed(instance) {
+		return ""
+	}
+
+	if context.IsEndpointRateLimitingEnabled(instance) {
 		// If request is monitored for rate limiting,
 		// do a sync call via gRPC to see if the request should be blocked or not
-		method := context.GetMethod()
-		route := context.GetRoute()
-		ip := context.GetIp()
-		rateLimitGroup := context.GetRateLimitGroup()
-		routeParsed := context.GetParsedRoute()
+		method := context.GetMethod(instance)
+		route := context.GetRoute(instance)
+		ip := context.GetIp(instance)
+		rateLimitGroup := context.GetRateLimitGroup(instance)
+		routeParsed := context.GetParsedRoute(instance)
 		if method == "" || route == "" {
 			return ""
 		}
-		rateLimitingStatus := grpc.GetRateLimitingStatus(server, method, route, routeParsed, userId, ip, rateLimitGroup, 10*time.Millisecond)
+		rateLimitingStatus := grpc.GetRateLimitingStatus(instance, server, method, route, routeParsed, userId, ip, rateLimitGroup, 10*time.Millisecond)
 		if rateLimitingStatus != nil && rateLimitingStatus.Block {
-			context.ContextSetIsEndpointRateLimited()
-			log.Infof("Request made from IP \"%s\" is ratelimited by \"%s\"!", ip, rateLimitingStatus.Trigger)
+			context.ContextSetIsEndpointRateLimited(instance)
+			log.Infof(instance, "Request made from IP \"%s\" is ratelimited by \"%s\"!", ip, rateLimitingStatus.Trigger)
 			return GetAction("store", "ratelimited", rateLimitingStatus.Trigger, "configured rate limit exceeded by current ip", ip, 429)
 		}
 	}
@@ -71,51 +75,56 @@ func OnGetBlockingStatus() string {
 	return autoBlockingStatus
 }
 
-func OnGetAutoBlockingStatus() string {
-	log.Debugf("OnGetAutoBlockingStatus called!")
+func OnGetAutoBlockingStatus(instance *instance.RequestProcessorInstance) string {
+	log.Debugf(instance, "OnGetAutoBlockingStatus called!")
 
-	server := globals.GetCurrentServer()
+	server := instance.GetCurrentServer()
 	if server == nil {
 		return ""
 	}
-	method := context.GetMethod()
-	route := context.GetParsedRoute()
+	method := context.GetMethod(instance)
+	route := context.GetParsedRoute(instance)
 	if method == "" || route == "" {
 		return ""
 	}
 
-	ip := context.GetIp()
-	userAgent := context.GetUserAgent()
+	ip := context.GetIp(instance)
+	userAgent := context.GetUserAgent(instance)
 
-	if !context.IsEndpointIpAllowed() {
-		log.Infof("IP \"%s\" is not allowed to access this endpoint!", ip)
+	if !context.IsEndpointIpAllowed(instance) {
+		log.Infof(instance, "IP \"%s\" is not allowed to access this endpoint!", ip)
 		return GetAction("exit", "blocked", "ip", "not allowed by config to access this endpoint", ip, 403)
 	}
 
-	if !utils.IsIpAllowed(server, ip) {
-		log.Infof("IP \"%s\" is not found in allow lists!", ip)
+	if context.IsIpBypassed(instance) {
+		log.Infof(instance, "IP \"%s\" is bypassed! Skipping additional checks...", ip)
+		return ""
+	}
+
+	if !utils.IsIpAllowed(instance, server, ip) {
+		log.Infof(instance, "IP \"%s\" is not found in allow lists!", ip)
 		return GetAction("exit", "blocked", "ip", "not in allow lists", ip, 403)
 	}
 
-	if ipMonitored, ipMonitoredMatches := utils.IsIpMonitored(server, ip); ipMonitored {
-		log.Infof("IP \"%s\" found in monitored lists: %v!", ip, ipMonitoredMatches)
-		go grpc.OnMonitoredIpMatch(server, ipMonitoredMatches)
+	if ipMonitored, ipMonitoredMatches := utils.IsIpMonitored(instance, server, ip); ipMonitored {
+		log.Infof(instance, "IP \"%s\" found in monitored lists: %v!", ip, ipMonitoredMatches)
+		go grpc.OnMonitoredIpMatch(server, instance.GetCurrentToken(), ipMonitoredMatches)
 	}
 
-	if ipBlocked, ipBlockedMatches := utils.IsIpBlocked(server, ip); ipBlocked {
-		log.Infof("IP \"%s\" found in blocked lists: %v!", ip, ipBlockedMatches)
-		go grpc.OnMonitoredIpMatch(server, ipBlockedMatches)
+	if ipBlocked, ipBlockedMatches := utils.IsIpBlocked(instance, server, ip); ipBlocked {
+		log.Infof(instance, "IP \"%s\" found in blocked lists: %v!", ip, ipBlockedMatches)
+		go grpc.OnMonitoredIpMatch(server, instance.GetCurrentToken(), ipBlockedMatches)
 		return GetAction("exit", "blocked", "ip", ipBlockedMatches[0].Description, ip, 403)
 	}
 
 	if userAgentMonitored, userAgentMonitoredDescriptions := utils.IsUserAgentMonitored(server, userAgent); userAgentMonitored {
-		log.Infof("User Agent \"%s\" found in monitored lists: %v!", userAgent, userAgentMonitoredDescriptions)
-		go grpc.OnMonitoredUserAgentMatch(server, userAgentMonitoredDescriptions)
+		log.Infof(instance, "User Agent \"%s\" found in monitored lists: %v!", userAgent, userAgentMonitoredDescriptions)
+		go grpc.OnMonitoredUserAgentMatch(server, instance.GetCurrentToken(), userAgentMonitoredDescriptions)
 	}
 
 	if userAgentBlocked, userAgentBlockedDescriptions := utils.IsUserAgentBlocked(server, userAgent); userAgentBlocked {
-		log.Infof("User Agent \"%s\" found in blocked lists: %v!", userAgent, userAgentBlockedDescriptions)
-		go grpc.OnMonitoredUserAgentMatch(server, userAgentBlockedDescriptions)
+		log.Infof(instance, "User Agent \"%s\" found in blocked lists: %v!", userAgent, userAgentBlockedDescriptions)
+		go grpc.OnMonitoredUserAgentMatch(server, instance.GetCurrentToken(), userAgentBlockedDescriptions)
 
 		description := "unknown"
 		if len(userAgentBlockedDescriptions) > 0 {
@@ -138,9 +147,9 @@ func GetBypassAction() string {
 	return string(actionJson)
 }
 
-func OnGetIsIpBypassed() string {
-	log.Debugf("OnGetIsIpBypassed called!")
-	if context.IsIpBypassed() {
+func OnGetIsIpBypassed(instance *instance.RequestProcessorInstance) string {
+	log.Debugf(instance, "OnGetIsIpBypassed called!")
+	if context.IsIpBypassed(instance) {
 		return GetBypassAction()
 	}
 	return ""

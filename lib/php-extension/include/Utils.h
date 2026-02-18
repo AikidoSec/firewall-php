@@ -12,6 +12,8 @@ std::string GetTime();
 
 std::string GetDateTime();
 
+uint64_t GetThreadID();
+
 const char* GetEventName(EVENT_ID event);
 
 std::string NormalizeAndDumpJson(const json& jsonStr);

@@ -3,6 +3,7 @@ package context
 // #include "../../API.h"
 import "C"
 import (
+	"main/instance"
 	"main/utils"
 )
 
@@ -15,10 +16,23 @@ type EventContextData struct {
 	CurrentSsrfInterceptorResult *utils.InterceptorResult
 }
 
-var EventContext EventContextData
+func getEventContext(instance *instance.RequestProcessorInstance) *EventContextData {
+	if instance == nil {
+		return nil
+	}
 
-func ResetEventContext() bool {
-	EventContext = EventContextData{}
+	ctx := instance.GetEventContext()
+	if ctx == nil {
+		return nil
+	}
+	return ctx.(*EventContextData)
+}
+
+func ResetEventContext(instance *instance.RequestProcessorInstance) bool {
+	if instance == nil {
+		return false
+	}
+	instance.SetEventContext(&EventContextData{})
 	return true
 }
 
@@ -33,10 +47,17 @@ A partial interceptor result stores the payload that matched the user input, the
 PHP function that was called, ..., basically the data needed for reporting if this actually turns into
 a detection at a later stage.
 */
-func EventContextSetCurrentSsrfInterceptorResult(interceptorResult *utils.InterceptorResult) {
-	EventContext.CurrentSsrfInterceptorResult = interceptorResult
+func EventContextSetCurrentSsrfInterceptorResult(instance *instance.RequestProcessorInstance, interceptorResult *utils.InterceptorResult) {
+	ctx := getEventContext(instance)
+	if ctx != nil {
+		ctx.CurrentSsrfInterceptorResult = interceptorResult
+	}
 }
 
-func GetCurrentSsrfInterceptorResult() *utils.InterceptorResult {
-	return EventContext.CurrentSsrfInterceptorResult
+func GetCurrentSsrfInterceptorResult(instance *instance.RequestProcessorInstance) *utils.InterceptorResult {
+	ctx := getEventContext(instance)
+	if ctx == nil {
+		return nil
+	}
+	return ctx.CurrentSsrfInterceptorResult
 }

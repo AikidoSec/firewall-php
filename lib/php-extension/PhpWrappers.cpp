@@ -60,7 +60,7 @@ bool CallPhpFunctionWithOneParam(std::string function_name, std::string first_pa
 
     bool ret = CallPhpFunction(function_name, 1, _params, return_value, object);
 
-    zend_string_release(_first_param);
+    zval_dtor(&_params[0]);
 
     return ret;
 }
@@ -90,3 +90,4 @@ std::string CallPhpFunctionCurlGetInfo(zval* curl_handle, int curl_info_option) 
 
     return result;
 }
+

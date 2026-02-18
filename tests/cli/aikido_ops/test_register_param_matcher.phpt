@@ -12,6 +12,6 @@ $result = \aikido\register_param_matcher("param_name", "{digits}-{alpha}");
 
 ?>
 
---EXPECT--
-[AIKIDO][INFO] Token changed to "AIK_RUNTIME_***UMMY"
-[AIKIDO][INFO] Registered param matcher param_name -> {digits}-{alpha}
+--EXPECTREGEX--
+\[AIKIDO\]\[INFO\]\[tid:\d+\] Token changed to "AIK_RUNTIME_\*\*\*UMMY"
+\[AIKIDO\]\[INFO\]\[tid:\d+\] Registered param matcher param_name -> \{digits\}-\{alpha\}

@@ -28,10 +28,12 @@ import (
 	"unsafe"
 )
 
-var (
+type ZenInternalsLibrary struct {
 	handle             unsafe.Pointer
 	detectSqlInjection C.detect_sql_injection_func
-)
+}
+
+var zenLib = &ZenInternalsLibrary{}
 
 func Init() bool {
 	zenInternalsLibPath := C.CString(fmt.Sprintf("/opt/aikido-%s/libzen_internals_%s-unknown-linux-gnu.so", globals.Version, utils.GetArch()))
@@ -39,7 +41,7 @@ func Init() bool {
 
 	handle := C.dlopen(zenInternalsLibPath, C.RTLD_LAZY)
 	if handle == nil {
-		log.Errorf("Failed to load zen-internals library from '%s' with error %s!", C.GoString(zenInternalsLibPath), C.GoString(C.dlerror()))
+		log.Errorf(nil, "Failed to load zen-internals library from '%s' with error %s!", C.GoString(zenInternalsLibPath), C.GoString(C.dlerror()))
 		return false
 	}
 
@@ -48,27 +50,31 @@ func Init() bool {
 
 	vDetectSqlInjection := C.dlsym(handle, detectSqlInjectionFnName)
 	if vDetectSqlInjection == nil {
-		log.Error("Failed to load detect_sql_injection function from zen-internals library!")
+		log.Error(nil, "Failed to load detect_sql_injection function from zen-internals library!")
+		C.dlclose(handle)
 		return false
 	}
 
-	detectSqlInjection = (C.detect_sql_injection_func)(vDetectSqlInjection)
-	log.Debugf("Loaded zen-internals library!")
+	zenLib.handle = handle
+	zenLib.detectSqlInjection = (C.detect_sql_injection_func)(vDetectSqlInjection)
+	log.Debugf(nil, "Loaded zen-internals library!")
 	return true
 }
 
 func Uninit() {
-	detectSqlInjection = nil
+	zenLib.detectSqlInjection = nil
 
-	if handle != nil {
-		C.dlclose(handle)
-		handle = nil
+	if zenLib.handle != nil {
+		C.dlclose(zenLib.handle)
+		zenLib.handle = nil
 	}
 }
 
 // DetectSQLInjection performs SQL injection detection using the loaded library
 func DetectSQLInjection(query string, user_input string, dialect int) int {
-	if detectSqlInjection == nil {
+	detectFn := zenLib.detectSqlInjection
+
+	if detectFn == nil {
 		return 0
 	}
 
@@ -81,11 +87,11 @@ func DetectSQLInjection(query string, user_input string, dialect int) int {
 	queryLen := C.size_t(len(query))
 	userInputLen := C.size_t(len(user_input))
 
-	result := int(C.call_detect_sql_injection(detectSqlInjection,
+	result := int(C.call_detect_sql_injection(detectFn,
 		cQuery, queryLen,
 		cUserInput, userInputLen,
 		C.int(dialect)))
 
-	log.Debugf("DetectSqlInjection(\"%s\", \"%s\", %d) -> %d", query, user_input, dialect, result)
+	log.Debugf(nil, "DetectSqlInjection(\"%s\", \"%s\", %d) -> %d", query, user_input, dialect, result)
 	return result
 }

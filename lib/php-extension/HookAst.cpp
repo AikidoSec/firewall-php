@@ -1,8 +1,5 @@
 #include "Includes.h"
 
-HashTable *global_ast_to_clean;
-ZEND_API void (*original_ast_process)(zend_ast *ast) = nullptr;
-
 /*
     This is a custom destructor, used for cleaning the allocated ast hashtable.
     This is needed because the ast hashtable is not cleaned by the zend_ast_process function.
@@ -13,15 +10,17 @@ void ast_to_clean_dtor(zval *zv) {
 } 
 
 void ensure_ast_hashtable_initialized() {
+    auto& global_ast_to_clean = AIKIDO_GLOBAL(globalAstToClean);
     if (!global_ast_to_clean) {
         ALLOC_HASHTABLE(global_ast_to_clean);
-        zend_hash_init(global_ast_to_clean, 8, NULL, ast_to_clean_dtor, 1);
+        zend_hash_init(global_ast_to_clean, 8, NULL, ast_to_clean_dtor, 0);
     }
 }
 
 zend_ast *create_ast_call(const char *name) {
     ensure_ast_hashtable_initialized();
 
+    auto& global_ast_to_clean = AIKIDO_GLOBAL(globalAstToClean);
     zend_ast *call;
     zend_ast_zval *name_var;
     zend_ast_list *arg_list;
@@ -108,6 +107,7 @@ void insert_call_to_ast(zend_ast *ast) {
     block->children = 2;
     block->child[0] = call;
     block->child[1] = stmt_list->child[insertion_point];
+    auto& global_ast_to_clean = AIKIDO_GLOBAL(globalAstToClean);
     zend_hash_next_index_insert_ptr(global_ast_to_clean, block);
 
     stmt_list->child[insertion_point] = (zend_ast*)block;
@@ -116,12 +116,14 @@ void insert_call_to_ast(zend_ast *ast) {
 void aikido_ast_process(zend_ast *ast) {
     insert_call_to_ast(ast);
 
+    auto& original_ast_process = AIKIDO_GLOBAL(originalAstProcess);
     if(original_ast_process){
         original_ast_process(ast);
     }
 }
 
 void HookAstProcess() {
+    auto& original_ast_process = AIKIDO_GLOBAL(originalAstProcess);
     if (original_ast_process) {
         AIKIDO_LOG_WARN("\"zend_ast_process\" already hooked (original handler %p)!\n", original_ast_process);
         return;
@@ -134,6 +136,7 @@ void HookAstProcess() {
 }
 
 void UnhookAstProcess() {
+    auto& original_ast_process = AIKIDO_GLOBAL(originalAstProcess);
     AIKIDO_LOG_INFO("Unhooked \"zend_ast_process\" (original handler %p)!\n", original_ast_process);
 
    // As it's not mandatory to have a zend_ast_process installed, we need to ensure UnhookAstProcess() restores zend_ast_process even if the original was NULL
@@ -146,6 +149,7 @@ void UnhookAstProcess() {
 }
 
 void DestroyAstToClean() {
+    auto& global_ast_to_clean = AIKIDO_GLOBAL(globalAstToClean);
     if (global_ast_to_clean) {
         zend_hash_destroy(global_ast_to_clean);
         FREE_HASHTABLE(global_ast_to_clean);

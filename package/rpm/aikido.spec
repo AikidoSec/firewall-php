@@ -1,5 +1,5 @@
 Name:           aikido-php-firewall
-Version:        1.4.15
+Version:        1.5.1
 Release:        1
 Summary:        Aikido PHP Extension
 License:        GPL
@@ -50,12 +50,22 @@ for php_path in /usr/bin/php* /usr/local/bin/php*; do
     fi
 done
 
-if [ ${#PHP_VERSIONS[@]} -eq 0 ]; then
-    echo "No PHP versions found! Exiting!"
-    exit 1
+if [ ${#PHP_VERSIONS[@]} -gt 0 ]; then
+    echo "Found PHP versions: ${PHP_VERSIONS[*]}"
 fi
 
-echo "Found PHP versions: ${PHP_VERSIONS[*]}"
+
+
+FRANKENPHP_PHP_VERSION=""
+if command -v frankenphp >/dev/null 2>&1; then
+    FRANKENPHP_PHP_VERSION=$(frankenphp -v 2>/dev/null | grep -oP 'PHP \K\d+\.\d+' | head -n 1)
+
+    if [ -n "$FRANKENPHP_PHP_VERSION" ]; then
+        echo "Found FrankenPHP with embedded PHP $FRANKENPHP_PHP_VERSION"
+    else
+        echo "Found FrankenPHP but could not determine PHP version"
+    fi
+fi
 
 for PHP_VERSION in "${PHP_VERSIONS[@]}"; do
     echo "Installing for PHP $PHP_VERSION..."
@@ -69,10 +79,26 @@ for PHP_VERSION in "${PHP_VERSIONS[@]}"; do
     PHP_EXT_DIR=$($PHP_BIN -i | grep "^extension_dir" | awk '{print $3}')
     PHP_MOD_DIR=$($PHP_BIN -i | grep "Scan this dir for additional .ini files" | awk -F"=> " '{print $2}')
 
+    # Detect if PHP is ZTS or NTS
+    PHP_THREAD_SAFETY=$($PHP_BIN -i | grep "Thread Safety" | awk -F"=> " '{print $2}' | tr -d ' ')
+    if [ "$PHP_THREAD_SAFETY" = "enabled" ]; then
+        EXT_SUFFIX="-zts"
+        echo "PHP $PHP_VERSION is ZTS (Thread Safe)"
+    else
+        EXT_SUFFIX="-nts"
+        echo "PHP $PHP_VERSION is NTS (Non-Thread Safe)"
+    fi
+
     # Install Aikido PHP extension
     if [ -d "$PHP_EXT_DIR" ]; then
-        echo "Installing new Aikido extension in $PHP_EXT_DIR/aikido-%{version}.so..."
-        ln -sf /opt/aikido-%{version}/aikido-extension-php-$PHP_VERSION.so $PHP_EXT_DIR/aikido-%{version}.so
+        EXT_FILE="aikido-extension-php-$PHP_VERSION$EXT_SUFFIX.so"
+        if [ -f "/opt/aikido-%{version}/$EXT_FILE" ]; then
+            echo "Installing new Aikido extension in $PHP_EXT_DIR/aikido-%{version}.so..."
+            ln -sf /opt/aikido-%{version}/$EXT_FILE $PHP_EXT_DIR/aikido-%{version}.so
+        else
+            echo "Warning: Extension file /opt/aikido-%{version}/$EXT_FILE not found! Skipping..."
+            continue
+        fi
     else
         echo "No extension dir for PHP $PHP_VERSION! Skipping..."
         continue
@@ -117,6 +143,36 @@ for PHP_VERSION in "${PHP_VERSIONS[@]}"; do
     fi
 done
 
+if [ -n "$FRANKENPHP_PHP_VERSION" ]; then
+    echo "Installing for FrankenPHP with PHP $FRANKENPHP_PHP_VERSION... ZTS (Thread Safe)"
+
+    FRANKENPHP_EXT_DIR="/usr/lib/frankenphp/modules"
+    FRANKENPHP_INI_DIR="/etc/frankenphp/php.d"
+
+    if [ -d "$FRANKENPHP_EXT_DIR" ]; then
+        echo "Installing new Aikido extension in $FRANKENPHP_EXT_DIR/aikido-%{version}.so..."
+        ln -sf /opt/aikido-%{version}/aikido-extension-php-$FRANKENPHP_PHP_VERSION-zts.so $FRANKENPHP_EXT_DIR/aikido-%{version}.so
+    else
+        echo "FrankenPHP extension directory $FRANKENPHP_EXT_DIR not found! Creating it..."
+        mkdir -p $FRANKENPHP_EXT_DIR
+        ln -sf /opt/aikido-%{version}/aikido-extension-php-$FRANKENPHP_PHP_VERSION-zts.so $FRANKENPHP_EXT_DIR/aikido-%{version}.so
+    fi
+
+    if [ -d "$FRANKENPHP_INI_DIR" ]; then
+        echo "Installing new Aikido mod in $FRANKENPHP_INI_DIR/zz-aikido-%{version}.ini..."
+        ln -sf /opt/aikido-%{version}/aikido.ini $FRANKENPHP_INI_DIR/zz-aikido-%{version}.ini
+    else
+        echo "FrankenPHP ini directory $FRANKENPHP_INI_DIR not found! Creating it..."
+        mkdir -p $FRANKENPHP_INI_DIR
+        ln -sf /opt/aikido-%{version}/aikido.ini $FRANKENPHP_INI_DIR/zz-aikido-%{version}.ini
+    fi
+fi
+
+if [ ${#PHP_VERSIONS[@]} -eq 0 ] && [ -z "$FRANKENPHP_PHP_VERSION" ]; then
+    echo "No PHP or FrankenPHP found! Exiting!"
+    exit 1
+fi
+
 mkdir -p /run/aikido-%{version}
 chmod 777 /run/aikido-%{version}
 
@@ -152,6 +208,9 @@ for php_path in /usr/bin/php* /usr/local/bin/php*; do
 done
 
 echo "Found PHP versions: ${PHP_VERSIONS[*]}"
+
+FRANKENPHP_EXT_DIR="/usr/lib/frankenphp/modules"
+FRANKENPHP_INI_DIR="/etc/frankenphp/php.d"
 
 for PHP_VERSION in "${PHP_VERSIONS[@]}"; do
     echo "Uninstalling for PHP $PHP_VERSION..."
@@ -206,6 +265,20 @@ for PHP_VERSION in "${PHP_VERSIONS[@]}"; do
         rm -f $PHP_EXT_DIR/aikido-%{version}.so
     fi
 done
+
+if [ -d "$FRANKENPHP_EXT_DIR" ] || [ -d "$FRANKENPHP_INI_DIR" ]; then
+    echo "Uninstalling for FrankenPHP..."
+
+    if [ -f "$FRANKENPHP_EXT_DIR/aikido-%{version}.so" ]; then
+        echo "Uninstalling Aikido extension from $FRANKENPHP_EXT_DIR/aikido-%{version}.so..."
+        rm -f $FRANKENPHP_EXT_DIR/aikido-%{version}.so
+    fi
+
+    if [ -f "$FRANKENPHP_INI_DIR/zz-aikido-%{version}.ini" ]; then
+        echo "Uninstalling Aikido mod from $FRANKENPHP_INI_DIR/zz-aikido-%{version}.ini..."
+        rm -f $FRANKENPHP_INI_DIR/zz-aikido-%{version}.ini
+    fi
+fi
 
 # Remove the Aikido logs folder
 rm -rf /var/log/aikido-%{version}

@@ -9,7 +9,7 @@ import (
 func TestCheckContextForPathTraversal(t *testing.T) {
 
 	t.Run("it detects path traversal from body parameter", func(t *testing.T) {
-		context.LoadForUnitTests(map[string]string{
+		instance := context.LoadForUnitTests(map[string]string{
 			"remoteAddress": "ip",
 			"method":        "POST",
 			"url":           "url",
@@ -18,7 +18,7 @@ func TestCheckContextForPathTraversal(t *testing.T) {
 		})
 
 		operation := "operation"
-		result := CheckContextForPathTraversal("../file/test.txt", operation, true)
+		result := CheckContextForPathTraversal(instance, "../file/test.txt", operation, true)
 
 		if result == nil {
 			t.Errorf("expected result, got nil")
@@ -46,14 +46,8 @@ func TestCheckContextForPathTraversal(t *testing.T) {
 	})
 
 	t.Run("it does not flag safe operation", func(t *testing.T) {
-		context.LoadForUnitTests(map[string]string{
-			"remoteAddress": "ip",
-			"method":        "POST",
-			"url":           "url",
-		})
-
 		operation := "path.normalize"
-		context.LoadForUnitTests(map[string]string{
+		instance := context.LoadForUnitTests(map[string]string{
 			"url":    "/_next/static/RjAvHy_jB1ciRT_xBrSyI/_ssgManifest.js",
 			"method": "GET",
 			"headers": context.GetJsonString(map[string]interface{}{
@@ -83,7 +77,7 @@ func TestCheckContextForPathTraversal(t *testing.T) {
 			"remoteAddress": "127.0.0.1",
 		})
 
-		result := CheckContextForPathTraversal("../../web/spec-extension/cookies", operation, true)
+		result := CheckContextForPathTraversal(instance, "../../web/spec-extension/cookies", operation, true)
 		if result != nil {
 			t.Errorf("expected nil, got %v", result)
 		}

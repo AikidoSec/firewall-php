@@ -11,7 +11,7 @@ on:
 
 jobs:
   build_libs:
-    name: Build Go libs${{ matrix.arch }}
+    name: Build Go libs ${{ matrix.arch == '' && 'x86_64' || 'arm' }}
     runs-on: ubuntu-24.04${{ matrix.arch }}
     container:
       image: ghcr.io/aikidosec/firewall-php-build-libs:v1
@@ -78,10 +78,10 @@ jobs:
         path: |
           ${{ github.workspace }}/build/aikido-request-processor.so
 
-  build_php_extension:
-    name: Build php${{ matrix.php_version }} extension${{ matrix.arch }}
+  build_php_extension_nts:
+    name: Build php ${{ matrix.php_version }} extension NTS ${{ matrix.arch == '' && 'x86_64' || 'arm' }}
     runs-on: ubuntu-24.04${{ matrix.arch }}
-    container: ghcr.io/aikidosec/firewall-php-build-extension:${{ matrix.php_version }}-v1
+    container: ghcr.io/aikidosec/firewall-php-build-extension-nts:${{ matrix.php_version }}-v2
     strategy:
       matrix:
         php_version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4', '8.5']
@@ -104,10 +104,8 @@ jobs:
 
     - name: Check PHP setup
       run: |
-        which php
-        php -v
-        php -i
-        php -m | grep -E 'curl|mysqli' || (echo "Required extensions missing" && php -m && exit 1)
+        php -v | grep -v "ZTS" > /dev/null || (echo "ERROR: PHP is ZTS, expected NTS!" && php -v && exit 1)
+
 
     - name: Build extension
       run: |
@@ -122,20 +120,73 @@ jobs:
     - name: Version Aikido extension
       run: |
         cd ./build/modules
-        mv aikido.so ${{ env.AIKIDO_ARTIFACT }}.so
+        mv aikido.so ${{ env.AIKIDO_ARTIFACT }}-nts.so
 
     - name: Archive build artifacts
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: ${{ env.AIKIDO_ARTIFACT }}-${{ env.ARCH }}
+        name: ${{ env.AIKIDO_ARTIFACT }}-nts-${{ env.ARCH }}
         if-no-files-found: error
         path: |
-          ${{ github.workspace }}/build/modules/${{ env.AIKIDO_ARTIFACT }}.so
+          ${{ github.workspace }}/build/modules/${{ env.AIKIDO_ARTIFACT }}-nts.so
+          ${{ github.workspace }}/tests/*.diff
+
+  build_php_extension_zts:
+    name: Build php ${{ matrix.php_version }} extension ZTS ${{ matrix.arch == '' && 'x86_64' || 'arm' }}
+    runs-on: ubuntu-24.04${{ matrix.arch }}
+    container: ghcr.io/aikidosec/firewall-php-build-extension-zts:${{ matrix.php_version }}-v2
+    strategy:
+      matrix:
+        php_version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4', '8.5']
+        arch: [ '', '-arm' ]
+      fail-fast: false
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Get Arch
+      run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
+
+    - name: Get Aikido version
+      run: |
+        AIKIDO_VERSION=$(grep '#define PHP_AIKIDO_VERSION' lib/php-extension/include/php_aikido.h | awk -F'"' '{print $2}')
+        echo $AIKIDO_VERSION
+        echo "AIKIDO_VERSION=$AIKIDO_VERSION" >> $GITHUB_ENV
+        echo "AIKIDO_ARTIFACT=aikido-extension-php-${{ matrix.php_version }}" >> $GITHUB_ENV
+
+    - name: Check PHP setup
+      run: |
+        php -v | grep -q "ZTS" || (echo "ERROR: PHP is not ZTS!" && php -v && exit 1)
+
+    - name: Build extension
+      run: |
+        rm -rf build
+        mkdir build
+        cd lib/php-extension
+        phpize
+        cd ../../build
+        CXX=g++ CXXFLAGS="-fPIC -g -O2 -I../lib/php-extension/include" LDFLAGS="-lstdc++" ../lib/php-extension/configure
+        make -j"$(nproc)"
+
+    - name: Version Aikido extension
+      run: |
+        cd ./build/modules
+        mv aikido.so ${{ env.AIKIDO_ARTIFACT }}-zts.so
+
+    - name: Archive build artifacts
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: ${{ env.AIKIDO_ARTIFACT }}-zts-${{ env.ARCH }}
+        if-no-files-found: error
+        path: |
+          ${{ github.workspace }}/build/modules/${{ env.AIKIDO_ARTIFACT }}-zts.so
           ${{ github.workspace }}/tests/*.diff
 
   build_rpm:
-    name: Build rpm${{ matrix.arch }}
+    name: Build rpm ${{ matrix.arch == '' && 'x86_64' || 'arm' }}
     runs-on: ubuntu-24.04${{ matrix.arch }}
     container:
       image: quay.io/centos/centos:stream9
@@ -143,7 +194,7 @@ jobs:
       matrix:
         arch: ['', '-arm']
       fail-fast: false
-    needs: [ build_libs, build_php_extension ]
+    needs: [ build_libs, build_php_extension_nts, build_php_extension_zts ]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -165,11 +216,17 @@ jobs:
           echo "AIKIDO_LIBZEN=libzen_internals_${{ env.ARCH }}-unknown-linux-gnu.so" >> $GITHUB_ENV
           echo "AIKIDO_LIBZEN_VERSION=0.1.60" >> $GITHUB_ENV
 
-      - name: Download artifacts
+      - name: Download artifacts (NTS)
         uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4
         with:
           pattern: |
-            aikido-extension-php-*-${{ env.ARCH }}
+            aikido-extension-php-*-nts-${{ env.ARCH }}
+
+      - name: Download artifacts (ZTS)
+        uses: actions/download-artifact@v4
+        with:
+          pattern: |
+            aikido-extension-php-*-zts-${{ env.ARCH }}
 
       - name: Download artifacts
         uses: actions/download-artifact@v4
@@ -204,8 +261,20 @@ jobs:
           mv aikido-agent-${{ env.ARCH }}/aikido-agent package/rpm/opt/aikido/aikido-agent
           mv aikido-request-processor-${{ env.ARCH }}/aikido-request-processor.so package/rpm/opt/aikido/aikido-request-processor.so
           mv ${{ env.AIKIDO_LIBZEN }} package/rpm/opt/aikido/${{ env.AIKIDO_LIBZEN }}
-          ls -lR aikido-extension-php-*
-          mv aikido-extension-php-*/__w/firewall-php/firewall-php/build/modules/aikido-extension-php-* package/rpm/opt/aikido/
+          # Copy NTS extensions
+          for dir in aikido-extension-php-*-nts-*/; do
+            if [ -d "$dir" ]; then
+              find "$dir" -name "aikido-extension-php-*-nts.so" -exec mv {} package/rpm/opt/aikido/ \;
+            fi
+          done
+          # Copy ZTS extensions
+          for dir in aikido-extension-php-*-zts-*/; do
+            if [ -d "$dir" ]; then
+              find "$dir" -name "aikido-extension-php-*-zts.so" -exec mv {} package/rpm/opt/aikido/ \;
+            fi
+          done
+          echo "Extensions in package:"
+          ls -la package/rpm/opt/aikido/aikido-extension-php-*.so || true
           mv package/rpm/opt/aikido package/rpm/opt/aikido-${{ env.AIKIDO_VERSION }}
           chmod 777 package/rpm/opt/aikido-${{ env.AIKIDO_VERSION }}/*
           rpmdev-setuptree
@@ -242,7 +311,7 @@ jobs:
             ~/rpmbuild/RPMS/${{ env.ARCH }}/${{ env.AIKIDO_ARTIFACT_RELEASE }}
 
   build_deb:
-    name: Build deb${{ matrix.arch }}
+    name: Build deb ${{ matrix.arch == '' && 'x86_64' || 'arm' }}
     runs-on: ubuntu-24.04${{ matrix.arch }}
     container:
       image: ubuntu:22.04
@@ -311,10 +380,10 @@ jobs:
             ${{ env.AIKIDO_ARTIFACT }}
 
   test_php_centos:
-    name: CentOS php-${{ matrix.php_version }} ${{ matrix.server }}${{ matrix.arch }}
+    name: CentOS NTS php-${{ matrix.php_version }} ${{ matrix.server }} ${{ matrix.arch == '' && 'x86_64' || 'arm' }}
     runs-on: ubuntu-24.04${{ matrix.arch }}
     container:
-      image: ghcr.io/aikidosec/firewall-php-test-centos:${{ matrix.php_version }}-v1
+      image: ghcr.io/aikidosec/firewall-php-test-centos-nts:${{ matrix.php_version }}-v2
       options: --privileged
     needs: [ build_rpm ]
     strategy:
@@ -389,6 +458,9 @@ jobs:
       - name: Run CLI tests
         run: |
           export TEST_PHP_EXECUTABLE=/usr/bin/php
+          cd lib/php-extension/
+          phpize
+          cd ../../
           php lib/php-extension/run-tests.php ./tests/cli
 
       - name: Run ${{ matrix.server }} server tests
@@ -397,10 +469,10 @@ jobs:
           python3 run_server_tests.py ../tests/server ../tests/testlib --server=${{ matrix.server }} --max-runs=3
 
   test_php_ubuntu:
-    name: Ubuntu php-${{ matrix.php_version }} ${{ matrix.server }}${{ matrix.arch }}
+    name: Ubuntu NTS php-${{ matrix.php_version }} ${{ matrix.server }} ${{ matrix.arch == '' && 'x86_64' || 'arm' }}
     runs-on: ubuntu-24.04${{ matrix.arch }}
     container:
-      image: ghcr.io/aikidosec/firewall-php-test-ubuntu:${{ matrix.php_version }}-v1
+      image: ghcr.io/aikidosec/firewall-php-test-ubuntu-nts:${{ matrix.php_version }}-v2
       options: --privileged
     needs: [ build_deb ]
     strategy:
@@ -430,9 +502,15 @@ jobs:
             ${{ env.AIKIDO_DEB }}
 
       - name: Prepare php-fpm
+        if: matrix.server == 'nginx-php-fpm'
         run: |
-          ls -l /usr/sbin | grep php
-          ln -s /usr/sbin/php-fpm${{ matrix.php_version }} /usr/sbin/php-fpm
+          # Verify NTS-built PHP-FPM exists and is NTS (not ZTS-enabled)
+          /usr/local/sbin/php-fpm -v
+          /usr/local/sbin/php-fpm -i | grep -q "Thread Safety => disabled" || (echo "ERROR: PHP-FPM not built with NTS!" && exit 1)
+          # Create symlink for nginx to find php-fpm
+          ln -sf /usr/local/sbin/php-fpm /usr/sbin/php-fpm || true
+          # Verify symlink works
+          php-fpm -i | grep -q "Thread Safety => disabled" || (echo "ERROR: php-fpm symlink not working or not NTS!" && exit 1)
 
       # MariaDB startup compatible with your current approach
       - name: Start MariaDB (background)
@@ -441,11 +519,78 @@ jobs:
           sleep 5
           mysql -u root -ppwd -e "SELECT 1" || (echo "MySQL not up" && exit 1)
 
-      # For Apache mod_php tests, ensure the right PHP module is active
-      - name: Ensure Apache uses PHP ${{ matrix.php_version }}
-        if: matrix.server == 'apache-mod-php'
+      - name: Install DEB
         run: |
-          a2-switch-php ${{ matrix.php_version }}
+          dpkg -i -E ${{ env.AIKIDO_DEB }}/${{ env.AIKIDO_DEB }}
+
+      - name: Run CLI tests
+        run: |
+          export TEST_PHP_EXECUTABLE=/usr/local/bin/php        
+          cd lib/php-extension/
+          phpize
+          cd ../../
+          php lib/php-extension/run-tests.php ./tests/cli
+
+      - name: Run ${{ matrix.server }} server tests
+        run: |
+          . /etc/apache2/envvars
+          cd tools
+          python3 run_server_tests.py ../tests/server ../tests/testlib --server=${{ matrix.server }} --max-runs=3
+
+  test_php_ubuntu_zts:
+    name: Ubuntu ZTS php-${{ matrix.php_version }} ${{ matrix.server }} ${{ matrix.arch == '' && 'x86_64' || 'arm' }}
+    runs-on: ubuntu-24.04${{ matrix.arch }}
+    container:
+      image: ghcr.io/aikidosec/firewall-php-test-ubuntu-zts:${{ matrix.php_version }}-v2
+      options: --privileged
+    needs: [ build_deb ]
+    strategy:
+      matrix:
+        arch: ['', '-arm']
+        php_version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4', '8.5']
+        server: ['nginx-php-fpm', 'php-built-in']
+      fail-fast: false
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Get Arch
+        run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
+
+      - name: Set env
+        run: |
+          AIKIDO_VERSION=$(grep '#define PHP_AIKIDO_VERSION' lib/php-extension/include/php_aikido.h | awk -F'"' '{print $2}')
+          echo $AIKIDO_VERSION
+          echo "AIKIDO_VERSION=$AIKIDO_VERSION" >> $GITHUB_ENV
+          echo "AIKIDO_DEB=aikido-php-firewall.${{ env.ARCH }}.deb" >> $GITHUB_ENV
+
+      - name: Verify ZTS is enabled
+        run: |
+          php -v | grep -q "ZTS" || (echo "ERROR: ZTS not enabled!" && exit 1)
+          php -v
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: |
+            ${{ env.AIKIDO_DEB }}
+
+      - name: Prepare php-fpm
+        if: matrix.server == 'nginx-php-fpm'
+        run: |
+          # Verify ZTS-built PHP-FPM exists and is ZTS-enabled
+          /usr/local/sbin/php-fpm -v
+          /usr/local/sbin/php-fpm -i | grep -q "Thread Safety => enabled" || (echo "ERROR: PHP-FPM not built with ZTS!" && exit 1)
+          # Create symlink for nginx to find php-fpm
+          ln -sf /usr/local/sbin/php-fpm /usr/sbin/php-fpm || true
+          # Verify symlink works
+          php-fpm -i | grep -q "Thread Safety => enabled" || (echo "ERROR: php-fpm symlink not working or not ZTS!" && exit 1)
+
+      - name: Start MariaDB (background)
+        run: |
+          start-mariadb &   # provided by the image
+          sleep 5
+          mysql -u root -ppwd -e "SELECT 1" || (echo "MySQL not up" && exit 1)
 
       - name: Install DEB
         run: |
@@ -453,11 +598,239 @@ jobs:
 
       - name: Run CLI tests
         run: |
+          export TEST_PHP_EXECUTABLE=/usr/local/bin/php
+          cd lib/php-extension/
+          phpize
+          cd ../../
           php lib/php-extension/run-tests.php ./tests/cli
 
       - name: Run ${{ matrix.server }} server tests
         run: |
-          . /etc/apache2/envvars
+          cd tools
+          python3 run_server_tests.py ../tests/server ../tests/testlib --server=${{ matrix.server }} --max-runs=3
+
+  test_php_centos_zts:
+    name: CentOS ZTS php-${{ matrix.php_version }} ${{ matrix.server }} ${{ matrix.arch == '' && 'x86_64' || 'arm' }}
+    runs-on: ubuntu-24.04${{ matrix.arch }}
+    container:
+      image: ghcr.io/aikidosec/firewall-php-test-centos-zts:${{ matrix.php_version }}-v2
+      options: --privileged
+    needs: [ build_rpm ]
+    strategy:
+      matrix:
+        php_version: ['7.4', '8.0', '8.1', '8.2', '8.3', '8.4', '8.5']
+        server: ['nginx-php-fpm', 'php-built-in']
+        arch: ['', '-arm']
+      fail-fast: false
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup
+        run: |
+          uname -a
+          cat /etc/centos-release || cat /etc/redhat-release || echo "CentOS/Stream detected"
+          php -v
+          nginx -v || true
+          which php-fpm && php-fpm -v || true
+
+      - name: Verify ZTS is enabled
+        run: |
+          php -v | grep -q "ZTS" || (echo "ERROR: ZTS not enabled!" && exit 1)
+          php -v
+
+      - name: Install and start MySQL
+        run: |
+          mkdir -p /var/lib/mysql
+          mysqld --initialize-insecure --datadir=/var/lib/mysql
+          mysqld -u root --datadir=/var/lib/mysql --socket=/var/lib/mysql/mysql.sock &
+          sleep 10
+          mysql -u root -e "CREATE DATABASE IF NOT EXISTS db;"
+          mysql -u root -e "ALTER USER 'root'@'localhost' IDENTIFIED BY 'pwd'; FLUSH PRIVILEGES;"
+
+      - name: Test MySQL connection with mysqli
+        run: |
+          php -r '
+            $mysqli = new mysqli("localhost", "root", "pwd", "db");
+            if ($mysqli->connect_error) {
+              echo "MySQL connection failed: " . $mysqli->connect_error . "\n";
+              exit(1);
+            } else {
+              echo "MySQL connection successful\n";
+              $mysqli->close();
+            }
+          '
+
+      - name: Get Arch
+        run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
+
+      - name: Check PHP setup
+        run: |
+          uname -m
+          php -v
+          php -i | head -20
+
+      - name: Get Aikido version
+        run: |
+          AIKIDO_VERSION=$(grep '#define PHP_AIKIDO_VERSION' lib/php-extension/include/php_aikido.h | awk -F'"' '{print $2}')
+          echo $AIKIDO_VERSION
+          echo "AIKIDO_VERSION=$AIKIDO_VERSION" >> $GITHUB_ENV
+          echo "AIKIDO_RPM=aikido-php-firewall.${{ env.ARCH }}.rpm" >> $GITHUB_ENV
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: |
+            ${{ env.AIKIDO_RPM }}
+
+      - name: Install RPM
+        run: |
+          rpm -Uvh --oldpackage ${{ env.AIKIDO_RPM }}/${{ env.AIKIDO_RPM }}
+
+      - name: Run CLI tests
+        run: |
+          export TEST_PHP_EXECUTABLE=/usr/local/bin/php
+          cd lib/php-extension/
+          phpize
+          cd ../../
+          php lib/php-extension/run-tests.php ./tests/cli
+
+      - name: Run ${{ matrix.server }} server tests
+        run: |
+          cd tools
+          python3 run_server_tests.py ../tests/server ../tests/testlib --server=${{ matrix.server }} --max-runs=3
+
+  test_php_frankenphp:
+    name: CentOS FrankenPHP php-${{ matrix.php_version }} ${{ matrix.server }} ${{ matrix.arch == '' && 'x86_64' || 'arm' }}
+    runs-on: ubuntu-24.04${{ matrix.arch }}
+    container:
+      image: ghcr.io/aikidosec/firewall-php-test-centos-zts:${{ matrix.php_version }}-v2
+      options: --privileged
+    needs: [ build_rpm ]
+    strategy:
+      matrix:
+        php_version: ['8.2', '8.3', '8.4', '8.5']
+        server: ['frankenphp-worker', 'frankenphp-classic']
+        arch: ['', '-arm']
+      fail-fast: false
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup
+        run: |
+          uname -a
+          cat /etc/centos-release || cat /etc/redhat-release || echo "CentOS/Stream detected"
+          php -v
+          command -v frankenphp && frankenphp -v || (echo "ERROR: FrankenPHP not found!" && exit 1)
+
+      - name: Verify ZTS is enabled
+        run: |
+          php -v | grep -q "ZTS" || (echo "ERROR: ZTS not enabled!" && exit 1)
+          php -v
+
+      - name: Install and start MySQL
+        run: |
+          mkdir -p /var/lib/mysql
+          mysqld --initialize-insecure --datadir=/var/lib/mysql
+          mysqld -u root --datadir=/var/lib/mysql --socket=/var/lib/mysql/mysql.sock &
+          sleep 10
+          mysql -u root -e "CREATE DATABASE IF NOT EXISTS db;"
+          mysql -u root -e "ALTER USER 'root'@'localhost' IDENTIFIED BY 'pwd'; FLUSH PRIVILEGES;"
+
+      - name: Test MySQL connection with mysqli
+        run: |
+          php -r '
+            $mysqli = new mysqli("localhost", "root", "pwd", "db");
+            if ($mysqli->connect_error) {
+              echo "MySQL connection failed: " . $mysqli->connect_error . "\n";
+              exit(1);
+            } else {
+              echo "MySQL connection successful\n";
+              $mysqli->close();
+            }
+          '
+
+      - name: Get Arch
+        run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
+
+      - name: Get Aikido version
+        run: |
+          AIKIDO_VERSION=$(grep '#define PHP_AIKIDO_VERSION' lib/php-extension/include/php_aikido.h | awk -F'"' '{print $2}')
+          echo $AIKIDO_VERSION
+          echo "AIKIDO_VERSION=$AIKIDO_VERSION" >> $GITHUB_ENV
+          echo "AIKIDO_RPM=aikido-php-firewall.${{ env.ARCH }}.rpm" >> $GITHUB_ENV
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: |
+            ${{ env.AIKIDO_RPM }}
+
+      - name: Install RPM
+        run: |
+          rpm -Uvh --oldpackage ${{ env.AIKIDO_RPM }}/${{ env.AIKIDO_RPM }}
+
+      - name: Run ${{ matrix.server }} server tests
+        run: |
+          cd tools
+          python3 run_server_tests.py ../tests/server ../tests/testlib --server=${{ matrix.server }} --max-runs=3
+
+  test_php_frankenphp_ubuntu:
+    name: Ubuntu FrankenPHP php-${{ matrix.php_version }} ${{ matrix.server }} ${{ matrix.arch == '' && 'x86_64' || 'arm' }}
+    runs-on: ubuntu-24.04${{ matrix.arch }}
+    container:
+      image: ghcr.io/aikidosec/firewall-php-test-ubuntu-zts:${{ matrix.php_version }}-v2
+      options: --privileged
+    needs: [ build_deb ]
+    strategy:
+      matrix:
+        php_version: ['8.2', '8.3', '8.4', '8.5']
+        server: ['frankenphp-worker', 'frankenphp-classic']
+        arch: ['', '-arm']
+      fail-fast: false
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Get Arch
+        run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
+
+      - name: Set env
+        run: |
+          AIKIDO_VERSION=$(grep '#define PHP_AIKIDO_VERSION' lib/php-extension/include/php_aikido.h | awk -F'"' '{print $2}')
+          echo $AIKIDO_VERSION
+          echo "AIKIDO_VERSION=$AIKIDO_VERSION" >> $GITHUB_ENV
+          echo "AIKIDO_DEB=aikido-php-firewall.${{ env.ARCH }}.deb" >> $GITHUB_ENV
+
+      - name: Verify ZTS is enabled
+        run: |
+          php -v | grep -q "ZTS" || (echo "ERROR: ZTS not enabled!" && exit 1)
+          php -v
+
+      - name: Verify FrankenPHP is installed
+        run: |
+          command -v frankenphp && frankenphp -v || (echo "ERROR: FrankenPHP not found!" && exit 1)
+
+      - name: Start MariaDB (background)
+        run: |
+          start-mariadb &   # provided by the image
+          sleep 5
+          mysql -u root -ppwd -e "SELECT 1" || (echo "MySQL not up" && exit 1)
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: |
+            ${{ env.AIKIDO_DEB }}
+
+      - name: Install DEB
+        run: |
+          dpkg -i -E ${{ env.AIKIDO_DEB }}/${{ env.AIKIDO_DEB }}
+
+      - name: Run ${{ matrix.server }} server tests
+        run: |
           cd tools
           python3 run_server_tests.py ../tests/server ../tests/testlib --server=${{ matrix.server }} --max-runs=3
 

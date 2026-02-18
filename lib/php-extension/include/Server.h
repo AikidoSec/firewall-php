@@ -31,5 +31,3 @@ class Server {
 
     ~Server() = default;
 };
-
-extern Server server;

@@ -4,6 +4,7 @@ import re
 import pwd
 import psutil
 import time
+import glob
 
 nginx_global_conf = "/etc/nginx/nginx.conf"
 nginx_config_dir = "/etc/nginx/conf.d"
@@ -33,7 +34,7 @@ def get_user_of_process(process_name):
         except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
             pass
 
-nginx_conf_template = """
+nginx_conf_template = r"""
 server {{
     listen {port};
     server_name {name};
@@ -61,6 +62,7 @@ group = {user}
 listen = {run_dir}/php-fpm-{name}.sock
 listen.owner = {user}
 listen.group = {user}
+listen.mode = 0660
 pm = dynamic
 pm.max_children = 5
 pm.start_servers = 2
@@ -173,8 +175,18 @@ def php_fpm_create_conf_file(test_dir, test_name, user, env):
     return php_fpm_config_file_path
 
 
+def cleanup_glob(pattern):
+    for f in glob.glob(pattern):
+        try:
+            if os.path.isdir(f):
+                subprocess.run(['rm', '-rf', f], check=False)
+            else:
+                os.remove(f)
+        except Exception as e:
+            print(f"Failed to remove {f}: {e}")
+
 def nginx_php_fpm_init(tests_dir):
-    subprocess.run(['rm', '-rf', f'{php_fpm_config_dir}/*'])
+    cleanup_glob(f'{php_fpm_config_dir}/*')
 
 
 def nginx_php_fpm_process_test(test_data):
@@ -185,19 +197,46 @@ def nginx_php_fpm_process_test(test_data):
     return test_data
 
 
+def wait_for_fpm_sockets(timeout=15):
+    """Wait for all PHP-FPM pool sockets to be created."""
+    expected_sockets = glob.glob(f'{php_fpm_config_dir}/*.conf')
+    if not expected_sockets:
+        return True
+    
+    start_time = time.time()
+    while time.time() - start_time < timeout:
+        existing_sockets = glob.glob(f'{php_fpm_run_dir}/php-fpm-*.sock')
+        if len(existing_sockets) >= len(expected_sockets):
+            print(f"All {len(existing_sockets)} PHP-FPM sockets are ready")
+            return True
+        time.sleep(0.5)
+    
+    existing_sockets = glob.glob(f'{php_fpm_run_dir}/php-fpm-*.sock')
+    print(f"Warning: Only {len(existing_sockets)}/{len(expected_sockets)} PHP-FPM sockets ready after {timeout}s")
+    return False
+
 def nginx_php_fpm_pre_tests():
-    subprocess.run(['pkill', 'nginx'])
-    subprocess.run(['pkill', 'php-fpm'])
-    subprocess.run(['rm', '-rf', f'{log_dir}/nginx/*'])
-    subprocess.run(['rm', '-rf', f'{log_dir}/php-fpm/*'])
-    subprocess.run(['rm', '-rf', f'{log_dir}/aikido-*/*'])
+    subprocess.run(['pkill', 'nginx'], check=False)
+    subprocess.run(['pkill', '-9', 'php-fpm'], check=False)
+    time.sleep(2)
+    
+    cleanup_glob(f'{log_dir}/nginx/*')
+    cleanup_glob(f'{log_dir}/php-fpm/*')
+    cleanup_glob(f'{log_dir}/aikido-*/*')
+    cleanup_glob(f'{php_fpm_run_dir}/*')
+    for pid_file in ['/var/run/php-fpm.pid', '/run/php-fpm.pid']:
+        try:
+            os.remove(pid_file)
+        except FileNotFoundError:
+            pass
+    
     create_folder(php_fpm_run_dir)
     create_folder(f'{log_dir}/php-fpm')
     modify_nginx_conf(nginx_global_conf)
     subprocess.run(['nginx'], check=True)
     subprocess.run([php_fpm_bin, '--allow-to-run-as-root'], check=True)
-    print("nginx and php-fpm servers restarted!")
-    time.sleep(5)
+    print("nginx and php-fpm servers started, waiting for sockets...")
+    wait_for_fpm_sockets()
 
 
 def nginx_php_fpm_start_server(test_data, test_lib_dir, valgrind):
@@ -205,5 +244,7 @@ def nginx_php_fpm_start_server(test_data, test_lib_dir, valgrind):
 
 
 def nginx_php_fpm_uninit():
-    subprocess.run(['pkill', 'nginx'])
-    subprocess.run(['pkill', 'php-fpm'])
+    subprocess.run(['pkill', 'nginx'], check=False)
+    subprocess.run(['pkill', '-9', 'php-fpm'], check=False)
+    time.sleep(1)
+    cleanup_glob(f'{php_fpm_run_dir}/*')

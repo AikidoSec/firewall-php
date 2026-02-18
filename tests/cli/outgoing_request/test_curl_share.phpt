@@ -66,17 +66,17 @@ curl_exec($ch6);
 
 ?>
 
---EXPECT--
-[AIKIDO][INFO] [BEFORE] Got domain: example.com
-[AIKIDO][INFO] [AFTER] Got domain: example.com port: 443
-[AIKIDO][INFO] [BEFORE] Got domain: httpbin.org
-[AIKIDO][INFO] [AFTER] Got domain: httpbin.org port: 443
-[AIKIDO][INFO] [BEFORE] Got domain: facebook.com
-[AIKIDO][INFO] [AFTER] Got domain: facebook.com port: 443
-[AIKIDO][INFO] [BEFORE] Got domain: facebook.com
-[AIKIDO][INFO] [AFTER] Got domain: facebook.com port: 443
-[AIKIDO][INFO] [BEFORE] Got domain: www.aikido.dev
-[AIKIDO][INFO] [AFTER] Got domain: www.aikido.dev port: 80
-[AIKIDO][INFO] [BEFORE] Got domain: some-invalid-domain.com
-[AIKIDO][INFO] [AFTER] Got domain: some-invalid-domain.com port: 4113
+--EXPECTREGEX--
+\[AIKIDO\]\[INFO\]\[tid:\d+\] \[BEFORE\] Got domain: example.com
+\[AIKIDO\]\[INFO\]\[tid:\d+\] \[AFTER\] Got domain: example.com port: 443
+\[AIKIDO\]\[INFO\]\[tid:\d+\] \[BEFORE\] Got domain: httpbin.org
+\[AIKIDO\]\[INFO\]\[tid:\d+\] \[AFTER\] Got domain: httpbin.org port: 443
+\[AIKIDO\]\[INFO\]\[tid:\d+\] \[BEFORE\] Got domain: facebook.com
+\[AIKIDO\]\[INFO\]\[tid:\d+\] \[AFTER\] Got domain: facebook.com port: 443
+\[AIKIDO\]\[INFO\]\[tid:\d+\] \[BEFORE\] Got domain: facebook.com
+\[AIKIDO\]\[INFO\]\[tid:\d+\] \[AFTER\] Got domain: facebook.com port: 443
+\[AIKIDO\]\[INFO\]\[tid:\d+\] \[BEFORE\] Got domain: www.aikido.dev
+\[AIKIDO\]\[INFO\]\[tid:\d+\] \[AFTER\] Got domain: www.aikido.dev port: 80
+\[AIKIDO\]\[INFO\]\[tid:\d+\] \[BEFORE\] Got domain: some-invalid-domain.com
+\[AIKIDO\]\[INFO\]\[tid:\d+\] \[AFTER\] Got domain: some-invalid-domain.com port: 4113
 

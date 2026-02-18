@@ -2,13 +2,13 @@
 
 zend_class_entry *blockingStatusClass = nullptr;
 
-// This variable is used to check if auto_block_request function has already been called,
-// in order to avoid multiple calls to this function.
-bool checkedAutoBlock = false;
+// The checkedAutoBlock module global variable is used to check if auto_block_request function
+// has already been called, in order to avoid multiple calls to this function.
+// Accessed via AIKIDO_GLOBAL(checkedAutoBlock).
 
-// This variable is used to check if should_block_request function has already been called,
-// in order to avoid multiple calls to this function.
-bool checkedShouldBlockRequest = false;
+// The checkedShouldBlockRequest module global variable is used to check if should_block_request
+// function has already been called, in order to avoid multiple calls to this function.
+// Accessed via AIKIDO_GLOBAL(checkedShouldBlockRequest).
 
 bool CheckBlocking(EVENT_ID eventId, bool& checkedBlocking) {
     if (checkedBlocking) {
@@ -18,8 +18,10 @@ bool CheckBlocking(EVENT_ID eventId, bool& checkedBlocking) {
     ScopedTimer scopedTimer("check_blocking", "aikido_op");
 
     try {
+        auto& requestProcessorInstance = AIKIDO_GLOBAL(requestProcessorInstance);
+        auto& action = AIKIDO_GLOBAL(action);
         std::string output;
-        requestProcessor.SendEvent(eventId, output);
+        requestProcessorInstance.SendEvent(eventId, output);
         action.Execute(output);
         checkedBlocking = true;
         return true;
@@ -43,7 +45,7 @@ ZEND_FUNCTION(should_block_request) {
         return;
     }
 
-    if (!CheckBlocking(EVENT_GET_BLOCKING_STATUS, checkedShouldBlockRequest)) {
+    if (!CheckBlocking(EVENT_GET_BLOCKING_STATUS, AIKIDO_GLOBAL(checkedShouldBlockRequest))) {
         return;
     }
 
@@ -56,6 +58,7 @@ ZEND_FUNCTION(should_block_request) {
 #else
     zval *obj = return_value;
 #endif
+    auto& action = AIKIDO_GLOBAL(action);
     zend_update_property_bool(blockingStatusClass, obj, "block", sizeof("block") - 1, action.Block());
     zend_update_property_string(blockingStatusClass, obj, "type", sizeof("type") - 1, action.Type());
     zend_update_property_string(blockingStatusClass, obj, "trigger", sizeof("trigger") - 1, action.Trigger());
@@ -74,7 +77,7 @@ ZEND_FUNCTION(auto_block_request) {
         return;
     }
 
-    CheckBlocking(EVENT_GET_AUTO_BLOCKING_STATUS, checkedAutoBlock);
+    CheckBlocking(EVENT_GET_AUTO_BLOCKING_STATUS, AIKIDO_GLOBAL(checkedAutoBlock));
 }
 
 void RegisterAikidoBlockRequestStatusClass() {

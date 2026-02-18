@@ -6,8 +6,6 @@
         return ""; \
     }
 
-Server server;
-
 /* Always load the current "_SERVER" variable from PHP, 
 so we make sure it's always available and it's the correct one */
 zval* Server::GetServerVar() {
@@ -23,7 +21,7 @@ zval* Server::GetServerVar() {
     }
 
     /* Get the "_SERVER" PHP global variable */
-    return &PG(http_globals)[TRACK_VARS_SERVER];
+        return &PG(http_globals)[TRACK_VARS_SERVER];
 }
 
 std::string Server::GetVar(const char* var) {
@@ -127,7 +125,9 @@ std::string Server::GetBody() {
     stream = php_stream_open_wrapper("php://input", "rb", 0 | REPORT_ERRORS, NULL);
     if ((contents = php_stream_copy_to_mem(stream, maxlen, 0)) != NULL) {
         php_stream_close(stream);
-        return std::string(ZSTR_VAL(contents));
+        std::string result = std::string(ZSTR_VAL(contents), ZSTR_LEN(contents));
+        zend_string_release(contents);
+        return result;
     }
     php_stream_close(stream);
     return "";
@@ -179,8 +179,8 @@ std::string Server::GetHeaders() {
     ZEND_HASH_FOREACH_END();
 
     json headers_json;
-    for (auto const& [key, val] : headers) {
-        headers_json[key] = val;
+    for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it) {
+        headers_json[it->first] = it->second;
     }
     return NormalizeAndDumpJson(headers_json);
 }

@@ -3,13 +3,13 @@ package main
 import (
 	"fmt"
 	"main/context"
-	"main/globals"
+	"main/instance"
 	"main/log"
 	"main/utils"
 )
 
-func OnRegisterParamMatcherEvent() string {
-	param, regex := context.GetParamMatcher()
+func OnRegisterParamMatcherEvent(instance *instance.RequestProcessorInstance) string {
+	param, regex := context.GetParamMatcher(instance)
 	if param == "" || regex == "" {
 		return ""
 	}
@@ -18,7 +18,7 @@ func OnRegisterParamMatcherEvent() string {
 		return utils.GetMessageAction(fmt.Sprintf("Invalid param name: %s. Param names must match [a-zA-Z_]+", param))
 	}
 
-	server := globals.GetCurrentServer()
+	server := instance.GetCurrentServer()
 	if server == nil {
 		return ""
 	}
@@ -32,6 +32,6 @@ func OnRegisterParamMatcherEvent() string {
 		return utils.GetMessageAction(fmt.Sprintf("Error compiling param matcher %s -> regex \"%s\": %s", param, regex, err.Error()))
 	}
 	server.ParamMatchers[param] = regexCompiled
-	log.Infof("Registered param matcher %s -> %s", param, regex)
+	log.Infof(instance, "Registered param matcher %s -> %s", param, regex)
 	return ""
 }

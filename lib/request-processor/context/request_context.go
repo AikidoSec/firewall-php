@@ -4,14 +4,18 @@ package context
 import "C"
 import (
 	. "main/aikido_types"
+	"main/globals"
+	"main/instance"
 	"main/log"
+	"unsafe"
 )
 
-type CallbackFunction func(int) string
+type CallbackFunction func(*instance.RequestProcessorInstance, int) string
 
 /* Request level context cache (changes on each PHP request) */
 type RequestContextData struct {
-	Callback                      CallbackFunction // callback to access data from the PHP layer (C++ extension) about the current request and current event
+	instance                      *instance.RequestProcessorInstance // CACHED: Instance pointer for fast access
+	Callback                      CallbackFunction                   // callback to access data from the PHP layer (C++ extension) about the current request and current event
 	Method                        *string
 	Route                         *string
 	RouteParsed                   *string
@@ -44,143 +48,204 @@ type RequestContextData struct {
 	RouteParamsParsedFlattened    *map[string]string
 }
 
-var Context RequestContextData
+func GetServerPID() int32 {
+	return globals.EnvironmentConfig.ServerPID
+}
 
-func Init(callback CallbackFunction) bool {
-	Context = RequestContextData{
+func Init(instPtr unsafe.Pointer, callback CallbackFunction) bool {
+	instance := instance.GetInstance(instPtr)
+	if instance == nil {
+		return false
+	}
+
+	instance.SetContextInstance(instPtr)
+
+	ctx := &RequestContextData{
+		instance: instance,
 		Callback: callback,
 	}
+	instance.SetRequestContext(ctx)
+
+	instance.SetEventContext(&EventContextData{})
+
 	return true
 }
 
-func Clear() bool {
-	Context = RequestContextData{
-		Callback: Context.Callback,
+func GetContext(instance *instance.RequestProcessorInstance) *RequestContextData {
+	if instance == nil {
+		return nil
 	}
-	ResetEventContext()
+	ctx := instance.GetRequestContext()
+	if ctx == nil {
+		return nil
+	}
+	return ctx.(*RequestContextData)
+}
+
+func (ctx *RequestContextData) GetInstance() *instance.RequestProcessorInstance {
+	return ctx.instance
+}
+
+func Clear(instance *instance.RequestProcessorInstance) bool {
+	ctx := GetContext(instance)
+	*ctx = RequestContextData{
+		instance: instance,
+		Callback: ctx.Callback,
+	}
+	ResetEventContext(instance)
 	return true
 }
 
-func GetFromCache[T any](fetchDataFn func(), s **T) T {
+func GetFromCache[T any](instance *instance.RequestProcessorInstance, fetchDataFn func(*instance.RequestProcessorInstance), s **T) T {
 	if fetchDataFn != nil {
-		fetchDataFn()
+		fetchDataFn(instance)
 	}
 	if *s == nil {
 		var t T
-		log.Warnf("Error getting from cache. Returning default value %v...", t)
+		c := GetContext(instance)
+		if c != nil && c.instance != nil && instance.GetCurrentServer() != nil {
+			log.Warnf(instance, "Error getting from cache. Returning default value %v...", t)
+		}
 		return t
 	}
 	return **s
 }
 
-func GetIp() string {
-	return GetFromCache(ContextSetIp, &Context.IP)
+func GetMethod(instance *instance.RequestProcessorInstance) string {
+	ctx := GetContext(instance)
+	return GetFromCache(instance, ContextSetMethod, &ctx.Method)
 }
 
-func GetMethod() string {
-	return GetFromCache(ContextSetMethod, &Context.Method)
+func GetRoute(instance *instance.RequestProcessorInstance) string {
+	ctx := GetContext(instance)
+	return GetFromCache(instance, ContextSetRoute, &ctx.Route)
 }
 
-func GetRoute() string {
-	return GetFromCache(ContextSetRoute, &Context.Route)
+func GetIp(instance *instance.RequestProcessorInstance) string {
+	ctx := GetContext(instance)
+	return GetFromCache(instance, ContextSetIp, &ctx.IP)
 }
 
-func GetParsedRoute() string {
-	return GetFromCache(ContextSetParsedRoute, &Context.RouteParsed)
+func GetUserId(instance *instance.RequestProcessorInstance) string {
+	ctx := GetContext(instance)
+	return GetFromCache(instance, ContextSetUserId, &ctx.UserId)
 }
 
-func GetUrl() string {
-	return GetFromCache(ContextSetUrl, &Context.URL)
+func GetUserAgent(instance *instance.RequestProcessorInstance) string {
+	ctx := GetContext(instance)
+	return GetFromCache(instance, ContextSetUserAgent, &ctx.UserAgent)
 }
 
-func GetStatusCode() int {
-	return GetFromCache(ContextSetStatusCode, &Context.StatusCode)
+func GetStatusCode(instance *instance.RequestProcessorInstance) int {
+	ctx := GetContext(instance)
+	return GetFromCache(instance, ContextSetStatusCode, &ctx.StatusCode)
 }
 
-func IsIpBypassed() bool {
-	return GetFromCache(ContextSetIsIpBypassed, &Context.IsIpBypassed)
+func GetUrl(instance *instance.RequestProcessorInstance) string {
+	ctx := GetContext(instance)
+	return GetFromCache(instance, ContextSetUrl, &ctx.URL)
 }
 
-func GetBodyRaw() string {
-	return GetFromCache(ContextSetBody, &Context.BodyRaw)
+func GetBodyRaw(instance *instance.RequestProcessorInstance) string {
+	ctx := GetContext(instance)
+	return GetFromCache(instance, ContextSetBody, &ctx.BodyRaw)
 }
 
-func GetBodyParsed() map[string]interface{} {
-	return GetFromCache(ContextSetBody, &Context.BodyParsed)
+func GetParsedRoute(instance *instance.RequestProcessorInstance) string {
+	ctx := GetContext(instance)
+	return GetFromCache(instance, ContextSetParsedRoute, &ctx.RouteParsed)
 }
 
-func GetQueryParsed() map[string]interface{} {
-	return GetFromCache(ContextSetQuery, &Context.QueryParsed)
+func GetRateLimitGroup(instance *instance.RequestProcessorInstance) string {
+	ctx := GetContext(instance)
+	return GetFromCache(instance, ContextSetRateLimitGroup, &ctx.RateLimitGroup)
 }
 
-func GetCookiesParsed() map[string]interface{} {
-	return GetFromCache(ContextSetCookies, &Context.CookiesParsed)
+func GetQueryParsed(instance *instance.RequestProcessorInstance) map[string]interface{} {
+	ctx := GetContext(instance)
+	return GetFromCache(instance, ContextSetQuery, &ctx.QueryParsed)
 }
 
-func GetHeadersParsed() map[string]interface{} {
-	return GetFromCache(ContextSetHeaders, &Context.HeadersParsed)
+func GetHeadersParsed(instance *instance.RequestProcessorInstance) map[string]interface{} {
+	ctx := GetContext(instance)
+	return GetFromCache(instance, ContextSetHeaders, &ctx.HeadersParsed)
 }
 
-func GetBodyParsedFlattened() map[string]string {
-	return GetFromCache(ContextSetBody, &Context.BodyParsedFlattened)
+func IsIpBypassed(instance *instance.RequestProcessorInstance) bool {
+	ctx := GetContext(instance)
+	return GetFromCache(instance, ContextSetIsIpBypassed, &ctx.IsIpBypassed)
 }
 
-func GetQueryParsedFlattened() map[string]string {
-	return GetFromCache(ContextSetQuery, &Context.QueryParsedFlattened)
+func IsEndpointRateLimited(instance *instance.RequestProcessorInstance) bool {
+	return GetContext(instance).IsEndpointRateLimited
 }
 
-func GetCookiesParsedFlattened() map[string]string {
-	return GetFromCache(ContextSetCookies, &Context.CookiesParsedFlattened)
+func IsEndpointProtectionTurnedOff(instance *instance.RequestProcessorInstance) bool {
+	ctx := GetContext(instance)
+	return GetFromCache(instance, ContextSetIsEndpointProtectionTurnedOff, &ctx.IsEndpointProtectionTurnedOff)
 }
 
-func GetRouteParamsParsedFlattened() map[string]string {
-	return GetFromCache(ContextSetRouteParams, &Context.RouteParamsParsedFlattened)
+func GetBodyParsed(instance *instance.RequestProcessorInstance) map[string]interface{} {
+	ctx := GetContext(instance)
+	return GetFromCache(instance, ContextSetBody, &ctx.BodyParsed)
 }
 
-func GetHeadersParsedFlattened() map[string]string {
-	return GetFromCache(ContextSetHeaders, &Context.HeadersParsedFlattened)
+func GetCookiesParsed(instance *instance.RequestProcessorInstance) map[string]interface{} {
+	ctx := GetContext(instance)
+	return GetFromCache(instance, ContextSetCookies, &ctx.CookiesParsed)
 }
 
-func GetUserAgent() string {
-	return GetFromCache(ContextSetUserAgent, &Context.UserAgent)
+func GetBodyParsedFlattened(instance *instance.RequestProcessorInstance) map[string]string {
+	ctx := GetContext(instance)
+	return GetFromCache(instance, ContextSetBody, &ctx.BodyParsedFlattened)
 }
 
-func GetUserId() string {
-	return GetFromCache(ContextSetUserId, &Context.UserId)
+func GetQueryParsedFlattened(instance *instance.RequestProcessorInstance) map[string]string {
+	ctx := GetContext(instance)
+	return GetFromCache(instance, ContextSetQuery, &ctx.QueryParsedFlattened)
 }
 
-func GetUserName() string {
-	return GetFromCache(ContextSetUserName, &Context.UserName)
+func GetCookiesParsedFlattened(instance *instance.RequestProcessorInstance) map[string]string {
+	ctx := GetContext(instance)
+	return GetFromCache(instance, ContextSetCookies, &ctx.CookiesParsedFlattened)
 }
 
-func GetRateLimitGroup() string {
-	return GetFromCache(ContextSetRateLimitGroup, &Context.RateLimitGroup)
+func GetRouteParamsParsedFlattened(instance *instance.RequestProcessorInstance) map[string]string {
+	ctx := GetContext(instance)
+	return GetFromCache(instance, ContextSetRouteParams, &ctx.RouteParamsParsedFlattened)
 }
 
-func GetEndpointConfig() *EndpointData {
-	return GetFromCache(ContextSetEndpointConfig, &Context.EndpointConfig)
+func GetHeadersParsedFlattened(instance *instance.RequestProcessorInstance) map[string]string {
+	ctx := GetContext(instance)
+	return GetFromCache(instance, ContextSetHeaders, &ctx.HeadersParsedFlattened)
 }
 
-func GetWildcardEndpointsConfig() []EndpointData {
-	return GetFromCache(ContextSetWildcardEndpointsConfigs, &Context.WildcardEndpointsConfigs)
+func GetUserName(instance *instance.RequestProcessorInstance) string {
+	ctx := GetContext(instance)
+	return GetFromCache(instance, ContextSetUserName, &ctx.UserName)
 }
 
-func IsEndpointConfigured() bool {
-	return GetFromCache(ContextSetIsEndpointConfigured, &Context.IsEndpointConfigured)
+func GetEndpointConfig(instance *instance.RequestProcessorInstance) *EndpointData {
+	ctx := GetContext(instance)
+	return GetFromCache(instance, ContextSetEndpointConfig, &ctx.EndpointConfig)
 }
 
-func IsEndpointRateLimitingEnabled() bool {
-	return GetFromCache(ContextSetIsEndpointRateLimitingEnabled, &Context.IsEndpointRateLimitingEnabled)
+func GetWildcardEndpointsConfig(instance *instance.RequestProcessorInstance) []EndpointData {
+	ctx := GetContext(instance)
+	return GetFromCache(instance, ContextSetWildcardEndpointsConfigs, &ctx.WildcardEndpointsConfigs)
 }
 
-func IsEndpointIpAllowed() bool {
-	return GetFromCache(ContextSetIsEndpointIpAllowed, &Context.IsEndpointIpAllowed)
+func IsEndpointConfigured(instance *instance.RequestProcessorInstance) bool {
+	ctx := GetContext(instance)
+	return GetFromCache(instance, ContextSetIsEndpointConfigured, &ctx.IsEndpointConfigured)
 }
 
-func IsEndpointProtectionTurnedOff() bool {
-	return GetFromCache(ContextSetIsEndpointProtectionTurnedOff, &Context.IsEndpointProtectionTurnedOff)
+func IsEndpointRateLimitingEnabled(instance *instance.RequestProcessorInstance) bool {
+	ctx := GetContext(instance)
+	return GetFromCache(instance, ContextSetIsEndpointRateLimitingEnabled, &ctx.IsEndpointRateLimitingEnabled)
 }
 
-func IsEndpointRateLimited() bool {
-	return Context.IsEndpointRateLimited
+func IsEndpointIpAllowed(instance *instance.RequestProcessorInstance) bool {
+	ctx := GetContext(instance)
+	return GetFromCache(instance, ContextSetIsEndpointIpAllowed, &ctx.IsEndpointIpAllowed)
 }

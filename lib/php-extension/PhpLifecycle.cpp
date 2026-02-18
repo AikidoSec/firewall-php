@@ -1,6 +1,12 @@
 #include "Includes.h"
 
 void PhpLifecycle::ModuleInit() {
+    /* If SAPI name is "cli" run in "simple" mode */
+    if (AIKIDO_GLOBAL(sapi_name) == "cli") {
+        AIKIDO_LOG_INFO("MINIT finished earlier because we run in CLI mode!\n");
+        return;
+    }
+
     this->mainPID = getpid();
     AIKIDO_LOG_INFO("Main PID is: %u\n", this->mainPID);
     if (!AIKIDO_GLOBAL(agent).Init()) {
@@ -11,16 +17,18 @@ void PhpLifecycle::ModuleInit() {
 }
 
 void PhpLifecycle::RequestInit() {
-    action.Reset();
-    requestCache.Reset();
-    requestProcessor.RequestInit();
-    checkedAutoBlock = false;
-    checkedShouldBlockRequest = false;
+    AIKIDO_GLOBAL(action).Reset();
+    AIKIDO_GLOBAL(requestCache).Reset();
+    
+    AIKIDO_GLOBAL(requestProcessorInstance).RequestInit();
+    AIKIDO_GLOBAL(checkedAutoBlock) = false;
+    AIKIDO_GLOBAL(checkedShouldBlockRequest) = false;
+    AIKIDO_GLOBAL(isIpBypassed) = false;
     InitIpBypassCheck();
 }
 
 void PhpLifecycle::RequestShutdown() {
-    requestProcessor.RequestShutdown();
+    AIKIDO_GLOBAL(requestProcessorInstance).RequestShutdown();
 }
 
 void PhpLifecycle::ModuleShutdown() {
@@ -31,8 +39,10 @@ void PhpLifecycle::ModuleShutdown() {
         AIKIDO_GLOBAL(agent).Uninit();
         UnhookAll();
     } else {
-        AIKIDO_LOG_INFO("Module shutdown NOT called on main PID. Uninitializing Aikido Request Processor...\n");
-        requestProcessor.Uninit();
+        #ifndef ZTS
+            AIKIDO_LOG_INFO("Module shutdown NOT called on main PID. Uninitializing Aikido Request Processor...\n");
+            requestProcessor.Uninit();
+        #endif
     }
 }
 
@@ -49,5 +59,3 @@ void PhpLifecycle::UnhookAll() {
     UnhookFileCompilation();
     UnhookAstProcess();
 }
-
-PhpLifecycle phpLifecycle;

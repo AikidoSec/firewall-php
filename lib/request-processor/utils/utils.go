@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"main/helpers"
+	"main/instance"
 	"main/log"
 	"net"
 	"net/netip"
@@ -196,7 +197,7 @@ func isLocalhost(ip string) bool {
 	return parsedIP.IsLoopback()
 }
 
-func IsIpInSet(ipSet *netipx.IPSet, ip string) int {
+func IsIpInSet(instance *instance.RequestProcessorInstance, ipSet *netipx.IPSet, ip string) int {
 	if ipSet == nil || ipSet.Equal(&netipx.IPSet{}) {
 		// No IPs configured in the list -> return default value
 		return NoConfig
@@ -204,7 +205,7 @@ func IsIpInSet(ipSet *netipx.IPSet, ip string) int {
 
 	ipAddress, err := netip.ParseAddr(ip)
 	if err != nil {
-		log.Infof("Invalid ip address: %s\n", ip)
+		log.Infof(instance, "Invalid ip address: %s\n", ip)
 		return NoConfig
 	}
 
@@ -221,7 +222,7 @@ func IsIpInSet(ipSet *netipx.IPSet, ip string) int {
 	return NotFound
 }
 
-func IsIpAllowedOnEndpoint(server *ServerData, allowedIps *netipx.IPSet, ip string) int {
+func IsIpAllowedOnEndpoint(instance *instance.RequestProcessorInstance, server *ServerData, allowedIps *netipx.IPSet, ip string) int {
 	if server == nil {
 		return NoConfig
 	}
@@ -229,17 +230,17 @@ func IsIpAllowedOnEndpoint(server *ServerData, allowedIps *netipx.IPSet, ip stri
 		return Found
 	}
 
-	return IsIpInSet(allowedIps, ip)
+	return IsIpInSet(instance, allowedIps, ip)
 }
 
-func IsIpBypassed(server *ServerData, ip string) bool {
+func IsIpBypassed(instance *instance.RequestProcessorInstance, server *ServerData, ip string) bool {
 	if server == nil {
 		return false
 	}
 	server.CloudConfigMutex.Lock()
 	defer server.CloudConfigMutex.Unlock()
 
-	return IsIpInSet(server.CloudConfig.BypassedIps, ip) == Found
+	return IsIpInSet(instance, server.CloudConfig.BypassedIps, ip) == Found
 }
 
 func getIpFromXForwardedFor(value string) string {
@@ -333,7 +334,7 @@ type IpListMatch struct {
 	Description string
 }
 
-func IsIpInList(ipList map[string]IpList, ip string) (int, []IpListMatch) {
+func IsIpInList(instance *instance.RequestProcessorInstance, ipList map[string]IpList, ip string) (int, []IpListMatch) {
 	if len(ipList) == 0 {
 		return NoConfig, []IpListMatch{}
 	}
@@ -357,7 +358,7 @@ func IsIpInList(ipList map[string]IpList, ip string) (int, []IpListMatch) {
 	return Found, matches
 }
 
-func IsIpAllowed(server *ServerData, ip string) bool {
+func IsIpAllowed(instance *instance.RequestProcessorInstance, server *ServerData, ip string) bool {
 	server.CloudConfigMutex.Lock()
 	defer server.CloudConfigMutex.Unlock()
 
@@ -365,22 +366,22 @@ func IsIpAllowed(server *ServerData, ip string) bool {
 		return true
 	}
 
-	result, _ := IsIpInList(server.CloudConfig.AllowedIps, ip)
+	result, _ := IsIpInList(instance, server.CloudConfig.AllowedIps, ip)
 	// IP is allowed if it's found in the allowed lists or if the allowed lists are not configured
 	return result == Found || result == NoConfig
 }
 
-func IsIpBlocked(server *ServerData, ip string) (bool, []IpListMatch) {
+func IsIpBlocked(instance *instance.RequestProcessorInstance, server *ServerData, ip string) (bool, []IpListMatch) {
 	server.CloudConfigMutex.Lock()
 	defer server.CloudConfigMutex.Unlock()
-	result, matches := IsIpInList(server.CloudConfig.BlockedIps, ip)
+	result, matches := IsIpInList(instance, server.CloudConfig.BlockedIps, ip)
 	return result == Found, matches
 }
 
-func IsIpMonitored(server *ServerData, ip string) (bool, []IpListMatch) {
+func IsIpMonitored(instance *instance.RequestProcessorInstance, server *ServerData, ip string) (bool, []IpListMatch) {
 	server.CloudConfigMutex.Lock()
 	defer server.CloudConfigMutex.Unlock()
-	result, matches := IsIpInList(server.CloudConfig.MonitoredIps, ip)
+	result, matches := IsIpInList(instance, server.CloudConfig.MonitoredIps, ip)
 	return result == Found, matches
 }
 

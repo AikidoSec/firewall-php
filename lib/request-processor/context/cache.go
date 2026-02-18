@@ -3,8 +3,8 @@ package context
 // #include "../../API.h"
 import "C"
 import (
-	"main/globals"
 	"main/helpers"
+	"main/instance"
 	"main/log"
 	"main/utils"
 	"strconv"
@@ -20,12 +20,17 @@ import (
 
 type ParseFunction func(string) map[string]interface{}
 
-func ContextSetMap(contextId int, rawDataPtr **string, parsedPtr **map[string]interface{}, stringsPtr **map[string]string, parseFunc ParseFunction) {
+func ContextSetMap(instance *instance.RequestProcessorInstance, contextId int, rawDataPtr **string, parsedPtr **map[string]interface{}, stringsPtr **map[string]string, parseFunc ParseFunction) {
 	if stringsPtr != nil && *stringsPtr != nil {
 		return
 	}
 
-	contextData := Context.Callback(contextId)
+	c := GetContext(instance)
+	if c.Callback == nil {
+		return
+	}
+
+	contextData := c.Callback(instance, contextId)
 	if rawDataPtr != nil {
 		*rawDataPtr = &contextData
 	}
@@ -39,201 +44,255 @@ func ContextSetMap(contextId int, rawDataPtr **string, parsedPtr **map[string]in
 	}
 }
 
-func ContextSetString(context_id int, m **string) {
+func ContextSetString(instance *instance.RequestProcessorInstance, context_id int, m **string) {
 	if *m != nil {
 		return
 	}
-	temp := Context.Callback(context_id)
+
+	c := GetContext(instance)
+	if c.Callback == nil {
+		return
+	}
+
+	temp := c.Callback(instance, context_id)
 	*m = &temp
 }
 
-func ContextSetBody() {
-	ContextSetMap(C.CONTEXT_BODY, &Context.BodyRaw, &Context.BodyParsed, &Context.BodyParsedFlattened, utils.ParseBody)
+func ContextSetBody(instance *instance.RequestProcessorInstance) {
+	c := GetContext(instance)
+	ContextSetMap(instance, C.CONTEXT_BODY, &c.BodyRaw, &c.BodyParsed, &c.BodyParsedFlattened, utils.ParseBody)
 }
 
-func ContextSetQuery() {
-	ContextSetMap(C.CONTEXT_QUERY, nil, &Context.QueryParsed, &Context.QueryParsedFlattened, utils.ParseQuery)
+func ContextSetQuery(instance *instance.RequestProcessorInstance) {
+	c := GetContext(instance)
+	ContextSetMap(instance, C.CONTEXT_QUERY, nil, &c.QueryParsed, &c.QueryParsedFlattened, utils.ParseQuery)
 }
 
-func ContextSetCookies() {
-	ContextSetMap(C.CONTEXT_COOKIES, nil, &Context.CookiesParsed, &Context.CookiesParsedFlattened, utils.ParseCookies)
+func ContextSetCookies(instance *instance.RequestProcessorInstance) {
+	c := GetContext(instance)
+	ContextSetMap(instance, C.CONTEXT_COOKIES, nil, &c.CookiesParsed, &c.CookiesParsedFlattened, utils.ParseCookies)
 }
 
-func ContextSetHeaders() {
-	ContextSetMap(C.CONTEXT_HEADERS, nil, &Context.HeadersParsed, &Context.HeadersParsedFlattened, utils.ParseHeaders)
+func ContextSetHeaders(instance *instance.RequestProcessorInstance) {
+	c := GetContext(instance)
+	ContextSetMap(instance, C.CONTEXT_HEADERS, nil, &c.HeadersParsed, &c.HeadersParsedFlattened, utils.ParseHeaders)
 }
 
-func ContextSetRouteParams() {
-	ContextSetMap(C.CONTEXT_ROUTE, &Context.RouteParamsRaw, &Context.RouteParamsParsed, &Context.RouteParamsParsedFlattened, utils.ParseRouteParams)
+func ContextSetRouteParams(instance *instance.RequestProcessorInstance) {
+	c := GetContext(instance)
+	ContextSetMap(instance, C.CONTEXT_ROUTE, &c.RouteParamsRaw, &c.RouteParamsParsed, &c.RouteParamsParsedFlattened, utils.ParseRouteParams)
 }
 
-func ContextSetStatusCode() {
-	if Context.StatusCode != nil {
+func ContextSetStatusCode(instance *instance.RequestProcessorInstance) {
+	c := GetContext(instance)
+	if c.StatusCode != nil {
 		return
 	}
-	status_code_str := Context.Callback(C.CONTEXT_STATUS_CODE)
+	if c.Callback == nil {
+		return
+	}
+	status_code_str := c.Callback(instance, C.CONTEXT_STATUS_CODE)
 	status_code, err := strconv.Atoi(status_code_str)
 	if err != nil {
-		log.Warnf("Error parsing status code %v: %v", status_code_str, err)
+		log.Warnf(instance, "Error parsing status code %v: %v", status_code_str, err)
 		return
 	}
-	Context.StatusCode = &status_code
+	c.StatusCode = &status_code
 }
 
-func ContextSetRoute() {
-	ContextSetString(C.CONTEXT_ROUTE, &Context.Route)
+func ContextSetRoute(instance *instance.RequestProcessorInstance) {
+	c := GetContext(instance)
+	ContextSetString(instance, C.CONTEXT_ROUTE, &c.Route)
 }
 
-func ContextSetParsedRoute() {
-	parsedRoute := utils.BuildRouteFromURL(GetRoute())
-	Context.RouteParsed = &parsedRoute
+func ContextSetParsedRoute(instance *instance.RequestProcessorInstance) {
+	parsedRoute := utils.BuildRouteFromURL(instance, GetRoute(instance))
+	c := GetContext(instance)
+	c.RouteParsed = &parsedRoute
 }
 
-func ContextSetMethod() {
-	ContextSetString(C.CONTEXT_METHOD, &Context.Method)
+func ContextSetMethod(instance *instance.RequestProcessorInstance) {
+	c := GetContext(instance)
+	ContextSetString(instance, C.CONTEXT_METHOD, &c.Method)
 }
 
-func ContextSetUrl() {
-	ContextSetString(C.CONTEXT_URL, &Context.URL)
+func ContextSetUrl(instance *instance.RequestProcessorInstance) {
+	c := GetContext(instance)
+	ContextSetString(instance, C.CONTEXT_URL, &c.URL)
 }
 
-func ContextSetUserAgent() {
-	ContextSetString(C.CONTEXT_HEADER_USER_AGENT, &Context.UserAgent)
+func ContextSetUserAgent(instance *instance.RequestProcessorInstance) {
+	c := GetContext(instance)
+	ContextSetString(instance, C.CONTEXT_HEADER_USER_AGENT, &c.UserAgent)
 }
 
-func ContextSetIp() {
-	if Context.IP != nil {
+func ContextSetIp(instance *instance.RequestProcessorInstance) {
+	c := GetContext(instance)
+	if c.IP != nil {
 		return
 	}
-	remoteAddress := Context.Callback(C.CONTEXT_REMOTE_ADDRESS)
-	xForwardedFor := Context.Callback(C.CONTEXT_HEADER_X_FORWARDED_FOR)
-	ip := utils.GetIpFromRequest(globals.GetCurrentServer(), remoteAddress, xForwardedFor)
-	Context.IP = &ip
-}
-
-func ContextSetIsIpBypassed() {
-	if Context.IsIpBypassed != nil {
+	if c.Callback == nil {
 		return
 	}
+	remoteAddress := c.Callback(instance, C.CONTEXT_REMOTE_ADDRESS)
+	xForwardedFor := c.Callback(instance, C.CONTEXT_HEADER_X_FORWARDED_FOR)
 
-	isIpBypassed := utils.IsIpBypassed(globals.GetCurrentServer(), GetIp())
-	Context.IsIpBypassed = &isIpBypassed
+	server := c.instance.GetCurrentServer()
+	ip := utils.GetIpFromRequest(server, remoteAddress, xForwardedFor)
+	c.IP = &ip
 }
 
-func ContextSetUserId() {
-	ContextSetString(C.CONTEXT_USER_ID, &Context.UserId)
-}
-
-func ContextSetUserName() {
-	ContextSetString(C.CONTEXT_USER_NAME, &Context.UserName)
-}
-
-func ContextSetRateLimitGroup() {
-	if Context.RateLimitGroup != nil {
-		return
-	}
-	rateLimitGroup := Context.Callback(C.CONTEXT_RATE_LIMIT_GROUP)
-	Context.RateLimitGroup = &rateLimitGroup
-}
-
-func ContextSetEndpointConfig() {
-	if Context.EndpointConfig != nil {
+func ContextSetIsIpBypassed(instance *instance.RequestProcessorInstance) {
+	c := GetContext(instance)
+	if c.IsIpBypassed != nil {
 		return
 	}
 
-	endpointConfig := utils.GetEndpointConfig(globals.GetCurrentServer(), GetMethod(), GetParsedRoute())
-	Context.EndpointConfig = &endpointConfig
+	server := c.instance.GetCurrentServer()
+	isIpBypassed := utils.IsIpBypassed(instance, server, GetIp(instance))
+	c.IsIpBypassed = &isIpBypassed
 }
 
-func ContextSetWildcardEndpointsConfigs() {
-	if Context.WildcardEndpointsConfigs != nil {
+func ContextSetUserId(instance *instance.RequestProcessorInstance) {
+	c := GetContext(instance)
+	ContextSetString(instance, C.CONTEXT_USER_ID, &c.UserId)
+}
+
+func ContextSetUserName(instance *instance.RequestProcessorInstance) {
+	c := GetContext(instance)
+	ContextSetString(instance, C.CONTEXT_USER_NAME, &c.UserName)
+}
+
+func ContextSetRateLimitGroup(instance *instance.RequestProcessorInstance) {
+	c := GetContext(instance)
+	if c.RateLimitGroup != nil {
+		return
+	}
+	if c.Callback == nil {
+		return
+	}
+	rateLimitGroup := c.Callback(instance, C.CONTEXT_RATE_LIMIT_GROUP)
+	c.RateLimitGroup = &rateLimitGroup
+}
+
+func ContextSetEndpointConfig(instance *instance.RequestProcessorInstance) {
+	c := GetContext(instance)
+	if c.EndpointConfig != nil {
 		return
 	}
 
-	wildcardEndpointsConfigs := utils.GetWildcardEndpointsConfigs(globals.GetCurrentServer(), GetMethod(), GetParsedRoute())
-	Context.WildcardEndpointsConfigs = &wildcardEndpointsConfigs
+	server := c.instance.GetCurrentServer()
+	if server == nil {
+		return
+	}
+
+	method := GetMethod(instance)
+	route := GetParsedRoute(instance)
+	endpointConfig := utils.GetEndpointConfig(server, method, route)
+	c.EndpointConfig = &endpointConfig
 }
 
-func ContextSetIsEndpointProtectionTurnedOff() {
-	if Context.IsEndpointProtectionTurnedOff != nil {
+func ContextSetWildcardEndpointsConfigs(instance *instance.RequestProcessorInstance) {
+	c := GetContext(instance)
+	if c.WildcardEndpointsConfigs != nil {
+		return
+	}
+
+	// Per-thread isolation via sync.Map prevents context bleeding
+	server := c.instance.GetCurrentServer()
+	if server == nil {
+		return
+	}
+
+	wildcardEndpointsConfigs := utils.GetWildcardEndpointsConfigs(server, GetMethod(instance), GetParsedRoute(instance))
+	c.WildcardEndpointsConfigs = &wildcardEndpointsConfigs
+}
+
+func ContextSetIsEndpointProtectionTurnedOff(instance *instance.RequestProcessorInstance) {
+	c := GetContext(instance)
+	if c.IsEndpointProtectionTurnedOff != nil {
 		return
 	}
 
 	isEndpointProtectionTurnedOff := false
 
-	endpointConfig := GetEndpointConfig()
+	endpointConfig := GetEndpointConfig(instance)
 	if endpointConfig != nil {
 		isEndpointProtectionTurnedOff = endpointConfig.ForceProtectionOff
 	}
 	if !isEndpointProtectionTurnedOff {
-		for _, wildcardEndpointConfig := range GetWildcardEndpointsConfig() {
+		for _, wildcardEndpointConfig := range GetWildcardEndpointsConfig(instance) {
 			if wildcardEndpointConfig.ForceProtectionOff {
 				isEndpointProtectionTurnedOff = true
 				break
 			}
 		}
 	}
-	Context.IsEndpointProtectionTurnedOff = &isEndpointProtectionTurnedOff
+	c.IsEndpointProtectionTurnedOff = &isEndpointProtectionTurnedOff
 }
 
-func ContextSetIsEndpointConfigured() {
-	if Context.IsEndpointConfigured != nil {
+func ContextSetIsEndpointConfigured(instance *instance.RequestProcessorInstance) {
+	c := GetContext(instance)
+	if c.IsEndpointConfigured != nil {
 		return
 	}
 
 	IsEndpointConfigured := false
 
-	endpointConfig := GetEndpointConfig()
+	endpointConfig := GetEndpointConfig(instance)
 	if endpointConfig != nil {
 		IsEndpointConfigured = true
 	}
 	if !IsEndpointConfigured {
-		if len(GetWildcardEndpointsConfig()) != 0 {
+		if len(GetWildcardEndpointsConfig(instance)) != 0 {
 			IsEndpointConfigured = true
 		}
 	}
-	Context.IsEndpointConfigured = &IsEndpointConfigured
+	c.IsEndpointConfigured = &IsEndpointConfigured
 }
 
-func ContextSetIsEndpointRateLimitingEnabled() {
-	if Context.IsEndpointRateLimitingEnabled != nil {
+func ContextSetIsEndpointRateLimitingEnabled(instance *instance.RequestProcessorInstance) {
+	c := GetContext(instance)
+	if c.IsEndpointRateLimitingEnabled != nil {
 		return
 	}
 
 	IsEndpointRateLimitingEnabled := false
 
-	endpointConfig := GetEndpointConfig()
+	endpointConfig := GetEndpointConfig(instance)
 	if endpointConfig != nil {
 		IsEndpointRateLimitingEnabled = endpointConfig.RateLimiting.Enabled
 	}
 	if !IsEndpointRateLimitingEnabled {
-		for _, wildcardEndpointConfig := range GetWildcardEndpointsConfig() {
+		for _, wildcardEndpointConfig := range GetWildcardEndpointsConfig(instance) {
 			if wildcardEndpointConfig.RateLimiting.Enabled {
 				IsEndpointRateLimitingEnabled = true
 				break
 			}
 		}
 	}
-	Context.IsEndpointRateLimitingEnabled = &IsEndpointRateLimitingEnabled
+	c.IsEndpointRateLimitingEnabled = &IsEndpointRateLimitingEnabled
 }
 
-func ContextSetIsEndpointIpAllowed() {
-	if Context.IsEndpointIpAllowed != nil {
+func ContextSetIsEndpointIpAllowed(instance *instance.RequestProcessorInstance) {
+	c := GetContext(instance)
+	if c.IsEndpointIpAllowed != nil {
 		return
 	}
 
-	ip := GetIp()
+	ip := GetIp(instance)
 
 	isEndpointIpAllowed := utils.NoConfig
 
-	endpointConfig := GetEndpointConfig()
-	if endpointConfig != nil {
-		isEndpointIpAllowed = utils.IsIpAllowedOnEndpoint(globals.GetCurrentServer(), endpointConfig.AllowedIPAddresses, ip)
+	server := c.instance.GetCurrentServer()
+	endpointConfig := GetEndpointConfig(instance)
+	if endpointConfig != nil && server != nil {
+		isEndpointIpAllowed = utils.IsIpAllowedOnEndpoint(instance, server, endpointConfig.AllowedIPAddresses, ip)
 	}
 
-	if isEndpointIpAllowed == utils.NoConfig {
-		for _, wildcardEndpointConfig := range GetWildcardEndpointsConfig() {
-			isEndpointIpAllowed = utils.IsIpAllowedOnEndpoint(globals.GetCurrentServer(), wildcardEndpointConfig.AllowedIPAddresses, ip)
+	if isEndpointIpAllowed == utils.NoConfig && server != nil {
+		for _, wildcardEndpointConfig := range GetWildcardEndpointsConfig(instance) {
+			isEndpointIpAllowed = utils.IsIpAllowedOnEndpoint(instance, server, wildcardEndpointConfig.AllowedIPAddresses, ip)
 			if isEndpointIpAllowed != utils.NoConfig {
 				break
 			}
@@ -242,9 +301,10 @@ func ContextSetIsEndpointIpAllowed() {
 
 	isEndpointIpAllowedBool := isEndpointIpAllowed != utils.NotFound
 
-	Context.IsEndpointIpAllowed = &isEndpointIpAllowedBool
+	c.IsEndpointIpAllowed = &isEndpointIpAllowedBool
 }
 
-func ContextSetIsEndpointRateLimited() {
-	Context.IsEndpointRateLimited = true
+func ContextSetIsEndpointRateLimited(instance *instance.RequestProcessorInstance) {
+	c := GetContext(instance)
+	c.IsEndpointRateLimited = true
 }

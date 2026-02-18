@@ -7,9 +7,12 @@ import sys
 import json
 import argparse
 import socket
+import urllib.request
 from server_tests.php_built_in.main import php_built_in_start_server
 from server_tests.apache.main import apache_mod_php_init, apache_mod_php_process_test, apache_mod_php_pre_tests, apache_mod_php_start_server, apache_mod_php_uninit
 from server_tests.nginx.main import nginx_php_fpm_init, nginx_php_fpm_process_test, nginx_php_fpm_pre_tests, nginx_php_fpm_start_server, nginx_php_fpm_uninit
+from server_tests.frankenphp_classic.main import frankenphp_classic_init, frankenphp_classic_process_test, frankenphp_classic_pre_tests, frankenphp_classic_start_server, frankenphp_classic_uninit
+from server_tests.frankenphp_worker.main import frankenphp_worker_init, frankenphp_worker_process_test, frankenphp_worker_pre_tests, frankenphp_worker_start_server, frankenphp_worker_uninit
 
 INIT = 0
 PROCESS_TEST = 1
@@ -39,6 +42,20 @@ servers = {
         nginx_php_fpm_start_server,
         nginx_php_fpm_uninit
     ),
+    "frankenphp-classic": (
+        frankenphp_classic_init,
+        frankenphp_classic_process_test,
+        frankenphp_classic_pre_tests,
+        frankenphp_classic_start_server,
+        frankenphp_classic_uninit
+    ),
+    "frankenphp-worker": (
+        frankenphp_worker_init,
+        frankenphp_worker_process_test,
+        frankenphp_worker_pre_tests,
+        frankenphp_worker_start_server,
+        frankenphp_worker_uninit
+    ),
 }
 
 used_ports = set()
@@ -52,10 +69,25 @@ def is_port_in_active_use(port):
         result = sock.connect_ex(('127.0.0.1', port))
         return result == 0
 
+def wait_for_port_ready(port, timeout=30, check_interval=0.1):
+    """Wait for a port to become ready to accept connections."""
+    start_time = time.time()
+    
+    while time.time() - start_time < timeout:
+        if is_port_in_active_use(port):
+            return True
+        time.sleep(check_interval)
+    
+    return False
+
 def generate_unique_port():
     with lock:
         while True:
             port = random.randint(1024, 9999)
+            # Exclude port 2019 (Caddy admin endpoint)
+            # Exclude port 9000 (PHP-FPM default port)
+            if port == 2019 or port == 9000:
+                continue
             if port not in used_ports and not is_port_in_active_use(port):
                 used_ports.add(port)
                 return port
@@ -77,19 +109,37 @@ def print_test_results(s, tests):
         print(f"\t- {t}")
 
 def handle_test_scenario(data, root_tests_dir, test_lib_dir, server, benchmark, valgrind, debug):
+	_handle_test_scenario_impl(data, root_tests_dir, test_lib_dir, server, benchmark, valgrind, debug)
+
+def _handle_test_scenario_impl(data, root_tests_dir, test_lib_dir, server, benchmark, valgrind, debug):
     test_name = data["test_name"]
     mock_port = data["mock_port"]
     server_port = data["server_port"]
+    mock_aikido_core = None
+    server_process = None
+    test_process = None
     try:
         print(f"Running {test_name}...")
-        print(f"Starting mock server on port {mock_port} with start_config.json for {test_name}...")
-        mock_aikido_core = subprocess.Popen(["python3", "mock_aikido_core.py", str(mock_port), data["config_path"]])
-        time.sleep(5)
+        
+        # For frankenphp modes, mock servers are already started and FrankenPHP is already running
+        if server in ["frankenphp-worker", "frankenphp-classic"]:
+            mock_aikido_core = data.get("mock_process")
+            if not mock_aikido_core:
+                raise RuntimeError(f"Mock process not found for {test_name} in {server} mode")
+        else:
+            # For other server modes, start mock server normally
+            print(f"Starting mock server on port {mock_port} with start_config.json for {test_name}...")
+            mock_aikido_core = subprocess.Popen(["python3", "-u", "mock_aikido_core.py", str(mock_port), data["config_path"]], cwd=os.path.dirname(os.path.abspath(__file__)))
+            
+            # Wait for mock server to be ready (instead of fixed sleep)
+            if not wait_for_port_ready(mock_port, timeout=10):
+                raise RuntimeError(f"Mock server on port {mock_port} failed to start within 10 seconds")
+            print(f"Mock server on port {mock_port} is ready")
 
-        print(f"Starting {server} server on port {server_port} for {test_name}...")
+            print(f"Starting {server} server on port {server_port} for {test_name}...")
 
-        server_start = servers[server][START_SERVER]
-        server_process = server_start(data, test_lib_dir, valgrind)
+            server_start = servers[server][START_SERVER]
+            server_process = server_start(data, test_lib_dir, valgrind)
 
         time.sleep(20)
 
@@ -105,16 +155,13 @@ def handle_test_scenario(data, root_tests_dir, test_lib_dir, server, benchmark, 
         subprocess.run(["python3", test_script_name, str(server_port), str(mock_port), test_name],
                        env=dict(os.environ, PYTHONPATH=f"{test_lib_dir}:$PYTHONPATH"),
                        cwd=test_script_cwd,
-                       check=True, timeout=600, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                       check=True, timeout=600)
 
         passed_tests.append(test_name)
 
     except subprocess.CalledProcessError as e:
         print(f"Error in testing scenario {test_name}:")
-        print(f"Exception output: {e.output}")
         print(f"Test exit code: {e.returncode}")
-        print(f"Test stdout: {e.stdout.decode()}")
-        print(f"Test stderr: {e.stderr.decode()}")
         failed_tests.append(test_name)
 
     except subprocess.TimeoutExpired:
@@ -128,7 +175,8 @@ def handle_test_scenario(data, root_tests_dir, test_lib_dir, server, benchmark, 
         failed_tests.append(test_name)
 
     finally:
-        if server_process:
+        # For frankenphp modes, don't stop the server (it's shared across all tests)
+        if server_process and server not in ["frankenphp-worker", "frankenphp-classic"]:
             server_process.terminate()
             server_process.wait()
             print(f"PHP server on port {server_port} stopped.")
@@ -172,8 +220,41 @@ def main(root_tests_dir, test_lib_dir, test_dirs, server="php-built-in", benchma
         tests_data.append(test_data)
 
     if servers[server][PRE_TESTS] is not None:
-        test_data = servers[server][PRE_TESTS]()
-
+        pre_tests = servers[server][PRE_TESTS]
+        if server in ["frankenphp-classic", "frankenphp-worker"]:
+            pre_tests(tests_data)
+        else:
+            pre_tests()
+    
+    # For frankenphp modes, start ALL mock servers BEFORE starting FrankenPHP
+    # since one FrankenPHP process handles all tests and initializes immediately
+    if server in ["frankenphp-worker", "frankenphp-classic"]:
+        print(f"Starting all mock servers for {server} mode...")
+        for test_data in tests_data:
+            test_name = test_data["test_name"]
+            mock_port = test_data["mock_port"]
+            print(f"Starting mock server on port {mock_port} for {test_name}...")
+            mock_process = subprocess.Popen(
+                ["python3", "-u", "mock_aikido_core.py", str(mock_port), test_data["config_path"]],
+                cwd=os.path.dirname(os.path.abspath(__file__))
+            )
+            test_data["mock_process"] = mock_process
+        
+        # Wait for ALL mock servers to be ready
+        print("Waiting for all mock servers to be ready...")
+        for test_data in tests_data:
+            mock_port = test_data["mock_port"]
+            test_name = test_data["test_name"]
+            if not wait_for_port_ready(mock_port, timeout=10):
+                raise RuntimeError(f"Mock server on port {mock_port} for {test_name} failed to start")
+        print(f"All {len(tests_data)} mock servers are ready!")
+        
+        # Now start FrankenPHP ONCE with all mock servers ready
+        server_start = servers[server][START_SERVER]
+        server_start(tests_data[0], test_lib_dir, valgrind)
+        print(f"FrankenPHP started with all mock servers ready")
+        time.sleep(5)  # Give FrankenPHP time to initialize
+    
     threads = []
     for test_data in tests_data:
         args = (test_data, root_tests_dir, test_lib_dir, server, benchmark, valgrind, debug)
@@ -181,7 +262,6 @@ def main(root_tests_dir, test_lib_dir, test_dirs, server="php-built-in", benchma
         threads.append(thread)
         thread.start()
         time.sleep(10)
-
     for thread in threads:
         thread.join()
 
@@ -197,7 +277,7 @@ if __name__ == "__main__":
     parser.add_argument("--benchmark", action="store_true", help="Enable benchmarking.")
     parser.add_argument("--valgrind", action="store_true", help="Enable valgrind.")
     parser.add_argument("--debug", action="store_true", help="Enable debugging logs.")
-    parser.add_argument("--server", type=str, choices=["php-built-in", "apache-mod-php", "nginx-php-fpm"], default="php-built-in", help="Select the type of server testing.")
+    parser.add_argument("--server", type=str, choices=["php-built-in", "apache-mod-php", "nginx-php-fpm", "frankenphp-classic", "frankenphp-worker"], default="php-built-in", help="Select the type of server testing.")
     parser.add_argument("--max-tests", type=int, default=0, help="Maximum number of tests to execute.")
     parser.add_argument("--max-runs", type=int, default=1, help="Maximum number of test runs.")
 

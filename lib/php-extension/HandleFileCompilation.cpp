@@ -1,6 +1,8 @@
 #include "Includes.h"
 
 zend_op_array* handle_file_compilation(zend_file_handle* file_handle, int type) {
+    auto& eventCacheStack = AIKIDO_GLOBAL(eventCacheStack);
+    
     // Create a new event context for file compilation
     ScopedEventContext scopedContext;
     

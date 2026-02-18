@@ -8,6 +8,7 @@ import (
 	"main/context"
 	"main/globals"
 	"main/grpc"
+	"main/instance"
 	"main/log"
 	"main/utils"
 	zen_internals "main/vulnerabilities/zen-internals"
@@ -15,6 +16,8 @@ import (
 	"time"
 	"unsafe"
 )
+
+type HandlerFunction func(*instance.RequestProcessorInstance) string
 
 var eventHandlers = map[int]HandlerFunction{
 	C.EVENT_PRE_REQUEST:              OnPreRequest,
@@ -38,49 +41,84 @@ func initializeServer(server *ServerData) {
 	grpc.GetCloudConfig(server, 5*time.Second)
 }
 
+//export CreateInstance
+func CreateInstance(threadID uint64) unsafe.Pointer {
+	return instance.CreateInstance(threadID)
+}
+
+//export InitInstance
+func InitInstance(instancePtr unsafe.Pointer, initJson string) bool {
+	// We need to init the instance in a separate function because we pin only the instance pointer, not the instance itself(all members).
+	instanceObject := instance.GetInstance(instancePtr)
+	if instanceObject == nil {
+		return false
+	}
+	config.InitInstance(instanceObject, initJson)
+
+	log.Debugf(instanceObject, "Init data: %s", initJson)
+	log.Debugf(instanceObject, "Started with token: \"AIK_RUNTIME_***%s\"", utils.AnonymizeToken(instanceObject.GetCurrentToken()))
+
+	if globals.EnvironmentConfig.PlatformName != "cli" {
+		server := instanceObject.GetCurrentServer()
+		if server != nil {
+			server.ServerInitMutex.Lock()
+			defer server.ServerInitMutex.Unlock()
+			if server.ServerInitialized {
+				return true
+			}
+			initializeServer(server)
+			server.ServerInitialized = true
+		}
+	}
+	return true
+}
+
+//export DestroyInstance
+func DestroyInstance(threadID uint64) {
+	instance.DestroyInstance(threadID)
+}
+
 //export RequestProcessorInit
-func RequestProcessorInit(initJson string) (initOk bool) {
+func RequestProcessorInit(platformName string) (initOk bool) {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Warn("Recovered from panic:", r)
+			log.Warn(nil, "Recovered from panic:", r)
 			initOk = false
 		}
 	}()
 
-	config.Init(initJson)
+	config.Init(platformName)
 
-	log.Debugf("Aikido Request Processor v%s (server PID: %d, request processor PID: %d) started in \"%s\" mode!",
+	if globals.EnvironmentConfig.PlatformName != "cli" {
+		grpc.Init()
+		grpc.StartCloudConfigRoutine()
+	}
+	if !zen_internals.Init() {
+		log.Error(nil, "Error initializing zen-internals library!")
+		return false
+	}
+
+	log.Debugf(nil, "Aikido Request Processor v%s (server PID: %d, request processor PID: %d) started in \"%s\" mode!",
 		globals.Version,
 		globals.EnvironmentConfig.ServerPID,
 		globals.EnvironmentConfig.RequestProcessorPID,
 		globals.EnvironmentConfig.PlatformName,
 	)
-	log.Debugf("Init data: %s", initJson)
-	log.Debugf("Started with token: \"AIK_RUNTIME_***%s\"", utils.AnonymizeToken(globals.CurrentToken))
-
-	if globals.EnvironmentConfig.PlatformName != "cli" {
-		grpc.Init()
-		server := globals.GetCurrentServer()
-		if server != nil {
-			initializeServer(server)
-		}
-		grpc.StartCloudConfigRoutine()
-	}
-	if !zen_internals.Init() {
-		log.Error("Error initializing zen-internals library!")
-		return false
-	}
 	return true
 }
 
-var CContextCallback C.ContextCallback
-
-func GoContextCallback(contextId int) string {
-	if CContextCallback == nil {
+func GoContextCallback(instance *instance.RequestProcessorInstance, contextId int) string {
+	if instance == nil {
 		return ""
 	}
 
-	contextData := C.call(CContextCallback, C.int(contextId))
+	contextCallbackPtr := instance.GetContextCallback()
+	if contextCallbackPtr == nil {
+		return ""
+	}
+
+	contextCallback := (C.ContextCallback)(contextCallbackPtr)
+	contextData := C.call(contextCallback, C.int(contextId))
 	if contextData == nil {
 		return ""
 	}
@@ -98,36 +136,47 @@ func GoContextCallback(contextId int) string {
 }
 
 //export RequestProcessorContextInit
-func RequestProcessorContextInit(contextCallback C.ContextCallback) (initOk bool) {
+func RequestProcessorContextInit(instancePtr unsafe.Pointer, contextCallback C.ContextCallback) (initOk bool) {
+	instance := instance.GetInstance(instancePtr)
 	defer func() {
 		if r := recover(); r != nil {
-			log.Warn("Recovered from panic:", r)
+			log.Warn(instance, "Recovered from panic:", r)
 			initOk = false
 		}
 	}()
 
-	log.Debug("Initializing context...")
-	CContextCallback = contextCallback
-	return context.Init(GoContextCallback)
+	if instance == nil {
+		return false
+	}
+
+	instance.SetContextCallback(unsafe.Pointer(contextCallback))
+	return context.Init(instancePtr, GoContextCallback)
 }
 
 /*
 	RequestProcessorConfigUpdate is used to update the Aikido Config loaded from env variables and send this config via gRPC to the Aikido Agent.
 */
 //export RequestProcessorConfigUpdate
-func RequestProcessorConfigUpdate(configJson string) (initOk bool) {
+func RequestProcessorConfigUpdate(instancePtr unsafe.Pointer, configJson string) (initOk bool) {
+	instance := instance.GetInstance(instancePtr)
 	defer func() {
 		if r := recover(); r != nil {
-			log.Warn("Recovered from panic:", r)
+			log.Warn(instance, "Recovered from panic:", r)
 			initOk = false
 		}
 	}()
 
-	log.Debugf("Reloading Aikido config...")
+	if instance == nil {
+		return false
+	}
+
+	log.Debugf(instance, "Reloading Aikido config...")
 	conf := AikidoConfigData{}
 
-	reloadResult := config.ReloadAikidoConfig(&conf, configJson)
-	server := globals.GetCurrentServer()
+	reloadResult := config.ReloadAikidoConfig(instance, &conf, configJson)
+
+	server := instance.GetCurrentServer()
+
 	if server == nil {
 		return false
 	}
@@ -147,15 +196,25 @@ func RequestProcessorConfigUpdate(configJson string) (initOk bool) {
 }
 
 //export RequestProcessorOnEvent
-func RequestProcessorOnEvent(eventId int) (outputJson *C.char) {
+func RequestProcessorOnEvent(instancePtr unsafe.Pointer, eventId int) (outputJson *C.char) {
+	instance := instance.GetInstance(instancePtr)
 	defer func() {
 		if r := recover(); r != nil {
-			log.Warn("Recovered from panic:", r)
+			log.Warn(instance, "Recovered from panic:", r)
 			outputJson = nil
 		}
 	}()
 
-	goString := eventHandlers[eventId]()
+	if instance == nil {
+		return nil
+	}
+
+	handler, exists := eventHandlers[eventId]
+	if !exists {
+		return nil
+	}
+
+	goString := handler(instance)
 	if goString == "" {
 		return nil
 	}
@@ -168,30 +227,46 @@ func RequestProcessorOnEvent(eventId int) (outputJson *C.char) {
 	Otherwise, it returns the environment value.
 */
 //export RequestProcessorGetBlockingMode
-func RequestProcessorGetBlockingMode() int {
-	return utils.GetBlockingMode(globals.GetCurrentServer())
+func RequestProcessorGetBlockingMode(instancePtr unsafe.Pointer) int {
+	instance := instance.GetInstance(instancePtr)
+	if instance == nil {
+		return -1
+	}
+	return utils.GetBlockingMode(instance.GetCurrentServer())
 }
 
 //export RequestProcessorReportStats
-func RequestProcessorReportStats(sink, kind string, attacksDetected, attacksBlocked, interceptorThrewError, withoutContext, total int32, timings []int64) {
+func RequestProcessorReportStats(instancePtr unsafe.Pointer, sink, kind string, attacksDetected, attacksBlocked, interceptorThrewError, withoutContext, total int32, timings []int64) {
 	if globals.EnvironmentConfig.PlatformName == "cli" {
 		return
 	}
+
+	instance := instance.GetInstance(instancePtr)
+	if instance == nil {
+		return
+	}
+
+	server := instance.GetCurrentServer()
+	if server == nil {
+		return
+	}
+
 	clonedTimings := make([]int64, len(timings))
 	copy(clonedTimings, timings)
-	go grpc.OnMonitoredSinkStats(globals.GetCurrentServer(), strings.Clone(sink), strings.Clone(kind), attacksDetected, attacksBlocked, interceptorThrewError, withoutContext, total, clonedTimings)
+	go grpc.OnMonitoredSinkStats(server, instance.GetCurrentToken(), strings.Clone(sink), strings.Clone(kind), attacksDetected, attacksBlocked, interceptorThrewError, withoutContext, total, clonedTimings)
 }
 
 //export RequestProcessorUninit
-func RequestProcessorUninit() {
-	log.Debug("Uninit: {}")
+func RequestProcessorUninit(instancePtr unsafe.Pointer) {
+	instance := instance.GetInstance(instancePtr)
+	log.Debug(instance, "Uninit: {}")
 	zen_internals.Uninit()
 
 	if globals.EnvironmentConfig.PlatformName != "cli" {
 		grpc.Uninit()
 	}
 
-	log.Debugf("Aikido Request Processor v%s stopped!", globals.Version)
+	log.Debugf(instance, "Aikido Request Processor v%s stopped!", globals.Version)
 	config.Uninit()
 }
 
