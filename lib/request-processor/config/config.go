@@ -12,8 +12,7 @@ import (
 
 func UpdateToken(instance *instance.RequestProcessorInstance, token string) bool {
 	server := globals.GetServer(token)
-	if token == instance.GetCurrentToken() {
-		log.Debugf(instance, "Server not found for token \"AIK_RUNTIME_***%s\"", utils.AnonymizeToken(token))
+	if server == nil {
 		return false
 	}
 
