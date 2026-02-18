@@ -192,6 +192,21 @@ bool RequestProcessor::Init() {
 bool RequestProcessorInstance::RequestInit() {
     std::string sapiName = sapi_module.name;
 
+    if (sapiName == "apache2handler" || sapiName == "frankenphp") {
+        // Apache-mod-php and FrankenPHP can serve multiple sites per process
+        // We need to reload config each request to detect token changes
+          this->LoadConfigFromEnvironment();
+      } else {
+          // Server APIs that are not apache-mod-php/frankenphp (like php-fpm, cli-server, ...) 
+          //  can only serve one site per process, so the config should be loaded at the first request.
+          // If the token is not set at the first request, we try to reload it until we get a valid token.
+          // The user can update .env file via zero downtime deployments after the PHP server is started.
+          if (AIKIDO_GLOBAL(token) == "") {
+              AIKIDO_LOG_INFO("Loading Aikido config until we get a valid token for SAPI: %s...\n", AIKIDO_GLOBAL(sapi_name).c_str());
+              this->LoadConfigFromEnvironment();
+          }
+      }
+
     #ifdef ZTS
         if(requestProcessor.initFailed) {
             return false;
@@ -223,21 +238,6 @@ bool RequestProcessorInstance::RequestInit() {
         }
 
         AIKIDO_LOG_INFO("Created Go RequestProcessorInstance (threadId: %lu)\n", this->threadId);
-    }
-    
-    if (sapiName == "apache2handler" || sapiName == "frankenphp") {
-      // Apache-mod-php and FrankenPHP can serve multiple sites per process
-      // We need to reload config each request to detect token changes
-        this->LoadConfigFromEnvironment();
-    } else {
-        // Server APIs that are not apache-mod-php/frankenphp (like php-fpm, cli-server, ...) 
-        //  can only serve one site per process, so the config should be loaded at the first request.
-        // If the token is not set at the first request, we try to reload it until we get a valid token.
-        // The user can update .env file via zero downtime deployments after the PHP server is started.
-        if (AIKIDO_GLOBAL(token) == "") {
-            AIKIDO_LOG_INFO("Loading Aikido config until we get a valid token for SAPI: %s...\n", AIKIDO_GLOBAL(sapi_name).c_str());
-            this->LoadConfigFromEnvironment();
-        }
     }
 
     AIKIDO_LOG_DEBUG("RINIT started!\n");
