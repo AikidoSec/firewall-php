@@ -85,7 +85,8 @@ def generate_unique_port():
         while True:
             port = random.randint(1024, 9999)
             # Exclude port 2019 (Caddy admin endpoint)
-            if port == 2019:
+            # Exclude port 9000 (PHP-FPM default port)
+            if port == 2019 or port == 9000:
                 continue
             if port not in used_ports and not is_port_in_active_use(port):
                 used_ports.add(port)
