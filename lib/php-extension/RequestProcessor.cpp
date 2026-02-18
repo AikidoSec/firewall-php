@@ -278,13 +278,9 @@ void RequestProcessorInstance::LoadConfig(const std::string& previousToken, cons
 }
 
 void RequestProcessorInstance::LoadConfigFromEnvironment() {
-    auto& globalToken = AIKIDO_GLOBAL(token);
-    std::string previousToken = globalToken;
-        
+    std::string previousToken = AIKIDO_GLOBAL(token);
     LoadEnvironment();
-    
-    std::string currentToken = globalToken;
-    
+    std::string currentToken = AIKIDO_GLOBAL(token);
     LoadConfig(previousToken, currentToken);
 }
 
