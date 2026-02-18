@@ -27,6 +27,7 @@
 #include <fstream>
 #include <iostream>
 #include <set>
+#include <mutex>
 
 #include "3rdparty/json.hpp"
 using namespace std;

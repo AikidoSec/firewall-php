@@ -14,6 +14,11 @@ typedef void (*RequestProcessorReportStats)(void* instancePtr, GoString, GoStrin
 typedef void (*RequestProcessorUninitFn)(void* instancePtr);
 
 class RequestProcessor {
+    #ifdef ZTS
+        private:
+            std::mutex syncMutex;
+    #endif
+    
     public:
     bool initFailed = false;
     void* libHandle = nullptr;
@@ -29,7 +34,7 @@ class RequestProcessor {
     RequestProcessorUninitFn requestProcessorUninitFn = nullptr;
 
     RequestProcessor() = default;
-    ~RequestProcessor() = default;
+    ~RequestProcessor();
 
     std::string GetInitData(const std::string& userProvidedToken = "");
 

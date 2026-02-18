@@ -27,15 +27,6 @@ PHP_MINIT_FUNCTION(aikido) {
 
     AIKIDO_GLOBAL(phpLifecycle).ModuleInit();
 
-    // Initialize the request processor only if we are in ZTS mode(In NTS mode php-fpm forks the main process for workers
-    // and this can lead to crash as the request processor is a go library that brings in the Go runtime, which (once initialized) 
-    // can start threads, install signal handlers, set up GC, etc)
-    #ifdef ZTS
-        if(!requestProcessor.Init()) {
-            AIKIDO_LOG_ERROR("Failed to initialize the request processor!\n");
-        }
-    #endif
-
     AIKIDO_LOG_INFO("MINIT finished!\n");
     return SUCCESS;
 }
@@ -49,10 +40,6 @@ PHP_MSHUTDOWN_FUNCTION(aikido) {
         AIKIDO_LOG_INFO("MSHUTDOWN finished earlier because AIKIDO_DISABLE is set to 1!\n");
         return SUCCESS;
     }
-    #ifdef ZTS
-        AIKIDO_LOG_INFO("Uninitializing Aikido Request Processor\n");
-        requestProcessor.Uninit();
-    #endif   
 
     /* If SAPI name is "cli" run in "simple" mode */
     if (AIKIDO_GLOBAL(sapi_name) == "cli") {

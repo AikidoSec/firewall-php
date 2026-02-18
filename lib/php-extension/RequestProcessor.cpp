@@ -2,6 +2,78 @@
 
 RequestProcessor requestProcessor;
 
+bool RequestProcessor::Init() {
+    #ifdef ZTS
+        std::lock_guard<std::mutex> lock(this->syncMutex);
+    #endif
+
+    if (this->initFailed) {
+        return false;
+    }
+    if (this->libHandle) {
+        return true;
+    }
+
+    if (AIKIDO_GLOBAL(disable) == true && AIKIDO_GLOBAL(sapi_name) != "apache2handler" && AIKIDO_GLOBAL(sapi_name) != "frankenphp") {
+        /* 
+            As you can set AIKIDO_DISABLE per site, in an apache-mod-php or frankenphp setup, as a process can serve multiple sites,
+            we can't just not initialize the request processor, as it can be disabled for one site but not for another.
+            When subsequent requests come in for the non-disabled sites, the request processor needs to be initialized.
+            For non-apache-mod-php/frankenphp SAPI, we can just not initialize the request processor if AIKIDO_DISABLE is set to 1.
+        */
+        AIKIDO_LOG_INFO("Request Processor initialization skipped because AIKIDO_DISABLE is set to 1 and SAPI is not apache2handler or frankenphp!\n");
+        return false;
+    }
+
+    std::string requestProcessorLibPath = "/opt/aikido-" + std::string(PHP_AIKIDO_VERSION) + "/aikido-request-processor.so";
+    this->libHandle = dlopen(requestProcessorLibPath.c_str(), RTLD_LAZY);
+    if (!this->libHandle) {
+        const char* err = dlerror();
+        AIKIDO_LOG_ERROR("Error loading the Aikido Request Processor library from %s: %s!\n", requestProcessorLibPath.c_str(), err);
+        this->initFailed = true;
+        return false;
+    }
+
+    AIKIDO_LOG_INFO("Initializing Aikido Request Processor...\n");
+
+    this->createInstanceFn = (CreateInstanceFn)dlsym(libHandle, "CreateInstance");
+    this->destroyInstanceFn = (DestroyInstanceFn)dlsym(libHandle, "DestroyInstance");
+
+    RequestProcessorInitFn requestProcessorInitFn = (RequestProcessorInitFn)dlsym(libHandle, "RequestProcessorInit");
+    this->initInstanceFn = (InitInstanceFn)dlsym(libHandle, "InitInstance");
+    this->requestProcessorContextInitFn = (RequestProcessorContextInitFn)dlsym(libHandle, "RequestProcessorContextInit");
+    this->requestProcessorConfigUpdateFn = (RequestProcessorConfigUpdateFn)dlsym(libHandle, "RequestProcessorConfigUpdate");
+    this->requestProcessorOnEventFn = (RequestProcessorOnEventFn)dlsym(libHandle, "RequestProcessorOnEvent");
+    this->requestProcessorGetBlockingModeFn = (RequestProcessorGetBlockingModeFn)dlsym(libHandle, "RequestProcessorGetBlockingMode");
+    this->requestProcessorReportStatsFn = (RequestProcessorReportStats)dlsym(libHandle, "RequestProcessorReportStats");
+    this->requestProcessorUninitFn = (RequestProcessorUninitFn)dlsym(libHandle, "RequestProcessorUninit");
+    if (!this->createInstanceFn ||
+        !this->initInstanceFn ||
+        !this->destroyInstanceFn ||
+        !requestProcessorInitFn ||
+        !this->requestProcessorContextInitFn ||
+        !this->requestProcessorConfigUpdateFn ||
+        !this->requestProcessorOnEventFn ||
+        !this->requestProcessorGetBlockingModeFn ||
+        !this->requestProcessorReportStatsFn ||
+        !this->requestProcessorUninitFn) {
+        AIKIDO_LOG_ERROR("Error loading symbols from the Aikido Request Processor library!\n");
+        this->initFailed = true;
+        return false;
+    }
+
+    if (!requestProcessorInitFn(GoCreateString(AIKIDO_GLOBAL(sapi_name)))) {
+        AIKIDO_LOG_ERROR("Failed to initialize Aikido Request Processor!\n");
+        this->initFailed = true;
+        return false;
+    }
+
+    AIKIDO_GLOBAL(logger).Init();
+
+    AIKIDO_LOG_INFO("Aikido Request Processor initialized successfully (SAPI: %s)!\n", AIKIDO_GLOBAL(sapi_name).c_str());
+    return true;
+}
+
 std::string RequestProcessor::GetInitData(const std::string& userProvidedToken) {
     LoadLaravelEnvFile();
     LoadEnvironment();
@@ -26,6 +98,21 @@ std::string RequestProcessor::GetInitData(const std::string& userProvidedToken) 
         {"collect_api_schema", AIKIDO_GLOBAL(collect_api_schema)},
         {"packages", packages}};
     return NormalizeAndDumpJson(initData);
+}
+
+void RequestProcessor::Uninit() {
+    #ifdef ZTS
+        std::lock_guard<std::mutex> lock(this->syncMutex);
+    #endif
+    if (!this->libHandle) {
+        return;
+    }
+    dlclose(this->libHandle);
+    this->libHandle = nullptr;
+    AIKIDO_LOG_INFO("Aikido Request Processor unloaded!\n");
+}
+RequestProcessor::~RequestProcessor() {
+    this->Uninit();
 }
 
 bool RequestProcessorInstance::ContextInit() {
@@ -120,75 +207,6 @@ bool RequestProcessorInstance::ReportStats() {
     return true;
 }
 
-bool RequestProcessor::Init() {
-    if (this->initFailed) {
-        return false;
-    }
-
-    if (this->libHandle) {
-        return true;
-    }
-
-    if (AIKIDO_GLOBAL(disable) == true && AIKIDO_GLOBAL(sapi_name) != "apache2handler" && AIKIDO_GLOBAL(sapi_name) != "frankenphp") {
-        /* 
-            As you can set AIKIDO_DISABLE per site, in an apache-mod-php or frankenphp setup, as a process can serve multiple sites,
-            we can't just not initialize the request processor, as it can be disabled for one site but not for another.
-            When subsequent requests come in for the non-disabled sites, the request processor needs to be initialized.
-            For non-apache-mod-php/frankenphp SAPI, we can just not initialize the request processor if AIKIDO_DISABLE is set to 1.
-        */
-        AIKIDO_LOG_INFO("Request Processor initialization skipped because AIKIDO_DISABLE is set to 1 and SAPI is not apache2handler or frankenphp!\n");
-        return false;
-    }
-
-    std::string requestProcessorLibPath = "/opt/aikido-" + std::string(PHP_AIKIDO_VERSION) + "/aikido-request-processor.so";
-    this->libHandle = dlopen(requestProcessorLibPath.c_str(), RTLD_LAZY);
-    if (!this->libHandle) {
-        const char* err = dlerror();
-        AIKIDO_LOG_ERROR("Error loading the Aikido Request Processor library from %s: %s!\n", requestProcessorLibPath.c_str(), err);
-        this->initFailed = true;
-        return false;
-    }
-
-    AIKIDO_LOG_INFO("Initializing Aikido Request Processor...\n");
-
-    this->createInstanceFn = (CreateInstanceFn)dlsym(libHandle, "CreateInstance");
-    this->destroyInstanceFn = (DestroyInstanceFn)dlsym(libHandle, "DestroyInstance");
-
-    RequestProcessorInitFn requestProcessorInitFn = (RequestProcessorInitFn)dlsym(libHandle, "RequestProcessorInit");
-    this->initInstanceFn = (InitInstanceFn)dlsym(libHandle, "InitInstance");
-    this->requestProcessorContextInitFn = (RequestProcessorContextInitFn)dlsym(libHandle, "RequestProcessorContextInit");
-    this->requestProcessorConfigUpdateFn = (RequestProcessorConfigUpdateFn)dlsym(libHandle, "RequestProcessorConfigUpdate");
-    this->requestProcessorOnEventFn = (RequestProcessorOnEventFn)dlsym(libHandle, "RequestProcessorOnEvent");
-    this->requestProcessorGetBlockingModeFn = (RequestProcessorGetBlockingModeFn)dlsym(libHandle, "RequestProcessorGetBlockingMode");
-    this->requestProcessorReportStatsFn = (RequestProcessorReportStats)dlsym(libHandle, "RequestProcessorReportStats");
-    this->requestProcessorUninitFn = (RequestProcessorUninitFn)dlsym(libHandle, "RequestProcessorUninit");
-    if (!this->createInstanceFn ||
-        !this->initInstanceFn ||
-        !this->destroyInstanceFn ||
-        !requestProcessorInitFn ||
-        !this->requestProcessorContextInitFn ||
-        !this->requestProcessorConfigUpdateFn ||
-        !this->requestProcessorOnEventFn ||
-        !this->requestProcessorGetBlockingModeFn ||
-        !this->requestProcessorReportStatsFn ||
-        !this->requestProcessorUninitFn) {
-        AIKIDO_LOG_ERROR("Error loading symbols from the Aikido Request Processor library!\n");
-        this->initFailed = true;
-        return false;
-    }
-
-    if (!requestProcessorInitFn(GoCreateString(AIKIDO_GLOBAL(sapi_name)))) {
-        AIKIDO_LOG_ERROR("Failed to initialize Aikido Request Processor!\n");
-        this->initFailed = true;
-        return false;
-    }
-
-    AIKIDO_GLOBAL(logger).Init();
-
-    AIKIDO_LOG_INFO("Aikido Request Processor initialized successfully (SAPI: %s)!\n", AIKIDO_GLOBAL(sapi_name).c_str());
-    return true;
-}
-
 bool RequestProcessorInstance::RequestInit() {
     std::string sapiName = sapi_module.name;
 
@@ -207,10 +225,6 @@ bool RequestProcessorInstance::RequestInit() {
           }
       }
 
-    #ifdef ZTS
-        if(requestProcessor.initFailed) {
-            return false;
-        }
         if (sapiName == "frankenphp") {
             if (GetEnvBool("FRANKENPHP_WORKER", false)) {
                 AIKIDO_GLOBAL(isWorkerMode) = true;
@@ -218,13 +232,15 @@ bool RequestProcessorInstance::RequestInit() {
                 return true;
             }
         }
-    #else
-        // Initialize the request processor only once(lazy) during RINIT because in NTS mode php-fpm forks the main process for workers and we need to load the library after the worker process is forked.
+
+        // Initialize the request processor only once(lazy) during RINIT because php-fpm forks the main process 
+        // for workers and we need to load the library after the worker process is forked because
+        // the request processor is a go library that brings in the Go runtime, which (once initialized) 
+        // can start threads, install signal handlers, set up GC, etc)
         if(!requestProcessor.Init()){
             AIKIDO_LOG_ERROR("Failed to initialize Aikido Request Processor!\n");
             return false;
         } 
-    #endif
     
     if (this->requestProcessorInstance == nullptr && requestProcessor.createInstanceFn != nullptr) {
         this->threadId = GetThreadID();
@@ -293,15 +309,6 @@ void RequestProcessorInstance::LoadConfigWithTokenFromPHPSetToken(const std::str
 void RequestProcessorInstance::RequestShutdown() {
     SendPostRequestEvent();
     this->requestInitialized = false;
-}
-
-void RequestProcessor::Uninit() {
-    if (!requestProcessor.libHandle) {
-        return;
-    }
-    dlclose(this->libHandle);
-    this->libHandle = nullptr;
-    AIKIDO_LOG_INFO("Aikido Request Processor unloaded!\n");
 }
 
 RequestProcessorInstance::~RequestProcessorInstance() {
