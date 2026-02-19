@@ -208,7 +208,7 @@ unsigned int GetEnvNumber(const std::vector<EnvGetterFn>& envGetters, const std:
     return default_value;
 }
 
-void LoadSystemEnvironmentFromGetters(const std::vector<EnvGetterFn>& envGetters) {
+void LoadEnvironmentFromGetters(const std::vector<EnvGetterFn>& envGetters) {
     auto& logLevelStr = AIKIDO_GLOBAL(log_level_str);
     auto& logLevel = AIKIDO_GLOBAL(log_level);
     if (GetEnvBool("AIKIDO_DEBUG", false)) {
@@ -233,9 +233,9 @@ void LoadSystemEnvironmentFromGetters(const std::vector<EnvGetterFn>& envGetters
 }
 
 void LoadEnvironment() {
-    LoadSystemEnvironmentFromGetters(completeEnvGetters);
+    LoadEnvironmentFromGetters(completeEnvGetters);
 }
 
 void LoadSystemEnvironment() {
-    LoadSystemEnvironmentFromGetters(systemEnvGetters);
+    LoadEnvironmentFromGetters(systemEnvGetters);
 }
