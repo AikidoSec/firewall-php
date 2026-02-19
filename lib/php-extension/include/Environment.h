@@ -6,8 +6,5 @@ void LoadSystemEnvironment();
 
 bool LoadLaravelEnvFile();
 
-bool GetBoolFromString(const std::string& env, bool default_value);
-
+// This should be used only after MINIT
 bool GetEnvBool(const std::string& env_key, bool default_value);
-
-std::string GetEnvString(const std::string& env_key, const std::string default_value);
