@@ -65,8 +65,10 @@ We support Debian >= 11 and Ubuntu >= 20.04.
 You can run on Debian 10, by doing this setup before install: [Debian10 setup](./docs/debian10.md)
 
 #### Deployment setup
-- [Caddy & PHP-FPM](./docs/caddy.md)
+- [Caddy & PHP-FPM](./docs/caddy-php-fpm.md)
 - [Apache mod_php](./docs/apache-mod-php.md)
+- [FrannkenPHP classic](./docs/caddy-frankenphp-classic.md)
+- [FrannkenPHP worker](./docs/caddy-frankenphp-worker.md)
 
 #### Managed platforms
 - [Laravel Forge](./docs/laravel-forge.md)
