@@ -67,8 +67,8 @@ You can run on Debian 10, by doing this setup before install: [Debian10 setup](.
 #### Deployment setup
 - [Caddy & PHP-FPM](./docs/caddy-php-fpm.md)
 - [Apache mod_php](./docs/apache-mod-php.md)
-- [FrannkenPHP classic](./docs/caddy-frankenphp-classic.md)
-- [FrannkenPHP worker](./docs/caddy-frankenphp-worker.md)
+- [FrankenPHP classic](./docs/frankenphp-classic.md)
+- [FrankenPHP worker](./docs/frankenphp-worker.md)
 
 #### Managed platforms
 - [Laravel Forge](./docs/laravel-forge.md)
