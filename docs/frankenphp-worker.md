@@ -11,6 +11,7 @@ example.com {
         env AIKIDO_TOKEN "AIK_RUNTIME_...."
         env AIKIDO_BLOCK "True"
         worker {
+          // your worker parameters
         }
     }
 
