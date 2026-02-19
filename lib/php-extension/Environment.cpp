@@ -215,7 +215,7 @@ unsigned int GetEnvNumber(const std::vector<EnvGetterFn>& envGetters, const std:
 void LoadEnvironmentFromGetters(const std::vector<EnvGetterFn>& envGetters) {
     auto& logLevelStr = AIKIDO_GLOBAL(log_level_str);
     auto& logLevel = AIKIDO_GLOBAL(log_level);
-    if (GetEnvBool("AIKIDO_DEBUG", false)) {
+    if (GetEnvBool(envGetters, "AIKIDO_DEBUG", false)) {
         logLevelStr = "DEBUG";
         logLevel = AIKIDO_LOG_LEVEL_DEBUG;
     } else {
