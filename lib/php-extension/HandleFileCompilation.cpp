@@ -1,6 +1,10 @@
 #include "Includes.h"
 
 zend_op_array* handle_file_compilation(zend_file_handle* file_handle, int type) {
+    if(AIKIDO_GLOBAL(disable) == true) {
+        return original_file_compilation_handler(file_handle, type);
+    }
+
     auto& eventCacheStack = AIKIDO_GLOBAL(eventCacheStack);
     
     // Create a new event context for file compilation

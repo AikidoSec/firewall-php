@@ -114,9 +114,17 @@ void insert_call_to_ast(zend_ast *ast) {
 }
 
 void aikido_ast_process(zend_ast *ast) {
+    auto& original_ast_process = AIKIDO_GLOBAL(originalAstProcess);
+
+    if(AIKIDO_GLOBAL(disable) == true) {
+        if(original_ast_process){
+            original_ast_process(ast);
+        }
+        return;
+    }
+
     insert_call_to_ast(ast);
 
-    auto& original_ast_process = AIKIDO_GLOBAL(originalAstProcess);
     if(original_ast_process){
         original_ast_process(ast);
     }

@@ -152,14 +152,19 @@ std::string GetLaravelEnvVariable(const std::string& env_key) {
 */
 
 using EnvGetterFn = std::string(*)(const std::string&);
-EnvGetterFn envGetters[] = {
+
+const std::vector<EnvGetterFn> completeEnvGetters = {
     &GetSystemEnvVariable,
     &GetFrankenEnvVariable,
     &GetPhpEnvVariable,
     &GetLaravelEnvVariable
 };
 
-std::string GetEnvVariable(const std::string& env_key) {
+const std::vector<EnvGetterFn> systemEnvGetters = {
+    &GetSystemEnvVariable,
+};
+
+std::string GetEnvVariable(const std::vector<EnvGetterFn>& envGetters, const std::string& env_key) {
     for (EnvGetterFn envGetter : envGetters) {
         std::string env_value = envGetter(env_key);
         if (!env_value.empty()) {
@@ -169,8 +174,8 @@ std::string GetEnvVariable(const std::string& env_key) {
     return "";
 }
 
-std::string GetEnvString(const std::string& env_key, const std::string default_value) {
-    std::string env_value = GetEnvVariable(env_key);
+std::string GetEnvString(const std::vector<EnvGetterFn>& envGetters, const std::string& env_key, const std::string default_value) {
+    std::string env_value = GetEnvVariable(envGetters, env_key);
     if (!env_value.empty()) {
         return env_value;
     }
@@ -185,12 +190,12 @@ bool GetBoolFromString(const std::string& env, bool default_value) {
     return default_value;
 }
 
-bool GetEnvBool(const std::string& env_key, bool default_value) {
-    return GetBoolFromString(GetEnvVariable(env_key), default_value);
+bool GetEnvBool(const std::vector<EnvGetterFn>& envGetters, const std::string& env_key, bool default_value) {
+    return GetBoolFromString(GetEnvVariable(envGetters, env_key), default_value);
 }
 
-unsigned int GetEnvNumber(const std::string& env_key, unsigned int default_value) {
-    std::string env_value = GetEnvVariable(env_key.c_str());
+unsigned int GetEnvNumber(const std::vector<EnvGetterFn>& envGetters, const std::string& env_key, unsigned int default_value) {
+    std::string env_value = GetEnvVariable(envGetters, env_key);
     if (!env_value.empty()) {
         try {
             unsigned int number = std::stoi(env_value);
@@ -203,26 +208,34 @@ unsigned int GetEnvNumber(const std::string& env_key, unsigned int default_value
     return default_value;
 }
 
-void LoadEnvironment() {
+void LoadSystemEnvironmentFromGetters(const std::vector<EnvGetterFn>& envGetters) {
     auto& logLevelStr = AIKIDO_GLOBAL(log_level_str);
     auto& logLevel = AIKIDO_GLOBAL(log_level);
     if (GetEnvBool("AIKIDO_DEBUG", false)) {
         logLevelStr = "DEBUG";
         logLevel = AIKIDO_LOG_LEVEL_DEBUG;
     } else {
-        logLevelStr = GetEnvString("AIKIDO_LOG_LEVEL", "WARN");
+        logLevelStr = GetEnvString(envGetters, "AIKIDO_LOG_LEVEL", "WARN");
         logLevel = Log::ToLevel(logLevelStr);
     }
 
-    AIKIDO_GLOBAL(blocking) = GetEnvBool("AIKIDO_BLOCK", false) || GetEnvBool("AIKIDO_BLOCKING", false);;
-    AIKIDO_GLOBAL(disable) = GetEnvBool("AIKIDO_DISABLE", false);
-    AIKIDO_GLOBAL(collect_api_schema) = GetEnvBool("AIKIDO_FEATURE_COLLECT_API_SCHEMA", true);
-    AIKIDO_GLOBAL(localhost_allowed_by_default) = GetEnvBool("AIKIDO_LOCALHOST_ALLOWED_BY_DEFAULT", true);
-    AIKIDO_GLOBAL(trust_proxy) = GetEnvBool("AIKIDO_TRUST_PROXY", true);
-    AIKIDO_GLOBAL(disk_logs) = GetEnvBool("AIKIDO_DISK_LOGS", false);
+    AIKIDO_GLOBAL(blocking) = GetEnvBool(envGetters, "AIKIDO_BLOCK", false) || GetEnvBool("AIKIDO_BLOCKING", false);;
+    AIKIDO_GLOBAL(disable) = GetEnvBool(envGetters, "AIKIDO_DISABLE", false);
+    AIKIDO_GLOBAL(collect_api_schema) = GetEnvBool(envGetters,"AIKIDO_FEATURE_COLLECT_API_SCHEMA", true);
+    AIKIDO_GLOBAL(localhost_allowed_by_default) = GetEnvBool(envGetters, "AIKIDO_LOCALHOST_ALLOWED_BY_DEFAULT", true);
+    AIKIDO_GLOBAL(trust_proxy) = GetEnvBool(envGetters, "AIKIDO_TRUST_PROXY", true);
+    AIKIDO_GLOBAL(disk_logs) = GetEnvBool(envGetters, "AIKIDO_DISK_LOGS", false);
     AIKIDO_GLOBAL(sapi_name) = sapi_module.name;
-    AIKIDO_GLOBAL(token) = GetEnvString("AIKIDO_TOKEN", "");
-    AIKIDO_GLOBAL(endpoint) = GetEnvString("AIKIDO_ENDPOINT", "https://guard.aikido.dev/");
-    AIKIDO_GLOBAL(config_endpoint) = GetEnvString("AIKIDO_REALTIME_ENDPOINT", "https://runtime.aikido.dev/");
-    AIKIDO_GLOBAL(report_stats_interval_to_agent) = GetEnvNumber("AIKIDO_REPORT_STATS_INTERVAL", 100);
+    AIKIDO_GLOBAL(token) = GetEnvString(envGetters, "AIKIDO_TOKEN", "");
+    AIKIDO_GLOBAL(endpoint) = GetEnvString(envGetters, "AIKIDO_ENDPOINT", "https://guard.aikido.dev/");
+    AIKIDO_GLOBAL(config_endpoint) = GetEnvString(envGetters, "AIKIDO_REALTIME_ENDPOINT", "https://runtime.aikido.dev/");
+    AIKIDO_GLOBAL(report_stats_interval_to_agent) = GetEnvNumber(envGetters, "AIKIDO_REPORT_STATS_INTERVAL", 100);
+}
+
+void LoadEnvironment() {
+    LoadSystemEnvironmentFromGetters(completeEnvGetters);
+}
+
+void LoadSystemEnvironment() {
+    LoadSystemEnvironmentFromGetters(systemEnvGetters);
 }

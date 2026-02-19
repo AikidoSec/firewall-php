@@ -4,10 +4,9 @@
 ZEND_DECLARE_MODULE_GLOBALS(aikido)
 
 PHP_MINIT_FUNCTION(aikido) {
-    // For FrankenPHP: Set sapi_name but skip rest of LoadEnvironment during MINIT
-    // Full environment will be loaded in RINIT when Caddyfile env vars are available
     if (sapi_module.name == std::string("frankenphp")) {
-        AIKIDO_GLOBAL(sapi_name) = sapi_module.name;
+        // For FrankenPHP: Load system environment during MINIT
+        LoadSystemEnvironment();
     } else {
         // For other SAPIs: Load environment during MINIT as normal
         LoadEnvironment();

@@ -2,6 +2,8 @@
 
 void LoadEnvironment();
 
+void LoadSystemEnvironment();
+
 bool LoadLaravelEnvFile();
 
 bool GetBoolFromString(const std::string& env, bool default_value);

@@ -18,6 +18,7 @@
 #include <pthread.h>
 
 #include <functional>
+#include <vector>
 #include <random>
 #include <string>
 #include <ctime>
