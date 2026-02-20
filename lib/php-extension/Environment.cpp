@@ -194,8 +194,8 @@ bool GetEnvBool(const std::vector<EnvGetterFn>& envGetters, const std::string& e
     return GetBoolFromString(GetEnvVariable(envGetters, env_key), default_value);
 }
 
-bool GetEnvBool(const std::string& env_key, bool default_value) {
-    return GetEnvBool(completeEnvGetters, env_key, default_value);
+bool GetEnvBoolWithAllGetters(const std::string& env_key, bool default_value) {
+    return GetBoolFromString(GetEnvVariable(completeEnvGetters, env_key), default_value);
 }
 
 unsigned int GetEnvNumber(const std::vector<EnvGetterFn>& envGetters, const std::string& env_key, unsigned int default_value) {
