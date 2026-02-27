@@ -4,7 +4,7 @@ You can get your token from the [Aikido Security Dashboard](https://help.aikido.
 
 ## Via Laravel Sail
 
-1. Install Aikido
+1. Download Aikido installation package
 
 `docker/version/Dockerfile`
 ```dockerfile
@@ -81,9 +81,7 @@ RUN apt-get update && apt-get install -y curl \
     && rm /tmp/aikido-php-firewall.deb \
     && apt-get clean
 
-COPY . /var/www/html
-
-WORKDIR /var/www/html
+COPY . /app
 
 ENTRYPOINT ["php", "artisan", "octane:frankenphp"]
 ```
