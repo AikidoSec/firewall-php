@@ -5,7 +5,7 @@
 ARG PHP_VERSION=8.3
 ARG PHP_SRC_REF=PHP-${PHP_VERSION}
 
-FROM alpine:3.21 AS base
+FROM alpine:3.16 AS base
 SHELL ["/bin/ash", "-eo", "pipefail", "-c"]
 
 ENV TZ=Etc/UTC \

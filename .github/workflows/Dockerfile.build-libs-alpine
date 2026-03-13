@@ -1,6 +1,6 @@
 # Alpine-based image for building Go shared libraries with custom Go fork
 # that supports c-shared buildmode on musl-based systems.
-FROM alpine:3.21
+FROM alpine:3.16
 
 ARG GO_RELEASE_TAG=devel-go1.27-tlsdesc.1
 
