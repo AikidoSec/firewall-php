@@ -549,7 +549,7 @@ jobs:
     name: Build apk x86_64
     runs-on: ubuntu-24.04
     container:
-      image: alpine:3.21
+      image: alpine:3.16
     needs: [ build_libs_alpine, build_php_extension_alpine_nts, build_php_extension_alpine_zts ]
     steps:
       - name: Checkout repository
