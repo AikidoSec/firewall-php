@@ -79,14 +79,10 @@ jobs:
           ${{ github.workspace }}/build/aikido-request-processor.so
 
   build_libs_alpine:
-    name: Build Go libs (Alpine/musl) ${{ matrix.arch == '' && 'x86_64' || 'arm' }}
-    runs-on: ubuntu-24.04${{ matrix.arch }}
+    name: Build Go libs (Alpine/musl) x86_64
+    runs-on: ubuntu-24.04
     container:
       image: ghcr.io/aikidosec/firewall-php-build-libs-alpine:v1
-    strategy:
-      matrix:
-        arch: [ '', '-arm' ]
-      fail-fast: false
 
     steps:
     - name: Checkout repository
@@ -252,13 +248,12 @@ jobs:
           ${{ github.workspace }}/tests/*.diff
 
   build_php_extension_alpine_nts:
-    name: Build php ${{ matrix.php_version }} extension Alpine NTS ${{ matrix.arch == '' && 'x86_64' || 'arm' }}
-    runs-on: ubuntu-24.04${{ matrix.arch }}
+    name: Build php ${{ matrix.php_version }} extension Alpine NTS x86_64
+    runs-on: ubuntu-24.04
     container: ghcr.io/aikidosec/firewall-php-build-extension-alpine-nts:${{ matrix.php_version }}-v1
     strategy:
       matrix:
         php_version: ['7.4', '8.0', '8.1', '8.2', '8.3', '8.4', '8.5']
-        arch: [ '', '-arm' ]
       fail-fast: false
 
     steps:
@@ -305,13 +300,12 @@ jobs:
           ${{ github.workspace }}/tests/*.diff
 
   build_php_extension_alpine_zts:
-    name: Build php ${{ matrix.php_version }} extension Alpine ZTS ${{ matrix.arch == '' && 'x86_64' || 'arm' }}
-    runs-on: ubuntu-24.04${{ matrix.arch }}
+    name: Build php ${{ matrix.php_version }} extension Alpine ZTS x86_64
+    runs-on: ubuntu-24.04
     container: ghcr.io/aikidosec/firewall-php-build-extension-alpine-zts:${{ matrix.php_version }}-v1
     strategy:
       matrix:
         php_version: ['7.4', '8.0', '8.1', '8.2', '8.3', '8.4', '8.5']
-        arch: [ '', '-arm' ]
       fail-fast: false
 
     steps:
@@ -552,14 +546,10 @@ jobs:
             ${{ env.AIKIDO_ARTIFACT }}
 
   build_apk:
-    name: Build apk ${{ matrix.arch == '' && 'x86_64' || 'arm' }}
-    runs-on: ubuntu-24.04${{ matrix.arch }}
+    name: Build apk x86_64
+    runs-on: ubuntu-24.04
     container:
       image: alpine:3.21
-    strategy:
-      matrix:
-        arch: ['', '-arm']
-      fail-fast: false
     needs: [ build_libs_alpine, build_php_extension_alpine_nts, build_php_extension_alpine_zts ]
     steps:
       - name: Checkout repository
@@ -1155,8 +1145,8 @@ jobs:
           python3 run_server_tests.py ../tests/server ../tests/testlib --server=${{ matrix.server }} --max-runs=3
 
   test_php_alpine:
-    name: Alpine NTS php-${{ matrix.php_version }} ${{ matrix.server }} ${{ matrix.arch == '' && 'x86_64' || 'arm' }}
-    runs-on: ubuntu-24.04${{ matrix.arch }}
+    name: Alpine NTS php-${{ matrix.php_version }} ${{ matrix.server }} x86_64
+    runs-on: ubuntu-24.04
     container:
       image: ghcr.io/aikidosec/firewall-php-test-alpine-nts:${{ matrix.php_version }}-v1
       options: --privileged
@@ -1165,7 +1155,6 @@ jobs:
       matrix:
         php_version: ['7.4', '8.0', '8.1', '8.2', '8.3', '8.4', '8.5']
         server: ['nginx-php-fpm', 'php-built-in']
-        arch: ['', '-arm']
       fail-fast: false
 
     steps:
@@ -1243,8 +1232,8 @@ jobs:
           python3 run_server_tests.py ../tests/server ../tests/testlib --server=${{ matrix.server }} --max-runs=3
 
   test_php_alpine_zts:
-    name: Alpine ZTS php-${{ matrix.php_version }} ${{ matrix.server }} ${{ matrix.arch == '' && 'x86_64' || 'arm' }}
-    runs-on: ubuntu-24.04${{ matrix.arch }}
+    name: Alpine ZTS php-${{ matrix.php_version }} ${{ matrix.server }} x86_64
+    runs-on: ubuntu-24.04
     container:
       image: ghcr.io/aikidosec/firewall-php-test-alpine-zts:${{ matrix.php_version }}-v1
       options: --privileged
@@ -1253,7 +1242,6 @@ jobs:
       matrix:
         php_version: ['7.4', '8.0', '8.1', '8.2', '8.3', '8.4', '8.5']
         server: ['nginx-php-fpm', 'php-built-in']
-        arch: ['', '-arm']
       fail-fast: false
 
     steps:
