@@ -123,7 +123,7 @@ jobs:
         go get github.com/stretchr/testify/assert
         go get main/ipc/protos
         go test ./...
-        go build -ldflags "-s -w" -buildmode=c-shared -o ../../build/aikido-request-processor.so
+        go build -buildvcs=false -ldflags "-s -w" -buildmode=c-shared -o ../../build/aikido-request-processor.so
         ls -l ../../build
 
     - name: Archive agent
