@@ -37,11 +37,15 @@ ZEND_FUNCTION(should_block_request) {
         return;
     }
 
-    if (IsAikidoDisabledOrBypassed()) {
+    if (!blockingStatusClass) {
         return;
     }
 
-    if (!blockingStatusClass) {
+    // Initialize the returned object with default values so that block = false
+    // even if the IP is bypassed
+    object_init_ex(return_value, blockingStatusClass);
+
+    if (IsAikidoDisabledOrBypassed()) {
         return;
     }
 
@@ -49,7 +53,6 @@ ZEND_FUNCTION(should_block_request) {
         return;
     }
 
-    object_init_ex(return_value, blockingStatusClass);
 #if PHP_VERSION_ID >= 80000
     zend_object *obj = Z_OBJ_P(return_value);
     if (!obj) {
