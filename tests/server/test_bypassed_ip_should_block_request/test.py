@@ -17,7 +17,8 @@ properties on the return value of should_block_request().
 def run_test():
     response = php_server_get("/somethingVerySpecific", headers={"X-Forwarded-For": "185.245.255.211"})
     assert_response_code_is(response, 200)
-    assert_response_body_contains(response, "Something")
+    assert_response_body_not_contains(response, "Decision is null!")
+    assert_response_body_contains(response, "Something!")
 
 
 if __name__ == "__main__":
