@@ -37,19 +37,18 @@ ZEND_FUNCTION(should_block_request) {
         return;
     }
 
-    if (IsAikidoDisabledOrBypassed()) {
-        return;
-    }
-
     if (!blockingStatusClass) {
         return;
     }
 
-    if (!CheckBlocking(EVENT_GET_BLOCKING_STATUS, AIKIDO_GLOBAL(checkedShouldBlockRequest))) {
+    // Initialize the returned object with default values so that block = false
+    // even if the IP is bypassed
+    object_init_ex(return_value, blockingStatusClass);
+
+    if (IsAikidoDisabledOrBypassed() ||
+        !CheckBlocking(EVENT_GET_BLOCKING_STATUS, AIKIDO_GLOBAL(checkedShouldBlockRequest))) {
         return;
     }
-
-    object_init_ex(return_value, blockingStatusClass);
 #if PHP_VERSION_ID >= 80000
     zend_object *obj = Z_OBJ_P(return_value);
     if (!obj) {
