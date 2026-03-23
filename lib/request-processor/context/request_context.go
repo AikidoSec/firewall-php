@@ -7,6 +7,7 @@ import (
 	"main/globals"
 	"main/instance"
 	"main/log"
+	"main/utils"
 	"unsafe"
 )
 
@@ -29,7 +30,7 @@ type RequestContextData struct {
 	IsEndpointConfigured          *bool
 	IsEndpointRateLimitingEnabled *bool
 	IsEndpointProtectionTurnedOff *bool
-	IsEndpointIpAllowed           *bool
+	IsEndpointIpAllowed           *int
 	IsEndpointRateLimited         bool
 	UserAgent                     *string
 	UserId                        *string
@@ -247,5 +248,10 @@ func IsEndpointRateLimitingEnabled(instance *instance.RequestProcessorInstance) 
 
 func IsEndpointIpAllowed(instance *instance.RequestProcessorInstance) bool {
 	ctx := GetContext(instance)
-	return GetFromCache(instance, ContextSetIsEndpointIpAllowed, &ctx.IsEndpointIpAllowed)
+	return GetFromCache(instance, ContextSetIsEndpointIpAllowed, &ctx.IsEndpointIpAllowed) != utils.NotFound
+}
+
+func IsEndpointIpWhitelisted(instance *instance.RequestProcessorInstance) bool {
+	ctx := GetContext(instance)
+	return GetFromCache(instance, ContextSetIsEndpointIpAllowed, &ctx.IsEndpointIpAllowed) == utils.Found
 }

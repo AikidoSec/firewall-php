@@ -22,7 +22,7 @@ Returns an `AikidoWhitelistRequestStatus` object with the following properties:
 
 The function checks three conditions in order. The first match wins:
 
-1. **`endpoint-allowlist`** — The endpoint has a route-level IP allowlist configured and the request IP is not in it. This indicates that IP-based access control is active for this route.
+1. **`endpoint-allowlist`** — The endpoint has a route-level IP allowlist configured and the request IP is in it. This indicates that IP-based access control is active for this route.
 2. **`bypassed`** — The request IP is in the global firewall bypass list.
 3. **`allowlist`** — The request IP is found in the global allowed IP list.
 

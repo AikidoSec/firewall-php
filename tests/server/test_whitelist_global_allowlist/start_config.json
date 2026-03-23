@@ -10,7 +10,7 @@
             "key": "manual",
             "source": "manual",
             "description": "Manually allowed IPs",
-            "ips": ["185.245.255.211"]
+            "ips": ["185.245.255.211", "185.245.255.214"]
         }
     ],
     "receivedAnyStats": true

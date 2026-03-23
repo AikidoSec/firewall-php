@@ -164,7 +164,7 @@ func OnGetWhitelistedStatus(instance *instance.RequestProcessorInstance) string 
 	log.Debugf(instance, "OnGetWhitelistedStatus called!")
 	ip := context.GetIp(instance)
 
-	if !context.IsEndpointIpAllowed(instance) {
+	if context.IsEndpointIpWhitelisted(instance) {
 		return GetAction("whitelisted", "endpoint-allowlist", "ip", "IP is configured in the route's allowlist", ip, 0)
 	}
 
