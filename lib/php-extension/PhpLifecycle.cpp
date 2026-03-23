@@ -23,6 +23,7 @@ void PhpLifecycle::RequestInit() {
     AIKIDO_GLOBAL(requestProcessorInstance).RequestInit();
     AIKIDO_GLOBAL(checkedAutoBlock) = false;
     AIKIDO_GLOBAL(checkedShouldBlockRequest) = false;
+    AIKIDO_GLOBAL(checkedWhitelistRequest) = false;
     AIKIDO_GLOBAL(isIpBypassed) = false;
     InitIpBypassCheck();
 }
