@@ -5,12 +5,13 @@ ZEND_DECLARE_MODULE_GLOBALS(aikido)
 
 PHP_MINIT_FUNCTION(aikido) {
     LoadSystemEnvironment();
-    
+
     AIKIDO_GLOBAL(logger).Init();
 
     AIKIDO_LOG_INFO("MINIT started!\n");
 
     RegisterAikidoBlockRequestStatusClass();
+    RegisterAikidoWhitelistRequestStatusClass();
 
     if (AIKIDO_GLOBAL(disable) == true) {
         AIKIDO_LOG_INFO("MINIT finished earlier because AIKIDO_DISABLE is set to 1!\n");
@@ -74,7 +75,7 @@ static void aikido_do_request_shutdown() {
         AIKIDO_LOG_DEBUG("RSHUTDOWN finished earlier because AIKIDO_DISABLE is set to 1!\n");
         return;
     }
-    
+
     DestroyAstToClean();
     AIKIDO_GLOBAL(phpLifecycle).RequestShutdown();
 
@@ -100,12 +101,12 @@ PHP_RSHUTDOWN_FUNCTION(aikido) {
 }
 
 // PHP function: \aikido\worker_rinit()
-// Because FrankenPHP doesn't call RINIT for each request in worker mode, 
+// Because FrankenPHP doesn't call RINIT for each request in worker mode,
 // we need to call it manually at the start of each request.
 // Only works with FrankenPHP worker mode
 PHP_FUNCTION(worker_rinit) {
     ZEND_PARSE_PARAMETERS_NONE();
-    
+
     // Only allow this function in FrankenPHP worker mode
     if (std::string(sapi_module.name) != "frankenphp" || !AIKIDO_GLOBAL(isWorkerMode)) {
         zend_throw_exception(
@@ -113,9 +114,9 @@ PHP_FUNCTION(worker_rinit) {
             "aikido\\worker_rinit() can only be called in FrankenPHP worker mode", 0);
         RETURN_FALSE;
     }
-    
+
     aikido_do_request_init();
-    
+
     RETURN_TRUE;
 }
 
@@ -125,7 +126,7 @@ PHP_FUNCTION(worker_rinit) {
 // Only works with FrankenPHP worker mode
 PHP_FUNCTION(worker_rshutdown) {
     ZEND_PARSE_PARAMETERS_NONE();
-    
+
     // Only allow this function in FrankenPHP worker mode
     if (std::string(sapi_module.name) != "frankenphp" || !AIKIDO_GLOBAL(isWorkerMode)) {
         zend_throw_exception(
@@ -133,9 +134,9 @@ PHP_FUNCTION(worker_rshutdown) {
             "aikido\\worker_rshutdown() can only be called in FrankenPHP worker mode", 0);
         RETURN_FALSE;
     }
-    
+
     aikido_do_request_shutdown();
-    
+
     RETURN_TRUE;
 }
 
@@ -149,6 +150,7 @@ static const zend_function_entry ext_functions[] = {
     ZEND_NS_FE("aikido", set_user, arginfo_aikido_set_user)
     ZEND_NS_FE("aikido", should_block_request, arginfo_aikido_should_block_request)
     ZEND_NS_FE("aikido", auto_block_request, arginfo_aikido_auto_block_request)
+    ZEND_NS_FE("aikido", should_whitelist_request, arginfo_aikido_should_whitelist_request)
     ZEND_NS_FE("aikido", set_token, arginfo_aikido_set_token)
     ZEND_NS_FE("aikido", set_rate_limit_group, arginfo_aikido_set_rate_limit_group)
     ZEND_NS_FE("aikido", register_param_matcher, arginfo_aikido_register_param_matcher)
@@ -172,6 +174,7 @@ PHP_GINIT_FUNCTION(aikido) {
     aikido_globals->laravelEnvLoaded = false;
     aikido_globals->checkedAutoBlock = false;
     aikido_globals->checkedShouldBlockRequest = false;
+    aikido_globals->checkedWhitelistRequest = false;
     aikido_globals->isIpBypassed = false;
     aikido_globals->isWorkerMode = false;
     aikido_globals->globalAstToClean = nullptr;

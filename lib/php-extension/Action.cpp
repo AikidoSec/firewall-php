@@ -41,6 +41,17 @@ ACTION_STATUS Action::executeStore(json &event) {
     return CONTINUE;
 }
 
+ACTION_STATUS Action::executeWhitelist(json &event) {
+    whitelisted = true;
+    type = event["type"];
+    trigger = event["trigger"];
+    description = event["description"];
+    if (trigger == "ip") {
+        ip = event["ip"];
+    }
+    return CONTINUE;
+}
+
 ACTION_STATUS Action::executeBypassIp(json &event) {
     AIKIDO_GLOBAL(isIpBypassed) = true;
     return CONTINUE;
@@ -73,6 +84,8 @@ ACTION_STATUS Action::Execute(std::string &event) {
         return executeWarningMessage(eventJson);
     } else if (actionType == "bypassIp") {
         return executeBypassIp(eventJson);
+    } else if (actionType == "whitelisted") {
+        return executeWhitelist(eventJson);
     }
     return CONTINUE;
 }
@@ -83,6 +96,7 @@ bool Action::IsDetection(std::string &event) {
 
 void Action::Reset() {
     block = false;
+    whitelisted = false;
     type = "";
     trigger = "";
     description = "";
@@ -96,6 +110,10 @@ bool Action::Exit() {
 
 bool Action::Block() {
     return block;
+}
+
+bool Action::Whitelisted() {
+    return whitelisted;
 }
 
 char *Action::Type() {

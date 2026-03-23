@@ -5,5 +5,9 @@
 // This should be called during request initialization.
 void InitIpBypassCheck();
 
+bool IsAikidoDisabled();
+
+bool IsIpBypassed();
+
 // Check if Aikido is disabled or the current IP is bypassed.
 bool IsAikidoDisabledOrBypassed();

@@ -299,9 +299,7 @@ func ContextSetIsEndpointIpAllowed(instance *instance.RequestProcessorInstance) 
 		}
 	}
 
-	isEndpointIpAllowedBool := isEndpointIpAllowed != utils.NotFound
-
-	c.IsEndpointIpAllowed = &isEndpointIpAllowedBool
+	c.IsEndpointIpAllowed = &isEndpointIpAllowed
 }
 
 func ContextSetIsEndpointRateLimited(instance *instance.RequestProcessorInstance) {

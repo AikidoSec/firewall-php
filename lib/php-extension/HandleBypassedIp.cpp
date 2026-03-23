@@ -15,8 +15,15 @@ void InitIpBypassCheck() {
     }
 }
 
+bool IsAikidoDisabled() {
+    return AIKIDO_GLOBAL(disable) == true;
+}
+
+bool IsIpBypassed() {
+    return AIKIDO_GLOBAL(isIpBypassed);
+}
 
 bool IsAikidoDisabledOrBypassed() {
-    return AIKIDO_GLOBAL(disable) == true || AIKIDO_GLOBAL(isIpBypassed);
+    return IsAikidoDisabled() || IsIpBypassed();
 }
 

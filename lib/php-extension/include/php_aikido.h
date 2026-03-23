@@ -39,8 +39,18 @@ unsigned int report_stats_interval_to_agent; // Report once every X requests the
 std::chrono::high_resolution_clock::time_point currentRequestStart;
 uint64_t totalOverheadForCurrentRequest;
 bool laravelEnvLoaded;
+// The checkedAutoBlock module global variable is used to check if auto_block_request function
+// has already been called, in order to avoid multiple calls to this function.
+// Accessed via AIKIDO_GLOBAL(checkedAutoBlock).
 bool checkedAutoBlock;
+// The checkedShouldBlockRequest module global variable is used to check if should_block_request
+// function has already been called, in order to avoid multiple calls to this function.
+// Accessed via AIKIDO_GLOBAL(checkedShouldBlockRequest).
 bool checkedShouldBlockRequest;
+// The checkedWhitelistRequest module global variable is used to check if should_whitelist_request
+// function has already been called, in order to avoid multiple calls to this function.
+// Accessed via AIKIDO_GLOBAL(checkedWhitelistRequest).
+bool checkedWhitelistRequest;
 // This variable is used to check if the request is bypassed,
 // if true, all blocking checks will be skipped.
 bool isIpBypassed;
