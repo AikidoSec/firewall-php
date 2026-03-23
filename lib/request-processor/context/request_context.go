@@ -7,7 +7,6 @@ import (
 	"main/globals"
 	"main/instance"
 	"main/log"
-	"main/utils"
 	"unsafe"
 )
 
@@ -246,12 +245,7 @@ func IsEndpointRateLimitingEnabled(instance *instance.RequestProcessorInstance) 
 	return GetFromCache(instance, ContextSetIsEndpointRateLimitingEnabled, &ctx.IsEndpointRateLimitingEnabled)
 }
 
-func IsEndpointIpAllowed(instance *instance.RequestProcessorInstance) bool {
+func GetEndpointIpAllowed(instance *instance.RequestProcessorInstance) int {
 	ctx := GetContext(instance)
-	return GetFromCache(instance, ContextSetIsEndpointIpAllowed, &ctx.IsEndpointIpAllowed) != utils.NotFound
-}
-
-func IsEndpointIpWhitelisted(instance *instance.RequestProcessorInstance) bool {
-	ctx := GetContext(instance)
-	return GetFromCache(instance, ContextSetIsEndpointIpAllowed, &ctx.IsEndpointIpAllowed) == utils.Found
+	return GetFromCache(instance, ContextSetIsEndpointIpAllowed, &ctx.IsEndpointIpAllowed)
 }
