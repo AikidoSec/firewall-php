@@ -24,7 +24,7 @@ The function checks three conditions in order. The first match wins:
 
 1. **`endpoint-allowlist`** — The endpoint has a route-level IP allowlist configured and the request IP is in it. This indicates that IP-based access control is active for this route.
 2. **`bypassed`** — The request IP is in the global firewall bypass list.
-3. **`allowlist`** — The request IP is found in the global allowed IP list.
+3. **`allowlist`** — The request IP is found in the global allowed IP list (e.g., geo-location allow lists).
 
 If none of the above conditions match, `whitelisted` is `false` and all other fields are empty strings.
 
