@@ -48,6 +48,8 @@ const char* GetEventName(EVENT_ID event) {
             return "GetAutoBlockingStatus";
         case EVENT_GET_BLOCKING_STATUS:
             return "GetBlockingStatus";
+        case EVENT_GET_WHITELISTED_STATUS:
+            return "GetWhitelistedStatus";
         case EVENT_GET_IS_IP_BYPASSED:
             return "GetIsIpBypassed";
         case EVENT_PRE_OUTGOING_REQUEST:

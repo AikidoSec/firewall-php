@@ -1,0 +1,17 @@
+{
+    "success": true,
+    "serviceId": 1,
+    "heartbeatIntervalInMS": 600000,
+    "endpoints": [],
+    "blockedUserIds": [],
+    "allowedIPAddresses": [],
+    "lists_allowedIPAddresses": [
+        {
+            "key": "manual",
+            "source": "manual",
+            "description": "Manually allowed IPs",
+            "ips": ["185.245.255.211"]
+        }
+    ],
+    "receivedAnyStats": true
+}

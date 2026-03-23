@@ -358,17 +358,17 @@ func IsIpInList(instance *instance.RequestProcessorInstance, ipList map[string]I
 	return Found, matches
 }
 
-func IsIpAllowed(instance *instance.RequestProcessorInstance, server *ServerData, ip string) bool {
+func IsIpAllowed(instance *instance.RequestProcessorInstance, server *ServerData, ip string) (bool, []IpListMatch) {
 	server.CloudConfigMutex.Lock()
 	defer server.CloudConfigMutex.Unlock()
 
 	if helpers.IsPrivateIP(ip) {
-		return true
+		return true, []IpListMatch{}
 	}
 
-	result, _ := IsIpInList(instance, server.CloudConfig.AllowedIps, ip)
+	result, matches := IsIpInList(instance, server.CloudConfig.AllowedIps, ip)
 	// IP is allowed if it's found in the allowed lists or if the allowed lists are not configured
-	return result == Found || result == NoConfig
+	return result == Found || result == NoConfig, matches
 }
 
 func IsIpBlocked(instance *instance.RequestProcessorInstance, server *ServerData, ip string) (bool, []IpListMatch) {

@@ -12,6 +12,7 @@ enum ACTION_STATUS {
 class Action {
     private:
         bool block = false;
+        bool whitelisted = false;
         std::string type;
         std::string trigger;
         std::string description;
@@ -29,6 +30,8 @@ class Action {
 
         ACTION_STATUS executeBypassIp(json &event);
 
+        ACTION_STATUS executeWhitelist(json &event);
+
     public:
         Action() = default;
         ~Action() = default;
@@ -40,6 +43,7 @@ class Action {
 
         bool Exit();
         bool Block();
+        bool Whitelisted();
         char* Type();
         char* Trigger();
         char* Description();

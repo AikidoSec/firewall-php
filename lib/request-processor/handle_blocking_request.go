@@ -101,7 +101,7 @@ func OnGetAutoBlockingStatus(instance *instance.RequestProcessorInstance) string
 		return ""
 	}
 
-	if !utils.IsIpAllowed(instance, server, ip) {
+	if ipAllowed, _ := utils.IsIpAllowed(instance, server, ip); !ipAllowed {
 		log.Infof(instance, "IP \"%s\" is not found in allow lists!", ip)
 		return GetAction("exit", "blocked", "ip", "not in allow lists", ip, 403)
 	}
@@ -152,5 +152,29 @@ func OnGetIsIpBypassed(instance *instance.RequestProcessorInstance) string {
 	if context.IsIpBypassed(instance) {
 		return GetBypassAction()
 	}
+	return ""
+}
+
+func OnGetWhitelistedStatus(instance *instance.RequestProcessorInstance) string {
+	server := instance.GetCurrentServer()
+	if server == nil {
+		return ""
+	}
+
+	log.Debugf(instance, "OnGetWhitelistedStatus called!")
+	ip := context.GetIp(instance)
+
+	if !context.IsEndpointIpAllowed(instance) {
+		return GetAction("whitelisted", "endpoint-allowlist", "ip", "IP is configured in the route's allowlist", ip, 0)
+	}
+
+	if context.IsIpBypassed(instance) {
+		return GetAction("whitelisted", "bypassed", "ip", "IP is configured in the firewall bypass list", ip, 0)
+	}
+
+	if ipAllowed, ipAllowedMatches := utils.IsIpAllowed(instance, server, ip); ipAllowed && len(ipAllowedMatches) > 0 {
+		return GetAction("whitelisted", "allowlist", "ip", "IP is part of allowlist: "+ipAllowedMatches[0].Description, ip, 0)
+	}
+
 	return ""
 }
