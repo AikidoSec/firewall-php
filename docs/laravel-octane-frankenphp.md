@@ -8,7 +8,7 @@ You can get your token from the [Aikido Security Dashboard](https://help.aikido.
 
 `docker/version/Dockerfile`
 ```dockerfile
-ARG AIKIDO_VERSION=1.5.3
+ARG AIKIDO_VERSION=1.5.4
 
 RUN curl -L -o /tmp/aikido-php-firewall.deb \
     "https://github.com/AikidoSec/firewall-php/releases/download/v${AIKIDO_VERSION}/aikido-php-firewall.$(uname -m).deb" \
@@ -72,7 +72,7 @@ dpkg -i -E ./aikido-php-firewall.$(uname -m).deb
 ```dockerfile
 FROM dunglas/frankenphp:php${PHP_VERSION}-bookworm
 
-ARG AIKIDO_VERSION=1.5.3
+ARG AIKIDO_VERSION=1.5.4
 
 RUN apt-get update && apt-get install -y curl \
     && curl -L -o /tmp/aikido-php-firewall.deb \
