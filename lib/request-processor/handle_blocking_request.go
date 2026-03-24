@@ -91,7 +91,9 @@ func OnGetAutoBlockingStatus(instance *instance.RequestProcessorInstance) string
 	ip := context.GetIp(instance)
 	userAgent := context.GetUserAgent(instance)
 
-	if !context.IsEndpointIpAllowed(instance) {
+	// If there is a config for the endpoint and the IP is not in the list of allowed IPs, block the request
+	endpointIpAllowedStatus := context.GetEndpointIpAllowed(instance)
+	if endpointIpAllowedStatus != utils.NoConfig && endpointIpAllowedStatus == utils.NotFound {
 		log.Infof(instance, "IP \"%s\" is not allowed to access this endpoint!", ip)
 		return GetAction("exit", "blocked", "ip", "not allowed by config to access this endpoint", ip, 403)
 	}
@@ -164,7 +166,8 @@ func OnGetWhitelistedStatus(instance *instance.RequestProcessorInstance) string 
 	log.Debugf(instance, "OnGetWhitelistedStatus called!")
 	ip := context.GetIp(instance)
 
-	if context.IsEndpointIpWhitelisted(instance) {
+	// If the IP is in the list of allowed IPs, whitelist the request
+	if context.GetEndpointIpAllowed(instance) == utils.Found {
 		return GetAction("whitelisted", "endpoint-allowlist", "ip", "IP is configured in the route's allowlist", ip, 0)
 	}
 
