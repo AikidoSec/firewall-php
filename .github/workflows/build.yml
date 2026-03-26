@@ -78,6 +78,68 @@ jobs:
         path: |
           ${{ github.workspace }}/build/aikido-request-processor.so
 
+  build_libs_alpine:
+    name: Build Go libs (Alpine/musl) x86_64
+    runs-on: ubuntu-24.04
+    container:
+      image: ghcr.io/aikidosec/firewall-php-build-libs-alpine:v1
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+    - name: Get Arch
+      run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
+
+    - name: Get Aikido version
+      run: |
+        AIKIDO_VERSION=$(grep '#define PHP_AIKIDO_VERSION' lib/php-extension/include/php_aikido.h | awk -F'"' '{print $2}')
+        echo $AIKIDO_VERSION
+        echo "AIKIDO_VERSION=$AIKIDO_VERSION" >> $GITHUB_ENV
+
+    - name: Build Aikido Agent
+      run: |
+        cd lib
+        protoc --go_out=agent --go-grpc_out=agent ipc.proto
+        cd agent
+        go get main/ipc/protos
+        go get google.golang.org/grpc
+        go get github.com/stretchr/testify/assert
+        go test ./...
+        go build -buildvcs=false -ldflags "-s -w" -o ../../build/aikido-agent
+        ls -l ../../build
+
+    - name: Build Aikido Request Processor
+      run: |
+        cd lib
+        protoc --go_out=request-processor --go-grpc_out=request-processor ipc.proto
+        cd request-processor
+        go mod tidy
+        go get google.golang.org/grpc
+        go get github.com/stretchr/testify/assert
+        go get main/ipc/protos
+        go test ./...
+        go build -buildvcs=false -ldflags "-s -w" -buildmode=c-shared -o ../../build/aikido-request-processor.so
+        ls -l ../../build
+
+    - name: Archive agent
+      uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4
+      if: always()
+      with:
+        name: aikido-agent-alpine-${{ env.ARCH }}
+        if-no-files-found: error
+        path: |
+          ${{ github.workspace }}/build/aikido-agent
+
+    - name: Archive request processor
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: aikido-request-processor-alpine-${{ env.ARCH }}
+        if-no-files-found: error
+        path: |
+          ${{ github.workspace }}/build/aikido-request-processor.so
+
   build_php_extension_nts:
     name: Build php ${{ matrix.php_version }} extension NTS ${{ matrix.arch == '' && 'x86_64' || 'arm' }}
     runs-on: ubuntu-24.04${{ matrix.arch }}
@@ -155,6 +217,110 @@ jobs:
         echo $AIKIDO_VERSION
         echo "AIKIDO_VERSION=$AIKIDO_VERSION" >> $GITHUB_ENV
         echo "AIKIDO_ARTIFACT=aikido-extension-php-${{ matrix.php_version }}" >> $GITHUB_ENV
+
+    - name: Check PHP setup
+      run: |
+        php -v | grep -q "ZTS" || (echo "ERROR: PHP is not ZTS!" && php -v && exit 1)
+
+    - name: Build extension
+      run: |
+        rm -rf build
+        mkdir build
+        cd lib/php-extension
+        phpize
+        cd ../../build
+        CXX=g++ CXXFLAGS="-fPIC -g -O2 -I../lib/php-extension/include" LDFLAGS="-lstdc++" ../lib/php-extension/configure
+        make -j"$(nproc)"
+
+    - name: Version Aikido extension
+      run: |
+        cd ./build/modules
+        mv aikido.so ${{ env.AIKIDO_ARTIFACT }}-zts.so
+
+    - name: Archive build artifacts
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: ${{ env.AIKIDO_ARTIFACT }}-zts-${{ env.ARCH }}
+        if-no-files-found: error
+        path: |
+          ${{ github.workspace }}/build/modules/${{ env.AIKIDO_ARTIFACT }}-zts.so
+          ${{ github.workspace }}/tests/*.diff
+
+  build_php_extension_alpine_nts:
+    name: Build php ${{ matrix.php_version }} extension Alpine NTS x86_64
+    runs-on: ubuntu-24.04
+    container: ghcr.io/aikidosec/firewall-php-build-extension-alpine-nts:${{ matrix.php_version }}-v1
+    strategy:
+      matrix:
+        php_version: ['7.4', '8.0', '8.1', '8.2', '8.3', '8.4', '8.5']
+      fail-fast: false
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Get Arch
+      run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
+
+    - name: Get Aikido version
+      run: |
+        AIKIDO_VERSION=$(grep '#define PHP_AIKIDO_VERSION' lib/php-extension/include/php_aikido.h | awk -F'"' '{print $2}')
+        echo $AIKIDO_VERSION
+        echo "AIKIDO_VERSION=$AIKIDO_VERSION" >> $GITHUB_ENV
+        echo "AIKIDO_ARTIFACT=aikido-extension-alpine-php-${{ matrix.php_version }}" >> $GITHUB_ENV
+
+    - name: Check PHP setup
+      run: |
+        php -v | grep -v "ZTS" > /dev/null || (echo "ERROR: PHP is ZTS, expected NTS!" && php -v && exit 1)
+
+    - name: Build extension
+      run: |
+        rm -rf build
+        mkdir build
+        cd lib/php-extension
+        phpize
+        cd ../../build
+        CXX=g++ CXXFLAGS="-fPIC -g -O2 -I../lib/php-extension/include" LDFLAGS="-lstdc++" ../lib/php-extension/configure
+        make -j"$(nproc)"
+
+    - name: Version Aikido extension
+      run: |
+        cd ./build/modules
+        mv aikido.so ${{ env.AIKIDO_ARTIFACT }}-nts.so
+
+    - name: Archive build artifacts
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: ${{ env.AIKIDO_ARTIFACT }}-nts-${{ env.ARCH }}
+        if-no-files-found: error
+        path: |
+          ${{ github.workspace }}/build/modules/${{ env.AIKIDO_ARTIFACT }}-nts.so
+          ${{ github.workspace }}/tests/*.diff
+
+  build_php_extension_alpine_zts:
+    name: Build php ${{ matrix.php_version }} extension Alpine ZTS x86_64
+    runs-on: ubuntu-24.04
+    container: ghcr.io/aikidosec/firewall-php-build-extension-alpine-zts:${{ matrix.php_version }}-v1
+    strategy:
+      matrix:
+        php_version: ['7.4', '8.0', '8.1', '8.2', '8.3', '8.4', '8.5']
+      fail-fast: false
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Get Arch
+      run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
+
+    - name: Get Aikido version
+      run: |
+        AIKIDO_VERSION=$(grep '#define PHP_AIKIDO_VERSION' lib/php-extension/include/php_aikido.h | awk -F'"' '{print $2}')
+        echo $AIKIDO_VERSION
+        echo "AIKIDO_VERSION=$AIKIDO_VERSION" >> $GITHUB_ENV
+        echo "AIKIDO_ARTIFACT=aikido-extension-alpine-php-${{ matrix.php_version }}" >> $GITHUB_ENV
 
     - name: Check PHP setup
       run: |
@@ -378,6 +544,150 @@ jobs:
           if-no-files-found: error
           path: |
             ${{ env.AIKIDO_ARTIFACT }}
+
+  build_apk:
+    name: Build apk x86_64
+    runs-on: ubuntu-24.04
+    container:
+      image: alpine:3.16
+    needs: [ build_libs_alpine, build_php_extension_alpine_nts, build_php_extension_alpine_zts ]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install tools
+        run: |
+          apk add --no-cache bash curl jq coreutils
+
+      - name: Get Arch
+        run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
+
+      - name: Get Aikido version
+        run: |
+          AIKIDO_VERSION=$(grep '#define PHP_AIKIDO_VERSION' lib/php-extension/include/php_aikido.h | awk -F'"' '{print $2}')
+          echo $AIKIDO_VERSION
+          echo "AIKIDO_VERSION=$AIKIDO_VERSION" >> $GITHUB_ENV
+          echo "AIKIDO_LIBZEN=libzen_internals_${{ env.ARCH }}-unknown-linux-musl.so" >> $GITHUB_ENV
+          echo "AIKIDO_LIBZEN_VERSION=0.1.60" >> $GITHUB_ENV
+
+      - name: Download Alpine NTS extensions
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4
+        with:
+          pattern: |
+            aikido-extension-alpine-php-*-nts-${{ env.ARCH }}
+
+      - name: Download Alpine ZTS extensions
+        uses: actions/download-artifact@v4
+        with:
+          pattern: |
+            aikido-extension-alpine-php-*-zts-${{ env.ARCH }}
+
+      - name: Download Alpine agent
+        uses: actions/download-artifact@v4
+        with:
+          pattern: |
+            aikido-agent-alpine-${{ env.ARCH }}
+
+      - name: Download Alpine request processor
+        uses: actions/download-artifact@v4
+        with:
+          pattern: |
+            aikido-request-processor-alpine-${{ env.ARCH }}
+
+      - name: Download Aikido Zen Internals Lib (musl)
+        run: |
+          curl -L -O https://github.com/AikidoSec/zen-internals/releases/download/v${{ env.AIKIDO_LIBZEN_VERSION }}/${{ env.AIKIDO_LIBZEN }}
+
+      - name: Verify Aikido Zen Internals Lib SHA256
+        run: |
+          EXPECTED_SHA256=$(curl -s https://api.github.com/repos/AikidoSec/zen-internals/releases/tags/v${{ env.AIKIDO_LIBZEN_VERSION }} | jq -r '.assets[] | select(.name == "${{ env.AIKIDO_LIBZEN }}") | .digest' | sed 's/sha256://')
+          ACTUAL_SHA256=$(sha256sum ${{ env.AIKIDO_LIBZEN }} | awk '{print $1}')
+          echo "Expected SHA256: $EXPECTED_SHA256"
+          echo "Actual SHA256:   $ACTUAL_SHA256"
+          if [ "$EXPECTED_SHA256" != "$ACTUAL_SHA256" ]; then
+            echo "SHA256 mismatch! Downloaded file may be corrupted or tampered with."
+            exit 1
+          fi
+          echo "SHA256 verification passed!"
+
+      - name: Prepare APK package
+        run: |
+          mkdir -p pkg-root/opt/aikido-${{ env.AIKIDO_VERSION }}
+          mv aikido-agent-alpine-${{ env.ARCH }}/aikido-agent pkg-root/opt/aikido-${{ env.AIKIDO_VERSION }}/aikido-agent
+          mv aikido-request-processor-alpine-${{ env.ARCH }}/aikido-request-processor.so pkg-root/opt/aikido-${{ env.AIKIDO_VERSION }}/aikido-request-processor.so
+          mv ${{ env.AIKIDO_LIBZEN }} pkg-root/opt/aikido-${{ env.AIKIDO_VERSION }}/${{ env.AIKIDO_LIBZEN }}
+          # Copy NTS extensions
+          for dir in aikido-extension-alpine-php-*-nts-*/; do
+            if [ -d "$dir" ]; then
+              find "$dir" -name "aikido-extension-alpine-php-*-nts.so" -exec sh -c 'f="{}"; base=$(basename "$f"); newname=$(echo "$base" | sed "s/aikido-extension-alpine-/aikido-extension-/"); mv "$f" "pkg-root/opt/aikido-${{ env.AIKIDO_VERSION }}/$newname"' \;
+            fi
+          done
+          # Copy ZTS extensions
+          for dir in aikido-extension-alpine-php-*-zts-*/; do
+            if [ -d "$dir" ]; then
+              find "$dir" -name "aikido-extension-alpine-php-*-zts.so" -exec sh -c 'f="{}"; base=$(basename "$f"); newname=$(echo "$base" | sed "s/aikido-extension-alpine-/aikido-extension-/"); mv "$f" "pkg-root/opt/aikido-${{ env.AIKIDO_VERSION }}/$newname"' \;
+            fi
+          done
+          cp package/rpm/opt/aikido/aikido.ini pkg-root/opt/aikido-${{ env.AIKIDO_VERSION }}/aikido.ini
+          sed -i "s/aikido.so/aikido-${{ env.AIKIDO_VERSION }}.so/" pkg-root/opt/aikido-${{ env.AIKIDO_VERSION }}/aikido.ini
+          chmod 755 pkg-root/opt/aikido-${{ env.AIKIDO_VERSION }}/*
+          echo "Package contents:"
+          ls -la pkg-root/opt/aikido-${{ env.AIKIDO_VERSION }}/
+
+      - name: Build APK package
+        run: |
+          INSTALLED_SIZE=$(du -sk pkg-root | awk '{print $1 * 1024}')
+          BUILD_DATE=$(date +%s)
+
+          # Create data tarball
+          cd pkg-root
+          tar czf ../data.tar.gz .
+          cd ..
+
+          DATAHASH=$(sha256sum data.tar.gz | awk '{print $1}')
+
+          # Create .PKGINFO
+          cat > .PKGINFO <<EOF
+          pkgname = aikido-php-firewall
+          pkgver = ${{ env.AIKIDO_VERSION }}-r1
+          pkgdesc = Aikido PHP Extension and Agent
+          url = https://aikido.dev
+          builddate = ${BUILD_DATE}
+          size = ${INSTALLED_SIZE}
+          arch = ${{ env.ARCH }}
+          license = GPL
+          datahash = ${DATAHASH}
+          EOF
+          sed -i 's/^ *//' .PKGINFO
+
+          # Create post-install script
+          cp package/apk/post-install.sh .post-install
+          sed -i "s/__VERSION__/${{ env.AIKIDO_VERSION }}/g" .post-install
+          chmod +x .post-install
+
+          # Create pre-deinstall script
+          cp package/apk/pre-deinstall.sh .pre-deinstall
+          sed -i "s/__VERSION__/${{ env.AIKIDO_VERSION }}/g" .pre-deinstall
+          chmod +x .pre-deinstall
+
+          # Create control tarball
+          tar czf control.tar.gz .PKGINFO .post-install .pre-deinstall
+
+          # Concatenate control + data to form APK
+          cat control.tar.gz data.tar.gz > aikido-php-firewall.${{ env.ARCH }}.apk
+
+          echo "APK package built:"
+          ls -la aikido-php-firewall.${{ env.ARCH }}.apk
+
+          echo "AIKIDO_ARTIFACT=aikido-php-firewall.${{ env.ARCH }}.apk" >> $GITHUB_ENV
+
+      - name: Archive APK package
+        uses: actions/upload-artifact@v4
+        with:
+          name: aikido-php-firewall.${{ env.ARCH }}.apk
+          if-no-files-found: error
+          path: |
+            aikido-php-firewall.${{ env.ARCH }}.apk
 
   test_php_centos:
     name: CentOS NTS php-${{ matrix.php_version }} ${{ matrix.server }} ${{ matrix.arch == '' && 'x86_64' || 'arm' }}
@@ -828,6 +1138,185 @@ jobs:
       - name: Install DEB
         run: |
           dpkg -i -E ${{ env.AIKIDO_DEB }}/${{ env.AIKIDO_DEB }}
+
+      - name: Run ${{ matrix.server }} server tests
+        run: |
+          cd tools
+          python3 run_server_tests.py ../tests/server ../tests/testlib --server=${{ matrix.server }} --max-runs=3
+
+  test_php_alpine:
+    name: Alpine NTS php-${{ matrix.php_version }} ${{ matrix.server }} x86_64
+    runs-on: ubuntu-24.04
+    container:
+      image: ghcr.io/aikidosec/firewall-php-test-alpine-nts:${{ matrix.php_version }}-v1
+      options: --privileged
+    needs: [ build_apk ]
+    strategy:
+      matrix:
+        php_version: ['7.4', '8.0', '8.1', '8.2', '8.3', '8.4', '8.5']
+        server: ['nginx-php-fpm', 'php-built-in']
+      fail-fast: false
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup
+        run: |
+          uname -a
+          cat /etc/alpine-release
+          php -v
+          nginx -v || true
+          which php-fpm && php-fpm -v || true
+
+      - name: Install and start MariaDB
+        run: |
+          mkdir -p /var/lib/mysql /run/mysqld
+          chown -R mysql:mysql /var/lib/mysql /run/mysqld
+          mysql_install_db --user=mysql --datadir=/var/lib/mysql
+          mysqld --user=mysql --datadir=/var/lib/mysql --socket=/var/lib/mysql/mysql.sock &
+          sleep 10
+          mysql --socket=/var/lib/mysql/mysql.sock -u root -e "CREATE DATABASE IF NOT EXISTS db;"
+          mysql --socket=/var/lib/mysql/mysql.sock -u root -e "ALTER USER 'root'@'localhost' IDENTIFIED BY 'pwd'; FLUSH PRIVILEGES;"
+
+      - name: Test MySQL connection with mysqli
+        run: |
+          php -r '
+            $mysqli = new mysqli("localhost", "root", "pwd", "db");
+            if ($mysqli->connect_error) {
+              echo "MySQL connection failed: " . $mysqli->connect_error . "\n";
+              exit(1);
+            } else {
+              echo "MySQL connection successful\n";
+              $mysqli->close();
+            }
+          '
+
+      - name: Get Arch
+        run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
+
+      - name: Check PHP setup
+        run: |
+          uname -m
+          php -v
+          php -i
+
+      - name: Get Aikido version
+        run: |
+          AIKIDO_VERSION=$(grep '#define PHP_AIKIDO_VERSION' lib/php-extension/include/php_aikido.h | awk -F'"' '{print $2}')
+          echo $AIKIDO_VERSION
+          echo "AIKIDO_VERSION=$AIKIDO_VERSION" >> $GITHUB_ENV
+          echo "AIKIDO_APK=aikido-php-firewall.${{ env.ARCH }}.apk" >> $GITHUB_ENV
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: |
+            ${{ env.AIKIDO_APK }}
+
+      - name: Install APK
+        run: |
+          apk add --allow-untrusted ${{ env.AIKIDO_APK }}/${{ env.AIKIDO_APK }}
+
+      - name: Run CLI tests
+        run: |
+          export TEST_PHP_EXECUTABLE=/usr/local/bin/php
+          cd lib/php-extension/
+          phpize
+          cd ../../
+          php lib/php-extension/run-tests.php ./tests/cli
+
+      - name: Run ${{ matrix.server }} server tests
+        run: |
+          cd tools
+          python3 run_server_tests.py ../tests/server ../tests/testlib --server=${{ matrix.server }} --max-runs=3
+
+  test_php_alpine_zts:
+    name: Alpine ZTS php-${{ matrix.php_version }} ${{ matrix.server }} x86_64
+    runs-on: ubuntu-24.04
+    container:
+      image: ghcr.io/aikidosec/firewall-php-test-alpine-zts:${{ matrix.php_version }}-v1
+      options: --privileged
+    needs: [ build_apk ]
+    strategy:
+      matrix:
+        php_version: ['7.4', '8.0', '8.1', '8.2', '8.3', '8.4', '8.5']
+        server: ['nginx-php-fpm', 'php-built-in']
+      fail-fast: false
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup
+        run: |
+          uname -a
+          cat /etc/alpine-release
+          php -v
+          nginx -v || true
+          which php-fpm && php-fpm -v || true
+
+      - name: Verify ZTS is enabled
+        run: |
+          php -v | grep -q "ZTS" || (echo "ERROR: ZTS not enabled!" && exit 1)
+          php -v
+
+      - name: Install and start MariaDB
+        run: |
+          mkdir -p /var/lib/mysql /run/mysqld
+          chown -R mysql:mysql /var/lib/mysql /run/mysqld
+          mysql_install_db --user=mysql --datadir=/var/lib/mysql
+          mysqld --user=mysql --datadir=/var/lib/mysql --socket=/var/lib/mysql/mysql.sock &
+          sleep 10
+          mysql --socket=/var/lib/mysql/mysql.sock -u root -e "CREATE DATABASE IF NOT EXISTS db;"
+          mysql --socket=/var/lib/mysql/mysql.sock -u root -e "ALTER USER 'root'@'localhost' IDENTIFIED BY 'pwd'; FLUSH PRIVILEGES;"
+
+      - name: Test MySQL connection with mysqli
+        run: |
+          php -r '
+            $mysqli = new mysqli("localhost", "root", "pwd", "db");
+            if ($mysqli->connect_error) {
+              echo "MySQL connection failed: " . $mysqli->connect_error . "\n";
+              exit(1);
+            } else {
+              echo "MySQL connection successful\n";
+              $mysqli->close();
+            }
+          '
+
+      - name: Get Arch
+        run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
+
+      - name: Check PHP setup
+        run: |
+          uname -m
+          php -v
+          php -i
+
+      - name: Get Aikido version
+        run: |
+          AIKIDO_VERSION=$(grep '#define PHP_AIKIDO_VERSION' lib/php-extension/include/php_aikido.h | awk -F'"' '{print $2}')
+          echo $AIKIDO_VERSION
+          echo "AIKIDO_VERSION=$AIKIDO_VERSION" >> $GITHUB_ENV
+          echo "AIKIDO_APK=aikido-php-firewall.${{ env.ARCH }}.apk" >> $GITHUB_ENV
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: |
+            ${{ env.AIKIDO_APK }}
+
+      - name: Install APK
+        run: |
+          apk add --allow-untrusted ${{ env.AIKIDO_APK }}/${{ env.AIKIDO_APK }}
+
+      - name: Run CLI tests
+        run: |
+          export TEST_PHP_EXECUTABLE=/usr/local/bin/php
+          cd lib/php-extension/
+          phpize
+          cd ../../
+          php lib/php-extension/run-tests.php ./tests/cli
 
       - name: Run ${{ matrix.server }} server tests
         run: |
