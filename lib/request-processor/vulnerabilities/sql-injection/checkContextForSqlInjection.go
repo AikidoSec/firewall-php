@@ -15,12 +15,19 @@ func CheckContextForSqlInjection(instance *instance.RequestProcessorInstance, sq
 	trimmedSql := helpers.TrimInvisible(sql)
 	dialectId := utils.GetSqlDialectFromString(dialect)
 
+	blockInvalidSql := true
+	if server := instance.GetCurrentServer(); server != nil {
+		blockInvalidSql = server.AikidoConfig.BlockInvalidSql
+	}
+
 	for _, source := range context.SOURCES {
 		mapss := source.CacheGet(instance)
 
 		for str, path := range mapss {
 			trimmedInputString := helpers.TrimInvisible(str)
-			if detectSQLInjection(trimmedSql, trimmedInputString, dialectId) {
+			result := detectSQLInjection(trimmedSql, trimmedInputString, dialectId)
+
+			if result == 1 {
 				return &utils.InterceptorResult{
 					Operation:     operation,
 					Kind:          utils.Sql_injection,
@@ -33,8 +40,22 @@ func CheckContextForSqlInjection(instance *instance.RequestProcessorInstance, sq
 					Payload: str,
 				}
 			}
+
+			if result == 3 && blockInvalidSql {
+				return &utils.InterceptorResult{
+					Operation:     operation,
+					Kind:          utils.Sql_injection,
+					Source:        source.Name,
+					PathToPayload: path,
+					Metadata: map[string]string{
+						"sql":              sql,
+						"dialect":          dialect,
+						"failedToTokenize": "true",
+					},
+					Payload: str,
+				}
+			}
 		}
 	}
 	return nil
-
 }

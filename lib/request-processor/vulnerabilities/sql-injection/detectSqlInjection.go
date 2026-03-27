@@ -34,12 +34,11 @@ func shouldReturnEarly(query, userInput string) bool {
 	return match
 }
 
-func detectSQLInjection(query string, userInput string, dialect int) bool {
+func detectSQLInjection(query string, userInput string, dialect int) int {
 	if shouldReturnEarly(query, userInput) {
-		return false
+		return 0
 	}
 
 	// Executing our final check with zen_internals
-	return zen_internals.DetectSQLInjection(query, userInput, dialect) == 1
-
+	return zen_internals.DetectSQLInjection(query, userInput, dialect)
 }
