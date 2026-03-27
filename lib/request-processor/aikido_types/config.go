@@ -23,6 +23,7 @@ type AikidoConfigData struct {
 	TrustProxy                bool              `json:"trust_proxy"`                  // default: true
 	LocalhostAllowedByDefault bool              `json:"localhost_allowed_by_default"` // default: true
 	CollectApiSchema          bool              `json:"collect_api_schema"`           // default: true
+	BlockInvalidSql           bool              `json:"block_invalid_sql"`            // default: true
 	DiskLogs                  bool              `json:"disk_logs"`                    // default: false
 	Packages                  map[string]string `json:"packages"`                     // default: {}
 }
