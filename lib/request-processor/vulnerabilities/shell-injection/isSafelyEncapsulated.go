@@ -4,62 +4,83 @@ import (
 	"strings"
 )
 
-var (
-	escapeChars                      = []string{`"`, `'`}
-	dangerousCharsInsideDoubleQuotes = []string{"$", "`", "\\", "!"}
-)
+var dangerousCharsInsideDoubleQuotes = []string{"$", "`", "\\", "!"}
+
+type quoteRegion struct {
+	start     int
+	end       int
+	quoteChar byte
+}
+
+// parseQuoteRegions walks the command and returns all properly closed
+// single-quote and double-quote regions. Inside double quotes, backslash
+// escapes are respected (per POSIX/bash rules); single quotes have no
+// escape mechanism.
+func parseQuoteRegions(command string) []quoteRegion {
+	var regions []quoteRegion
+	i := 0
+	for i < len(command) {
+		ch := command[i]
+		if ch == '\'' || ch == '"' {
+			start := i
+			i++
+			for i < len(command) && command[i] != ch {
+				if ch == '"' && command[i] == '\\' {
+					i++
+				}
+				i++
+			}
+			if i < len(command) {
+				regions = append(regions, quoteRegion{start: start, end: i, quoteChar: ch})
+			}
+			i++
+		} else {
+			i++
+		}
+	}
+	return regions
+}
 
 func isSafelyEncapsulated(command, userInput string) bool {
-	segments := strings.Split(command, userInput)
+	regions := parseQuoteRegions(command)
 
-	for i := 0; i < len(segments)-1; i++ {
-		currentSegment := segments[i]
-		nextSegment := segments[i+1]
-
-		// Get the character before and after the user input
-		charBeforeUserInput := ""
-		if len(currentSegment) > 0 {
-			charBeforeUserInput = currentSegment[len(currentSegment)-1:]
+	idx := 0
+	for {
+		pos := strings.Index(command[idx:], userInput)
+		if pos == -1 {
+			break
 		}
+		absStart := idx + pos
+		absEnd := absStart + len(userInput) - 1
 
-		charAfterUserInput := ""
-		if len(nextSegment) > 0 {
-			charAfterUserInput = nextSegment[:1]
-		}
-
-		// Check if the character before the user input is an escape character
-		isEscapeChar := false
-		for _, char := range escapeChars {
-			if char == charBeforeUserInput {
-				isEscapeChar = true
-				break
-			}
-		}
-
-		if !isEscapeChar {
-			return false
-		}
-
-		// Check if the character before and after the user input are the same
-		if charBeforeUserInput != charAfterUserInput {
-			return false
-		}
-
-		// Check if the user input contains the escape character itself
-		if strings.Contains(userInput, charBeforeUserInput) {
-			return false
-		}
-
-		// Check for dangerous characters inside double quotes
-		// https://www.gnu.org/software/bash/manual/html_node/Single-Quotes.html
-		// https://www.gnu.org/software/bash/manual/html_node/Double-Quotes.html
-		if charBeforeUserInput == `"` {
-			for _, dangerousChar := range dangerousCharsInsideDoubleQuotes {
-				if strings.Contains(userInput, dangerousChar) {
-					return false
+		inSafeQuote := false
+		for _, region := range regions {
+			if absStart > region.start && absEnd < region.end {
+				if region.quoteChar == '\'' {
+					inSafeQuote = true
+					break
+				}
+				if region.quoteChar == '"' {
+					hasDangerous := false
+					for _, dc := range dangerousCharsInsideDoubleQuotes {
+						if strings.Contains(userInput, dc) {
+							hasDangerous = true
+							break
+						}
+					}
+					if !hasDangerous {
+						inSafeQuote = true
+						break
+					}
 				}
 			}
 		}
+
+		if !inSafeQuote {
+			return false
+		}
+
+		idx = absStart + 1
 	}
 
 	return true
