@@ -119,18 +119,18 @@ func GoContextCallback(instance *instance.RequestProcessorInstance, contextId in
 	}
 
 	contextCallback := (C.ContextCallback)(contextCallbackPtr)
-	contextData := C.call(contextCallback, C.int(contextId))
-	if contextData == nil {
+	result := C.call(contextCallback, C.int(contextId))
+	if result.data == nil {
 		return ""
 	}
 
-	goContextData := C.GoString(contextData)
+	goContextData := C.GoStringN(result.data, C.int(result.len))
 
 	/*
 		In order to pass dynamic strings from the PHP extension (C++), we need a dynamically allocated buffer, that is allocated by the C++ extension.
 		This buffer needs to be freed by the RequestProcessor (Go) once it has finished copying the data.
 	*/
-	C.free(unsafe.Pointer(contextData))
+	C.free(unsafe.Pointer(result.data))
 	// Remove invalid UTF8 characters (normalize)
 	goContextData = strings.ToValidUTF8(goContextData, "")
 	return goContextData

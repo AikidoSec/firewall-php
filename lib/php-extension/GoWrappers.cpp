@@ -22,7 +22,7 @@ static inline std::string GetEventCacheField(std::string EventCache::*field) {
 /*
     Callback wrapper called by the RequestProcessor (GO) whenever it needs data from PHP (C++ extension).
 */
-char* GoContextCallback(int callbackId) {
+CallbackResult GoContextCallback(int callbackId) {
     std::string ctx;
     std::string ret;
 
@@ -158,7 +158,7 @@ char* GoContextCallback(int callbackId) {
 
     if (!ret.length()) {
         AIKIDO_LOG_DEBUG("Callback %s -> NULL\n", ctx.c_str());
-        return nullptr;
+        return CallbackResult{nullptr, 0};
     }
 
     if (ret.length() > 10000) {
@@ -166,5 +166,9 @@ char* GoContextCallback(int callbackId) {
     } else {
         AIKIDO_LOG_DEBUG("Callback %s -> %s\n", ctx.c_str(), ret.c_str());
     }
-    return strdup(ret.c_str());
+
+    int len = static_cast<int>(ret.length());
+    char *buf = static_cast<char *>(malloc(len));
+    memcpy(buf, ret.data(), len);
+    return CallbackResult{buf, len};
 }
