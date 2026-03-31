@@ -70,6 +70,9 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_pdostatement_execute) {
     eventId = EVENT_PRE_SQL_QUERY_EXECUTED;
     auto& eventCacheStack = AIKIDO_GLOBAL(eventCacheStack);
     eventCacheStack.Top().moduleName = "PDOStatement";
+    if (!stmt->query_string) {
+        return;
+    }
 #if PHP_VERSION_ID >= 80100
     eventCacheStack.Top().sqlQuery = std::string(ZSTR_VAL(stmt->query_string), ZSTR_LEN(stmt->query_string));
 #else
