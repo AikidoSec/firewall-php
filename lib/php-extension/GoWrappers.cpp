@@ -169,6 +169,10 @@ CallbackResult GoContextCallback(int callbackId) {
 
     int len = static_cast<int>(ret.length());
     char *buf = static_cast<char *>(malloc(len));
+    if (!buf) {
+        AIKIDO_LOG_WARN("Failed to allocate %d bytes in GoContextCallback\n", len);
+        return CallbackResult{nullptr, 0};
+    }
     memcpy(buf, ret.data(), len);
     return CallbackResult{buf, len};
 }
