@@ -24,7 +24,7 @@ std::string GetPhpEnvVariable(const std::string& env_key) {
 std::string GetSystemEnvVariable(const std::string& env_key) {
     const char* env_value = getenv(env_key.c_str());
     if (!env_value) return "";
-    
+
     if (env_key == "AIKIDO_TOKEN") {
         AIKIDO_LOG_DEBUG("sys_env[%s] = %s\n", env_key.c_str(), AnonymizeToken(env_value).c_str());
     } else {
@@ -105,16 +105,16 @@ std::string GetFrankenEnvVariable(const std::string& env_key) {
     if (std::string(sapi_module.name) != "frankenphp") {
         return "";
     }
-    
+
     // Force $_SERVER autoglobal to be initialized (it's lazily loaded in PHP)
     // This is CRITICAL in ZTS mode to ensure each thread gets request-specific $_SERVER values
     zend_is_auto_global_str(ZEND_STRL("_SERVER"));
-    
+
     if (Z_TYPE(PG(http_globals)[TRACK_VARS_SERVER]) != IS_ARRAY) {
         AIKIDO_LOG_DEBUG("franken_env[%s] = (empty - $_SERVER not an array)\n", env_key.c_str());
         return "";
     }
-    
+
     std::string env_value = AIKIDO_GLOBAL(server).GetVar(env_key.c_str());
     if (!env_value.empty()) {
         if (env_key == "AIKIDO_TOKEN") {
@@ -143,9 +143,9 @@ std::string GetLaravelEnvVariable(const std::string& env_key) {
     Load env variables from the following sources (priority order):
     - System environment variables
     - FrankenPHP environment variables ($_SERVER - request-specific, thread-safe)
-    - PHP environment variables 
+    - PHP environment variables
     - Laravel environment variables
-    
+
     Order is critical: In multithreaded environments (FrankenPHP worker/classic, ZTS),
     getenv() returns cached process-level values that may belong to a different request.
     $_SERVER must be checked first to get fresh, request-specific environment data.
@@ -228,7 +228,7 @@ void LoadEnvironmentFromGetters(const std::vector<EnvGetterFn>& envGetters) {
     AIKIDO_GLOBAL(collect_api_schema) = GetEnvBool(envGetters,"AIKIDO_FEATURE_COLLECT_API_SCHEMA", true);
     AIKIDO_GLOBAL(localhost_allowed_by_default) = GetEnvBool(envGetters, "AIKIDO_LOCALHOST_ALLOWED_BY_DEFAULT", true);
     AIKIDO_GLOBAL(trust_proxy) = GetEnvBool(envGetters, "AIKIDO_TRUST_PROXY", true);
-    AIKIDO_GLOBAL(block_invalid_sql) = GetEnvBool(envGetters, "AIKIDO_BLOCK_INVALID_SQL", true);
+    AIKIDO_GLOBAL(block_invalid_sql) = GetEnvBool(envGetters, "AIKIDO_BLOCK_INVALID_SQL", false);
     AIKIDO_GLOBAL(disk_logs) = GetEnvBool(envGetters, "AIKIDO_DISK_LOGS", false);
     AIKIDO_GLOBAL(sapi_name) = sapi_module.name;
     AIKIDO_GLOBAL(token) = GetEnvString(envGetters, "AIKIDO_TOKEN", "");
