@@ -1,8 +1,7 @@
 # Blocking invalid SQL queries
 
-Zen blocks SQL queries that it can't tokenize when they contain user input. This prevents attackers from bypassing SQL injection detection with malformed queries. For example, ClickHouse ignores invalid SQL after `;`, and SQLite runs queries before an unclosed `/*` comment.
+Zen can block SQL queries that it can't tokenize when they contain user input. This prevents attackers from bypassing SQL injection detection with malformed queries. For example, ClickHouse ignores invalid SQL after `;`, and SQLite runs queries before an unclosed `/*` comment.
 
-This is on by default. In blocking mode, these queries are blocked. In detection-only mode, they are reported but still executed.
+This is NOT on by default, but it can be enabled by setting the `AIKIDO_BLOCK_INVALID_SQL` environment variable to `true`.
+If enabled, in blocking mode, these queries are blocked. In detection-only mode, they are reported but still executed.
 
-If you see false positives (legitimate queries being blocked), set the
-`AIKIDO_BLOCK_INVALID_SQL` environment variable to `false`.
