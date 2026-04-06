@@ -28,32 +28,22 @@ func CheckContextForSqlInjection(instance *instance.RequestProcessorInstance, sq
 			trimmedInputString := helpers.TrimInvisible(str)
 			result := detectSQLInjection(trimmedSql, trimmedInputString, dialectId)
 
-			if result == zen_internals.SQLInjectionDetected {
-				return &utils.InterceptorResult{
-					Operation:     operation,
-					Kind:          utils.Sql_injection,
-					Source:        source.Name,
-					PathToPayload: path,
-					Metadata: map[string]string{
-						"sql":     sql,
-						"dialect": dialect,
-					},
-					Payload: str,
+			if (result == zen_internals.SQLInjectionDetected) ||
+				(result == zen_internals.SQLInjectionTokenizeFailed && blockInvalidSql) {
+				metadata := map[string]string{
+					"sql":     sql,
+					"dialect": dialect,
 				}
-			}
-
-			if result == zen_internals.SQLInjectionTokenizeFailed && blockInvalidSql {
+				if result == zen_internals.SQLInjectionTokenizeFailed {
+					metadata["failedToTokenize"] = "true"
+				}
 				return &utils.InterceptorResult{
 					Operation:     operation,
 					Kind:          utils.Sql_injection,
 					Source:        source.Name,
 					PathToPayload: path,
-					Metadata: map[string]string{
-						"sql":              sql,
-						"dialect":          dialect,
-						"failedToTokenize": "true",
-					},
-					Payload: str,
+					Metadata:      metadata,
+					Payload:       str,
 				}
 			}
 		}
