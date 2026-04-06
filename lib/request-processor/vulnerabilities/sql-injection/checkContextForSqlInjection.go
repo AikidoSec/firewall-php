@@ -16,7 +16,7 @@ func CheckContextForSqlInjection(instance *instance.RequestProcessorInstance, sq
 	trimmedSql := helpers.TrimInvisible(sql)
 	dialectId := utils.GetSqlDialectFromString(dialect)
 
-	blockInvalidSql := true
+	blockInvalidSql := false
 	if server := instance.GetCurrentServer(); server != nil {
 		blockInvalidSql = server.AikidoConfig.BlockInvalidSql
 	}
