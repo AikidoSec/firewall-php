@@ -96,6 +96,7 @@ std::string RequestProcessor::GetInitData(const std::string& userProvidedToken) 
         {"disk_logs", AIKIDO_GLOBAL(disk_logs)},
         {"localhost_allowed_by_default", AIKIDO_GLOBAL(localhost_allowed_by_default)},
         {"collect_api_schema", AIKIDO_GLOBAL(collect_api_schema)},
+        {"block_invalid_sql", AIKIDO_GLOBAL(block_invalid_sql)},
         {"packages", packages}};
     return NormalizeAndDumpJson(initData);
 }

@@ -33,6 +33,13 @@ type ZenInternalsLibrary struct {
 	detectSqlInjection C.detect_sql_injection_func
 }
 
+const (
+	SqlInjectionClean          = 0
+	SQLInjectionDetected       = 1
+	SQLInjectionError          = 2
+	SQLInjectionTokenizeFailed = 3
+)
+
 var zenLib = &ZenInternalsLibrary{}
 
 func Init() bool {
@@ -75,7 +82,7 @@ func DetectSQLInjection(query string, user_input string, dialect int) int {
 	detectFn := zenLib.detectSqlInjection
 
 	if detectFn == nil {
-		return 0
+		return SqlInjectionClean
 	}
 
 	// Convert strings to C strings

@@ -5,6 +5,7 @@ import (
 	"main/helpers"
 	"main/instance"
 	"main/utils"
+	zen_internals "main/vulnerabilities/zen-internals"
 )
 
 /**
@@ -15,26 +16,37 @@ func CheckContextForSqlInjection(instance *instance.RequestProcessorInstance, sq
 	trimmedSql := helpers.TrimInvisible(sql)
 	dialectId := utils.GetSqlDialectFromString(dialect)
 
+	blockInvalidSql := false
+	if server := instance.GetCurrentServer(); server != nil {
+		blockInvalidSql = server.AikidoConfig.BlockInvalidSql
+	}
+
 	for _, source := range context.SOURCES {
 		mapss := source.CacheGet(instance)
 
 		for str, path := range mapss {
 			trimmedInputString := helpers.TrimInvisible(str)
-			if detectSQLInjection(trimmedSql, trimmedInputString, dialectId) {
+			result := detectSQLInjection(trimmedSql, trimmedInputString, dialectId)
+
+			if (result == zen_internals.SQLInjectionDetected) ||
+				(result == zen_internals.SQLInjectionTokenizeFailed && blockInvalidSql) {
+				metadata := map[string]string{
+					"sql":     sql,
+					"dialect": dialect,
+				}
+				if result == zen_internals.SQLInjectionTokenizeFailed {
+					metadata["failedToTokenize"] = "true"
+				}
 				return &utils.InterceptorResult{
 					Operation:     operation,
 					Kind:          utils.Sql_injection,
 					Source:        source.Name,
 					PathToPayload: path,
-					Metadata: map[string]string{
-						"sql":     sql,
-						"dialect": dialect,
-					},
-					Payload: str,
+					Metadata:      metadata,
+					Payload:       str,
 				}
 			}
 		}
 	}
 	return nil
-
 }
