@@ -36,7 +36,7 @@ func shouldReturnEarly(query, userInput string) bool {
 
 func detectSQLInjection(query string, userInput string, dialect int) int {
 	if shouldReturnEarly(query, userInput) {
-		return 0
+		return zen_internals.SqlInjectionClean
 	}
 
 	// Executing our final check with zen_internals

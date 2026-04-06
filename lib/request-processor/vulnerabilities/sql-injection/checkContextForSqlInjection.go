@@ -5,6 +5,7 @@ import (
 	"main/helpers"
 	"main/instance"
 	"main/utils"
+	zen_internals "main/vulnerabilities/zen-internals"
 )
 
 /**
@@ -27,7 +28,7 @@ func CheckContextForSqlInjection(instance *instance.RequestProcessorInstance, sq
 			trimmedInputString := helpers.TrimInvisible(str)
 			result := detectSQLInjection(trimmedSql, trimmedInputString, dialectId)
 
-			if result == 1 {
+			if result == zen_internals.SQLInjectionDetected {
 				return &utils.InterceptorResult{
 					Operation:     operation,
 					Kind:          utils.Sql_injection,
@@ -41,7 +42,7 @@ func CheckContextForSqlInjection(instance *instance.RequestProcessorInstance, sq
 				}
 			}
 
-			if result == 3 && blockInvalidSql {
+			if result == zen_internals.SQLInjectionTokenizeFailed && blockInvalidSql {
 				return &utils.InterceptorResult{
 					Operation:     operation,
 					Kind:          utils.Sql_injection,
