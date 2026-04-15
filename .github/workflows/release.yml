@@ -26,10 +26,16 @@ jobs:
       with:
         pattern: |
           aikido-php-firewall*
+          
+    - name: Download Lambda layer artifacts
+      uses: actions/download-artifact@v4
+      with:
+        pattern: |
+          aikido-firewall-bref-lambda-layer-*
     
     - name: List Artifacts
       run: |
-        ls -l
+        ls -lR
         pwd
         
     - name: Deploy to GitHub Release (draft)
@@ -38,3 +44,4 @@ jobs:
         draft: true
         files: |
           ./**/aikido-php-firewall*
+          ./**/aikido-firewall-bref-lambda-layer-*
