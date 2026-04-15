@@ -2,6 +2,7 @@
 
 In order to enable the user blocking and rate limiting features, the protected app can call `\aikido\should_block_request` to obtain the blocking decision for the current request and act accordingly.
 We provide middleware examples that can be used in different scenarious.
+Make sure to add this middleware as early as possible in the request handling process, but after the authentication middleware, so that the user information is available.
 
 ## No framework
 
@@ -123,7 +124,7 @@ class AikidoMiddleware
         // You can pass in the Aikido token here
         // \aikido\set_token("your token here");
 
-		
+
         // Get the authenticated user's ID from Laravel's Auth system
         $userId = Auth::id();
 
@@ -264,7 +265,7 @@ class AikidoEventSubscriber implements EventSubscriberInterface
                 else if ($decision->trigger == "group") {
                     $message = "Your group exceeded the rate limit for this endpoint!";
                 }
-                
+
                 $event->setResponse(new JsonResponse(
                     ['message' => $message],
                     429
@@ -274,3 +275,4 @@ class AikidoEventSubscriber implements EventSubscriberInterface
         }
     }
 }
+```
