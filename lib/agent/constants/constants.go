@@ -1,9 +1,22 @@
 package constants
 
+import "os"
+
+const Version = "1.5.4"
+
+var SocketPath string
+var PidPath string
+
+func init() {
+	runDir := "/run/aikido-" + Version
+	if _, ok := os.LookupEnv("AWS_LAMBDA_FUNCTION_NAME"); ok {
+		runDir = "/tmp/aikido-" + Version
+	}
+	SocketPath = runDir + "/aikido-agent.sock"
+	PidPath = runDir + "/aikido-agent.pid"
+}
+
 const (
-	Version                             = "1.5.4"
-	SocketPath                          = "/run/aikido-" + Version + "/aikido-agent.sock"
-	PidPath                             = "/run/aikido-" + Version + "/aikido-agent.pid"
 	ConfigUpdatedAtMethod               = "GET"
 	ConfigUpdatedAtAPI                  = "/config"
 	ConfigAPIMethod                     = "GET"

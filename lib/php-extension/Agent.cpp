@@ -1,5 +1,13 @@
 #include "Includes.h"
 
+static std::string GetRuntimeDir() {
+    const char* lambdaEnv = getenv("AWS_LAMBDA_FUNCTION_NAME");
+    if (lambdaEnv != nullptr) {
+        return "/tmp/aikido-" + std::string(PHP_AIKIDO_VERSION);
+    }
+    return "/run/aikido-" + std::string(PHP_AIKIDO_VERSION);
+}
+
 vector<pid_t> Agent::GetPIDsFromRunningProcesses(const std::string& aikidoAgentPath) {
     vector<pid_t> agentPIDs;
 
@@ -105,7 +113,7 @@ bool Agent::IsRunning(const std::string& aikidoAgentPath, const std::string& aik
 
     AIKIDO_LOG_INFO("Found socket file \"%s\" on disk! Checking if Aikido Agent process is running...\n", aikidoAgentSocketPath.c_str());
 
-    std::string aikidoAgentPidPath = "/run/aikido-" + std::string(PHP_AIKIDO_VERSION) + "/aikido-agent.pid";
+    std::string aikidoAgentPidPath = GetRuntimeDir() + "/aikido-agent.pid";
     pid_t agentPIDFromFile = this->GetPIDFromFile(aikidoAgentPidPath);
     vector<pid_t> agentPIDsFromRunningProcesses = this->GetPIDsFromRunningProcesses(aikidoAgentPath);
     if (agentPIDFromFile == -1 ||
@@ -126,7 +134,8 @@ bool Agent::IsRunning(const std::string& aikidoAgentPath, const std::string& aik
 
 bool Agent::Init() {
     std::string aikidoAgentPath = "/opt/aikido-" + std::string(PHP_AIKIDO_VERSION) + "/aikido-agent";
-    std::string aikidoAgentSocketPath = "/run/aikido-" + std::string(PHP_AIKIDO_VERSION) + "/aikido-agent.sock";
+    std::string runtimeDir = GetRuntimeDir();
+    std::string aikidoAgentSocketPath = runtimeDir + "/aikido-agent.sock";
 
     if (this->IsRunning(aikidoAgentPath, aikidoAgentSocketPath)) {
         AIKIDO_LOG_INFO("Aikido Agent is already running! Skipping init...\n");
