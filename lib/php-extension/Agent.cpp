@@ -148,6 +148,17 @@ bool Agent::Init() {
         return false;
     }
 
+    // Wait for the agent to bind its Unix socket (max ~1s) so the first
+    // request doesn't race against agent startup. This matters on Lambda
+    // cold starts where MINIT and the first invoke happen back-to-back.
+    for (int i = 0; i < 200; i++) {
+        if (FileExists(aikidoAgentSocketPath)) {
+            AIKIDO_LOG_INFO("Aikido Agent socket ready after %d ms\n", i * 5);
+            return true;
+        }
+        usleep(5000);
+    }
+    AIKIDO_LOG_WARN("Aikido Agent socket did not appear within 1s\n");
     return true;
 }
 
