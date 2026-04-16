@@ -1,7 +1,6 @@
 package globals
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"regexp"
@@ -83,16 +82,14 @@ const Version = "1.5.4"
 
 var SocketPath string
 
+func isRunDirWritable() bool {
+	return os.MkdirAll("/run/aikido-writetest", 0777) == nil && os.Remove("/run/aikido-writetest") == nil
+}
+
 func init() {
-	lambdaName, ok := os.LookupEnv("AWS_LAMBDA_FUNCTION_NAME")
-	fmt.Printf("[aikido-request-processor] init: AWS_LAMBDA_FUNCTION_NAME=%q, found=%v\n", lambdaName, ok)
 	runDir := "/run/aikido-" + Version
-	if ok {
+	if !isRunDirWritable() {
 		runDir = "/tmp/aikido-" + Version
-		fmt.Printf("[aikido-request-processor] init: Using /tmp path for Lambda\n")
-	} else {
-		fmt.Printf("[aikido-request-processor] init: Using /run path (non-Lambda)\n")
 	}
 	SocketPath = runDir + "/aikido-agent.sock"
-	fmt.Printf("[aikido-request-processor] init: SocketPath=%s\n", SocketPath)
 }
