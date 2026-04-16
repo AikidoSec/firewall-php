@@ -8,7 +8,7 @@ var SocketPath string
 var PidPath string
 
 func isRunDirWritable() bool {
-	return os.MkdirAll("/run/aikido-writetest", 0777) == nil && os.Remove("/run/aikido-writetest") == nil
+	return os.WriteFile("/run/aikido-probe", nil, 0644) == nil && os.Remove("/run/aikido-probe") == nil
 }
 
 func init() {
