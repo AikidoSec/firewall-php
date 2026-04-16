@@ -354,8 +354,8 @@ jobs:
       - name: Build Lambda layer zip
         run: |
           LAYER_DIR=lambda-layer
-          AIKIDO_DIR=$LAYER_DIR/opt/aikido-${{ env.AIKIDO_VERSION }}
-          BREF_CONF_DIR=$LAYER_DIR/opt/bref/etc/php/conf.d
+          AIKIDO_DIR=$LAYER_DIR/aikido-${{ env.AIKIDO_VERSION }}
+          BREF_CONF_DIR=$LAYER_DIR/bref/etc/php/conf.d
 
           mkdir -p $AIKIDO_DIR $BREF_CONF_DIR
 
@@ -370,12 +370,12 @@ jobs:
           ls -la $AIKIDO_DIR/
 
           cd $LAYER_DIR
-          zip -r ../aikido-firewall-bref-lambda-layer-php-${{ matrix.php_version }}-x86_64.zip opt/
+          zip -r ../aikido-firewall-bref-lambda-layer-php-${{ matrix.php_version }}-x86_64.zip .
 
       - name: Archive Lambda layer
         uses: actions/upload-artifact@v4
         with:
-          name: aikido-firewall-bref-lambda-layer-php-${{ matrix.php_version }}-x86_64.zip
+          name: aikido-firewall-bref-lambda-layer-php-${{ matrix.php_version }}-x86_64
           if-no-files-found: error
           path: |
             aikido-firewall-bref-lambda-layer-php-${{ matrix.php_version }}-x86_64.zip
