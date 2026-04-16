@@ -1,6 +1,9 @@
 package constants
 
-import "os"
+import (
+	"fmt"
+	"os"
+)
 
 const Version = "1.5.4"
 
@@ -8,12 +11,18 @@ var SocketPath string
 var PidPath string
 
 func init() {
+	lambdaName, ok := os.LookupEnv("AWS_LAMBDA_FUNCTION_NAME")
+	fmt.Printf("[aikido-agent] init: AWS_LAMBDA_FUNCTION_NAME=%q, found=%v\n", lambdaName, ok)
 	runDir := "/run/aikido-" + Version
-	if _, ok := os.LookupEnv("AWS_LAMBDA_FUNCTION_NAME"); ok {
+	if ok {
 		runDir = "/tmp/aikido-" + Version
+		fmt.Printf("[aikido-agent] init: Using /tmp path for Lambda\n")
+	} else {
+		fmt.Printf("[aikido-agent] init: Using /run path (non-Lambda)\n")
 	}
 	SocketPath = runDir + "/aikido-agent.sock"
 	PidPath = runDir + "/aikido-agent.pid"
+	fmt.Printf("[aikido-agent] init: SocketPath=%s, PidPath=%s\n", SocketPath, PidPath)
 }
 
 const (

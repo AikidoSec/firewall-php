@@ -2,9 +2,12 @@
 
 static std::string GetRuntimeDir() {
     const char* lambdaEnv = getenv("AWS_LAMBDA_FUNCTION_NAME");
+    AIKIDO_LOG_INFO("GetRuntimeDir: AWS_LAMBDA_FUNCTION_NAME=%s\n", lambdaEnv ? lambdaEnv : "(null)");
     if (lambdaEnv != nullptr) {
+        AIKIDO_LOG_INFO("GetRuntimeDir: Using /tmp path for Lambda\n");
         return "/tmp/aikido-" + std::string(PHP_AIKIDO_VERSION);
     }
+    AIKIDO_LOG_INFO("GetRuntimeDir: Using /run path (non-Lambda)\n");
     return "/run/aikido-" + std::string(PHP_AIKIDO_VERSION);
 }
 
