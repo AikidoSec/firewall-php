@@ -313,8 +313,6 @@ jobs:
   build_lambda_layers:
     name: Build Lambda layers php-${{ matrix.php_version }}
     runs-on: ubuntu-24.04
-    container:
-      image: quay.io/centos/centos:stream9
     needs: [ build_libs, build_php_extension_nts ]
     strategy:
       matrix:
@@ -329,26 +327,29 @@ jobs:
         run: |
           AIKIDO_VERSION=$(grep '#define PHP_AIKIDO_VERSION' lib/php-extension/include/php_aikido.h | awk -F'"' '{print $2}')
           echo "AIKIDO_VERSION=$AIKIDO_VERSION" >> $GITHUB_ENV
+          echo "AIKIDO_LIBZEN_VERSION=0.1.60" >> $GITHUB_ENV
 
       - name: Download NTS extension
         uses: actions/download-artifact@v4
         with:
           name: aikido-extension-php-${{ matrix.php_version }}-nts-x86_64
+          path: artifacts/extension
 
       - name: Download agent
         uses: actions/download-artifact@v4
         with:
           name: aikido-agent-x86_64
+          path: artifacts/agent
 
       - name: Download request processor
         uses: actions/download-artifact@v4
         with:
           name: aikido-request-processor-x86_64
+          path: artifacts/request-processor
 
       - name: Download Aikido Zen Internals Lib
         run: |
-          AIKIDO_LIBZEN_VERSION=0.1.60
-          curl -L -O https://github.com/AikidoSec/zen-internals/releases/download/v${AIKIDO_LIBZEN_VERSION}/libzen_internals_x86_64-unknown-linux-gnu.so
+          curl -L -O https://github.com/AikidoSec/zen-internals/releases/download/v${{ env.AIKIDO_LIBZEN_VERSION }}/libzen_internals_x86_64-unknown-linux-gnu.so
 
       - name: Build Lambda layer zip
         run: |
@@ -358,13 +359,15 @@ jobs:
 
           mkdir -p $AIKIDO_DIR $BREF_CONF_DIR
 
-          cp aikido-extension-php-${{ matrix.php_version }}-nts.so $AIKIDO_DIR/
-          cp aikido-agent $AIKIDO_DIR/
-          cp aikido-request-processor.so $AIKIDO_DIR/
+          find artifacts/extension -name "aikido-extension-php-${{ matrix.php_version }}-nts.so" -exec cp {} $AIKIDO_DIR/ \;
+          find artifacts/agent -name "aikido-agent" -exec cp {} $AIKIDO_DIR/ \;
+          find artifacts/request-processor -name "aikido-request-processor.so" -exec cp {} $AIKIDO_DIR/ \;
           cp libzen_internals_x86_64-unknown-linux-gnu.so $AIKIDO_DIR/
           chmod +x $AIKIDO_DIR/aikido-agent
 
           echo "extension=/opt/aikido-${{ env.AIKIDO_VERSION }}/aikido-extension-php-${{ matrix.php_version }}-nts.so" > $BREF_CONF_DIR/ext-aikido.ini
+
+          ls -la $AIKIDO_DIR/
 
           cd $LAYER_DIR
           zip -r ../aikido-firewall-bref-lambda-layer-php-${{ matrix.php_version }}-x86_64.zip opt/
