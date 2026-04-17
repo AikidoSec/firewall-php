@@ -88,6 +88,6 @@ var SocketPath = "/run/aikido-" + Version + "/aikido-agent.sock"
 // forked FPM worker.
 func SetRuntimeDir(isLambda bool) {
 	if isLambda {
-		SocketPath = "/tmp/aikido-" + Version
+		SocketPath = "/tmp/aikido-" + Version + "/aikido-agent.sock"
 	}
 }
