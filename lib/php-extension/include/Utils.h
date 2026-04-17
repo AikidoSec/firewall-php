@@ -35,6 +35,8 @@ bool FileExists(const std::string& filePath);
 
 bool RemoveFile(const std::string& filePath);
 
+bool IsLambda();
+
 std::string GetStackTrace();
 
 zend_class_entry* GetFirewallDefaultExceptionCe();

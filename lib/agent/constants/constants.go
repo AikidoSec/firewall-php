@@ -1,9 +1,23 @@
 package constants
 
+var (
+	IsLambda   bool
+	SocketPath = "/run/aikido-" + Version + "/aikido-agent.sock"
+	PidPath    = "/run/aikido-" + Version + "/aikido-agent.pid"
+)
+
+// SetRuntimeDir switches the socket/pid directory to /tmp when running on
+// Lambda. The flag is passed from C++ via an argv (--lambda) when the agent
+// is spawned.
+func SetRuntimeDir(isLambda bool) {
+	if isLambda {
+		SocketPath = "/tmp/aikido-" + Version + "/aikido-agent.sock"
+		PidPath = "/tmp/aikido-" + Version + "/aikido-agent.pid"
+	}
+}
+
 const (
 	Version                             = "1.5.6"
-	SocketPath                          = "/run/aikido-" + Version + "/aikido-agent.sock"
-	PidPath                             = "/run/aikido-" + Version + "/aikido-agent.pid"
 	ConfigUpdatedAtMethod               = "GET"
 	ConfigUpdatedAtAPI                  = "/config"
 	ConfigAPIMethod                     = "GET"

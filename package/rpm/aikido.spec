@@ -41,7 +41,7 @@ if command -v php -v >/dev/null 2>&1; then
 fi
 
 # Check common PHP installation paths
-for php_path in /usr/bin/php* /usr/local/bin/php*; do
+for php_path in /usr/bin/php* /usr/local/bin/php* /opt/bin/php*; do
     if [[ -x "$php_path" && "$php_path" =~ php([0-9]+\.[0-9]+)$ ]]; then
         version=$("$php_path" -v | grep -oP 'PHP \K\d+\.\d+' | head -n 1)
         if [[ ! " ${PHP_VERSIONS[@]} " =~ " ${version} " ]]; then
@@ -133,9 +133,10 @@ for PHP_VERSION in "${PHP_VERSIONS[@]}"; do
         fi
     else
         # RedHat-based system
-        if [ -d "$PHP_MOD_DIR" ]; then
-            echo "Installing new Aikido mod in $PHP_MOD_DIR/zz-aikido-%{version}.ini..."
-            ln -sf /opt/aikido-%{version}/aikido.ini $PHP_MOD_DIR/zz-aikido-%{version}.ini
+        PHP_MOD_DIR_FIRST="${PHP_MOD_DIR%%:*}"
+        if [ -d "$PHP_MOD_DIR_FIRST" ]; then
+            echo "Installing new Aikido mod in $PHP_MOD_DIR_FIRST/zz-aikido-%{version}.ini..."
+            ln -sf /opt/aikido-%{version}/aikido.ini $PHP_MOD_DIR_FIRST/zz-aikido-%{version}.ini
         else
             echo "No mod dir for PHP $PHP_VERSION! Skipping..."
             continue
@@ -198,7 +199,7 @@ if command -v php -v >/dev/null 2>&1; then
 fi
 
 # Check common PHP installation paths
-for php_path in /usr/bin/php* /usr/local/bin/php*; do
+for php_path in /usr/bin/php* /usr/local/bin/php* /opt/bin/php*; do
     if [[ -x "$php_path" && "$php_path" =~ php([0-9]+\.[0-9]+)$ ]]; then
         version=$("$php_path" -v | grep -oP 'PHP \K\d+\.\d+' | head -n 1)
         if [[ ! " ${PHP_VERSIONS[@]} " =~ " ${version} " ]]; then
@@ -252,10 +253,11 @@ for PHP_VERSION in "${PHP_VERSIONS[@]}"; do
             rm -f $PHP_DEBIAN_MOD_DIR_APACHE2/zz-aikido-%{version}.ini
         fi
     else
-        # RedHat-based system
-        if [ -d "$PHP_MOD_DIR" ]; then
-            echo "Uninstalling Aikido mod from $PHP_MOD_DIR/zz-aikido-%{version}.ini..."
-            rm -f $PHP_MOD_DIR/zz-aikido-%{version}.ini
+        # RedHat-based system (take first dir if colon-separated)
+        PHP_MOD_DIR_FIRST="${PHP_MOD_DIR%%:*}"
+        if [ -f "$PHP_MOD_DIR_FIRST/zz-aikido-%{version}.ini" ]; then
+            echo "Uninstalling Aikido mod from $PHP_MOD_DIR_FIRST/zz-aikido-%{version}.ini..."
+            rm -f $PHP_MOD_DIR_FIRST/zz-aikido-%{version}.ini
         fi
     fi
 

@@ -1,5 +1,12 @@
 #include "Includes.h"
 
+static std::string GetRuntimeDir() {
+    if (IsLambda()) {
+        return "/tmp/aikido-" + std::string(PHP_AIKIDO_VERSION);
+    }
+    return "/run/aikido-" + std::string(PHP_AIKIDO_VERSION);
+}
+
 vector<pid_t> Agent::GetPIDsFromRunningProcesses(const std::string& aikidoAgentPath) {
     vector<pid_t> agentPIDs;
 
@@ -38,13 +45,16 @@ bool Agent::Start(std::string aikidoAgentPath) {
     posix_spawnattr_t attr;
     posix_spawnattr_init(&attr);
 
-    char* argv[] = {
-        const_cast<char*>(aikidoAgentPath.c_str()),
-        nullptr
-    };
+    char lambdaFlag[] = "--lambda";
+    std::vector<char*> argvVec;
+    argvVec.push_back(const_cast<char*>(aikidoAgentPath.c_str()));
+    if (IsLambda()) {
+        argvVec.push_back(lambdaFlag);
+    }
+    argvVec.push_back(nullptr);
 
     pid_t agentPid;
-    int status = posix_spawn(&agentPid, aikidoAgentPath.c_str(), nullptr, &attr, argv, nullptr);
+    int status = posix_spawn(&agentPid, aikidoAgentPath.c_str(), nullptr, &attr, argvVec.data(), nullptr);
     posix_spawnattr_destroy(&attr);
     if (status != 0) {
         AIKIDO_LOG_ERROR("Failed to start Aikido Agent process: %s\n", strerror(status));
@@ -105,7 +115,7 @@ bool Agent::IsRunning(const std::string& aikidoAgentPath, const std::string& aik
 
     AIKIDO_LOG_INFO("Found socket file \"%s\" on disk! Checking if Aikido Agent process is running...\n", aikidoAgentSocketPath.c_str());
 
-    std::string aikidoAgentPidPath = "/run/aikido-" + std::string(PHP_AIKIDO_VERSION) + "/aikido-agent.pid";
+    std::string aikidoAgentPidPath = GetRuntimeDir() + "/aikido-agent.pid";
     pid_t agentPIDFromFile = this->GetPIDFromFile(aikidoAgentPidPath);
     vector<pid_t> agentPIDsFromRunningProcesses = this->GetPIDsFromRunningProcesses(aikidoAgentPath);
     if (agentPIDFromFile == -1 ||
@@ -126,7 +136,8 @@ bool Agent::IsRunning(const std::string& aikidoAgentPath, const std::string& aik
 
 bool Agent::Init() {
     std::string aikidoAgentPath = "/opt/aikido-" + std::string(PHP_AIKIDO_VERSION) + "/aikido-agent";
-    std::string aikidoAgentSocketPath = "/run/aikido-" + std::string(PHP_AIKIDO_VERSION) + "/aikido-agent.sock";
+    std::string runtimeDir = GetRuntimeDir();
+    std::string aikidoAgentSocketPath = runtimeDir + "/aikido-agent.sock";
 
     if (this->IsRunning(aikidoAgentPath, aikidoAgentSocketPath)) {
         AIKIDO_LOG_INFO("Aikido Agent is already running! Skipping init...\n");
@@ -140,6 +151,21 @@ bool Agent::Init() {
         return false;
     }
 
+    // On Lambda cold starts, MINIT and the first invoke happen back-to-back,
+    // so the first gRPC call can race against agent startup. Block here
+    // (up to ~5s) until the agent has bound its Unix socket. On regular
+    // long-running SAPIs (php-fpm, apache, frankenphp) MINIT runs well
+    // before any request, so this wait is unnecessary.
+    if (IsLambda()) {
+        for (int i = 0; i < 1000; i++) {
+            if (FileExists(aikidoAgentSocketPath)) {
+                AIKIDO_LOG_INFO("Aikido Agent socket ready after %d ms\n", i * 5);
+                return true;
+            }
+            usleep(5000);
+        }
+        AIKIDO_LOG_WARN("Aikido Agent socket did not appear within 1s\n");
+    }
     return true;
 }
 

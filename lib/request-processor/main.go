@@ -80,13 +80,15 @@ func DestroyInstance(threadID uint64) {
 }
 
 //export RequestProcessorInit
-func RequestProcessorInit(platformName string) (initOk bool) {
+func RequestProcessorInit(platformName string, isLambda bool) (initOk bool) {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Warn(nil, "Recovered from panic:", r)
 			initOk = false
 		}
 	}()
+
+	globals.SetRuntimeDir(isLambda)
 
 	config.Init(platformName)
 

@@ -24,6 +24,12 @@ var serversCleanupChannel = make(chan struct{})
 var serversCleanupTicker = time.NewTicker(time.Minute)
 
 func serversCleanupRoutine(_ *ServerData) {
+	// On Lambda, the agent process is frozen between invocations while
+	// wall-clock time keeps passing. Inactivity-based cleanup wrongly
+	// evicts the registered server and breaks subsequent requests.
+	if constants.IsLambda {
+		return
+	}
 	for _, serverKey := range globals.GetServersKeys() {
 		server := globals.GetServer(serverKey)
 		if server == nil {
@@ -88,6 +94,15 @@ func AgentUninit() {
 }
 
 func main() {
+	isLambda := false
+	for _, arg := range os.Args[1:] {
+		if arg == "--lambda" {
+			isLambda = true
+			break
+		}
+	}
+	constants.SetRuntimeDir(isLambda)
+
 	if !AgentInit() {
 		log.Errorf(log.MainLogger, "Agent initialization failed!")
 		os.Exit(-2)
