@@ -198,6 +198,10 @@ bool RemoveFile(const std::string& filePath) {
     return false;
 }
 
+bool IsLambda() {
+    return getenv("AWS_LAMBDA_FUNCTION_NAME") != nullptr;
+}
+
 
 std::string GetStackTrace() {
 #if PHP_VERSION_ID >= 80100

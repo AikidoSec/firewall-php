@@ -1,23 +1,21 @@
 package constants
 
-import "os"
-
 const Version = "1.5.4"
 
-var SocketPath string
-var PidPath string
+var (
+	IsLambda   bool
+	SocketPath = "/run/aikido-" + Version + "/aikido-agent.sock"
+	PidPath    = "/run/aikido-" + Version + "/aikido-agent.pid"
+)
 
-func isRunDirWritable() bool {
-	return os.WriteFile("/run/aikido-probe", nil, 0644) == nil && os.Remove("/run/aikido-probe") == nil
-}
-
-func init() {
-	runDir := "/run/aikido-" + Version
-	if !isRunDirWritable() {
-		runDir = "/tmp/aikido-" + Version
+// SetRuntimeDir switches the socket/pid directory to /tmp when running on
+// Lambda. The flag is passed from C++ via an argv (--lambda) when the agent
+// is spawned.
+func SetRuntimeDir(isLambda bool) {
+	if isLambda {
+		SocketPath = "/tmp/aikido-" + "/aikido-agent.sock"
+		PidPath = "/tmp/aikido-" + "/aikido-agent.pid"
 	}
-	SocketPath = runDir + "/aikido-agent.sock"
-	PidPath = runDir + "/aikido-agent.pid"
 }
 
 const (

@@ -80,16 +80,14 @@ func CreateServer(token string) *ServerData {
 
 const Version = "1.5.4"
 
-var SocketPath string
+var SocketPath = "/run/aikido-" + Version + "/aikido-agent.sock"
 
-func isRunDirWritable() bool {
-	return os.WriteFile("/run/aikido-probe", nil, 0644) == nil && os.Remove("/run/aikido-probe") == nil
-}
-
-func init() {
-	runDir := "/run/aikido-" + Version
-	if !isRunDirWritable() {
-		runDir = "/tmp/aikido-" + Version
+// SetRuntimeDir switches the socket directory to /tmp when running on Lambda.
+// The flag is passed from C++ (via RequestProcessorInit) because Go's
+// os.LookupEnv is unreliable when this shared library is loaded into a
+// forked FPM worker.
+func SetRuntimeDir(isLambda bool) {
+	if isLambda {
+		SocketPath = "/tmp/aikido-" + Version
 	}
-	SocketPath = runDir + "/aikido-agent.sock"
 }
