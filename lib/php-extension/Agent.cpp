@@ -153,11 +153,11 @@ bool Agent::Init() {
 
     // On Lambda cold starts, MINIT and the first invoke happen back-to-back,
     // so the first gRPC call can race against agent startup. Block here
-    // (up to ~1s) until the agent has bound its Unix socket. On regular
+    // (up to ~5s) until the agent has bound its Unix socket. On regular
     // long-running SAPIs (php-fpm, apache, frankenphp) MINIT runs well
     // before any request, so this wait is unnecessary.
     if (IsLambda()) {
-        for (int i = 0; i < 200; i++) {
+        for (int i = 0; i < 1000; i++) {
             if (FileExists(aikidoAgentSocketPath)) {
                 AIKIDO_LOG_INFO("Aikido Agent socket ready after %d ms\n", i * 5);
                 return true;
