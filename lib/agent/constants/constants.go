@@ -1,7 +1,5 @@
 package constants
 
-const Version = "1.5.4"
-
 var (
 	IsLambda   bool
 	SocketPath = "/run/aikido-" + Version + "/aikido-agent.sock"
