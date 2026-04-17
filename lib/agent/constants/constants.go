@@ -11,8 +11,8 @@ var (
 // is spawned.
 func SetRuntimeDir(isLambda bool) {
 	if isLambda {
-		SocketPath = "/tmp/aikido-" + "/aikido-agent.sock"
-		PidPath = "/tmp/aikido-" + "/aikido-agent.pid"
+		SocketPath = "/tmp/aikido-" + Version + "/aikido-agent.sock"
+		PidPath = "/tmp/aikido-" + Version + "/aikido-agent.pid"
 	}
 }
 
