@@ -79,8 +79,7 @@ func CreateServer(token string) *ServerData {
 }
 
 const (
-	Version    = "1.5.6"
-	SocketPath = "/run/aikido-" + Version + "/aikido-agent.sock"
+	Version = "1.5.6"
 )
 
 var SocketPath = "/run/aikido-" + Version + "/aikido-agent.sock"
