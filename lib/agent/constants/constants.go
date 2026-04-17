@@ -19,6 +19,7 @@ func SetRuntimeDir(isLambda bool) {
 }
 
 const (
+	Version                             = "1.5.6"
 	ConfigUpdatedAtMethod               = "GET"
 	ConfigUpdatedAtAPI                  = "/config"
 	ConfigAPIMethod                     = "GET"

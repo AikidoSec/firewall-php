@@ -9,7 +9,7 @@ jobs:
   build:
     uses: ./.github/workflows/build.yml
   release:
-    runs-on: ubuntu-24.04
+    runs-on: open-source-releaser
     needs: build
     permissions:
       contents: write
