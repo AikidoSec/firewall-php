@@ -21,8 +21,8 @@ void PhpLifecycle::RequestInit() {
     // cycle: running it there would dlopen aikido-request-processor.so in
     // the master, and every forked worker would inherit a Go runtime whose
     // scheduler threads do not exist in its address space.
-    #ifdef NTS
-    if (this->mainPID == getpid() && AIKIDO_GLOBAL(sapi_name) != "cli") {
+   #ifdef NTS
+    if (this->mainPID == getpid() && AIKIDO_GLOBAL(sapi_name) == "fpm-fcgi"){
         AIKIDO_LOG_INFO("Skipping RequestInit in php-fpm master (pid %d == mainPID; "
                         "likely opcache.preload virtual RINIT). Workers will initialize "
                         "the request processor after fork.\n", (int)getpid());
