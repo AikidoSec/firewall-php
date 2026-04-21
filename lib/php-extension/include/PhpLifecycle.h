@@ -20,5 +20,5 @@ class PhpLifecycle {
 
     void UnhookAll();
 
-    bool IsFpmMasterPreloadCycle();
+    bool IsFpmMasterPreloadCycle() const;
 };

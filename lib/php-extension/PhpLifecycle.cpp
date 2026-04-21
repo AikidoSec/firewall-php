@@ -23,8 +23,7 @@ bool PhpLifecycle::IsFpmMasterPreloadCycle() const {
     // a runtime whose scheduler threads do not exist in its address space.
     #ifndef ZTS
         if (this->mainPID != 0 && this->mainPID == getpid()) {
-            const std::string& sapi = AIKIDO_GLOBAL(sapi_name);
-            if (sapi == "fpm-fcgi" || sapi == "apache2handler") {
+            if (AIKIDO_GLOBAL(sapi_name) == "fpm-fcgi" || AIKIDO_GLOBAL(sapi_name) == "apache2handler") {
                 return true;
             }
         }
