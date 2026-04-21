@@ -84,7 +84,7 @@ ZEND_NAMED_FUNCTION(aikido_generic_handler) {
             return;
         }
 
-        if (IsAikidoDisabledOrBypassed()) {
+        if (IsAikidoDisabledOrBypassed() || AIKIDO_GLOBAL(phpLifecycle).IsFpmMasterPreloadCycle()) {
             if (original_handler) {
                 original_handler(INTERNAL_FUNCTION_PARAM_PASSTHRU);
             }

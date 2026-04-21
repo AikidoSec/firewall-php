@@ -16,19 +16,31 @@ void PhpLifecycle::ModuleInit() {
     }
 }
 
-void PhpLifecycle::RequestInit() {
-    // Skip RequestInit in the php-fpm master's opcache.preload virtual RINIT
-    // cycle: running it there would dlopen aikido-request-processor.so in
-    // the master, and every forked worker would inherit a Go runtime whose
-    // scheduler threads do not exist in its address space.
+bool PhpLifecycle::IsFpmMasterPreloadCycle() const {
+    // Skip any Aikido work that would dlopen aikido-request-processor.so in
+    // the php-fpm / apache master's opcache.preload virtual RINIT cycle:
+    // loading the Go runtime there would make every forked worker inherit
+    // a runtime whose scheduler threads do not exist in its address space.
     #ifndef ZTS
-    if (this->mainPID == getpid() && (AIKIDO_GLOBAL(sapi_name) == "fpm-fcgi" || AIKIDO_GLOBAL(sapi_name) == "apache2handler")){
-        AIKIDO_LOG_INFO("Skipping RequestInit in php-fpm master (pid %d == mainPID; "
-                        "likely opcache.preload virtual RINIT). Workers will initialize "
-                        "the request processor after fork.\n", (int)getpid());
-        return;
-    }   
+        if (this->mainPID != 0 && this->mainPID == getpid()) {
+            const std::string& sapi = AIKIDO_GLOBAL(sapi_name);
+            if (sapi == "fpm-fcgi" || sapi == "apache2handler") {
+                return true;
+            }
+        }
     #endif
+    return false;
+}
+
+
+void PhpLifecycle::RequestInit() {
+    if (IsFpmMasterPreloadCycle()) {
+        AIKIDO_LOG_INFO("Skipping RequestInit in %s master (pid %d == mainPID; "
+                        "likely opcache.preload virtual RINIT). Workers will "
+                        "initialize the request processor after fork.\n",
+                        AIKIDO_GLOBAL(sapi_name).c_str(), (int)getpid());
+        return;
+    }
 
     AIKIDO_GLOBAL(action).Reset();
     AIKIDO_GLOBAL(requestCache).Reset();
@@ -42,6 +54,9 @@ void PhpLifecycle::RequestInit() {
 }
 
 void PhpLifecycle::RequestShutdown() {
+    if (IsFpmMasterPreloadCycle()) {
+        return;
+    }
     AIKIDO_GLOBAL(requestProcessorInstance).RequestShutdown();
 }
 
