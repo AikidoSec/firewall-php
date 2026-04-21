@@ -17,6 +17,22 @@ void PhpLifecycle::ModuleInit() {
 }
 
 void PhpLifecycle::RequestInit() {
+    // Skip RequestInit in the php-fpm master's opcache.preload virtual RINIT
+    // cycle: running it there would dlopen aikido-request-processor.so in
+    // the master, and every forked worker would inherit a Go runtime whose
+    // scheduler threads do not exist in its address space (fork clones only
+    // the calling thread), causing gRPC calls from workers to hang ~60s.
+    // Gated on fpm-fcgi because cli-server / frankenphp are single-process
+    // and would match `mainPID == getpid()` for every real request too.
+    #ifndef ZTS
+    if (this->mainPID == getpid() && AIKIDO_GLOBAL(sapi_name) == "fpm-fcgi") {
+        AIKIDO_LOG_INFO("Skipping RequestInit in php-fpm master (pid %d == mainPID; "
+                        "likely opcache.preload virtual RINIT). Workers will initialize "
+                        "the request processor after fork.\n", (int)getpid());
+        return;
+    }
+    #endif
+
     AIKIDO_GLOBAL(action).Reset();
     AIKIDO_GLOBAL(requestCache).Reset();
     
