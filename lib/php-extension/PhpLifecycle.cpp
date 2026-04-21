@@ -22,14 +22,14 @@ void PhpLifecycle::RequestInit() {
     // the master, and every forked worker would inherit a Go runtime whose
     // scheduler threads do not exist in its address space.
     #ifndef ZTS
-    if (this->mainPID == getpid() && AIKIDO_GLOBAL(sapi_name) == "fpm-fcgi"){
+    if (this->mainPID == getpid() && (AIKIDO_GLOBAL(sapi_name) == "fpm-fcgi" || AIKIDO_GLOBAL(sapi_name) == "apache2handler")){
         AIKIDO_LOG_INFO("Skipping RequestInit in php-fpm master (pid %d == mainPID; "
                         "likely opcache.preload virtual RINIT). Workers will initialize "
                         "the request processor after fork.\n", (int)getpid());
         return;
     }   
     #endif
-    
+
     AIKIDO_GLOBAL(action).Reset();
     AIKIDO_GLOBAL(requestCache).Reset();
     
