@@ -16,7 +16,7 @@ void PhpLifecycle::ModuleInit() {
     }
 }
 
-bool PhpLifecycle::IsFpmMasterPreloadCycle() const {
+bool PhpLifecycle::IsRequestHandledInMainPid() const {
     // Skip any Aikido work that would dlopen aikido-request-processor.so in
     // the php-fpm / apache master's opcache.preload virtual RINIT cycle:
     // loading the Go runtime there would make every forked worker inherit
@@ -33,7 +33,7 @@ bool PhpLifecycle::IsFpmMasterPreloadCycle() const {
 
 
 void PhpLifecycle::RequestInit() {
-    if (IsFpmMasterPreloadCycle()) {
+    if (IsRequestHandledInMainPid()) {
         AIKIDO_LOG_INFO("Skipping RequestInit in %s master (pid %d == mainPID; "
                         "likely opcache.preload virtual RINIT). Workers will "
                         "initialize the request processor after fork.\n",
@@ -53,7 +53,7 @@ void PhpLifecycle::RequestInit() {
 }
 
 void PhpLifecycle::RequestShutdown() {
-    if (IsFpmMasterPreloadCycle()) {
+    if (IsRequestHandledInMainPid()) {
         return;
     }
     AIKIDO_GLOBAL(requestProcessorInstance).RequestShutdown();

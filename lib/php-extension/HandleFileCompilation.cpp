@@ -1,7 +1,7 @@
 #include "Includes.h"
 
 zend_op_array* handle_file_compilation(zend_file_handle* file_handle, int type) {
-    if(AIKIDO_GLOBAL(disable) == true || AIKIDO_GLOBAL(phpLifecycle).IsFpmMasterPreloadCycle()) {
+    if(AIKIDO_GLOBAL(disable) == true || AIKIDO_GLOBAL(phpLifecycle).IsRequestHandledInMainPid()) {
         return original_file_compilation_handler(file_handle, type);
     }
 
