@@ -269,7 +269,7 @@ func OnMonitoredSinkStats(server *ServerData, token string, sink, kind string, a
 		Timings:               timings,
 	})
 	if err != nil {
-		log.Warnf(nil, "Could not send monitored sink stats event")
+		log.Debugf(nil, "Could not send monitored sink stats event: %v", err)
 		return
 	}
 	log.Debugf(nil, "Monitored sink stats for sink \"%s\" sent via socket", sink)
