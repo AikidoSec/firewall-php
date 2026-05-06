@@ -26,7 +26,7 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_pdo_query) {
     eventId = EVENT_PRE_SQL_QUERY_EXECUTED;
     auto& eventCacheStack = AIKIDO_GLOBAL(eventCacheStack);
     eventCacheStack.Top().moduleName = "PDO";
-    eventCacheStack.Top().sqlQuery = ZSTR_VAL(query);
+    eventCacheStack.Top().sqlQuery = std::string(ZSTR_VAL(query), ZSTR_LEN(query));
     eventCacheStack.Top().sqlDialect = GetSqlDialectFromPdo(pdo_object);
 }
 
@@ -50,7 +50,7 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_pdo_exec) {
     eventId = EVENT_PRE_SQL_QUERY_EXECUTED;
     auto& eventCacheStack = AIKIDO_GLOBAL(eventCacheStack);
     eventCacheStack.Top().moduleName = "PDO";
-    eventCacheStack.Top().sqlQuery = ZSTR_VAL(query);
+    eventCacheStack.Top().sqlQuery = std::string(ZSTR_VAL(query), ZSTR_LEN(query));
     eventCacheStack.Top().sqlDialect = GetSqlDialectFromPdo(pdo_object);
 }
 
@@ -67,10 +67,19 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_pdostatement_execute) {
         return;
     }
 
+    if (!stmt->query_string) {
+        return;
+    }
+
     eventId = EVENT_PRE_SQL_QUERY_EXECUTED;
     auto& eventCacheStack = AIKIDO_GLOBAL(eventCacheStack);
-    eventCacheStack.Top().moduleName = "PDOStatement"; 
-    eventCacheStack.Top().sqlQuery = PHP_GET_CHAR_PTR(stmt->query_string);    
+    eventCacheStack.Top().moduleName = "PDOStatement";
+    
+#if PHP_VERSION_ID >= 80100
+    eventCacheStack.Top().sqlQuery = std::string(ZSTR_VAL(stmt->query_string), ZSTR_LEN(stmt->query_string));
+#else
+    eventCacheStack.Top().sqlQuery = std::string((char*)stmt->query_string);
+#endif
 
 #if PHP_VERSION_ID >= 80500
     if (!stmt->database_object_handle) {
@@ -121,6 +130,6 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_mysqli_query){
     eventId = EVENT_PRE_SQL_QUERY_EXECUTED;
     auto& eventCacheStack = AIKIDO_GLOBAL(eventCacheStack);
     eventCacheStack.Top().moduleName = "mysqli";
-    eventCacheStack.Top().sqlQuery = query;
+    eventCacheStack.Top().sqlQuery = std::string(query, queryLength);
     eventCacheStack.Top().sqlDialect = "mysql";
 }
