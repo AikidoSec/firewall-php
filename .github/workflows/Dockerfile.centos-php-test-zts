@@ -1,0 +1,213 @@
+# syntax=docker/dockerfile:1.7
+# CentOS Stream 9 test image with PHP built from source in ZTS mode
+# Used for testing the extension with FrankenPHP and other ZTS environments
+
+ARG BASE_IMAGE=quay.io/centos/centos:stream9
+ARG PHP_VERSION=8.3
+ARG PHP_SRC_REF=PHP-${PHP_VERSION}
+
+FROM ${BASE_IMAGE} AS base
+SHELL ["/bin/bash", "-euo", "pipefail", "-c"]
+
+ARG PHP_VERSION
+ENV TZ=Etc/UTC \
+    LC_ALL=C.UTF-8 \
+    LANG=C.UTF-8 \
+    PHP_VERSION=${PHP_VERSION}
+
+RUN yum install -y yum-utils && \
+    dnf config-manager --set-enabled crb || dnf config-manager --set-enabled powertools || true
+
+# Install minimal tools needed for re2c build (replace curl-minimal with full curl)
+RUN yum install -y xz tar gcc gcc-c++ make cmake
+
+ENV RE2C_VERSION=3.1
+RUN curl -fsSL -o /tmp/re2c.tar.xz https://github.com/skvadrik/re2c/releases/download/${RE2C_VERSION}/re2c-${RE2C_VERSION}.tar.xz \
+    && mkdir -p /tmp/re2c-src \
+    && tar -xJf /tmp/re2c.tar.xz -C /tmp/re2c-src --strip-components=1 \
+    && cd /tmp/re2c-src \
+    && ./configure \
+    && make -j"$(nproc)" \
+    && make install \
+    && rm -rf /tmp/re2c-src /tmp/re2c.tar.xz
+
+# Install remaining build dependencies and tools
+RUN yum install -y autoconf bison pkgconfig \
+    libxml2-devel sqlite-devel libcurl-devel openssl-devel \
+    libzip-devel oniguruma-devel libjpeg-turbo-devel libpng-devel libwebp-devel \
+    libicu-devel readline-devel libxslt-devel \
+    git wget \
+    python3 python3-devel python3-pip \
+    nginx httpd httpd-devel procps-ng mysql-server \
+ && yum clean all
+
+# Install mariadb-devel separately (may need different repo or skip if not critical)
+RUN yum install -y mariadb-devel || yum install -y mariadb-connector-c-devel || echo "Warning: mariadb-devel not available, continuing without it"
+
+# Fetch and build PHP from source with ZTS
+FROM base AS php-build
+ARG PHP_SRC_REF
+WORKDIR /usr/src
+RUN git clone --depth 1 --branch "${PHP_SRC_REF}" https://github.com/php/php-src.git
+WORKDIR /usr/src/php-src
+
+RUN sed -i 's/\[\([0-9]\+\.[0-9]\+\.[0-9]\+\)-dev\]/[\1]/' configure.ac
+RUN ./buildconf --force
+
+# Patch openssl.c for OpenSSL compatibility (RSA_SSLV23_PADDING may not be available in newer OpenSSL)
+RUN if [ -f ext/openssl/openssl.c ] && grep -q 'REGISTER_LONG_CONSTANT("OPENSSL_SSLV23_PADDING"' ext/openssl/openssl.c; then \
+    awk '/REGISTER_LONG_CONSTANT\("OPENSSL_SSLV23_PADDING"/ { \
+        indent = $0; \
+        gsub(/[^[:space:]].*/, "", indent); \
+        print indent "#ifdef RSA_SSLV23_PADDING"; \
+        gsub(/^[[:space:]]*/, indent "    "); \
+        print; \
+        print indent "#endif"; \
+        next \
+    } \
+    { print }' ext/openssl/openssl.c > ext/openssl/openssl.c.new && \
+    mv ext/openssl/openssl.c.new ext/openssl/openssl.c; \
+    fi || true
+
+RUN mkdir -p /usr/local/etc/php/conf.d
+
+ARG PHP_VERSION
+COPY --from=base /usr/local/include /usr/local/include
+COPY --from=base /usr/local/lib /usr/local/lib
+COPY --from=base /usr/local/lib64 /usr/local/lib64
+
+# Build PHP with ZTS
+RUN ./configure \
+      --prefix=/usr/local \
+      --with-config-file-path=/usr/local/lib \
+      --with-config-file-scan-dir=/usr/local/etc/php/conf.d \
+      --enable-zts \
+      --enable-maintainer-zts \
+      --enable-fpm \
+      --enable-mbstring \
+      --enable-pcntl \
+      --enable-cgi \
+      --enable-embed \
+      --enable-dom \
+      --enable-xml \
+      --enable-simplexml \
+      --enable-xmlreader \
+      --enable-xmlwriter \
+      --with-xsl \
+      --with-extra-version="" \
+      --with-curl \
+      --with-mysqli \
+      --with-openssl \
+      --with-zlib \
+      --with-zip \
+      --disable-zend-signals \
+      --enable-zend-max-execution-timers \
+&& make -j"$(nproc)" \
+&& make install \
+&& strip /usr/local/bin/php /usr/local/sbin/php-fpm || true
+
+WORKDIR /usr/src
+RUN git clone https://github.com/e-dant/watcher.git
+WORKDIR /usr/src/watcher
+RUN cmake -S . -B build \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=/usr/local \
+    -DBUILD_LIB=ON \
+    -DBUILD_BIN=ON \
+    -DBUILD_HDR=ON && \
+    cmake --build build && \
+    cmake --install build && \
+    ldconfig /usr/local/lib /usr/local/lib64
+
+FROM base AS final
+
+COPY --from=php-build /usr/local /usr/local
+
+RUN echo "/usr/local/lib" > /etc/ld.so.conf.d/usr-local-lib.conf && \
+    echo "/usr/local/lib64" >> /etc/ld.so.conf.d/usr-local-lib.conf && \
+    ldconfig
+
+COPY frankenphp-binary/ /tmp/frankenphp-binary/
+RUN if [ -f /tmp/frankenphp-binary/frankenphp ]; then \
+        cp /tmp/frankenphp-binary/frankenphp /usr/bin/frankenphp && \
+        chmod +x /usr/bin/frankenphp && \
+        mkdir -p /etc/frankenphp/caddy.d && \
+        mkdir -p /etc/frankenphp/php.d && \
+        mkdir -p /usr/lib/frankenphp/modules; \
+    fi
+
+RUN EXTENSION_DIR=$(php -i | grep "^extension_dir" | awk '{print $3}') && \
+    if [ -z "$EXTENSION_DIR" ]; then \
+        echo "Error: Could not determine extension_dir"; \
+        exit 1; \
+    fi && \
+    mkdir -p "$EXTENSION_DIR" && \
+    echo "Created extension_dir: $EXTENSION_DIR"
+
+# Verify ZTS is enabled
+RUN php -v | grep -q "ZTS" || (echo "ERROR: ZTS not enabled!" && exit 1) && \
+    php -m | grep -E 'curl|mysqli' >/dev/null
+
+ENV PATH="/usr/local/bin:${PATH}" \
+    LD_LIBRARY_PATH="/usr/local/lib:/usr/local/lib64:${LD_LIBRARY_PATH:-}"
+
+RUN ln -sf /usr/local/bin/php /usr/bin/php && \
+    ln -sf /usr/local/sbin/php-fpm /usr/sbin/php-fpm || true && \
+    ln -sf /usr/local/bin/php-cgi /usr/bin/php-cgi
+
+RUN     mkdir -p /etc/php-fpm.d && \
+    mkdir -p /run/php-fpm && \
+    mkdir -p /var/run && \
+    mkdir -p /var/log/php-fpm && \
+    mkdir -p /etc/httpd || true && \
+    mkdir -p /usr/local/etc/php-fpm.d && \
+    mkdir -p /usr/local/etc/php/conf.d && \
+
+    ln -sf /usr/local/etc/php/conf.d /etc/php.d || true && \
+
+    echo "[global]" > /usr/local/etc/php-fpm.conf && \
+    echo "pid = /run/php-fpm/php-fpm.pid" >> /usr/local/etc/php-fpm.conf && \
+    echo "error_log = /var/log/php-fpm/error.log" >> /usr/local/etc/php-fpm.conf && \
+    echo "daemonize = yes" >> /usr/local/etc/php-fpm.conf && \
+    echo "include=/usr/local/etc/php-fpm.d/*.conf" >> /usr/local/etc/php-fpm.conf && \
+    echo "include=/etc/php-fpm.d/*.conf" >> /usr/local/etc/php-fpm.conf && \
+
+    echo "[www]" > /usr/local/etc/php-fpm.d/www.conf && \
+    echo "user = root" >> /usr/local/etc/php-fpm.d/www.conf && \
+    echo "group = root" >> /usr/local/etc/php-fpm.d/www.conf && \
+    echo "listen = 127.0.0.1:9000" >> /usr/local/etc/php-fpm.d/www.conf && \
+    echo "listen.owner = root" >> /usr/local/etc/php-fpm.d/www.conf && \
+    echo "listen.group = root" >> /usr/local/etc/php-fpm.d/www.conf && \
+    echo "pm = dynamic" >> /usr/local/etc/php-fpm.d/www.conf && \
+    echo "pm.max_children = 5" >> /usr/local/etc/php-fpm.d/www.conf && \
+    echo "pm.start_servers = 2" >> /usr/local/etc/php-fpm.d/www.conf && \
+    echo "pm.min_spare_servers = 1" >> /usr/local/etc/php-fpm.d/www.conf && \
+    echo "pm.max_spare_servers = 3" >> /usr/local/etc/php-fpm.d/www.conf && \
+
+    php-fpm -t -y /usr/local/etc/php-fpm.conf 2>&1 | grep -v "Nothing matches the include pattern" || true && \
+    php-fpm -t -y /usr/local/etc/php-fpm.conf >/dev/null 2>&1 || \
+    (PHP_MAJOR=$(php -r 'echo PHP_MAJOR_VERSION;') && \
+     PHP_MINOR=$(php -r 'echo PHP_MINOR_VERSION;') && \
+     echo "PHP-FPM config test failed for PHP ${PHP_MAJOR}.${PHP_MINOR}" && \
+     echo "Config file contents:" && cat /usr/local/etc/php-fpm.conf && \
+     echo "Pool config:" && cat /usr/local/etc/php-fpm.d/www.conf && \
+     exit 1) && \
+
+    ln -sf /usr/local/etc/php-fpm.conf /etc/php-fpm.conf && \
+    ln -sf /usr/local/etc/php-fpm.d/www.conf /etc/php-fpm.d/www.conf || true
+
+RUN echo "mysqli.default_socket = /var/lib/mysql/mysql.sock" > /usr/local/etc/php/conf.d/mysql-socket.ini
+
+RUN if [ -f /usr/local/bin/frankenphp ]; then \
+         frankenphp -v || echo "Warning: frankenphp version check failed"; \
+     else \
+         echo "WARNING: frankenphp binary not found; FrankenPHP-specific tests will be skipped."; \
+     fi
+
+# Python deps used by test harness
+RUN python3 -m pip install --no-cache-dir --upgrade pip && \
+    python3 -m pip install --no-cache-dir flask requests psutil
+
+# Quality-of-life
+WORKDIR /work
+CMD ["bash"]

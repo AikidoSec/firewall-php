@@ -187,6 +187,9 @@ def assert_response_header_contains(response, header, value):
 def assert_response_body_contains(response, text):
     assert text in response.text, f"Test '{text}' is not part of response body: {response.text}"
 
+def assert_response_body_not_contains(response, text):
+    assert text not in response.text, f"Test '{text}' is part of response body: {response.text}"
+
 def assert_is_valid_ip(ip_address):
     try:
         ipaddress.ip_address(ip_address)

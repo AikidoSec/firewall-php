@@ -1,12 +1,16 @@
 #include "Includes.h"
 
-Action action;
-
 ACTION_STATUS Action::executeThrow(json &event) {
     int _code = event["code"].get<int>();
     std::string _message = event["message"].get<std::string>();
-    zend_throw_exception(GetFirewallDefaultExceptionCe(), _message.c_str(), _code);
+    
+    // Set response code BEFORE throwing: exception triggers header flush which reads http_response_code from SAPI.
+    // http_response_code() → zend_throw_exception() → zend_exception_error() → 
+    // sapi_send_headers() → frankenphp_send_headers() reads SG(sapi_headers).http_response_code
+    // This works for both standard and frankenphp.
     CallPhpFunctionWithOneParam("http_response_code", _code);
+    zend_throw_exception(GetFirewallDefaultExceptionCe(), _message.c_str(), _code);
+
     return BLOCK;
 }
 
@@ -37,8 +41,19 @@ ACTION_STATUS Action::executeStore(json &event) {
     return CONTINUE;
 }
 
+ACTION_STATUS Action::executeWhitelist(json &event) {
+    whitelisted = true;
+    type = event["type"];
+    trigger = event["trigger"];
+    description = event["description"];
+    if (trigger == "ip") {
+        ip = event["ip"];
+    }
+    return CONTINUE;
+}
+
 ACTION_STATUS Action::executeBypassIp(json &event) {
-    isIpBypassed = true;
+    AIKIDO_GLOBAL(isIpBypassed) = true;
     return CONTINUE;
 }
 
@@ -69,6 +84,8 @@ ACTION_STATUS Action::Execute(std::string &event) {
         return executeWarningMessage(eventJson);
     } else if (actionType == "bypassIp") {
         return executeBypassIp(eventJson);
+    } else if (actionType == "whitelisted") {
+        return executeWhitelist(eventJson);
     }
     return CONTINUE;
 }
@@ -91,6 +108,7 @@ bool Action::IsIdorViolation(std::string &event) {
 
 void Action::Reset() {
     block = false;
+    whitelisted = false;
     type = "";
     trigger = "";
     description = "";
@@ -104,6 +122,10 @@ bool Action::Exit() {
 
 bool Action::Block() {
     return block;
+}
+
+bool Action::Whitelisted() {
+    return whitelisted;
 }
 
 char *Action::Type() {

@@ -2,7 +2,8 @@
 
 ZEND_FUNCTION(enable_idor_protection) {
     ScopedTimer scopedTimer("enable_idor_protection", "aikido_op");
-    
+    auto& requestCache = AIKIDO_GLOBAL(requestCache);
+
     if (IsAikidoDisabledOrBypassed()) {
         RETURN_BOOL(false);
     }
@@ -44,6 +45,8 @@ ZEND_FUNCTION(enable_idor_protection) {
 }
 
 ZEND_FUNCTION(set_tenant_id) {
+    auto& requestCache = AIKIDO_GLOBAL(requestCache);
+
     if (IsAikidoDisabledOrBypassed()) {
         return;
     }
@@ -65,6 +68,7 @@ ZEND_FUNCTION(set_tenant_id) {
 }
 
 ZEND_FUNCTION(without_idor_protection) {
+    auto& requestCache = AIKIDO_GLOBAL(requestCache);
     zend_fcall_info fci;
     zend_fcall_info_cache fci_cache;
 

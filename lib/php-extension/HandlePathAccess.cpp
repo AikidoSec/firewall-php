@@ -27,6 +27,7 @@ void helper_handle_pre_file_path_access(char *filename, EVENT_ID &eventId) {
     filenameString = get_resource_or_original_from_php_filter(filenameString);
 
     // if filename starts with http:// or https://, it's a URL so we treat it as an outgoing request
+    auto& eventCacheStack = AIKIDO_GLOBAL(eventCacheStack);
     if (StartsWith(filenameString, "http://", false) ||
         StartsWith(filenameString, "https://", false)) {
         eventId = EVENT_PRE_OUTGOING_REQUEST;
@@ -39,6 +40,8 @@ void helper_handle_pre_file_path_access(char *filename, EVENT_ID &eventId) {
 
 /* Helper for handle post file path access */
 void helper_handle_post_file_path_access(EVENT_ID &eventId) {
+    auto& eventCacheStack = AIKIDO_GLOBAL(eventCacheStack);
+
     if (!eventCacheStack.Top().outgoingRequestUrl.empty()) {
         // If the pre handler for path access determined this was actually an URL,
         // we need to notify that the request finished.
@@ -92,7 +95,7 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_file_path_access_2) {
 
     helper_handle_pre_file_path_access(ZSTR_VAL(filename), eventId);
     if (filename2) {
-        eventCacheStack.Top().filename2 = ZSTR_VAL(filename2);
+        AIKIDO_GLOBAL(eventCacheStack).Top().filename2 = ZSTR_VAL(filename2);
     }
 }
 

@@ -14,7 +14,7 @@ func TestResolvedIpStatus(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		result := getResolvedIpStatusForHostname(test.hostname)
+		result := getResolvedIpStatusForHostname(nil, test.hostname)
 		if result == nil {
 			t.Errorf("For hostname '%s' expected DNS resolution to not fail", test.hostname)
 			break

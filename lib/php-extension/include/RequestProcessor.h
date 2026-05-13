@@ -1,19 +1,31 @@
 #pragma once
 
-typedef GoUint8 (*RequestProcessorInitFn)(GoString initJson);
-typedef GoUint8 (*RequestProcessorContextInitFn)(ContextCallback);
-typedef GoUint8 (*RequestProcessorConfigUpdateFn)(GoString initJson);
-typedef char* (*RequestProcessorOnEventFn)(GoInt eventId);
-typedef int (*RequestProcessorGetBlockingModeFn)();
-typedef void (*RequestProcessorReportStats)(GoString, GoString, GoInt32, GoInt32, GoInt32, GoInt32, GoInt32, GoSlice);
-typedef void (*RequestProcessorUninitFn)();
+typedef void* (*CreateInstanceFn)(uint64_t threadId);
+typedef GoUint8 (*InitInstanceFn)(void* instancePtr, GoString initJson);
+typedef void (*DestroyInstanceFn)(uint64_t threadId);
+
+// Updated typedefs with instance pointer as first parameter
+typedef GoUint8 (*RequestProcessorInitFn)(GoString platformName);
+typedef GoUint8 (*RequestProcessorContextInitFn)(void* instancePtr, ContextCallback);
+typedef GoUint8 (*RequestProcessorConfigUpdateFn)(void* instancePtr, GoString initJson);
+typedef char* (*RequestProcessorOnEventFn)(void* instancePtr, GoInt eventId);
+typedef int (*RequestProcessorGetBlockingModeFn)(void* instancePtr);
+typedef void (*RequestProcessorReportStats)(void* instancePtr, GoString, GoString, GoInt32, GoInt32, GoInt32, GoInt32, GoInt32, GoSlice);
+typedef void (*RequestProcessorUninitFn)(void* instancePtr);
 
 class RequestProcessor {
-   private:
+    #ifdef ZTS
+        private:
+            std::mutex syncMutex;
+    #endif
+    
+    public:
     bool initFailed = false;
-    bool requestInitialized = false;
     void* libHandle = nullptr;
-    uint64_t numberOfRequests = 0;
+
+    CreateInstanceFn createInstanceFn = nullptr;
+    InitInstanceFn initInstanceFn = nullptr;
+    DestroyInstanceFn destroyInstanceFn = nullptr;
     RequestProcessorContextInitFn requestProcessorContextInitFn = nullptr;
     RequestProcessorConfigUpdateFn requestProcessorConfigUpdateFn = nullptr;
     RequestProcessorOnEventFn requestProcessorOnEventFn = nullptr;
@@ -21,16 +33,29 @@ class RequestProcessor {
     RequestProcessorReportStats requestProcessorReportStatsFn = nullptr;
     RequestProcessorUninitFn requestProcessorUninitFn = nullptr;
 
+    RequestProcessor() = default;
+    ~RequestProcessor() = default;
+
+    std::string GetInitData(const std::string& userProvidedToken = "");
+
+    bool Init();
+    void Uninit();
+};
+
+class RequestProcessorInstance {
    private:
-    std::string GetInitData(const std::string& token = "");
+    bool requestInitialized = false;
+    void* requestProcessorInstance = nullptr; 
+    uint64_t numberOfRequests = 0;
+    uint64_t threadId = 0;
+
     bool ContextInit();
     void SendPreRequestEvent();
     void SendPostRequestEvent();
 
    public:
-    RequestProcessor() = default;
+    RequestProcessorInstance() = default;
 
-    bool Init();
     bool RequestInit();
     bool SendEvent(EVENT_ID eventId, std::string& output);
     bool IsBlockingEnabled();
@@ -39,9 +64,9 @@ class RequestProcessor {
     void LoadConfigFromEnvironment();
     void LoadConfigWithTokenFromPHPSetToken(const std::string& tokenFromMiddleware);
     void RequestShutdown();
-    void Uninit();
 
-    ~RequestProcessor();
+
+    ~RequestProcessorInstance();
 };
 
 extern RequestProcessor requestProcessor;

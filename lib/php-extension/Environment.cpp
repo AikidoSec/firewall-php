@@ -33,15 +33,13 @@ std::string GetSystemEnvVariable(const std::string& env_key) {
     return env_value;
 }
 
-std::unordered_map<std::string, std::string> laravelEnv;
-bool laravelEnvLoaded = false;
 
 bool LoadLaravelEnvFile() {
-    if (laravelEnvLoaded) {
+    if (AIKIDO_GLOBAL(laravelEnvLoaded)) {
         return true;
     }
 
-    std::string docRoot = server.GetVar("DOCUMENT_ROOT");
+    std::string docRoot = AIKIDO_GLOBAL(server).GetVar("DOCUMENT_ROOT");
     AIKIDO_LOG_DEBUG("Trying to load .env file, starting with DOCUMENT_ROOT: %s\n", docRoot.c_str());
     if (docRoot.empty()) {
         AIKIDO_LOG_DEBUG("DOCUMENT_ROOT is empty!\n");
@@ -89,41 +87,84 @@ bool LoadLaravelEnvFile() {
                      (value.front() == '\'' && value.back() == '\''))) {
                     value = value.substr(1, value.length() - 2);
                 }
-                laravelEnv[key] = value;
+                AIKIDO_GLOBAL(laravelEnv)[key] = value;
             }
         }
     }
-    laravelEnvLoaded = true;
+    AIKIDO_GLOBAL(laravelEnvLoaded) = true;
     AIKIDO_LOG_DEBUG("Loaded Laravel env file: %s\n", laravelEnvPath.c_str());
     return true;
 }
 
+
+/*
+    FrankenPHP's Caddyfile env directive only populates $_SERVER, not the process environment.
+    This function reads environment variables from $_SERVER for FrankenPHP compatibility.
+*/
+std::string GetFrankenEnvVariable(const std::string& env_key) {
+    if (std::string(sapi_module.name) != "frankenphp") {
+        return "";
+    }
+    
+    // Force $_SERVER autoglobal to be initialized (it's lazily loaded in PHP)
+    // This is CRITICAL in ZTS mode to ensure each thread gets request-specific $_SERVER values
+    zend_is_auto_global_str(ZEND_STRL("_SERVER"));
+    
+    if (Z_TYPE(PG(http_globals)[TRACK_VARS_SERVER]) != IS_ARRAY) {
+        AIKIDO_LOG_DEBUG("franken_env[%s] = (empty - $_SERVER not an array)\n", env_key.c_str());
+        return "";
+    }
+    
+    std::string env_value = AIKIDO_GLOBAL(server).GetVar(env_key.c_str());
+    if (!env_value.empty()) {
+        if (env_key == "AIKIDO_TOKEN") {
+            AIKIDO_LOG_DEBUG("franken_env[%s] = %s\n", env_key.c_str(), AnonymizeToken(env_value).c_str());
+        } else {
+            AIKIDO_LOG_DEBUG("franken_env[%s] = %s\n", env_key.c_str(), env_value.c_str());
+        }
+    }
+    return env_value;
+}
+
 std::string GetLaravelEnvVariable(const std::string& env_key) {
+    const auto& laravelEnv = AIKIDO_GLOBAL(laravelEnv);
     if (laravelEnv.find(env_key) != laravelEnv.end()) {
         if (env_key == "AIKIDO_TOKEN") {
-            AIKIDO_LOG_DEBUG("laravel_env[%s] = %s\n", env_key.c_str(), AnonymizeToken(laravelEnv[env_key]).c_str());
+            AIKIDO_LOG_DEBUG("laravel_env[%s] = %s\n", env_key.c_str(), AnonymizeToken(laravelEnv.at(env_key)).c_str());
         } else {
-            AIKIDO_LOG_DEBUG("laravel_env[%s] = %s\n", env_key.c_str(), laravelEnv[env_key].c_str());
+            AIKIDO_LOG_DEBUG("laravel_env[%s] = %s\n", env_key.c_str(), laravelEnv.at(env_key).c_str());
         }
-        return laravelEnv[env_key];
+        return laravelEnv.at(env_key);
     }
     return "";
 }
 
 /*
-    Load env variables from the following sources (in this order):
+    Load env variables from the following sources (priority order):
     - System environment variables
-    - PHP environment variables
+    - FrankenPHP environment variables ($_SERVER - request-specific, thread-safe)
+    - PHP environment variables 
     - Laravel environment variables
+    
+    Order is critical: In multithreaded environments (FrankenPHP worker/classic, ZTS),
+    getenv() returns cached process-level values that may belong to a different request.
+    $_SERVER must be checked first to get fresh, request-specific environment data.
 */
+
 using EnvGetterFn = std::string(*)(const std::string&);
-EnvGetterFn envGetters[] = {
+
+const std::vector<EnvGetterFn> completeEnvGetters = {
     &GetSystemEnvVariable,
+    &GetFrankenEnvVariable,
     &GetPhpEnvVariable,
     &GetLaravelEnvVariable
 };
 
-std::string GetEnvVariable(const std::string& env_key) {
+const std::vector<EnvGetterFn> systemEnvGetters = {
+    &GetSystemEnvVariable,
+};
+
+std::string GetEnvVariable(const std::vector<EnvGetterFn>& envGetters, const std::string& env_key) {
     for (EnvGetterFn envGetter : envGetters) {
         std::string env_value = envGetter(env_key);
         if (!env_value.empty()) {
@@ -133,8 +174,8 @@ std::string GetEnvVariable(const std::string& env_key) {
     return "";
 }
 
-std::string GetEnvString(const std::string& env_key, const std::string default_value) {
-    std::string env_value = GetEnvVariable(env_key);
+std::string GetEnvString(const std::vector<EnvGetterFn>& envGetters, const std::string& env_key, const std::string default_value) {
+    std::string env_value = GetEnvVariable(envGetters, env_key);
     if (!env_value.empty()) {
         return env_value;
     }
@@ -149,12 +190,16 @@ bool GetBoolFromString(const std::string& env, bool default_value) {
     return default_value;
 }
 
-bool GetEnvBool(const std::string& env_key, bool default_value) {
-    return GetBoolFromString(GetEnvVariable(env_key), default_value);
+bool GetEnvBool(const std::vector<EnvGetterFn>& envGetters, const std::string& env_key, bool default_value) {
+    return GetBoolFromString(GetEnvVariable(envGetters, env_key), default_value);
 }
 
-unsigned int GetEnvNumber(const std::string& env_key, unsigned int default_value) {
-    std::string env_value = GetEnvVariable(env_key.c_str());
+bool GetEnvBoolWithAllGetters(const std::string& env_key, bool default_value) {
+    return GetBoolFromString(GetEnvVariable(completeEnvGetters, env_key), default_value);
+}
+
+unsigned int GetEnvNumber(const std::vector<EnvGetterFn>& envGetters, const std::string& env_key, unsigned int default_value) {
+    std::string env_value = GetEnvVariable(envGetters, env_key);
     if (!env_value.empty()) {
         try {
             unsigned int number = std::stoi(env_value);
@@ -167,24 +212,34 @@ unsigned int GetEnvNumber(const std::string& env_key, unsigned int default_value
     return default_value;
 }
 
-void LoadEnvironment() {
-    if (GetEnvBool("AIKIDO_DEBUG", false)) {
-        AIKIDO_GLOBAL(log_level_str) = "DEBUG";
-        AIKIDO_GLOBAL(log_level) = AIKIDO_LOG_LEVEL_DEBUG;
+void LoadEnvironmentFromGetters(const std::vector<EnvGetterFn>& envGetters) {
+    auto& logLevelStr = AIKIDO_GLOBAL(log_level_str);
+    auto& logLevel = AIKIDO_GLOBAL(log_level);
+    if (GetEnvBool(envGetters, "AIKIDO_DEBUG", false)) {
+        logLevelStr = "DEBUG";
+        logLevel = AIKIDO_LOG_LEVEL_DEBUG;
     } else {
-        AIKIDO_GLOBAL(log_level_str) = GetEnvString("AIKIDO_LOG_LEVEL", "WARN");
-        AIKIDO_GLOBAL(log_level) = Log::ToLevel(AIKIDO_GLOBAL(log_level_str));
+        logLevelStr = GetEnvString(envGetters, "AIKIDO_LOG_LEVEL", "WARN");
+        logLevel = Log::ToLevel(logLevelStr);
     }
 
-    AIKIDO_GLOBAL(blocking) = GetEnvBool("AIKIDO_BLOCK", false) || GetEnvBool("AIKIDO_BLOCKING", false);;
-    AIKIDO_GLOBAL(disable) = GetEnvBool("AIKIDO_DISABLE", false);
-    AIKIDO_GLOBAL(collect_api_schema) = GetEnvBool("AIKIDO_FEATURE_COLLECT_API_SCHEMA", true);
-    AIKIDO_GLOBAL(localhost_allowed_by_default) = GetEnvBool("AIKIDO_LOCALHOST_ALLOWED_BY_DEFAULT", true);
-    AIKIDO_GLOBAL(trust_proxy) = GetEnvBool("AIKIDO_TRUST_PROXY", true);
-    AIKIDO_GLOBAL(disk_logs) = GetEnvBool("AIKIDO_DISK_LOGS", false);
+    AIKIDO_GLOBAL(blocking) = GetEnvBool(envGetters, "AIKIDO_BLOCK", false) || GetEnvBool(envGetters, "AIKIDO_BLOCKING", false);
+    AIKIDO_GLOBAL(disable) = GetEnvBool(envGetters, "AIKIDO_DISABLE", false);
+    AIKIDO_GLOBAL(collect_api_schema) = GetEnvBool(envGetters,"AIKIDO_FEATURE_COLLECT_API_SCHEMA", true);
+    AIKIDO_GLOBAL(localhost_allowed_by_default) = GetEnvBool(envGetters, "AIKIDO_LOCALHOST_ALLOWED_BY_DEFAULT", true);
+    AIKIDO_GLOBAL(trust_proxy) = GetEnvBool(envGetters, "AIKIDO_TRUST_PROXY", true);
+    AIKIDO_GLOBAL(disk_logs) = GetEnvBool(envGetters, "AIKIDO_DISK_LOGS", false);
     AIKIDO_GLOBAL(sapi_name) = sapi_module.name;
-    AIKIDO_GLOBAL(token) = GetEnvString("AIKIDO_TOKEN", "");
-    AIKIDO_GLOBAL(endpoint) = GetEnvString("AIKIDO_ENDPOINT", "https://guard.aikido.dev/");
-    AIKIDO_GLOBAL(config_endpoint) = GetEnvString("AIKIDO_REALTIME_ENDPOINT", "https://runtime.aikido.dev/");
-    AIKIDO_GLOBAL(report_stats_interval_to_agent) = GetEnvNumber("AIKIDO_REPORT_STATS_INTERVAL", 100);
+    AIKIDO_GLOBAL(token) = GetEnvString(envGetters, "AIKIDO_TOKEN", "");
+    AIKIDO_GLOBAL(endpoint) = GetEnvString(envGetters, "AIKIDO_ENDPOINT", "https://guard.aikido.dev/");
+    AIKIDO_GLOBAL(config_endpoint) = GetEnvString(envGetters, "AIKIDO_REALTIME_ENDPOINT", "https://runtime.aikido.dev/");
+    AIKIDO_GLOBAL(report_stats_interval_to_agent) = GetEnvNumber(envGetters, "AIKIDO_REPORT_STATS_INTERVAL", 100);
+}
+
+void LoadEnvironment() {
+    LoadEnvironmentFromGetters(completeEnvGetters);
+}
+
+void LoadSystemEnvironment() {
+    LoadEnvironmentFromGetters(systemEnvGetters);
 }

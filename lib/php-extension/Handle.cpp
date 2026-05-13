@@ -6,8 +6,12 @@ ACTION_STATUS aikido_process_event(EVENT_ID& eventId, std::string& sink) {
         return CONTINUE;
     }
 
+    auto& requestProcessorInstance = AIKIDO_GLOBAL(requestProcessorInstance);
+    auto& action = AIKIDO_GLOBAL(action);
+    auto& statsMap = AIKIDO_GLOBAL(stats);
+
     std::string outputEvent;
-    requestProcessor.SendEvent(eventId, outputEvent);
+    requestProcessorInstance.SendEvent(eventId, outputEvent);
 
     if (outputEvent.empty()) {
         return CONTINUE;
@@ -19,16 +23,16 @@ ACTION_STATUS aikido_process_event(EVENT_ID& eventId, std::string& sink) {
     }
 
     if (action.IsDetection(outputEvent)) {
-        stats[sink].IncrementAttacksDetected();
+        statsMap[sink].IncrementAttacksDetected();
     }
 
-    if (!requestProcessor.IsBlockingEnabled()) {
+    if (!requestProcessorInstance.IsBlockingEnabled()) {
         return CONTINUE;
     }
 
     ACTION_STATUS action_status = action.Execute(outputEvent);
     if (action_status == BLOCK) {
-        stats[sink].IncrementAttacksBlocked();
+        statsMap[sink].IncrementAttacksBlocked();
     }
     return action_status;
 }
@@ -45,6 +49,8 @@ ZEND_NAMED_FUNCTION(aikido_generic_handler) {
     std::string sink;
     std::string outputEvent;
     bool caughtException = false;
+
+    auto& eventCacheStack = AIKIDO_GLOBAL(eventCacheStack);
 
     try {
         zend_execute_data* exec_data = EG(current_execute_data);
@@ -87,7 +93,7 @@ ZEND_NAMED_FUNCTION(aikido_generic_handler) {
             return;
         }
 
-        if (IsAikidoDisabledOrBypassed()) {
+        if (IsAikidoDisabledOrBypassed() || AIKIDO_GLOBAL(phpLifecycle).IsRequestHandledInMainPid()) {
             if (original_handler) {
                 original_handler(INTERNAL_FUNCTION_PARAM_PASSTHRU);
             }

@@ -2,15 +2,14 @@ package aikido_types
 
 import "main/ipc/protos"
 
-type HandlerFunction func() string
-
 type Method struct {
 	ClassName  string
 	MethodName string
 }
 
 type RequestShutdownParams struct {
-	Server              *ServerData
+	ThreadID            uint64
+	Token               string
 	Method              string
 	Route               string
 	RouteParsed         string

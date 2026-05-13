@@ -10,5 +10,7 @@ type ServerData struct {
 	CloudConfig         CloudConfigData
 	CloudConfigMutex    sync.Mutex
 	MiddlewareInstalled bool
+	ServerInitialized   bool
+	ServerInitMutex     sync.Mutex
 	ParamMatchers       map[string]*regexp.Regexp
 }

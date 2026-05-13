@@ -10,5 +10,5 @@ def php_built_in_start_server(test_data, test_lib_dir, valgrind):
         
     return subprocess.Popen(
         php_server_process_cmd,
-        env=test_data["env"]
+        env=dict(os.environ, **test_data["env"])
     )

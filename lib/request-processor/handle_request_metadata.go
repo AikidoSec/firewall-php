@@ -4,15 +4,15 @@ import (
 	. "main/aikido_types"
 	"main/api_discovery"
 	"main/context"
-	"main/globals"
 	"main/grpc"
+	"main/instance"
 	"main/log"
 	"main/utils"
 	webscanner "main/vulnerabilities/web-scanner"
 )
 
-func OnPreRequest() string {
-	context.Clear()
+func OnPreRequest(instance *instance.RequestProcessorInstance) string {
+	context.Clear(instance)
 	return ""
 }
 
@@ -21,7 +21,7 @@ func OnRequestShutdownReporting(params RequestShutdownParams) {
 		return
 	}
 
-	log.Info("[RSHUTDOWN] Got request metadata: ", params.Method, " ", params.Route, " ", params.StatusCode)
+	log.Info(nil, "[RSHUTDOWN] Got request metadata: ", params.Method, " ", params.Route, " ", params.StatusCode)
 
 	params.IsWebScanner = webscanner.IsWebScanner(params.Method, params.Route, params.QueryParsed)
 
@@ -30,33 +30,41 @@ func OnRequestShutdownReporting(params RequestShutdownParams) {
 		return
 	}
 
-	log.Info("[RSHUTDOWN] Got API spec: ", params.APISpec)
+	log.Info(nil, "[RSHUTDOWN] Got API spec: ", params.APISpec)
 	grpc.OnRequestShutdown(params)
 }
 
-func OnPostRequest() string {
-	server := globals.GetCurrentServer()
+func OnPostRequest(instance *instance.RequestProcessorInstance) string {
+	server := instance.GetCurrentServer()
 	if server == nil {
 		return ""
 	}
+
 	// Only send request metadata if the IP is not bypassed
-	if !context.IsIpBypassed() {
-		go OnRequestShutdownReporting(RequestShutdownParams{
-			Server:         server,
-			Method:         context.GetMethod(),
-			Route:          context.GetRoute(),
-			RouteParsed:    context.GetParsedRoute(),
-			StatusCode:     context.GetStatusCode(),
-			User:           context.GetUserId(),
-			UserAgent:      context.GetUserAgent(),
-			IP:             context.GetIp(),
-			Url:            context.GetUrl(),
-			RateLimitGroup: context.GetRateLimitGroup(),
-			APISpec:        api_discovery.GetApiInfo(server),
-			RateLimited:    context.IsEndpointRateLimited(),
-			QueryParsed:    context.GetQueryParsed(),
-		})
+	if !context.IsIpBypassed(instance) {
+		params := RequestShutdownParams{
+			ThreadID:       instance.GetThreadID(),
+			Token:          instance.GetCurrentToken(),
+			Method:         context.GetMethod(instance),
+			Route:          context.GetRoute(instance),
+			RouteParsed:    context.GetParsedRoute(instance),
+			StatusCode:     context.GetStatusCode(instance),
+			User:           context.GetUserId(instance),
+			UserAgent:      context.GetUserAgent(instance),
+			IP:             context.GetIp(instance),
+			Url:            context.GetUrl(instance),
+			RateLimitGroup: context.GetRateLimitGroup(instance),
+			RateLimited:    context.IsEndpointRateLimited(instance),
+			QueryParsed:    context.GetQueryParsed(instance),
+			APISpec:        api_discovery.GetApiInfo(instance, instance.GetCurrentServer()),
+		}
+
+		context.Clear(instance)
+
+		go func() {
+			OnRequestShutdownReporting(params)
+		}()
 	}
-	context.Clear()
+
 	return ""
 }

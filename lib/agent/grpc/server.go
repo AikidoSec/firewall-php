@@ -80,7 +80,6 @@ func (s *GrpcServer) OnRequestShutdown(ctx context.Context, req *protos.RequestM
 	if req.GetShouldDiscoverRoute() || req.GetRateLimited() {
 		go storeTotalStats(server, req.GetRateLimited())
 		go storeRoute(server, req.GetMethod(), req.GetRouteParsed(), req.GetApiSpec(), req.GetRateLimited())
-		go updateRateLimitingCounts(server, req.GetMethod(), req.GetRoute(), req.GetRouteParsed(), req.GetUser(), req.GetIp(), req.GetRateLimitGroup())
 	}
 	go updateAttackWaveCountsAndDetect(server, req.GetIsWebScanner(), req.GetIp(), req.GetUser(), req.GetUserAgent(), req.GetMethod(), req.GetUrl())
 

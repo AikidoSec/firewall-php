@@ -3,16 +3,17 @@ package path_traversal
 import (
 	"main/context"
 	"main/helpers"
+	"main/instance"
 	"main/utils"
 	"strings"
 )
 
-func CheckContextForPathTraversal(filename string, operation string, checkPathStart bool) *utils.InterceptorResult {
+func CheckContextForPathTraversal(instance *instance.RequestProcessorInstance, filename string, operation string, checkPathStart bool) *utils.InterceptorResult {
 	trimmedFilename := helpers.TrimInvisible(filename)
 	sanitizedPath := SanitizePath(trimmedFilename)
 
 	for _, source := range context.SOURCES {
-		mapss := source.CacheGet()
+		mapss := source.CacheGet(instance)
 
 		for str, path := range mapss {
 			trimmedInputString := helpers.TrimInvisible(str)

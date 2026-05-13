@@ -1,8 +1,10 @@
 package context
 
+import "main/instance"
+
 type Source struct {
 	Name     string
-	CacheGet func() map[string]string
+	CacheGet func(*instance.RequestProcessorInstance) map[string]string
 }
 
 var SOURCES = []Source{

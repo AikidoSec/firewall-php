@@ -11,5 +11,5 @@ AIKIDO_LOG_LEVEL=INFO
 
 ?>	
 
---EXPECT--	
-[AIKIDO][INFO] Token changed to "AIK_RUNTIME_***here"
+--EXPECTREGEX--	
+\[AIKIDO\]\[INFO\]\[tid:\d+\] Token changed to "AIK_RUNTIME_\*\*\*here"

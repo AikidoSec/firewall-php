@@ -12,8 +12,13 @@
 #include <sys/types.h>
 #include <sys/utsname.h>
 #include <sys/wait.h>
+#include <sys/syscall.h>
+#include <unistd.h>
+#include <inttypes.h>
+#include <pthread.h>
 
 #include <functional>
+#include <vector>
 #include <random>
 #include <string>
 #include <ctime>
@@ -23,6 +28,7 @@
 #include <fstream>
 #include <iostream>
 #include <set>
+#include <mutex>
 
 #include "3rdparty/json.hpp"
 using namespace std;
@@ -39,18 +45,11 @@ using json = nlohmann::json;
 #include "GoWrappers.h"
 
 #include "../../API.h"
-#include "Log.h"
-#include "Agent.h"
 #include "php_aikido.h"
 #include "Environment.h"
-#include "Action.h"
-#include "Cache.h"
 #include "Stats.h"
 #include "Hooks.h"
 #include "PhpWrappers.h"
-#include "Server.h"
-#include "RequestProcessor.h"
-#include "PhpLifecycle.h"
 #include "Packages.h"
 
 #include "Utils.h"
@@ -59,6 +58,7 @@ using json = nlohmann::json;
 #include "HandleUsers.h"
 #include "HandleSetToken.h"
 #include "HandleRegisterParamMatcher.h"
+#include "HandleWorkerLifecycle.h"
 #include "HandleUrls.h"
 #include "HandleShellExecution.h"
 #include "HandleShouldBlockRequest.h"

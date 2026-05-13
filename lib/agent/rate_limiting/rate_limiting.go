@@ -6,10 +6,12 @@ import (
 )
 
 func AdvanceRateLimitingQueues(server *ServerData) {
-	server.RateLimitingMutex.Lock()
-	defer server.RateLimitingMutex.Unlock()
+	server.RateLimitingMutex.RLock()
+	defer server.RateLimitingMutex.RUnlock()
 
 	for _, endpoint := range server.RateLimitingMap {
+		endpoint.Mutex.Lock()
+		defer endpoint.Mutex.Unlock()
 		AdvanceSlidingWindowMap(endpoint.UserCounts, endpoint.Config.WindowSizeInMinutes)
 		AdvanceSlidingWindowMap(endpoint.IpCounts, endpoint.Config.WindowSizeInMinutes)
 		AdvanceSlidingWindowMap(endpoint.RateLimitGroupCounts, endpoint.Config.WindowSizeInMinutes)

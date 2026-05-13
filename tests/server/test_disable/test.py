@@ -16,7 +16,8 @@ def run_test():
     assert_response_code_is(response, 200)
     assert_response_body_contains(response, "File opened!")
     
-    if mock_server_get_platform_name() != "apache2handler":
+    platform = mock_server_get_platform_name()
+    if platform != "apache2handler" and platform != "frankenphp":
         events = mock_server_get_events()
         assert_events_length_is(events, 0)
         

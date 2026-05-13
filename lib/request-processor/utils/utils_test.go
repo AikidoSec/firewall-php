@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	. "main/aikido_types"
 	"main/globals"
+	"main/instance"
 	"math/big"
 	"regexp"
 	"strings"
@@ -230,7 +231,7 @@ func TestBuildRouteFromURL(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.url, func(t *testing.T) {
-			result := BuildRouteFromURL(test.url)
+			result := BuildRouteFromURL(nil, test.url)
 			if result != test.expected {
 				t.Errorf("expected %s, got %s", test.expected, result)
 			}
@@ -353,7 +354,7 @@ func TestBuildRouteFromURL_EdgeCases(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := BuildRouteFromURL(tt.url)
+			result := BuildRouteFromURL(nil, tt.url)
 			if result != tt.expected {
 				t.Errorf("BuildRouteFromURL(%q) = %q, want %q", tt.url, result, tt.expected)
 			}
@@ -362,11 +363,6 @@ func TestBuildRouteFromURL_EdgeCases(t *testing.T) {
 }
 
 func TestBuildRouteFromURL_WithParamMatchers(t *testing.T) {
-	originalServer := globals.GetCurrentServer()
-	defer func() {
-		globals.CurrentServer = originalServer
-	}()
-
 	mustCompileCustomPattern := func(pattern string) *regexp.Regexp {
 		re, err := CompileCustomPattern(pattern)
 		if err != nil {
@@ -384,7 +380,9 @@ func TestBuildRouteFromURL_WithParamMatchers(t *testing.T) {
 		"tenant": mustCompileCustomPattern("aikido-{digits}"),
 		"slug":   mustCompileCustomPattern("aikido-{alpha}-{digits}-{alpha}"),
 	}
-	globals.CurrentServer = server
+
+	testInst := instance.NewRequestProcessorInstance(0)
+	testInst.SetCurrentServer(server)
 
 	tests := []struct {
 		name     string
@@ -420,7 +418,7 @@ func TestBuildRouteFromURL_WithParamMatchers(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := BuildRouteFromURL(tt.url)
+			result := BuildRouteFromURL(testInst, tt.url)
 			if result != tt.expected {
 				t.Errorf("BuildRouteFromURL(%q) = %q, want %q", tt.url, result, tt.expected)
 			}
@@ -798,7 +796,7 @@ func TestIsIpBlockedByPrefix(t *testing.T) {
 	IpList, _ := BuildIpList("test", []string{"1.2.0.0/16"})
 	server.CloudConfig.BlockedIps["test"] = *IpList
 	ip := "1.2.3.4"
-	result, _ := IsIpBlocked(server, ip)
+	result, _ := IsIpBlocked(nil, server, ip)
 	if result != true {
 		t.Errorf("expected true, got %v", result)
 	}
@@ -810,7 +808,7 @@ func TestIsIpBlockedByIp(t *testing.T) {
 	IpList, _ := BuildIpList("test", []string{"1.2.3.4"})
 	server.CloudConfig.BlockedIps["test"] = *IpList
 	ip := "1.2.3.4"
-	result, _ := IsIpBlocked(server, ip)
+	result, _ := IsIpBlocked(nil, server, ip)
 	if result != true {
 		t.Errorf("expected true, got %v", result)
 	}
@@ -822,7 +820,7 @@ func TestIsIpNotBlockedByPrefix(t *testing.T) {
 	IpList, _ := BuildIpList("test", []string{"1.2.0.0/16"})
 	server.CloudConfig.BlockedIps["test"] = *IpList
 	ip := "2.3.4.5"
-	result, _ := IsIpBlocked(server, ip)
+	result, _ := IsIpBlocked(nil, server, ip)
 	if result != false {
 		t.Errorf("expected false, got %v", result)
 	}
@@ -834,7 +832,7 @@ func TestIsIpNotBlockedByIp(t *testing.T) {
 	IpList, _ := BuildIpList("test", []string{"1.2.3.4"})
 	server.CloudConfig.BlockedIps["test"] = *IpList
 	ip := "2.3.4.5"
-	result, _ := IsIpBlocked(server, ip)
+	result, _ := IsIpBlocked(nil, server, ip)
 	if result != false {
 		t.Errorf("expected false, got %v", result)
 	}
@@ -845,7 +843,7 @@ func TestIsIpv6BlockedByPrefix(t *testing.T) {
 	IpList, _ := BuildIpList("test", []string{"2001:db8::/32"})
 	server.CloudConfig.BlockedIps["test"] = *IpList
 	ip := "2001:db8:1234:5678:90ab:cdef:1234:5678"
-	result, _ := IsIpBlocked(server, ip)
+	result, _ := IsIpBlocked(nil, server, ip)
 	if result != true {
 		t.Errorf("expected true, got %v", result)
 	}
@@ -857,7 +855,7 @@ func TestIsIpv6BlockedByIp(t *testing.T) {
 	IpList, _ := BuildIpList("test", []string{"2001:db8::1"})
 	server.CloudConfig.BlockedIps["test"] = *IpList
 	ip := "2001:db8::1"
-	result, _ := IsIpBlocked(server, ip)
+	result, _ := IsIpBlocked(nil, server, ip)
 	if result != true {
 		t.Errorf("expected true, got %v", result)
 	}
@@ -869,7 +867,7 @@ func TestIsIpv6NotBlockedByPrefix(t *testing.T) {
 	IpList, _ := BuildIpList("test", []string{"2001:db8::/32"})
 	server.CloudConfig.BlockedIps["test"] = *IpList
 	ip := "2001:db9::1"
-	result, _ := IsIpBlocked(server, ip)
+	result, _ := IsIpBlocked(nil, server, ip)
 	if result != false {
 		t.Errorf("expected false, got %v", result)
 	}
@@ -881,7 +879,7 @@ func TestIsIpv6NotBlockedByIp(t *testing.T) {
 	IpList, _ := BuildIpList("test", []string{"2001:db8::1"})
 	server.CloudConfig.BlockedIps["test"] = *IpList
 	ip := "2001:db8::2"
-	result, _ := IsIpBlocked(server, ip)
+	result, _ := IsIpBlocked(nil, server, ip)
 	if result != false {
 		t.Errorf("expected false, got %v", result)
 	}

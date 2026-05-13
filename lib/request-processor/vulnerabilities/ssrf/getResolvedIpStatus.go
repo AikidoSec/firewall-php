@@ -1,6 +1,9 @@
 package ssrf
 
-import "main/helpers"
+import (
+	"main/helpers"
+	"main/instance"
+)
 
 type ResolvedIpStatus struct {
 	ip        string
@@ -15,8 +18,8 @@ we expect that for most of the cases, the result will be already cached at the O
 We do our own DNS resolution, because we want to actually block potential SSRF attacks and we did not find any way to hook PHP's DNS
 resolution calls.
 */
-func getResolvedIpStatusForHostname(hostname string) *ResolvedIpStatus {
-	resolvedIps := helpers.ResolveHostname(hostname)
+func getResolvedIpStatusForHostname(instance *instance.RequestProcessorInstance, hostname string) *ResolvedIpStatus {
+	resolvedIps := helpers.ResolveHostname(instance, hostname)
 	imdsIP := FindIMDSIp(hostname, resolvedIps)
 
 	if imdsIP != "" {

@@ -1,11 +1,13 @@
 #include "Includes.h"
 
 GoString GoCreateString(const std::string& s) {
-    return GoString{s.c_str(), s.length()};
+    return GoString{ s.c_str(), static_cast<ptrdiff_t>(s.size()) };
 }
 
 GoSlice GoCreateSlice(const std::vector<int64_t>& v) {
-    return GoSlice{ (void*)v.data(), v.size(), v.capacity() };
+    return GoSlice{ static_cast<void*>(const_cast<int64_t*>(v.data())),
+                    static_cast<GoInt>(v.size()),
+                    static_cast<GoInt>(v.capacity()) };
 }
 
 /*
@@ -13,6 +15,7 @@ GoSlice GoCreateSlice(const std::vector<int64_t>& v) {
     Returns empty string if stack is empty, otherwise returns the field value.
 */
 static inline std::string GetEventCacheField(std::string EventCache::*field) {
+    auto& eventCacheStack = AIKIDO_GLOBAL(eventCacheStack);
     return eventCacheStack.Empty() ? "" : eventCacheStack.Top().*field;
 }
 
@@ -22,6 +25,9 @@ static inline std::string GetEventCacheField(std::string EventCache::*field) {
 char* GoContextCallback(int callbackId) {
     std::string ctx;
     std::string ret;
+
+    auto& server = AIKIDO_GLOBAL(server);
+    const auto& requestCache = AIKIDO_GLOBAL(requestCache);
 
     try {
         switch (callbackId) {

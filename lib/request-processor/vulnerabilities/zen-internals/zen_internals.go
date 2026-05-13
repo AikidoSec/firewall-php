@@ -40,12 +40,14 @@ import (
 	"unsafe"
 )
 
-var (
+type ZenInternalsLibrary struct {
 	handle             unsafe.Pointer
 	detectSqlInjection C.detect_sql_injection_func
 	idorAnalyzeSql     C.idor_analyze_sql_func
 	freeString         C.free_string_func
-)
+}
+
+var zenLib = &ZenInternalsLibrary{}
 
 func Init() bool {
 	zenInternalsLibPath := C.CString(fmt.Sprintf("/opt/aikido-%s/libzen_internals_%s-unknown-linux-gnu.so", globals.Version, utils.GetArch()))
@@ -53,7 +55,7 @@ func Init() bool {
 
 	handle := C.dlopen(zenInternalsLibPath, C.RTLD_LAZY)
 	if handle == nil {
-		log.Errorf("Failed to load zen-internals library from '%s' with error %s!", C.GoString(zenInternalsLibPath), C.GoString(C.dlerror()))
+		log.Errorf(nil, "Failed to load zen-internals library from '%s' with error %s!", C.GoString(zenInternalsLibPath), C.GoString(C.dlerror()))
 		return false
 	}
 
@@ -62,52 +64,56 @@ func Init() bool {
 
 	vDetectSqlInjection := C.dlsym(handle, detectSqlInjectionFnName)
 	if vDetectSqlInjection == nil {
-		log.Error("Failed to load detect_sql_injection function from zen-internals library!")
+		log.Error(nil, "Failed to load detect_sql_injection function from zen-internals library!")
+		C.dlclose(handle)
 		return false
 	}
 
-	detectSqlInjection = (C.detect_sql_injection_func)(vDetectSqlInjection)
+	zenLib.handle = handle
+	zenLib.detectSqlInjection = (C.detect_sql_injection_func)(vDetectSqlInjection)
 
 	idorAnalyzeSqlFnName := C.CString("idor_analyze_sql_ffi")
 	defer C.free(unsafe.Pointer(idorAnalyzeSqlFnName))
 
 	vIdorAnalyzeSql := C.dlsym(handle, idorAnalyzeSqlFnName)
 	if vIdorAnalyzeSql == nil {
-		log.Error("Failed to load idor_analyze_sql_ffi function from zen-internals library!")
+		log.Error(nil, "Failed to load idor_analyze_sql_ffi function from zen-internals library!")
 		return false
 	}
 
-	idorAnalyzeSql = (C.idor_analyze_sql_func)(vIdorAnalyzeSql)
+	zenLib.idorAnalyzeSql = (C.idor_analyze_sql_func)(vIdorAnalyzeSql)
 
 	freeStringFnName := C.CString("free_string")
 	defer C.free(unsafe.Pointer(freeStringFnName))
 
 	vFreeString := C.dlsym(handle, freeStringFnName)
 	if vFreeString == nil {
-		log.Error("Failed to load free_string function from zen-internals library!")
+		log.Error(nil, "Failed to load free_string function from zen-internals library!")
 		return false
 	}
 
-	freeString = (C.free_string_func)(vFreeString)
+	zenLib.freeString = (C.free_string_func)(vFreeString)
 
-	log.Debugf("Loaded zen-internals library!")
+	log.Debugf(nil, "Loaded zen-internals library!")
 	return true
 }
 
 func Uninit() {
-	detectSqlInjection = nil
-	idorAnalyzeSql = nil
-	freeString = nil
+	zenLib.detectSqlInjection = nil
+	zenLib.idorAnalyzeSql = nil
+	zenLib.freeString = nil
 
-	if handle != nil {
-		C.dlclose(handle)
-		handle = nil
+	if zenLib.handle != nil {
+		C.dlclose(zenLib.handle)
+		zenLib.handle = nil
 	}
 }
 
 // DetectSQLInjection performs SQL injection detection using the loaded library
 func DetectSQLInjection(query string, user_input string, dialect int) int {
-	if detectSqlInjection == nil {
+	detectFn := zenLib.detectSqlInjection
+
+	if detectFn == nil {
 		return 0
 	}
 
@@ -120,17 +126,17 @@ func DetectSQLInjection(query string, user_input string, dialect int) int {
 	queryLen := C.size_t(len(query))
 	userInputLen := C.size_t(len(user_input))
 
-	result := int(C.call_detect_sql_injection(detectSqlInjection,
+	result := int(C.call_detect_sql_injection(detectFn,
 		cQuery, queryLen,
 		cUserInput, userInputLen,
 		C.int(dialect)))
 
-	log.Debugf("DetectSqlInjection(\"%s\", \"%s\", %d) -> %d", query, user_input, dialect, result)
+	log.Debugf(nil, "DetectSqlInjection(\"%s\", \"%s\", %d) -> %d", query, user_input, dialect, result)
 	return result
 }
 
 func IdorAnalyzeSql(query string, dialect int) string {
-	if idorAnalyzeSql == nil || freeString == nil {
+	if zenLib.idorAnalyzeSql == nil || zenLib.freeString == nil {
 		return ""
 	}
 
@@ -138,13 +144,13 @@ func IdorAnalyzeSql(query string, dialect int) string {
 	defer C.free(unsafe.Pointer(cQuery))
 	queryLen := C.size_t(len(query))
 
-	resultPtr := C.call_idor_analyze_sql(idorAnalyzeSql, cQuery, queryLen, C.int(dialect))
+	resultPtr := C.call_idor_analyze_sql(zenLib.idorAnalyzeSql, cQuery, queryLen, C.int(dialect))
 	if resultPtr == nil {
 		return ""
 	}
 
 	result := C.GoString(resultPtr)
-	C.call_free_string(freeString, resultPtr)
+	C.call_free_string(zenLib.freeString, resultPtr)
 
 	return result
 }

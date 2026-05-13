@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"main/attack"
 	"main/context"
+	"main/instance"
 	"main/log"
 	"main/utils"
 	zen_internals "main/vulnerabilities/zen-internals"
@@ -39,8 +40,8 @@ type AnalysisError struct {
 	Error string `json:"error"`
 }
 
-func CheckForIdorViolation(query string, dialect string, tenantId string, sqlParams string) string {
-	if context.GetIdorConfig() == nil {
+func CheckForIdorViolation(instance *instance.RequestProcessorInstance, query string, dialect string, tenantId string, sqlParams string) string {
+	if context.GetIdorConfig(instance) == nil {
 		return ""
 	}
 
@@ -63,7 +64,7 @@ func CheckForIdorViolation(query string, dialect string, tenantId string, sqlPar
 
 	var queryResults []SqlQueryResult
 	if err := json.Unmarshal([]byte(resultJson), &queryResults); err != nil {
-		log.Warnf("Failed to parse IDOR analysis result: %s", err)
+		log.Warnf(instance, "Failed to parse IDOR analysis result: %s", err)
 		return buildIdorViolationAction("Zen IDOR protection: failed to parse SQL analysis result")
 	}
 
@@ -72,31 +73,31 @@ func CheckForIdorViolation(query string, dialect string, tenantId string, sqlPar
 	for _, queryResult := range queryResults {
 		switch queryResult.Kind {
 		case "insert":
-			if msg := checkInsert(queryResult, tenantId, params); msg != "" {
+			if msg := checkInsert(instance, queryResult, tenantId, params); msg != "" {
 				return buildIdorViolationAction(msg)
 			}
 		case "select", "update", "delete":
-			if msg := checkWhereFilters(queryResult, tenantId, params); msg != "" {
+			if msg := checkWhereFilters(instance, queryResult, tenantId, params); msg != "" {
 				return buildIdorViolationAction(msg)
 			}
 		}
-		// DDL, transactions, etc. are allowed
 	}
 
 	return ""
 }
 
-func checkWhereFilters(queryResult SqlQueryResult, tenantId string, params *SqlParams) string {
+func checkWhereFilters(instance *instance.RequestProcessorInstance, queryResult SqlQueryResult, tenantId string, params *SqlParams) string {
+	idorConfig := context.GetIdorConfig(instance)
 	for _, table := range queryResult.Tables {
-		if isExcludedTable(table.Name) {
+		if isExcludedTable(instance, table.Name) {
 			continue
 		}
 
-		tenantFilter := findTenantFilter(queryResult, table)
+		tenantFilter := findTenantFilter(instance, queryResult, table)
 		if tenantFilter == nil {
 			return fmt.Sprintf(
 				"Zen IDOR protection: query on table '%s' is missing a filter on column '%s'",
-				table.Name, context.GetIdorConfig().TenantColumnName,
+				table.Name, idorConfig.TenantColumnName,
 			)
 		}
 
@@ -104,7 +105,7 @@ func checkWhereFilters(queryResult SqlQueryResult, tenantId string, params *SqlP
 		if resolvedValue != "" && resolvedValue != tenantId {
 			return fmt.Sprintf(
 				"Zen IDOR protection: query on table '%s' filters '%s' with value '%s' but tenant ID is '%s'",
-				table.Name, context.GetIdorConfig().TenantColumnName, resolvedValue, tenantId,
+				table.Name, idorConfig.TenantColumnName, resolvedValue, tenantId,
 			)
 		}
 	}
@@ -112,26 +113,26 @@ func checkWhereFilters(queryResult SqlQueryResult, tenantId string, params *SqlP
 	return ""
 }
 
-func checkInsert(queryResult SqlQueryResult, tenantId string, params *SqlParams) string {
+func checkInsert(instance *instance.RequestProcessorInstance, queryResult SqlQueryResult, tenantId string, params *SqlParams) string {
+	idorConfig := context.GetIdorConfig(instance)
 	for _, table := range queryResult.Tables {
-		if isExcludedTable(table.Name) {
+		if isExcludedTable(instance, table.Name) {
 			continue
 		}
 
 		if queryResult.InsertColumns == nil {
-			// INSERT ... SELECT without explicit columns
 			return fmt.Sprintf(
 				"Zen IDOR protection: INSERT on table '%s' is missing column '%s'",
-				table.Name, context.GetIdorConfig().TenantColumnName,
+				table.Name, idorConfig.TenantColumnName,
 			)
 		}
 
 		for _, row := range queryResult.InsertColumns {
-			tenantCol := findTenantColumn(row)
+			tenantCol := findTenantColumn(instance, row)
 			if tenantCol == nil {
 				return fmt.Sprintf(
 					"Zen IDOR protection: INSERT on table '%s' is missing column '%s'",
-					table.Name, context.GetIdorConfig().TenantColumnName,
+					table.Name, idorConfig.TenantColumnName,
 				)
 			}
 
@@ -139,7 +140,7 @@ func checkInsert(queryResult SqlQueryResult, tenantId string, params *SqlParams)
 			if resolvedValue != "" && resolvedValue != tenantId {
 				return fmt.Sprintf(
 					"Zen IDOR protection: INSERT on table '%s' sets '%s' to '%s' but tenant ID is '%s'",
-					table.Name, context.GetIdorConfig().TenantColumnName, resolvedValue, tenantId,
+					table.Name, idorConfig.TenantColumnName, resolvedValue, tenantId,
 				)
 			}
 		}
@@ -148,19 +149,18 @@ func checkInsert(queryResult SqlQueryResult, tenantId string, params *SqlParams)
 	return ""
 }
 
-func findTenantFilter(queryResult SqlQueryResult, table TableRef) *FilterColumn {
+func findTenantFilter(instance *instance.RequestProcessorInstance, queryResult SqlQueryResult, table TableRef) *FilterColumn {
+	idorConfig := context.GetIdorConfig(instance)
 	for i, f := range queryResult.Filters {
-		if f.Column != context.GetIdorConfig().TenantColumnName {
+		if f.Column != idorConfig.TenantColumnName {
 			continue
 		}
 
 		if f.Table != nil {
-			// Qualified column (e.g. u.tenant_id) — match against table name or alias
 			if *f.Table == table.Name || (table.Alias != nil && *f.Table == *table.Alias) {
 				return &queryResult.Filters[i]
 			}
 		} else {
-			// Unqualified column — only safe to match in single-table queries
 			if len(queryResult.Tables) == 1 {
 				return &queryResult.Filters[i]
 			}
@@ -170,17 +170,19 @@ func findTenantFilter(queryResult SqlQueryResult, table TableRef) *FilterColumn 
 	return nil
 }
 
-func findTenantColumn(row []InsertColumn) *InsertColumn {
+func findTenantColumn(instance *instance.RequestProcessorInstance, row []InsertColumn) *InsertColumn {
+	idorConfig := context.GetIdorConfig(instance)
 	for i, c := range row {
-		if c.Column == context.GetIdorConfig().TenantColumnName {
+		if c.Column == idorConfig.TenantColumnName {
 			return &row[i]
 		}
 	}
 	return nil
 }
 
-func isExcludedTable(tableName string) bool {
-	for _, excluded := range context.GetIdorConfig().ExcludedTables {
+func isExcludedTable(instance *instance.RequestProcessorInstance, tableName string) bool {
+	idorConfig := context.GetIdorConfig(instance)
+	for _, excluded := range idorConfig.ExcludedTables {
 		if excluded == tableName {
 			return true
 		}

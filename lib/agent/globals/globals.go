@@ -51,6 +51,15 @@ func CreateServer(ServerKey ServerKey) *ServerData {
 	return Servers[ServerKey]
 }
 
+func GetOrCreateServer(ServerKey ServerKey) (*ServerData, bool) {
+	server, exists := Servers[ServerKey]
+	if !exists {
+		Servers[ServerKey] = NewServerData()
+		server = Servers[ServerKey]
+	}
+	return server, exists
+}
+
 func DeleteServer(ServerKey ServerKey) {
 	ServersMutex.Lock()
 	defer ServersMutex.Unlock()
@@ -59,8 +68,6 @@ func DeleteServer(ServerKey ServerKey) {
 }
 
 func IsPastDeletedServer(ServerKey ServerKey) bool {
-	ServersMutex.RLock()
-	defer ServersMutex.RUnlock()
 	_, exists := PastDeletedServers[ServerKey]
 	return exists
 }

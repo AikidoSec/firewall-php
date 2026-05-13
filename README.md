@@ -39,25 +39,25 @@ Prerequisites:
 
 ##### x86_64
 ```
-rpm -Uvh --oldpackage https://github.com/AikidoSec/firewall-php/releases/download/v1.4.15/aikido-php-firewall.x86_64.rpm
+rpm -Uvh --oldpackage https://github.com/AikidoSec/firewall-php/releases/download/v1.5.9/aikido-php-firewall.x86_64.rpm
 ```
 
 ##### arm64 / aarch64
 ```
-rpm -Uvh --oldpackage https://github.com/AikidoSec/firewall-php/releases/download/v1.4.15/aikido-php-firewall.aarch64.rpm
+rpm -Uvh --oldpackage https://github.com/AikidoSec/firewall-php/releases/download/v1.5.9/aikido-php-firewall.aarch64.rpm
 ```
 
 #### For Debian-based Systems (Debian, Ubuntu)
 
 ##### x86_64
 ```
-curl -L -O https://github.com/AikidoSec/firewall-php/releases/download/v1.4.15/aikido-php-firewall.x86_64.deb
+curl -L -O https://github.com/AikidoSec/firewall-php/releases/download/v1.5.9/aikido-php-firewall.x86_64.deb
 dpkg -i -E ./aikido-php-firewall.x86_64.deb
 ```
 
 ##### arm64 / aarch64
 ```
-curl -L -O https://github.com/AikidoSec/firewall-php/releases/download/v1.4.15/aikido-php-firewall.aarch64.deb
+curl -L -O https://github.com/AikidoSec/firewall-php/releases/download/v1.5.9/aikido-php-firewall.aarch64.deb
 dpkg -i -E ./aikido-php-firewall.aarch64.deb
 ```
 
@@ -65,8 +65,10 @@ We support Debian >= 11 and Ubuntu >= 20.04.
 You can run on Debian 10, by doing this setup before install: [Debian10 setup](./docs/debian10.md)
 
 #### Deployment setup
-- [Caddy & PHP-FPM](./docs/caddy.md)
+- [Caddy & PHP-FPM](./docs/caddy-php-fpm.md)
 - [Apache mod_php](./docs/apache-mod-php.md)
+- [FrankenPHP classic](./docs/frankenphp-classic.md)
+- [FrankenPHP worker](./docs/frankenphp-worker.md)
 
 #### Managed platforms
 - [Laravel Forge](./docs/laravel-forge.md)

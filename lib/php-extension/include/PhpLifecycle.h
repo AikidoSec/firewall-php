@@ -19,6 +19,6 @@ class PhpLifecycle {
     void HookAll();
 
     void UnhookAll();
-};
 
-extern PhpLifecycle phpLifecycle;
+    bool IsRequestHandledInMainPid() const;
+};

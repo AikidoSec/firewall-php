@@ -48,6 +48,7 @@ type RateLimitingValue struct {
 	UserCounts           map[string]*SlidingWindow
 	IpCounts             map[string]*SlidingWindow
 	RateLimitGroupCounts map[string]*SlidingWindow
+	Mutex                sync.Mutex
 }
 
 type RateLimitingWildcardValue struct {

@@ -2,26 +2,27 @@ package main
 
 import (
 	"main/context"
-	"main/globals"
 	"main/grpc"
+	"main/instance"
 	"main/log"
 )
 
-func OnUserEvent() string {
-	id := context.GetUserId()
-	username := context.GetUserName()
-	ip := context.GetIp()
+func OnUserEvent(instance *instance.RequestProcessorInstance) string {
+	id := context.GetUserId(instance)
+	username := context.GetUserName(instance)
+	ip := context.GetIp(instance)
 
-	log.Infof("Got user event!")
+	log.Infof(instance, "Got user event!")
 
 	if id == "" || ip == "" {
 		return ""
 	}
 
-	server := globals.GetCurrentServer()
+	server := instance.GetCurrentServer()
 	if server == nil {
 		return ""
 	}
-	go grpc.OnUserEvent(server, id, username, ip)
+
+	go grpc.OnUserEvent(server, instance.GetCurrentToken(), id, username, ip)
 	return ""
 }

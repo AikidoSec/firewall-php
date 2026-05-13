@@ -143,7 +143,7 @@ def mock_get_token():
 
 if __name__ == '__main__':
     if len(sys.argv) < 2 or len(sys.argv) > 3:
-        print("Usage: python mock_server.py <port> [config_file]")
+        print("Usage: python mock_aikido_core.py <port> [config_file]")
         sys.exit(1)
     
     port = int(sys.argv[1])

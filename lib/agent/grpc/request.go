@@ -176,20 +176,6 @@ func incrementSlidingWindowEntry(m map[string]*SlidingWindow, key string) *Slidi
 	return entry
 }
 
-func updateRateLimitingCounts(server *ServerData, method string, route string, routeParsed string, user string, ip string, rateLimitGroup string) {
-	server.RateLimitingMutex.Lock()
-	defer server.RateLimitingMutex.Unlock()
-
-	rateLimitingDataForEndpoint := getRateLimitingDataForEndpoint(server, method, route, routeParsed)
-	if rateLimitingDataForEndpoint == nil {
-		return
-	}
-
-	incrementSlidingWindowEntry(rateLimitingDataForEndpoint.UserCounts, user)
-	incrementSlidingWindowEntry(rateLimitingDataForEndpoint.IpCounts, ip)
-	incrementSlidingWindowEntry(rateLimitingDataForEndpoint.RateLimitGroupCounts, rateLimitGroup)
-}
-
 func isRateLimitingThresholdExceeded(config *RateLimitingConfig, countsMap map[string]*SlidingWindow, key string) bool {
 	counts, exists := countsMap[key]
 	if !exists {
@@ -294,6 +280,9 @@ func getWildcardMatchingRateLimitingValues(server *ServerData, method, route, ro
 }
 
 func getRateLimitingDataForEndpoint(server *ServerData, method, route, routeParsed string) *RateLimitingValue {
+	server.RateLimitingMutex.RLock()
+	defer server.RateLimitingMutex.RUnlock()
+
 	// Check for exact match first
 	rateLimitingDataMatch := getRateLimitingValue(server, method, routeParsed)
 	if rateLimitingDataMatch != nil {
@@ -315,34 +304,48 @@ func getRateLimitingDataForEndpoint(server *ServerData, method, route, routePars
 	return wildcardMatches[0]
 }
 
+func isRateLimitingThresholdExceededAndIncrement(rateLimitingDataMatch *RateLimitingValue,
+	countsMap map[string]*SlidingWindow,
+	key string,
+) bool {
+	rateLimitingDataMatch.Mutex.Lock()
+	defer rateLimitingDataMatch.Mutex.Unlock()
+
+	if isRateLimitingThresholdExceeded(&rateLimitingDataMatch.Config, countsMap, key) {
+		return true
+	}
+
+	incrementSlidingWindowEntry(countsMap, key)
+
+	return false
+}
+
 func getRateLimitingStatus(server *ServerData, method, route, routeParsed, user, ip, rateLimitGroup string) *protos.RateLimitingStatus {
 	if server == nil {
 		return nil
 	}
 
-	server.RateLimitingMutex.RLock()
-	defer server.RateLimitingMutex.RUnlock()
-
 	rateLimitingDataMatch := getRateLimitingDataForEndpoint(server, method, route, routeParsed)
+
 	if rateLimitingDataMatch == nil {
 		return &protos.RateLimitingStatus{Block: false}
 	}
 
 	if rateLimitGroup != "" {
 		// If the rate limit group exists, we only try to rate limit by rate limit group
-		if isRateLimitingThresholdExceeded(&rateLimitingDataMatch.Config, rateLimitingDataMatch.RateLimitGroupCounts, rateLimitGroup) {
+		if isRateLimitingThresholdExceededAndIncrement(rateLimitingDataMatch, rateLimitingDataMatch.RateLimitGroupCounts, rateLimitGroup) {
 			log.Infof(server.Logger, "Rate limited request for group %s - %s %s - %v", rateLimitGroup, method, routeParsed, rateLimitingDataMatch.RateLimitGroupCounts[rateLimitGroup])
 			return &protos.RateLimitingStatus{Block: true, Trigger: "group"}
 		}
 	} else if user != "" {
 		// Otherwise, if the user exists, we try to rate limit by user
-		if isRateLimitingThresholdExceeded(&rateLimitingDataMatch.Config, rateLimitingDataMatch.UserCounts, user) {
+		if isRateLimitingThresholdExceededAndIncrement(rateLimitingDataMatch, rateLimitingDataMatch.UserCounts, user) {
 			log.Infof(server.Logger, "Rate limited request for user %s - %s %s - %v", user, method, routeParsed, rateLimitingDataMatch.UserCounts[user])
 			return &protos.RateLimitingStatus{Block: true, Trigger: "user"}
 		}
 	} else {
 		// Otherwise, we try to rate limit by ip
-		if isRateLimitingThresholdExceeded(&rateLimitingDataMatch.Config, rateLimitingDataMatch.IpCounts, ip) {
+		if isRateLimitingThresholdExceededAndIncrement(rateLimitingDataMatch, rateLimitingDataMatch.IpCounts, ip) {
 			log.Infof(server.Logger, "Rate limited request for ip %s - %s %s - %v", ip, method, routeParsed, rateLimitingDataMatch.IpCounts[ip])
 			return &protos.RateLimitingStatus{Block: true, Trigger: "ip"}
 		}

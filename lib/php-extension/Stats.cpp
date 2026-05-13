@@ -1,29 +1,23 @@
 #include "Includes.h"
 
-std::unordered_map<std::string, SinkStats> stats;
-
-std::chrono::high_resolution_clock::time_point currentRequestStart = std::chrono::high_resolution_clock::time_point{};
-
-uint64_t totalOverheadForCurrentRequest = 0;
-
 inline void AddToStats(const std::string& key, const std::string& kind, uint64_t duration) {
-    SinkStats& sinkStats = stats[key];
+    SinkStats& sinkStats = AIKIDO_GLOBAL(stats)[key];
     sinkStats.kind = kind;
     sinkStats.timings.push_back(duration);
 }
 
 inline void AddRequestTotalToStats() {
-    if (currentRequestStart == std::chrono::high_resolution_clock::time_point{}) {
+    if (AIKIDO_GLOBAL(currentRequestStart) == std::chrono::high_resolution_clock::time_point{}) {
         return;
     }
-    uint64_t totalOverhead = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - currentRequestStart).count();
+    uint64_t totalOverhead = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - AIKIDO_GLOBAL(currentRequestStart)).count();
     AddToStats("request_total", "request_op", totalOverhead);
-    currentRequestStart = std::chrono::high_resolution_clock::time_point{};
+    AIKIDO_GLOBAL(currentRequestStart) = std::chrono::high_resolution_clock::time_point{};
 }
 
 inline void AddRequestTotalOverheadToStats() {
-    AddToStats("request_total_overhead", "request_op", totalOverheadForCurrentRequest);
-    totalOverheadForCurrentRequest = 0;
+    AddToStats("request_total_overhead", "request_op", AIKIDO_GLOBAL(totalOverheadForCurrentRequest));
+    AIKIDO_GLOBAL(totalOverheadForCurrentRequest) = 0;
 }
 
 ScopedTimer::ScopedTimer() {
@@ -42,7 +36,7 @@ void ScopedTimer::SetSink(std::string key, std::string kind) {
 void ScopedTimer::Start() {
     this->start = std::chrono::high_resolution_clock::now();
     if (this->key == "request_init") {
-        currentRequestStart = this->start;
+        AIKIDO_GLOBAL(currentRequestStart) = this->start;
     }
 }
 
@@ -59,7 +53,7 @@ ScopedTimer::~ScopedTimer() {
         return;
     }
     this->Stop();
-    totalOverheadForCurrentRequest += this->duration;
+    AIKIDO_GLOBAL(totalOverheadForCurrentRequest) += this->duration;
     if (key == "request_shutdown") {
         AddRequestTotalOverheadToStats();
         AddRequestTotalToStats();
