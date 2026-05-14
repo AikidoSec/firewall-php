@@ -76,9 +76,14 @@ class AikidoMiddleware implements MiddlewareInterface
             else if ($decision->trigger == "group") {
                 $message = "Your group exceeded the rate limit for this endpoint!";
             }
-            return new Response([
+            $response = new Response([
                 'message' => $message,
             ], 429);
+            // Set Retry-After header to inform the client how long to wait (in seconds)
+            if ($decision->retry_after_seconds > 0) {
+                $response = $response->withHeader('Retry-After', (string) $decision->retry_after_seconds);
+            }
+            return $response;
         }
 
         // Aikido decided to block but decision type is not implemented
@@ -145,15 +150,21 @@ class AikidoMiddleware
                 }
             }
             else if ($decision->type == "ratelimited") {
+                $message = '';
                 if ($decision->trigger == "user") {
-                    return response('Your user exceeded the rate limit for this endpoint!', 429);
+                    $message = 'Your user exceeded the rate limit for this endpoint!';
                 }
                 else if ($decision->trigger == "ip") {
-                    return response("Your IP ({$decision->ip}) exceeded the rate limit for this endpoint!", 429);
+                    $message = "Your IP ({$decision->ip}) exceeded the rate limit for this endpoint!";
                 }
                 else if ($decision->trigger == "group") {
-                    return response("Your group exceeded the rate limit for this endpoint!", 429);
+                    $message = "Your group exceeded the rate limit for this endpoint!";
                 }
+                $resp = response($message, 429);
+                if ($decision->retry_after_seconds > 0) {
+                    $resp->header('Retry-After', $decision->retry_after_seconds);
+                }
+                return $resp;
             }
         }
 
@@ -266,10 +277,14 @@ class AikidoEventSubscriber implements EventSubscriberInterface
                     $message = "Your group exceeded the rate limit for this endpoint!";
                 }
 
-                $event->setResponse(new JsonResponse(
+                $response = new JsonResponse(
                     ['message' => $message],
                     429
-                ));
+                );
+                if ($decision->retry_after_seconds > 0) {
+                    $response->headers->set('Retry-After', (string) $decision->retry_after_seconds);
+                }
+                $event->setResponse($response);
                 return;
             }
         }

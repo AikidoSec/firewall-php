@@ -16,7 +16,8 @@ benchmarks = []
 from requests.adapters import HTTPAdapter, Retry
 s = requests.Session()
 retries = Retry(connect=10,
-                backoff_factor=1)
+                backoff_factor=1,
+                respect_retry_after_header=False)
 
 s.mount('http://', HTTPAdapter(max_retries=retries))
 

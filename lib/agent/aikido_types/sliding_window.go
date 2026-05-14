@@ -1,5 +1,7 @@
 package aikido_types
 
+import "time"
+
 type SuspiciousRequest struct {
 	Method string `json:"method"`
 	Url    string `json:"url"`
@@ -8,15 +10,17 @@ type SuspiciousRequest struct {
 // SlidingWindow represents a time-based sliding window counter.
 // It maintains a queue of counts per time bucket and a running total.
 type SlidingWindow struct {
-	Total   int                 // Running total of all counts in the window
-	Queue   Queue[int]          // Queue of counts per time bucket
-	Samples []SuspiciousRequest // Sample requests collected for attack wave detection (max MaxSamplesPerIP)
+	Total     int                 // Running total of all counts in the window
+	Queue     Queue[int]          // Queue of counts per time bucket
+	Samples   []SuspiciousRequest // Sample requests collected for attack wave detection (max MaxSamplesPerIP)
+	CreatedAt time.Time           // Timestamp when this window was first created
 }
 
 // NewSlidingWindow creates a new sliding window with the specified size.
 func NewSlidingWindow() *SlidingWindow {
 	sw := &SlidingWindow{
-		Queue: NewQueue[int](0), // no max size, we handle it manually
+		Queue:     NewQueue[int](0), // no max size, we handle it manually
+		CreatedAt: time.Now(),
 	}
 	// Ensure there is a current bucket
 	sw.Queue.Push(0)

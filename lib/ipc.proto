@@ -144,6 +144,7 @@ message CloudConfig {
 message RateLimitingStatus {
   bool block = 1;
   string trigger = 2;
+  int32 retry_after_seconds = 3;
 }
 
 message User {

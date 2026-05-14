@@ -29,6 +29,24 @@ func GetAction(actionHandling, actionType, trigger, description, data string, re
 	return string(actionJson)
 }
 
+func GetRateLimitedAction(trigger, ip string, retryAfterSeconds int) string {
+	actionMap := map[string]interface{}{
+		"action":             "store",
+		"type":               "ratelimited",
+		"trigger":            trigger,
+		"description":        html.EscapeString("configured rate limit exceeded by current ip"),
+		"message":            fmt.Sprintf("Your %s (%s) is blocked due to: %s!", trigger, ip, "configured rate limit exceeded by current ip"),
+		trigger:              ip,
+		"response_code":      429,
+		"retryAfterSeconds":  retryAfterSeconds,
+	}
+	actionJson, err := json.Marshal(actionMap)
+	if err != nil {
+		return ""
+	}
+	return string(actionJson)
+}
+
 func OnGetBlockingStatus(instance *instance.RequestProcessorInstance) string {
 	log.Debugf(instance, "OnGetBlockingStatus called!")
 
@@ -68,7 +86,7 @@ func OnGetBlockingStatus(instance *instance.RequestProcessorInstance) string {
 		if rateLimitingStatus != nil && rateLimitingStatus.Block {
 			context.ContextSetIsEndpointRateLimited(instance)
 			log.Infof(instance, "Request made from IP \"%s\" is ratelimited by \"%s\"!", ip, rateLimitingStatus.Trigger)
-			return GetAction("store", "ratelimited", rateLimitingStatus.Trigger, "configured rate limit exceeded by current ip", ip, 429)
+			return GetRateLimitedAction(rateLimitingStatus.Trigger, ip, int(rateLimitingStatus.RetryAfterSeconds))
 		}
 	}
 

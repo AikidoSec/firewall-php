@@ -82,6 +82,7 @@ ZEND_FUNCTION(should_block_request) {
     zend_update_property_string(blockingStatusClass, obj, "description", sizeof("description") - 1, action.Description());
     zend_update_property_string(blockingStatusClass, obj, "ip", sizeof("ip") - 1, action.Ip());
     zend_update_property_string(blockingStatusClass, obj, "user_agent", sizeof("user_agent") - 1, action.UserAgent());
+    zend_update_property_long(blockingStatusClass, obj, "retry_after_seconds", sizeof("retry_after_seconds") - 1, action.RetryAfterSeconds());
 }
 
 ZEND_FUNCTION(auto_block_request) {
@@ -145,6 +146,7 @@ void RegisterAikidoBlockRequestStatusClass() {
     zend_declare_property_string(blockingStatusClass, "description", sizeof("description") - 1, "", ZEND_ACC_PUBLIC);
     zend_declare_property_string(blockingStatusClass, "ip", sizeof("ip") - 1, "", ZEND_ACC_PUBLIC);
     zend_declare_property_string(blockingStatusClass, "user_agent", sizeof("user_agent") - 1, "", ZEND_ACC_PUBLIC);
+    zend_declare_property_long(blockingStatusClass, "retry_after_seconds", sizeof("retry_after_seconds") - 1, 0, ZEND_ACC_PUBLIC);
 }
 
 void RegisterAikidoWhitelistRequestStatusClass() {
