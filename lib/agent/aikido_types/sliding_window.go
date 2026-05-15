@@ -36,6 +36,7 @@ func (sw *SlidingWindow) Advance(windowSize int) {
 		if sw.Total >= dropped { // safety check to avoid negative total
 			sw.Total -= dropped
 		}
+		sw.CreatedAt = sw.CreatedAt.Add(time.Minute)
 	}
 	// Add a new bucket for the current time period
 	sw.Queue.Push(0)
