@@ -72,31 +72,53 @@ std::string NormalizeAndDumpJson(const json& jsonObj) {
     return jsonObj.dump(-1, ' ', false, json::error_handler_t::ignore);
 }
 
+static json ZvalToJsonValue(zval* val, int depth) {
+    const int MAX_DEPTH = 20;
+    if (!val || depth > MAX_DEPTH) {
+        return nullptr;
+    }
+
+    if (Z_TYPE_P(val) == IS_REFERENCE) {
+        val = Z_REFVAL_P(val);
+    }
+
+    if (Z_TYPE_P(val) == IS_STRING) {
+        return std::string(Z_STRVAL_P(val), Z_STRLEN_P(val));
+    }
+
+    if (Z_TYPE_P(val) == IS_ARRAY) {
+        json result = json::object();
+        zend_string* str_key;
+        zend_ulong num_key;
+        zval* v;
+        ZEND_HASH_FOREACH_KEY_VAL(Z_ARRVAL_P(val), num_key, str_key, v) {
+            if (str_key) {
+                result[std::string(ZSTR_VAL(str_key), ZSTR_LEN(str_key))] = ZvalToJsonValue(v, depth + 1);
+            } else {
+                result[std::to_string(num_key)] = ZvalToJsonValue(v, depth + 1);
+            }
+        }
+        ZEND_HASH_FOREACH_END();
+        return result;
+    }
+
+    return nullptr;
+}
+
 std::string ArrayToJson(zval* array) {
-    if (!array) {
+    if (!array || Z_TYPE_P(array) != IS_ARRAY) {
         return "";
     }
 
-    json query_json;
-    zend_string *key;
-    zval *val;
-    ZEND_HASH_FOREACH_STR_KEY_VAL(Z_ARRVAL_P(array), key, val) {
-        if(key && val) {
-            std::string key_str(ZSTR_VAL(key));
-            if (Z_TYPE_P(val) == IS_STRING) {
-                query_json[key_str] = Z_STRVAL_P(val);
-            }
-            else if (Z_TYPE_P(val) == IS_ARRAY){
-                json val_array = json::array();
-                zval *v;
-                ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(val), v) {
-                    if (Z_TYPE_P(v) == IS_STRING) {
-                        val_array.push_back(Z_STRVAL_P(v));
-                    }
-                }
-                ZEND_HASH_FOREACH_END();
-                query_json[key_str] = val_array;
-            }
+    json query_json = json::object();
+    zend_string* key;
+    zend_ulong num_key;
+    zval* val;
+    ZEND_HASH_FOREACH_KEY_VAL(Z_ARRVAL_P(array), num_key, key, val) {
+        if (key) {
+            query_json[std::string(ZSTR_VAL(key), ZSTR_LEN(key))] = ZvalToJsonValue(val, 1);
+        } else {
+            query_json[std::to_string(num_key)] = ZvalToJsonValue(val, 1);
         }
     }
     ZEND_HASH_FOREACH_END();
