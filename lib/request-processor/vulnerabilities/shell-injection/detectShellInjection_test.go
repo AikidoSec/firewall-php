@@ -114,6 +114,7 @@ func TestDetectShellInjection(t *testing.T) {
 
 	t.Run("allows safe commands within single quotes", func(t *testing.T) {
 		isNotShellInjection(t, "echo 'safe command'", "safe command")
+		isNotShellInjection(t, "ls '/var/a b/c'", "a b")
 	})
 
 	t.Run("detects unsafe use of variables", func(t *testing.T) {
