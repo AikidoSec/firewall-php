@@ -3,6 +3,7 @@ package context
 // #include "../../API.h"
 import "C"
 import (
+	"encoding/json"
 	"main/helpers"
 	"main/instance"
 	"main/log"
@@ -305,4 +306,37 @@ func ContextSetIsEndpointIpAllowed(instance *instance.RequestProcessorInstance) 
 func ContextSetIsEndpointRateLimited(instance *instance.RequestProcessorInstance) {
 	c := GetContext(instance)
 	c.IsEndpointRateLimited = true
+}
+
+func ContextSetIdorConfig(instance *instance.RequestProcessorInstance) {
+	c := GetContext(instance)
+	if c.IdorConfig != nil {
+		return
+	}
+	if c.Callback == nil {
+		return
+	}
+	idorConfigJson := GetIdorConfigJson(instance)
+	if idorConfigJson == "" {
+		return
+	}
+
+	var payload struct {
+		ColumnName     string   `json:"column_name"`
+		ExcludedTables []string `json:"excluded_tables"`
+	}
+	if err := json.Unmarshal([]byte(idorConfigJson), &payload); err != nil {
+		log.Warnf(instance, "enable_idor_protection: failed to parse IDOR config: %s", err)
+		return
+	}
+	if payload.ColumnName == "" {
+		log.Warn(instance, "enable_idor_protection: tenant column name is empty!")
+		return
+	}
+	idorConfig := IdorConfig{
+		TenantColumnName: payload.ColumnName,
+		ExcludedTables:   payload.ExcludedTables,
+	}
+	ptr := &idorConfig
+	c.IdorConfig = &ptr
 }

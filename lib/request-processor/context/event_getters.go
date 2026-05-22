@@ -44,6 +44,10 @@ func GetSqlDialect(instance *instance.RequestProcessorInstance) string {
 	return GetContext(instance).Callback(instance, C.SQL_DIALECT)
 }
 
+func GetSqlParams(instance *instance.RequestProcessorInstance) string {
+	return GetContext(instance).Callback(instance, C.SQL_PARAMS)
+}
+
 func GetModule(instance *instance.RequestProcessorInstance) string {
 	return GetContext(instance).Callback(instance, C.MODULE)
 }
@@ -57,6 +61,18 @@ func GetParamMatcher(instance *instance.RequestProcessorInstance) (string, strin
 	param := ctx.Callback(instance, C.PARAM_MATCHER_PARAM)
 	regex := ctx.Callback(instance, C.PARAM_MATCHER_REGEX)
 	return param, regex
+}
+
+func GetTenantId(instance *instance.RequestProcessorInstance) string {
+	return GetContext(instance).Callback(instance, C.CONTEXT_TENANT_ID)
+}
+
+func IsIdorDisabled(instance *instance.RequestProcessorInstance) bool {
+	return GetContext(instance).Callback(instance, C.CONTEXT_IDOR_DISABLED) == "1"
+}
+
+func GetIdorConfigJson(instance *instance.RequestProcessorInstance) string {
+	return GetContext(instance).Callback(instance, C.CONTEXT_IDOR_CONFIG)
 }
 
 func getHostNameAndPort(instance *instance.RequestProcessorInstance, urlCallbackId int, portCallbackId int) (string, uint32) {

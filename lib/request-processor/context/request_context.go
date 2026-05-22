@@ -12,6 +12,11 @@ import (
 
 type CallbackFunction func(*instance.RequestProcessorInstance, int) string
 
+type IdorConfig struct {
+	TenantColumnName string
+	ExcludedTables   []string
+}
+
 /* Request level context cache (changes on each PHP request) */
 type RequestContextData struct {
 	instance                      *instance.RequestProcessorInstance // CACHED: Instance pointer for fast access
@@ -31,6 +36,7 @@ type RequestContextData struct {
 	IsEndpointProtectionTurnedOff *bool
 	IsEndpointIpAllowed           *int
 	IsEndpointRateLimited         bool
+	IdorConfig                    **IdorConfig
 	UserAgent                     *string
 	UserId                        *string
 	UserName                      *string
@@ -248,4 +254,9 @@ func IsEndpointRateLimitingEnabled(instance *instance.RequestProcessorInstance) 
 func GetEndpointIpAllowed(instance *instance.RequestProcessorInstance) int {
 	ctx := GetContext(instance)
 	return GetFromCache(instance, ContextSetIsEndpointIpAllowed, &ctx.IsEndpointIpAllowed)
+}
+
+func GetIdorConfig(instance *instance.RequestProcessorInstance) *IdorConfig {
+	ctx := GetContext(instance)
+	return GetFromCache(instance, ContextSetIdorConfig, &ctx.IdorConfig)
 }

@@ -38,6 +38,7 @@ class Action {
 
         ACTION_STATUS Execute(std::string &event);
         bool IsDetection(std::string &event);
+        bool IsIdorViolation(std::string &event);
 
         void Reset();
 

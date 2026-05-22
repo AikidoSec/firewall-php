@@ -5,6 +5,7 @@ import (
 	"main/context"
 	"main/instance"
 	"main/log"
+	idor "main/vulnerabilities/idor"
 	sql_injection "main/vulnerabilities/sql-injection"
 )
 
@@ -25,5 +26,15 @@ func OnPreSqlQueryExecuted(instance *instance.RequestProcessorInstance) string {
 	if res != nil {
 		return attack.ReportAttackDetected(res, instance)
 	}
+
+	if context.GetIdorConfig(instance) != nil && !context.IsIdorDisabled(instance) {
+		tenantId := context.GetTenantId(instance)
+		sqlParams := context.GetSqlParams(instance)
+		idorResult := idor.CheckForIdorViolation(instance, query, dialect, tenantId, sqlParams)
+		if idorResult != "" {
+			return idorResult
+		}
+	}
+
 	return ""
 }

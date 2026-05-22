@@ -1,5 +1,9 @@
 #pragma once
 
+#if PHP_VERSION_ID < 80000
+typedef ZEND_RESULT_CODE zend_result;
+#endif
+
 #if PHP_VERSION_ID >= 80100
     #define PHP_GET_CHAR_PTR(x) (ZSTR_VAL(x))
 #else
