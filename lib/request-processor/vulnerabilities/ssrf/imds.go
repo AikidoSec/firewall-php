@@ -1,6 +1,6 @@
 package ssrf
 
-import "strings"
+import "main/helpers"
 
 // This IP address is used by AWS EC2 instances to access the instance metadata service (IMDS)
 // We should block any requests to these IP addresses
@@ -26,8 +26,7 @@ func isIMDSIPAddress(ip string) bool {
 }
 
 func isTrustedHostname(hostname string) bool {
-	normalized := strings.ToLower(strings.TrimRight(hostname, "."))
-	_, exists := trustedHosts[normalized]
+	_, exists := trustedHosts[helpers.NormalizeHostname(hostname)]
 	return exists
 }
 
