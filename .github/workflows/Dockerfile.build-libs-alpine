@@ -1,0 +1,29 @@
+# Alpine-based image for building Go shared libraries with custom Go fork
+# that supports c-shared buildmode on musl-based systems.
+FROM alpine:3.16
+
+ARG GO_RELEASE_TAG=devel-go1.27-tlsdesc.1
+
+RUN apk add --no-cache \
+    bash curl git make gcc g++ musl-dev \
+    protobuf protobuf-dev
+
+RUN ARCH=$(uname -m) && \
+    if [ "$ARCH" = "x86_64" ]; then GO_ARCH="amd64"; \
+    elif [ "$ARCH" = "aarch64" ]; then GO_ARCH="arm64"; fi && \
+    curl -fsSL -o /tmp/go.tar.gz \
+      "https://github.com/AikidoSec/go/releases/download/${GO_RELEASE_TAG}/${GO_RELEASE_TAG}.linux-${GO_ARCH}.tar.gz" && \
+    tar -C /usr/local -xzf /tmp/go.tar.gz && \
+    rm /tmp/go.tar.gz
+
+ENV PATH="/usr/local/go/bin:${PATH}"
+ENV GOPATH="/go"
+ENV GOBIN="/go/bin"
+ENV PATH="${GOBIN}:${PATH}"
+
+RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@latest && \
+    go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+
+WORKDIR /workspace
+
+CMD ["/bin/bash"]
