@@ -21,7 +21,7 @@ func detectPathTraversal(filePath string, userInput string, checkPathStart bool)
 		return false
 	}
 
-	if !strings.Contains(filePath, userInput) {
+	if !strings.Contains(strings.ToLower(filePath), strings.ToLower(userInput)) {
 		// We ignore cases where the user input is not part of the file path.
 		return false
 	}
