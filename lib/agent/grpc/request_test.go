@@ -3,6 +3,7 @@ package grpc
 import (
 	"sync"
 	"testing"
+	"time"
 
 	. "main/aikido_types"
 	"main/utils"
@@ -70,5 +71,44 @@ func TestAttackWaveThrottling(t *testing.T) {
 
 		// Verify LastSent map was populated
 		assert.True(t, server.AttackWave.LastSent[ip] > 0, "LastSent should be set after event is sent")
+	})
+}
+
+func TestComputeRetryAfterSeconds(t *testing.T) {
+	t.Run("returns full window size when sliding window is nil", func(t *testing.T) {
+		result := computeRetryAfterSeconds(nil, 5)
+		assert.Equal(t, int32(300), result)
+	})
+
+	t.Run("returns full window size for a freshly created window", func(t *testing.T) {
+		sw := NewSlidingWindow()
+		result := computeRetryAfterSeconds(sw, 5)
+		assert.True(t, result >= 299 && result <= 300, "expected ~300, got %d", result)
+	})
+
+	t.Run("decreases over time", func(t *testing.T) {
+		sw := NewSlidingWindow()
+		sw.CreatedAt = time.Now().Add(-60 * time.Second)
+		result := computeRetryAfterSeconds(sw, 5)
+		assert.True(t, result >= 239 && result <= 241, "expected ~240, got %d", result)
+	})
+
+	t.Run("clamps to 1 when window has expired", func(t *testing.T) {
+		sw := NewSlidingWindow()
+		sw.CreatedAt = time.Now().Add(-600 * time.Second)
+		result := computeRetryAfterSeconds(sw, 5)
+		assert.Equal(t, int32(1), result)
+	})
+
+	t.Run("stays accurate after CreatedAt is advanced by eviction", func(t *testing.T) {
+		sw := NewSlidingWindow()
+		sw.CreatedAt = time.Now().Add(-30 * time.Second)
+
+		// Simulate one eviction advancing CreatedAt by 1 minute
+		sw.CreatedAt = sw.CreatedAt.Add(time.Minute)
+
+		result := computeRetryAfterSeconds(sw, 2) // 2 min window = 120s
+		// CreatedAt is now ~30 seconds in the future, so retryAfter ≈ 120 + 30 = 150
+		assert.True(t, result >= 149 && result <= 151, "expected ~150, got %d", result)
 	})
 }

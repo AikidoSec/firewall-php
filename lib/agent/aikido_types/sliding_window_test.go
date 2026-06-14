@@ -2,6 +2,7 @@ package aikido_types
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -106,6 +107,49 @@ func TestSlidingWindowAdvance(t *testing.T) {
 
 		sw.Advance(2)                // evict bucket with value 10, but total is only 5
 		assert.Equal(t, 5, sw.Total) // should not go negative
+	})
+
+	t.Run("does not advance CreatedAt when below capacity", func(t *testing.T) {
+		sw := NewSlidingWindow()
+		originalCreatedAt := sw.CreatedAt
+		sw.Increment()
+
+		sw.Advance(5) // queue length 1 < window size 5, no eviction
+		assert.Equal(t, originalCreatedAt, sw.CreatedAt)
+	})
+
+	t.Run("advances CreatedAt by one minute when evicting a bucket", func(t *testing.T) {
+		sw := NewSlidingWindow()
+		originalCreatedAt := sw.CreatedAt
+		sw.Increment()
+
+		sw.Advance(2) // queue grows to 2 (capacity)
+		sw.Increment()
+
+		sw.Advance(2) // evicts oldest bucket, CreatedAt should shift by 1 minute
+		assert.Equal(t, originalCreatedAt.Add(time.Minute), sw.CreatedAt)
+	})
+
+	t.Run("advances CreatedAt by one minute per eviction over multiple advances", func(t *testing.T) {
+		sw := NewSlidingWindow()
+		originalCreatedAt := sw.CreatedAt
+		sw.Increment()
+
+		// Fill up the window (size 3)
+		sw.Advance(3)
+		sw.Increment()
+		sw.Advance(3)
+		sw.Increment()
+		// Queue is now at capacity (3 buckets)
+
+		sw.Advance(3) // eviction 1
+		assert.Equal(t, originalCreatedAt.Add(1*time.Minute), sw.CreatedAt)
+
+		sw.Advance(3) // eviction 2
+		assert.Equal(t, originalCreatedAt.Add(2*time.Minute), sw.CreatedAt)
+
+		sw.Advance(3) // eviction 3
+		assert.Equal(t, originalCreatedAt.Add(3*time.Minute), sw.CreatedAt)
 	})
 }
 
