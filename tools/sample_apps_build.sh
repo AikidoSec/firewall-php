@@ -45,9 +45,11 @@ sed -i "s/available_tags=''/available_tags='CXX'/" libtool
 if ! grep -q "BEGIN LIBTOOL TAG CONFIG: CXX" libtool; then
   sed -i '/^# ### BEGIN LIBTOOL TAG CONFIG: disable-shared$/i\
 # ### BEGIN LIBTOOL TAG CONFIG: CXX\
+CC="g++"\
 LTCXX="g++"\
 CXXFLAGS="-fPIC -g -O2"\
 compiler_CXX="g++"\
+compiler="g++"\
 # ### END LIBTOOL TAG CONFIG: CXX\
 ' libtool
 fi
