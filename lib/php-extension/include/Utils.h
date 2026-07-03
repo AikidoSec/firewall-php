@@ -31,6 +31,10 @@ json CallPhpFunctionParseUrl(const std::string& url);
 
 std::string AnonymizeToken(const std::string& str);
 
+std::string ExtractRegionFromToken(const std::string& token);
+
+std::string GetGuardEndpointForRegion(const std::string& region);
+
 bool FileExists(const std::string& filePath);
 
 bool RemoveFile(const std::string& filePath);

@@ -82,6 +82,9 @@ std::string RequestProcessor::GetInitData(const std::string& userProvidedToken) 
     if (!userProvidedToken.empty()) {
         globalToken = userProvidedToken;
     }
+    // Recompute using the final token, since \aikido\set_token() can override the token
+    // loaded above from the environment (see HandleSetToken.cpp).
+    AIKIDO_GLOBAL(endpoint) = GetGuardEndpointWithAllGetters(globalToken);
     unordered_map<std::string, std::string> packages = GetPackages();
     AIKIDO_GLOBAL(uses_symfony_http_foundation) = packages.find("symfony/http-foundation") != packages.end();
     json initData = {
