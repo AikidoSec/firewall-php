@@ -72,7 +72,7 @@ curl -L -o $AIKIDO_INTERNALS_LIB $(curl -s $AIKIDO_INTERNALS_REPO/releases/lates
 mv $AIKIDO_INTERNALS_LIB $AIKIDO_INSTALL_PATH/$AIKIDO_INTERNALS_LIB
 
 chmod 755 $AIKIDO_INSTALL_PATH
-chmod 644 $AIKIDO_INSTALL_PATH/aikido-agent
+chmod 755 $AIKIDO_INSTALL_PATH/aikido-agent
 chmod 644 $AIKIDO_INSTALL_PATH/aikido-request-processor.so
 chmod 644 $(php -r 'echo ini_get("extension_dir");')/aikido.so
 
