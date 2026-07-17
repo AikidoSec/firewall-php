@@ -1,6 +1,6 @@
 # Docker container used for building Zen for PHP from source on Centos
 
-FROM ubuntu:20.04
+FROM ubuntu:24.04
 
 ARG PHP_VERSION=8.1
 
