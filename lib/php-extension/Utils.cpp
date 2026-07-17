@@ -205,6 +205,45 @@ std::string AnonymizeToken(const std::string& str) {
     return str.length() > 4 ? "AIK_RUNTIME_***" + str.substr(str.length() - 4) : "AIK_RUNTIME_***";
 }
 
+std::string ExtractRegionFromToken(const std::string& token) {
+    const std::string prefix = "AIK_RUNTIME_";
+    if (token.empty() || !StartsWith(token, prefix)) {
+        return "EU";
+    }
+
+    std::string tokenWithoutPrefix = token.substr(prefix.length());
+
+    std::vector<std::string> parts;
+    size_t start = 0;
+    size_t sepPos;
+    while ((sepPos = tokenWithoutPrefix.find('_', start)) != std::string::npos) {
+        parts.push_back(tokenWithoutPrefix.substr(start, sepPos - start));
+        start = sepPos + 1;
+    }
+    parts.push_back(tokenWithoutPrefix.substr(start));
+
+    // New format: AIK_RUNTIME_{sys_group_id}_{service_id}_{region}_{random}
+    // Old format: AIK_RUNTIME_{sys_group_id}_{service_id}_{random}
+    if (parts.size() == 4) {
+        return parts[2];
+    }
+
+    return "EU";
+}
+
+std::string GetGuardEndpointForRegion(const std::string& region) {
+    if (region == "US") {
+        return "https://guard.us.aikido.dev/";
+    }
+    if (region == "ME") {
+        return "https://guard.me.aikido.dev/";
+    }
+    if (region == "AU") {
+        return "https://guard.au.aikido.dev/";
+    }
+    return "https://guard.aikido.dev/";
+}
+
 bool FileExists(const std::string& filePath) {
     struct stat buffer;
     if (stat(filePath.c_str(), &buffer) == 0) {

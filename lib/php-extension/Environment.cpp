@@ -212,6 +212,19 @@ unsigned int GetEnvNumber(const std::vector<EnvGetterFn>& envGetters, const std:
     return default_value;
 }
 
+/* Uses AIKIDO_ENDPOINT if set, otherwise picks the guard endpoint for the region encoded in the token */
+std::string GetGuardEndpoint(const std::vector<EnvGetterFn>& envGetters, const std::string& token) {
+    std::string configuredEndpoint = GetEnvVariable(envGetters, "AIKIDO_ENDPOINT");
+    if (!configuredEndpoint.empty()) {
+        return configuredEndpoint;
+    }
+    return GetGuardEndpointForRegion(ExtractRegionFromToken(token));
+}
+
+std::string GetGuardEndpointWithAllGetters(const std::string& token) {
+    return GetGuardEndpoint(completeEnvGetters, token);
+}
+
 void LoadEnvironmentFromGetters(const std::vector<EnvGetterFn>& envGetters) {
     auto& logLevelStr = AIKIDO_GLOBAL(log_level_str);
     auto& logLevel = AIKIDO_GLOBAL(log_level);
@@ -231,7 +244,7 @@ void LoadEnvironmentFromGetters(const std::vector<EnvGetterFn>& envGetters) {
     AIKIDO_GLOBAL(disk_logs) = GetEnvBool(envGetters, "AIKIDO_DISK_LOGS", false);
     AIKIDO_GLOBAL(sapi_name) = sapi_module.name;
     AIKIDO_GLOBAL(token) = GetEnvString(envGetters, "AIKIDO_TOKEN", "");
-    AIKIDO_GLOBAL(endpoint) = GetEnvString(envGetters, "AIKIDO_ENDPOINT", "https://guard.aikido.dev/");
+    AIKIDO_GLOBAL(endpoint) = GetGuardEndpoint(envGetters, AIKIDO_GLOBAL(token));
     AIKIDO_GLOBAL(config_endpoint) = GetEnvString(envGetters, "AIKIDO_REALTIME_ENDPOINT", "https://runtime.aikido.dev/");
     AIKIDO_GLOBAL(report_stats_interval_to_agent) = GetEnvNumber(envGetters, "AIKIDO_REPORT_STATS_INTERVAL", 100);
 }
