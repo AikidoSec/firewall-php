@@ -8,10 +8,12 @@ import (
 	"io"
 	. "main/aikido_types"
 	"main/config"
+	"main/constants"
 	"main/log"
 	"main/utils"
 	"net/http"
 	"net/url"
+	"time"
 )
 
 func SendCloudRequest(server *ServerData, endpoint string, route string, method string, payload interface{}) ([]byte, error) {
@@ -47,7 +49,8 @@ func SendCloudRequest(server *ServerData, endpoint string, route string, method 
 	req.Header.Set("Authorization", token)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept-Encoding", "gzip")
-	client := &http.Client{}
+	// Bounded, so a cloud that accepts the connection but never answers cannot block the calling routine forever
+	client := &http.Client{Timeout: constants.CloudRequestTimeoutInMs * time.Millisecond}
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to make request: %v", err)

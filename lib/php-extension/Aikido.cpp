@@ -166,6 +166,7 @@ PHP_GINIT_FUNCTION(aikido) {
     aikido_globals->disable = false;
     aikido_globals->disk_logs = false;
     aikido_globals->collect_api_schema = false;
+    aikido_globals->sse = false;
     aikido_globals->trust_proxy = false;
     aikido_globals->localhost_allowed_by_default = false;
     aikido_globals->report_stats_interval_to_agent = 0;

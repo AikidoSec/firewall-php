@@ -239,6 +239,7 @@ void LoadEnvironmentFromGetters(const std::vector<EnvGetterFn>& envGetters) {
     AIKIDO_GLOBAL(blocking) = GetEnvBool(envGetters, "AIKIDO_BLOCK", false) || GetEnvBool(envGetters, "AIKIDO_BLOCKING", false);
     AIKIDO_GLOBAL(disable) = GetEnvBool(envGetters, "AIKIDO_DISABLE", false);
     AIKIDO_GLOBAL(collect_api_schema) = GetEnvBool(envGetters,"AIKIDO_FEATURE_COLLECT_API_SCHEMA", true);
+    AIKIDO_GLOBAL(sse) = GetEnvBool(envGetters, "AIKIDO_FEATURE_SSE", false);
     AIKIDO_GLOBAL(localhost_allowed_by_default) = GetEnvBool(envGetters, "AIKIDO_LOCALHOST_ALLOWED_BY_DEFAULT", true);
     AIKIDO_GLOBAL(trust_proxy) = GetEnvBool(envGetters, "AIKIDO_TRUST_PROXY", true);
     AIKIDO_GLOBAL(disk_logs) = GetEnvBool(envGetters, "AIKIDO_DISK_LOGS", false);

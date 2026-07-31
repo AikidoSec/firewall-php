@@ -26,6 +26,7 @@ func storeConfig(server *ServerData, req *protos.Config) {
 	server.AikidoConfig.Blocking = req.GetBlocking()
 	server.AikidoConfig.LocalhostAllowedByDefault = req.GetLocalhostAllowedByDefault()
 	server.AikidoConfig.CollectApiSchema = req.GetCollectApiSchema()
+	server.AikidoConfig.Sse = req.GetSse()
 }
 
 func Register(serverKey ServerKey, requestProcessorPID int32, req *protos.Config) {

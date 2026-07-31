@@ -32,6 +32,8 @@ bool blocking;
 bool disable;
 bool disk_logs; // When enabled, it writes logs to disk instead of stdout. It's usefull when debugging to have the logs grouped by PHP process.
 bool collect_api_schema;
+// When enabled, the Agent listens for cloud config updates over a Server-Sent Events stream, on top of polling.
+bool sse;
 bool trust_proxy;
 bool localhost_allowed_by_default;
 bool uses_symfony_http_foundation; // If true, method override is supported using X-HTTP-METHOD-OVERRIDE or _method query param

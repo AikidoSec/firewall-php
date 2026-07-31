@@ -13,9 +13,13 @@ func Init(server *ServerData) {
 
 	utils.StartPollingRoutine(server.PollingData.HeartbeatRoutineChannel, server.PollingData.HeartbeatTicker, SendHeartbeatEvent, server)
 	utils.StartPollingRoutine(server.PollingData.ConfigPollingRoutineChannel, server.PollingData.ConfigPollingTicker, CheckConfigUpdatedAt, server)
+
+	StartConfigStreamRoutine(server)
 }
 
 func Uninit(server *ServerData) {
 	utils.StopPollingRoutine(server.PollingData.HeartbeatRoutineChannel)
 	utils.StopPollingRoutine(server.PollingData.ConfigPollingRoutineChannel)
+
+	StopConfigStreamRoutine(server)
 }

@@ -67,6 +67,7 @@ func SendAikidoConfig(server *ServerData) {
 		Blocking:                  server.AikidoConfig.Blocking,
 		LocalhostAllowedByDefault: server.AikidoConfig.LocalhostAllowedByDefault,
 		CollectApiSchema:          server.AikidoConfig.CollectApiSchema,
+		Sse:                       server.AikidoConfig.Sse,
 		RequestProcessorPid:       globals.EnvironmentConfig.RequestProcessorPID,
 	})
 	if err != nil {

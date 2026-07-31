@@ -26,6 +26,7 @@ type AikidoConfigData struct {
 	Blocking                  bool   `json:"blocking,omitempty"`                     // default: false
 	LocalhostAllowedByDefault bool   `json:"localhost_allowed_by_default,omitempty"` // default: true
 	CollectApiSchema          bool   `json:"collect_api_schema,omitempty"`           // default: true
+	Sse                       bool   `json:"sse,omitempty"`                          // default: false
 }
 
 type RateLimiting struct {
@@ -121,6 +122,7 @@ type ServerDataPolling struct {
 	HeartbeatTicker             *time.Ticker
 	ConfigPollingRoutineChannel chan struct{}
 	ConfigPollingTicker         *time.Ticker
+	ConfigStreamRoutineChannel  chan struct{}
 	RateLimitingChannel         chan struct{}
 	RateLimitingTicker          *time.Ticker
 	AttackWaveChannel           chan struct{}
@@ -133,6 +135,7 @@ func NewServerDataPolling() *ServerDataPolling {
 		HeartbeatTicker:             time.NewTicker(10 * time.Minute),
 		ConfigPollingRoutineChannel: make(chan struct{}),
 		ConfigPollingTicker:         time.NewTicker(1 * time.Minute),
+		ConfigStreamRoutineChannel:  make(chan struct{}),
 		RateLimitingChannel:         make(chan struct{}),
 		RateLimitingTicker:          time.NewTicker(constants.MinRateLimitingIntervalInMs * time.Millisecond),
 		AttackWaveChannel:           make(chan struct{}),
