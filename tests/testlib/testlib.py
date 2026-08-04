@@ -84,6 +84,12 @@ def mock_server_post(route, data):
 def mock_server_get_events():
     return mock_server_get("/mock/events").json()
 
+def mock_server_get_config_fetch_count():
+    return mock_server_get("/mock/config_fetch_count").json()["config_fetch_count"]
+
+def mock_server_get_stream_connections():
+    return mock_server_get("/mock/stream_connections").json()["stream_connections"]
+
 def mock_server_set_config(config):
     return mock_server_post("/mock/config", config)
 
@@ -197,6 +203,16 @@ def assert_is_valid_ip(ip_address):
     except ValueError:
         pass
     assert False, "Exception in assert_is_valid_ip for IP address: {ip_address}"
+
+def wait_until(condition, max_wait_time, check_interval=0.5):
+    """Waits for condition() to become true, returning how long it took, or None if it timed out."""
+    start_time = time.time()
+    while time.time() - start_time < max_wait_time:
+        if condition():
+            return time.time() - start_time
+        time.sleep(check_interval)
+
+    return None
 
 def mock_server_wait_for_new_events(max_wait_time):
     initial_number_of_events = len(mock_server_get_events())

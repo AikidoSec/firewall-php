@@ -34,6 +34,7 @@ message Config {
   bool localhost_allowed_by_default = 10;
   bool collect_api_schema = 11;
   int32 request_processor_pid = 12;
+  bool sse = 13;
 }
 
 message Packages {

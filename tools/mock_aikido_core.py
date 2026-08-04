@@ -18,9 +18,19 @@ server_down = False
 php_version = ""
 platform_name = ""
 
-excluded_routes = ['mock_get_events', 'mock_tests_simple', 'mock_down', 'mock_up']
+# Incremented every time the config changes, so open config streams know to push an event
+config_version = 0
+
+# Counters used by tests to check how the agent got a config update
+config_fetch_count = 0
+stream_connection_count = 0
+
+excluded_routes = ['mock_get_events', 'mock_tests_simple', 'mock_down', 'mock_up',
+                   'mock_get_config_fetch_count', 'mock_get_stream_connections']
 
 def load_config(j):
+    global config_version
+    config_version += 1
     configUpdatedAt = int(time.time())
     responses["lists"] = { "success": True, "serviceId": j["serviceId"] }
     if "blockedIPAddresses" in j:
@@ -74,6 +84,8 @@ def get_config():
 
 @app.route('/api/runtime/config', methods=['GET'])
 def get_runtime_config():
+    global config_fetch_count
+    config_fetch_count += 1
     return gzip_response(responses["config"])
 
 @app.route('/api/runtime/firewall/lists', methods=['GET'])
@@ -86,6 +98,37 @@ def get_lists_config():
         }), 400
 
     return gzip_response(responses["lists"])
+
+@app.route('/api/runtime/stream', methods=['GET'])
+def get_runtime_stream():
+    if 'text/event-stream' not in request.headers.get('Accept', ''):
+        return jsonify({
+            "success": False,
+            "error": "Accept header must include 'text/event-stream' for the config stream endpoint"
+        }), 400
+
+    global stream_connection_count
+    stream_connection_count += 1
+
+    def event_stream(last_version):
+        # Lines starting with a colon are comments, which clients use to detect a live connection
+        yield ": connected\n\n"
+        seconds_since_keep_alive = 0
+        while True:
+            if config_version != last_version:
+                last_version = config_version
+                payload = json.dumps({"configUpdatedAt": responses["configUpdatedAt"].get("configUpdatedAt", 0)})
+                yield f"event: config-updated\ndata: {payload}\n\n"
+            time.sleep(0.2)
+            seconds_since_keep_alive += 0.2
+            if seconds_since_keep_alive >= 15:
+                seconds_since_keep_alive = 0
+                yield ": keep-alive\n\n"
+
+    response = Response(event_stream(config_version), mimetype='text/event-stream')
+    response.headers['Cache-Control'] = 'no-cache'
+    response.headers['X-Accel-Buffering'] = 'no'
+    return response
 
 @app.route('/api/runtime/events', methods=['POST'])
 def post_events():
@@ -108,6 +151,12 @@ def mock_set_config():
     load_config(request.get_json())
     return gzip_response({})
 
+@app.route('/mock/push_config_updated', methods=['POST'])
+def mock_push_config_updated():
+    global config_version
+    config_version += 1
+    return gzip_response({})
+
 @app.route('/mock/down', methods=['POST'])
 def mock_down():
     global server_down
@@ -123,6 +172,14 @@ def mock_up():
 @app.route('/mock/events', methods=['GET'])
 def mock_get_events():
     return gzip_response(events)
+
+@app.route('/mock/config_fetch_count', methods=['GET'])
+def mock_get_config_fetch_count():
+    return gzip_response({"config_fetch_count": config_fetch_count})
+
+@app.route('/mock/stream_connections', methods=['GET'])
+def mock_get_stream_connections():
+    return gzip_response({"stream_connections": stream_connection_count})
 
 @app.route('/tests/simple', methods=['GET'])
 def mock_tests_simple():

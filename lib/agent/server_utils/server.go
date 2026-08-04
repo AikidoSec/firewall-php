@@ -26,6 +26,7 @@ func storeConfig(server *ServerData, req *protos.Config) {
 	server.AikidoConfig.Blocking = req.GetBlocking()
 	server.AikidoConfig.LocalhostAllowedByDefault = req.GetLocalhostAllowedByDefault()
 	server.AikidoConfig.CollectApiSchema = req.GetCollectApiSchema()
+	server.AikidoConfig.Sse = req.GetSse()
 }
 
 func Register(serverKey ServerKey, requestProcessorPID int32, req *protos.Config) {
@@ -51,6 +52,9 @@ func Register(serverKey ServerKey, requestProcessorPID int32, req *protos.Config
 	} else {
 		cloud.SendStartEvent(server)
 	}
+
+	// Started after the start event, as the config it returns can be the one enabling realtime updates
+	cloud.StartConfigStreamRoutine(server)
 
 	rate_limiting.Init(server)
 	attack_wave_detection.Init(server)

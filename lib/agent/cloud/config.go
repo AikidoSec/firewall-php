@@ -32,6 +32,10 @@ func CheckConfigUpdatedAt(server *ServerData) {
 		return
 	}
 
+	FetchAndStoreCloudConfig(server)
+}
+
+func FetchAndStoreCloudConfig(server *ServerData) {
 	configResponse, err := SendCloudRequest(server, server.AikidoConfig.Endpoint, constants.ConfigAPI, constants.ConfigAPIMethod, nil)
 	if err != nil {
 		LogCloudRequestError(server, "Error in sending config request: ", err)

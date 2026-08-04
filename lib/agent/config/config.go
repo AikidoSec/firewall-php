@@ -17,3 +17,10 @@ func GetBlocking(server *ServerData) bool {
 
 	return server.AikidoConfig.Blocking
 }
+
+func GetSse(server *ServerData) bool {
+	server.AikidoConfig.ConfigMutex.Lock()
+	defer server.AikidoConfig.ConfigMutex.Unlock()
+
+	return server.AikidoConfig.Sse
+}
