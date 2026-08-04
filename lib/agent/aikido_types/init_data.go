@@ -66,6 +66,7 @@ type CloudConfigData struct {
 	Block                    *bool            `json:"block,omitempty"`
 	BlockNewOutgoingRequests bool             `json:"blockNewOutgoingRequests"`
 	OutboundDomains          []OutboundDomain `json:"domains"`
+	EnabledFeatures          []string         `json:"enabledFeatures"`
 	BlockedIpsList           map[string]IpBlocklist
 	AllowedIpsList           map[string]IpBlocklist
 	BlockedUserAgents        string

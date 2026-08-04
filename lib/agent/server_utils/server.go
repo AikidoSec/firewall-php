@@ -53,6 +53,9 @@ func Register(serverKey ServerKey, requestProcessorPID int32, req *protos.Config
 		cloud.SendStartEvent(server)
 	}
 
+	// Started after the start event, as the config it returns can be the one enabling realtime updates
+	cloud.StartConfigStreamRoutine(server)
+
 	rate_limiting.Init(server)
 	attack_wave_detection.Init(server)
 }

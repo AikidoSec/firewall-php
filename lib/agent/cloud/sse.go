@@ -13,6 +13,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"slices"
 	"time"
 )
 
@@ -177,8 +178,23 @@ func configStreamRoutine(ctx context.Context, server *ServerData, initialReconne
 	}
 }
 
+/*
+Realtime updates are enabled either locally, via AIKIDO_FEATURE_SSE, or remotely, when
+the cloud lists the feature for this service, which is how the feature gets rolled out.
+*/
+func isRealtimeEnabled(server *ServerData) bool {
+	if config.GetSse(server) {
+		return true
+	}
+
+	server.CloudConfigMutex.Lock()
+	defer server.CloudConfigMutex.Unlock()
+
+	return slices.Contains(server.CloudConfig.EnabledFeatures, constants.RealtimeUpdatesFeature)
+}
+
 func StartConfigStreamRoutine(server *ServerData) {
-	if !config.GetSse(server) {
+	if !isRealtimeEnabled(server) {
 		return
 	}
 

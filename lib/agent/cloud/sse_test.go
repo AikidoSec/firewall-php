@@ -193,6 +193,35 @@ func TestConfigStreamRoutine(t *testing.T) {
 		assert.Equal(t, int32(0), cloud.streamConnections.Load())
 	})
 
+	t.Run("it connects when the cloud enables realtime updates", func(t *testing.T) {
+		cloud := newMockCloud()
+		server := newTestServerData(cloud, "AIK_RUNTIME_TEST_TOKEN", false)
+		server.CloudConfig.EnabledFeatures = []string{constants.RealtimeUpdatesFeature}
+
+		StartConfigStreamRoutine(server)
+
+		stopRoutine := sync.OnceFunc(func() { StopConfigStreamRoutine(server) })
+		defer cloud.httpServer.Close()
+		defer stopRoutine()
+
+		assert.True(t, waitFor(5*time.Second, func() bool {
+			return cloud.streamConnections.Load() == 1
+		}), "expected the agent to connect when the cloud enables the feature")
+	})
+
+	t.Run("it does not connect for a cloud feature it does not know", func(t *testing.T) {
+		cloud := newMockCloud()
+		defer cloud.httpServer.Close()
+		server := newTestServerData(cloud, "AIK_RUNTIME_TEST_TOKEN", false)
+		server.CloudConfig.EnabledFeatures = []string{"some_other_feature"}
+
+		StartConfigStreamRoutine(server)
+		defer StopConfigStreamRoutine(server)
+
+		time.Sleep(300 * time.Millisecond)
+		assert.Equal(t, int32(0), cloud.streamConnections.Load())
+	})
+
 	t.Run("it does not connect without a token", func(t *testing.T) {
 		cloud := newMockCloud()
 		defer cloud.httpServer.Close()
@@ -298,6 +327,29 @@ func TestConfigStreamRoutine(t *testing.T) {
 		}
 
 		assert.Equal(t, int32(1), cloud.streamConnections.Load())
+	})
+}
+
+func TestIsRealtimeEnabled(t *testing.T) {
+	newServer := func(sse bool, enabledFeatures []string) *ServerData {
+		server := NewServerData()
+		server.AikidoConfig.Sse = sse
+		server.CloudConfig.EnabledFeatures = enabledFeatures
+		return server
+	}
+
+	t.Run("it is enabled by the local feature flag", func(t *testing.T) {
+		assert.True(t, isRealtimeEnabled(newServer(true, nil)))
+	})
+
+	t.Run("it is enabled by the cloud", func(t *testing.T) {
+		assert.True(t, isRealtimeEnabled(newServer(false, []string{constants.RealtimeUpdatesFeature})))
+		assert.True(t, isRealtimeEnabled(newServer(false, []string{"other_feature", constants.RealtimeUpdatesFeature})))
+	})
+
+	t.Run("it is disabled without the local flag and the cloud feature", func(t *testing.T) {
+		assert.False(t, isRealtimeEnabled(newServer(false, nil)))
+		assert.False(t, isRealtimeEnabled(newServer(false, []string{"other_feature"})))
 	})
 }
 
