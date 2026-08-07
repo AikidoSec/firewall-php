@@ -8,6 +8,7 @@ import (
 	"main/log"
 	"main/utils"
 	"strconv"
+	"strings"
 )
 
 /*
@@ -305,4 +306,24 @@ func ContextSetIsEndpointIpAllowed(instance *instance.RequestProcessorInstance) 
 func ContextSetIsEndpointRateLimited(instance *instance.RequestProcessorInstance) {
 	c := GetContext(instance)
 	c.IsEndpointRateLimited = true
+}
+
+func GetPathTraversalCandidates(instance *instance.RequestProcessorInstance, sourceName string, full map[string]string) map[string]string {
+	c := GetContext(instance)
+	if c.PathTraversalCandidates == nil {
+		c.PathTraversalCandidates = map[string]map[string]string{}
+	}
+	if cached, ok := c.PathTraversalCandidates[sourceName]; ok {
+		return cached
+	}
+
+	filtered := make(map[string]string, len(full))
+	for str, path := range full {
+		trimmed := helpers.TrimInvisible(str)
+		if len(trimmed) > 1 && strings.ContainsAny(trimmed, `/\`) {
+			filtered[str] = path
+		}
+	}
+	c.PathTraversalCandidates[sourceName] = filtered
+	return filtered
 }

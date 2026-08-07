@@ -3,7 +3,9 @@ package path_traversal
 import (
 	"main/context"
 	"main/utils"
+	"strings"
 	"testing"
+	"time"
 )
 
 func TestCheckContextForPathTraversal(t *testing.T) {
@@ -113,4 +115,58 @@ func TestSanitizePath(t *testing.T) {
 		}
 	})
 
+}
+
+func TestCheckContextForPathTraversal_ManyCallsOnLargeBody(t *testing.T) {
+	instance := context.LoadForUnitTests(map[string]string{
+		"remoteAddress": "127.0.0.1",
+		"method":        "POST",
+		"url":           "/mail/inbox",
+		"body":          context.GetJsonString(map[string]interface{}{"rawMime": strings.Repeat("A", 3*1024*1024)}),
+		"source":        "laravel",
+	})
+	defer context.UnloadForUnitTests()
+
+	start := time.Now()
+	for i := 0; i < 200; i++ {
+		if result := CheckContextForPathTraversal(instance, "/tmp/php_mime_tmp.eml", "file_get_contents", true); result != nil {
+			t.Fatalf("unexpected path traversal flagged: %+v", result)
+		}
+	}
+	elapsed := time.Since(start)
+	if elapsed > time.Second {
+		t.Fatalf("200 calls took %v, expected well under 1s - path traversal candidates are not being cached per request", elapsed)
+	}
+}
+
+func TestCheckContextForPathTraversal_CacheInvalidatedBetweenRequests(t *testing.T) {
+	instance := context.LoadForUnitTests(map[string]string{
+		"remoteAddress": "127.0.0.1",
+		"method":        "POST",
+		"url":           "/mail/inbox",
+		"body":          context.GetJsonString(map[string]interface{}{"attack": "../../etc/shadow"}),
+		"source":        "laravel",
+	})
+	defer context.UnloadForUnitTests()
+
+	if result := CheckContextForPathTraversal(instance, "/var/www/../../etc/shadow", "file_get_contents", true); result == nil {
+		t.Fatalf("expected first request's payload to be detected")
+	}
+
+	context.Clear(instance)
+	context.TestContext = map[string]string{
+		"remoteAddress": "127.0.0.1",
+		"method":        "POST",
+		"url":           "/mail/inbox",
+		"body":          context.GetJsonString(map[string]interface{}{"attack": "../../var/log/app.log"}),
+		"source":        "laravel",
+	}
+
+	if result := CheckContextForPathTraversal(instance, "/var/www/../../etc/shadow", "file_get_contents", true); result != nil {
+		t.Fatalf("expected no match, got %+v - stale candidates from the previous request leaked in", result)
+	}
+
+	if result := CheckContextForPathTraversal(instance, "/opt/app/../../var/log/app.log", "file_get_contents", true); result == nil {
+		t.Fatalf("expected second request's own payload to still be detected")
+	}
 }

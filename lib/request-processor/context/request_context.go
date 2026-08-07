@@ -46,6 +46,7 @@ type RequestContextData struct {
 	RouteParamsRaw                *string
 	RouteParamsParsed             *map[string]interface{}
 	RouteParamsParsedFlattened    *map[string]string
+	PathTraversalCandidates       map[string]map[string]string
 }
 
 func GetServerPID() int32 {
