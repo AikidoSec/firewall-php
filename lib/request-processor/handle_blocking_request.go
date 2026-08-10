@@ -12,6 +12,9 @@ import (
 	"time"
 )
 
+// 50 ms is the lowest tested timeout that kept rate limiting working under heavy CPU load; shorter values can let requests through.
+const rateLimitingStatusTimeout = 50 * time.Millisecond
+
 func GetAction(actionHandling, actionType, trigger, description, data string, responseCode int) string {
 	actionMap := map[string]interface{}{
 		"action":        actionHandling,
@@ -64,7 +67,7 @@ func OnGetBlockingStatus(instance *instance.RequestProcessorInstance) string {
 		if method == "" || route == "" {
 			return ""
 		}
-		rateLimitingStatus := grpc.GetRateLimitingStatus(instance, server, method, route, routeParsed, userId, ip, rateLimitGroup, 10*time.Millisecond)
+		rateLimitingStatus := grpc.GetRateLimitingStatus(instance, server, method, route, routeParsed, userId, ip, rateLimitGroup, rateLimitingStatusTimeout)
 		if rateLimitingStatus != nil && rateLimitingStatus.Block {
 			context.ContextSetIsEndpointRateLimited(instance)
 			log.Infof(instance, "Request made from IP \"%s\" is ratelimited by \"%s\"!", ip, rateLimitingStatus.Trigger)
