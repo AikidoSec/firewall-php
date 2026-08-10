@@ -8,7 +8,6 @@ import (
 	"main/log"
 	"main/utils"
 	"strconv"
-	"strings"
 )
 
 /*
@@ -308,22 +307,27 @@ func ContextSetIsEndpointRateLimited(instance *instance.RequestProcessorInstance
 	c.IsEndpointRateLimited = true
 }
 
-func GetPathTraversalCandidates(instance *instance.RequestProcessorInstance, sourceName string, full map[string]string) map[string]string {
+func ContextSetPathTraversalCandidates(instance *instance.RequestProcessorInstance) {
 	c := GetContext(instance)
 	if c.PathTraversalCandidates == nil {
-		c.PathTraversalCandidates = map[string]map[string]string{}
+		candidates := make(map[string]map[string]string)
+		c.PathTraversalCandidates = &candidates
 	}
-	if cached, ok := c.PathTraversalCandidates[sourceName]; ok {
+}
+
+func GetPathTraversalCandidates(instance *instance.RequestProcessorInstance, sourceName string, full map[string]string, isCandidate func(string) bool) map[string]string {
+	c := GetContext(instance)
+	candidates := GetFromCache(instance, ContextSetPathTraversalCandidates, &c.PathTraversalCandidates)
+	if cached, ok := candidates[sourceName]; ok {
 		return cached
 	}
 
-	filtered := make(map[string]string, len(full))
+	filtered := make(map[string]string)
 	for str, path := range full {
-		trimmed := helpers.TrimInvisible(str)
-		if len(trimmed) > 1 && strings.ContainsAny(trimmed, `/\`) {
+		if isCandidate(str) {
 			filtered[str] = path
 		}
 	}
-	c.PathTraversalCandidates[sourceName] = filtered
+	candidates[sourceName] = filtered
 	return filtered
 }

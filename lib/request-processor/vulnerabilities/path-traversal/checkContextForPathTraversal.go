@@ -5,6 +5,7 @@ import (
 	"main/helpers"
 	"main/instance"
 	"main/utils"
+	"path/filepath"
 	"strings"
 )
 
@@ -13,7 +14,7 @@ func CheckContextForPathTraversal(instance *instance.RequestProcessorInstance, f
 	sanitizedPath := SanitizePath(trimmedFilename)
 
 	for _, source := range context.SOURCES {
-		mapss := context.GetPathTraversalCandidates(instance, source.Name, source.CacheGet(instance))
+		mapss := context.GetPathTraversalCandidates(instance, source.Name, source.CacheGet(instance), isPathTraversalCandidate)
 
 		for str, path := range mapss {
 			trimmedInputString := helpers.TrimInvisible(str)
@@ -34,6 +35,12 @@ func CheckContextForPathTraversal(instance *instance.RequestProcessorInstance, f
 
 	}
 	return nil
+}
+
+func isPathTraversalCandidate(input string) bool {
+	sanitizedInput := SanitizePath(helpers.TrimInvisible(input))
+	userInput := helpers.ExtractResourceOrOriginal(sanitizedInput)
+	return len(sanitizedInput) > 1 && (containsUnsafePathParts(userInput) || filepath.IsAbs(userInput))
 }
 
 func SanitizePath(path string) string {
