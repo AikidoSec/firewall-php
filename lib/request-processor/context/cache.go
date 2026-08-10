@@ -314,20 +314,3 @@ func ContextSetPathTraversalCandidates(instance *instance.RequestProcessorInstan
 		c.PathTraversalCandidates = &candidates
 	}
 }
-
-func GetPathTraversalCandidates(instance *instance.RequestProcessorInstance, sourceName string, full map[string]string, isCandidate func(string) bool) map[string]string {
-	c := GetContext(instance)
-	candidates := GetFromCache(instance, ContextSetPathTraversalCandidates, &c.PathTraversalCandidates)
-	if cached, ok := candidates[sourceName]; ok {
-		return cached
-	}
-
-	filtered := make(map[string]string)
-	for str, path := range full {
-		if isCandidate(str) {
-			filtered[str] = path
-		}
-	}
-	candidates[sourceName] = filtered
-	return filtered
-}

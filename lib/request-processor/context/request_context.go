@@ -250,3 +250,8 @@ func GetEndpointIpAllowed(instance *instance.RequestProcessorInstance) int {
 	ctx := GetContext(instance)
 	return GetFromCache(instance, ContextSetIsEndpointIpAllowed, &ctx.IsEndpointIpAllowed)
 }
+
+func GetPathTraversalCandidatesCache(instance *instance.RequestProcessorInstance) map[string]map[string]string {
+	ctx := GetContext(instance)
+	return GetFromCache(instance, ContextSetPathTraversalCandidates, &ctx.PathTraversalCandidates)
+}
