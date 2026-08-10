@@ -5,6 +5,7 @@ import (
 	"main/helpers"
 	"main/instance"
 	"main/utils"
+	"path/filepath"
 	"strings"
 )
 
@@ -13,7 +14,7 @@ func CheckContextForPathTraversal(instance *instance.RequestProcessorInstance, f
 	sanitizedPath := SanitizePath(trimmedFilename)
 
 	for _, source := range context.SOURCES {
-		mapss := source.CacheGet(instance)
+		mapss := getPathTraversalCandidates(instance, source.Name, source.CacheGet(instance))
 
 		for str, path := range mapss {
 			trimmedInputString := helpers.TrimInvisible(str)
@@ -36,9 +37,30 @@ func CheckContextForPathTraversal(instance *instance.RequestProcessorInstance, f
 	return nil
 }
 
+func getPathTraversalCandidates(instance *instance.RequestProcessorInstance, sourceName string, full map[string]string) map[string]string {
+	candidates := context.GetPathTraversalCandidatesCache(instance)
+	if cached, ok := candidates[sourceName]; ok {
+		return cached
+	}
+
+	filtered := make(map[string]string)
+	for str, path := range full {
+		if isPathTraversalCandidate(str) {
+			filtered[str] = path
+		}
+	}
+	candidates[sourceName] = filtered
+	return filtered
+}
+
+func isPathTraversalCandidate(input string) bool {
+	sanitizedInput := SanitizePath(helpers.TrimInvisible(input))
+	userInput := helpers.ExtractResourceOrOriginal(sanitizedInput)
+	return len(sanitizedInput) > 1 && (containsUnsafePathParts(userInput) || filepath.IsAbs(userInput))
+}
+
 func SanitizePath(path string) string {
-	// If path starts with file:// -> remove it (case insensitive)
-	if len(path) > 7 && strings.HasPrefix(strings.ToLower(path), "file://") {
+	if len(path) > 7 && strings.ToLower(path[:7]) == "file://" {
 		path = path[7:]
 	}
 	return path

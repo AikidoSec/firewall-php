@@ -306,3 +306,11 @@ func ContextSetIsEndpointRateLimited(instance *instance.RequestProcessorInstance
 	c := GetContext(instance)
 	c.IsEndpointRateLimited = true
 }
+
+func ContextSetPathTraversalCandidates(instance *instance.RequestProcessorInstance) {
+	c := GetContext(instance)
+	if c.PathTraversalCandidates == nil {
+		candidates := make(map[string]map[string]string)
+		c.PathTraversalCandidates = &candidates
+	}
+}

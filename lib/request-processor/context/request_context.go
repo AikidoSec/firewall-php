@@ -46,6 +46,7 @@ type RequestContextData struct {
 	RouteParamsRaw                *string
 	RouteParamsParsed             *map[string]interface{}
 	RouteParamsParsedFlattened    *map[string]string
+	PathTraversalCandidates       *map[string]map[string]string
 }
 
 func GetServerPID() int32 {
@@ -248,4 +249,9 @@ func IsEndpointRateLimitingEnabled(instance *instance.RequestProcessorInstance) 
 func GetEndpointIpAllowed(instance *instance.RequestProcessorInstance) int {
 	ctx := GetContext(instance)
 	return GetFromCache(instance, ContextSetIsEndpointIpAllowed, &ctx.IsEndpointIpAllowed)
+}
+
+func GetPathTraversalCandidatesCache(instance *instance.RequestProcessorInstance) map[string]map[string]string {
+	ctx := GetContext(instance)
+	return GetFromCache(instance, ContextSetPathTraversalCandidates, &ctx.PathTraversalCandidates)
 }
