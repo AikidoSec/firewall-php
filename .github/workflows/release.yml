@@ -6,7 +6,34 @@ on:
       - "v*.*.*"
 
 jobs:
+  validate_version:
+    name: Validate release version
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Ensure tag matches source versions
+      run: |
+        RELEASE_VERSION="${GITHUB_REF_NAME#v}"
+        FAILED=0
+
+        check_version() {
+          if [ "$1" != "$RELEASE_VERSION" ]; then
+            echo "::error file=$2::Expected version $RELEASE_VERSION, found $1"
+            FAILED=1
+          fi
+        }
+
+        check_version "$(awk -F'"' '/^#define PHP_AIKIDO_VERSION / { print $2 }' lib/php-extension/include/php_aikido.h)" "lib/php-extension/include/php_aikido.h"
+        check_version "$(awk -F'"' '/^[[:space:]]*Version[[:space:]]*=/ { print $2; exit }' lib/agent/constants/constants.go)" "lib/agent/constants/constants.go"
+        check_version "$(awk -F'"' '/^[[:space:]]*Version[[:space:]]*=/ { print $2; exit }' lib/request-processor/globals/globals.go)" "lib/request-processor/globals/globals.go"
+        check_version "$(awk '/^Version:/ { print $2 }' package/rpm/aikido.spec)" "package/rpm/aikido.spec"
+
+        exit "$FAILED"
+
   build:
+    needs: validate_version
     uses: ./.github/workflows/build.yml
   release:
     runs-on: open-source-releaser
