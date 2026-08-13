@@ -24,6 +24,8 @@ type StatsDataType struct {
 	RequestsRateLimited int
 	Attacks             int
 	AttacksBlocked      int
+	AttackWaves         int
+	AttackWavesBlocked  int
 
 	MonitoredSinkTimings map[string]MonitoredSinkTimings
 

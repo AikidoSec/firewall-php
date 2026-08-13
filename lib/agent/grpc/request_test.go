@@ -5,10 +5,61 @@ import (
 	"testing"
 
 	. "main/aikido_types"
+	"main/ipc/protos"
 	"main/utils"
 
 	"github.com/stretchr/testify/assert"
 )
+
+func TestStoreAttackStats(t *testing.T) {
+	t.Run("increments Attacks on every call, and AttacksBlocked only when blocked", func(t *testing.T) {
+		server := &ServerData{}
+
+		storeAttackStats(server, &protos.AttackDetected{Attack: &protos.Attack{Blocked: false}})
+		assert.Equal(t, 1, server.StatsData.Attacks)
+		assert.Equal(t, 0, server.StatsData.AttacksBlocked)
+
+		storeAttackStats(server, &protos.AttackDetected{Attack: &protos.Attack{Blocked: true}})
+		assert.Equal(t, 2, server.StatsData.Attacks)
+		assert.Equal(t, 1, server.StatsData.AttacksBlocked)
+
+		storeAttackStats(server, &protos.AttackDetected{Attack: &protos.Attack{Blocked: true}})
+		assert.Equal(t, 3, server.StatsData.Attacks)
+		assert.Equal(t, 2, server.StatsData.AttacksBlocked)
+	})
+}
+
+func TestStoreAttackWaveStats(t *testing.T) {
+	t.Run("increments AttackWaves on every call", func(t *testing.T) {
+		server := &ServerData{}
+
+		storeAttackWaveStats(server)
+		assert.Equal(t, 1, server.StatsData.AttackWaves)
+
+		storeAttackWaveStats(server)
+		storeAttackWaveStats(server)
+		assert.Equal(t, 3, server.StatsData.AttackWaves)
+
+		assert.Equal(t, 0, server.StatsData.AttackWavesBlocked)
+	})
+
+	t.Run("is safe for concurrent use", func(t *testing.T) {
+		server := &ServerData{}
+
+		const goroutines = 50
+		var wg sync.WaitGroup
+		wg.Add(goroutines)
+		for i := 0; i < goroutines; i++ {
+			go func() {
+				defer wg.Done()
+				storeAttackWaveStats(server)
+			}()
+		}
+		wg.Wait()
+
+		assert.Equal(t, goroutines, server.StatsData.AttackWaves)
+	})
+}
 
 func TestAttackWaveThrottling(t *testing.T) {
 	t.Run("returns false when event for IP was recently sent (within MinBetween window)", func(t *testing.T) {
@@ -70,5 +121,8 @@ func TestAttackWaveThrottling(t *testing.T) {
 
 		// Verify LastSent map was populated
 		assert.True(t, server.AttackWave.LastSent[ip] > 0, "LastSent should be set after event is sent")
+
+		// Verify the attack wave stats counter was incremented, so it gets reported in the heartbeat stats
+		assert.Equal(t, 1, server.StatsData.AttackWaves)
 	})
 }

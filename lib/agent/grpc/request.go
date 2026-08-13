@@ -32,6 +32,13 @@ func storeAttackStats(server *ServerData, req *protos.AttackDetected) {
 	}
 }
 
+func storeAttackWaveStats(server *ServerData) {
+	server.StatsData.StatsMutex.Lock()
+	defer server.StatsData.StatsMutex.Unlock()
+
+	server.StatsData.AttackWaves += 1
+}
+
 func storePackages(server *ServerData, packages map[string]string) {
 	server.PackagesMutex.Lock()
 	defer server.PackagesMutex.Unlock()
@@ -225,6 +232,8 @@ func updateAttackWaveCountsAndDetect(server *ServerData, isWebScanner bool, ip s
 	if server.Logger != nil {
 		log.Infof(server.Logger, "Attack wave detected from IP: %s", ip)
 	}
+
+	storeAttackWaveStats(server)
 
 	// report event to cloud
 	cloud.SendAttackDetectedEvent(server, &protos.AttackDetected{

@@ -63,6 +63,7 @@ type Requests struct {
 	Aborted         int             `json:"aborted"`
 	RateLimited     int             `json:"rateLimited"`
 	AttacksDetected AttacksDetected `json:"attacksDetected"`
+	AttackWaves     AttacksDetected `json:"attackWaves"`
 }
 
 type Stats struct {
