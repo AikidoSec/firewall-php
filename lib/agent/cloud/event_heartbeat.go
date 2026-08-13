@@ -131,6 +131,7 @@ func GetStatsAndClear(server *ServerData) Stats {
 	server.StatsData.StartedAt = utils.GetTime()
 	server.StatsData.Requests = 0
 	server.StatsData.RequestsAborted = 0
+	server.StatsData.RequestsRateLimited = 0
 	server.StatsData.Attacks = 0
 	server.StatsData.AttacksBlocked = 0
 	server.StatsData.AttackWaves = 0

@@ -11,6 +11,24 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestStoreTotalStats(t *testing.T) {
+	t.Run("increments Requests on every call, and RequestsRateLimited only when rate limited", func(t *testing.T) {
+		server := &ServerData{}
+
+		storeTotalStats(server, false)
+		assert.Equal(t, 1, server.StatsData.Requests)
+		assert.Equal(t, 0, server.StatsData.RequestsRateLimited)
+
+		storeTotalStats(server, true)
+		assert.Equal(t, 2, server.StatsData.Requests)
+		assert.Equal(t, 1, server.StatsData.RequestsRateLimited)
+
+		storeTotalStats(server, true)
+		assert.Equal(t, 3, server.StatsData.Requests)
+		assert.Equal(t, 2, server.StatsData.RequestsRateLimited)
+	})
+}
+
 func TestStoreAttackStats(t *testing.T) {
 	t.Run("increments Attacks on every call, and AttacksBlocked only when blocked", func(t *testing.T) {
 		server := &ServerData{}

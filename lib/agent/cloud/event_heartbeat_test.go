@@ -12,6 +12,7 @@ func TestGetStatsAndClear(t *testing.T) {
 		server := NewServerData()
 		server.StatsData.Requests = 30
 		server.StatsData.RequestsAborted = 2
+		server.StatsData.RequestsRateLimited = 7
 		server.StatsData.Attacks = 5
 		server.StatsData.AttacksBlocked = 3
 		server.StatsData.AttackWaves = 2
@@ -22,6 +23,7 @@ func TestGetStatsAndClear(t *testing.T) {
 		// The returned snapshot reflects everything that was accumulated (incrementing side)
 		assert.Equal(t, 30, stats.Requests.Total)
 		assert.Equal(t, 2, stats.Requests.Aborted)
+		assert.Equal(t, 7, stats.Requests.RateLimited)
 		assert.Equal(t, 5, stats.Requests.AttacksDetected.Total)
 		assert.Equal(t, 3, stats.Requests.AttacksDetected.Blocked)
 		assert.Equal(t, 2, stats.Requests.AttackWaves.Total)
@@ -30,6 +32,7 @@ func TestGetStatsAndClear(t *testing.T) {
 		// The underlying counters are cleared (decremented back to zero) so the next heartbeat starts fresh
 		assert.Equal(t, 0, server.StatsData.Requests)
 		assert.Equal(t, 0, server.StatsData.RequestsAborted)
+		assert.Equal(t, 0, server.StatsData.RequestsRateLimited)
 		assert.Equal(t, 0, server.StatsData.Attacks)
 		assert.Equal(t, 0, server.StatsData.AttacksBlocked)
 		assert.Equal(t, 0, server.StatsData.AttackWaves)
