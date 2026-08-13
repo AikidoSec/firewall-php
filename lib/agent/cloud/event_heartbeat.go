@@ -119,6 +119,10 @@ func GetStatsAndClear(server *ServerData) Stats {
 				Total:   server.StatsData.Attacks,
 				Blocked: server.StatsData.AttacksBlocked,
 			},
+			AttackWaves: AttacksDetected{
+				Total:   server.StatsData.AttackWaves,
+				Blocked: server.StatsData.AttackWavesBlocked,
+			},
 		},
 		UserAgents:  GetUserAgentsBreakdownAndClear(server),
 		IpAddresses: GetIpsBreakdownAndClear(server),
@@ -127,8 +131,11 @@ func GetStatsAndClear(server *ServerData) Stats {
 	server.StatsData.StartedAt = utils.GetTime()
 	server.StatsData.Requests = 0
 	server.StatsData.RequestsAborted = 0
+	server.StatsData.RequestsRateLimited = 0
 	server.StatsData.Attacks = 0
 	server.StatsData.AttacksBlocked = 0
+	server.StatsData.AttackWaves = 0
+	server.StatsData.AttackWavesBlocked = 0
 
 	return stats
 }
