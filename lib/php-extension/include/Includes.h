@@ -10,8 +10,8 @@
 #include <net/if.h>
 #include <netinet/in.h>
 #include <sys/types.h>
-#include <sys/utsname.h>
 #include <sys/wait.h>
+#include <sys/utsname.h>
 #include <sys/syscall.h>
 #include <unistd.h>
 #include <inttypes.h>
@@ -27,7 +27,6 @@
 #include <spawn.h>
 #include <fstream>
 #include <iostream>
-#include <set>
 #include <mutex>
 
 #include "3rdparty/json.hpp"
