@@ -1,21 +1,23 @@
-// Package main builds the Aikido Agent executable.
-//
-// One installed executable is invoked in two process roles:
+// Package main builds one executable that is used in two roles:
 //
 //	PHP --posix_spawn--> launcher (no arguments)
-//	                           `--spawn--> worker (--agent-worker)
+//	                           `--start--> worker (--agent-worker)
 //
-// Reusing this executable avoids packaging and versioning a separate launcher
-// binary. The process boundary, rather than Go itself, provides the safety.
-// PHP may be hosted by a multithreaded runtime such as FrankenPHP. Calling
-// fork/daemon in the extension would leave the child with only one surviving
-// thread but locks and runtime state inherited from threads that disappeared.
-// posix_spawn loads the launcher as a clean process first, so detaching and
-// starting the worker happen outside the PHP host.
+// The Agent must keep running after PHP module startup and serve every PHP
+// process using the same runtime directory. PHP cannot wait for that long-lived
+// process because module startup would never finish. If PHP started it without
+// waiting, each supported PHP host would instead be responsible for reaping it
+// when it eventually exits.
 //
-// PHP waits for and reaps its short-lived launcher child. The launcher does not
-// wait for the long-lived worker: when the launcher exits, the operating system
-// reparents the worker to init or a subreaper.
+// The short-lived launcher avoids both outcomes. PHP waits for and reaps only
+// the launcher. The launcher locks the versioned runtime directory, starts the
+// long-lived worker with that lock already inherited, and exits. The worker is
+// then reparented to init or a subreaper, which becomes responsible for reaping
+// it. The worker retains the lock, owns the PID file and Unix socket, and serves
+// all PHP processes using that runtime directory.
+//
+// These roles share one executable only to avoid packaging and versioning a
+// separate launcher binary. They are separate processes with separate lifetimes.
 package main
 
 import (
@@ -44,7 +46,11 @@ var serversCleanupTicker = time.NewTicker(time.Minute)
 
 const (
 	agentWorkerArg = "--agent-worker"
-	agentLockFD    = 3 // The first exec.Cmd.ExtraFiles entry becomes file descriptor 3.
+	// The launcher opens and locks the runtime directory using whatever descriptor
+	// its process receives. ExtraFiles maps that same open directory to descriptor
+	// 3 in the worker. The worker keeps its copy after the launcher exits, so the
+	// lock is never released; reopening the directory would leave an unlocked gap.
+	agentLockFD = 3
 )
 
 func serversCleanupRoutine(_ *ServerData) {
@@ -131,6 +137,7 @@ func acquireAgentLock() (*os.File, error) {
 	return runDirectory, nil
 }
 
+// getInheritedAgentLock validates the directory descriptor passed by the launcher.
 func getInheritedAgentLock() (*os.File, error) {
 	runDirectory := os.NewFile(agentLockFD, constants.RunPath)
 	if runDirectory == nil {
@@ -155,11 +162,9 @@ func getInheritedAgentLock() (*os.File, error) {
 	return runDirectory, nil
 }
 
-// runLauncher is the normal entry point started by the PHP extension. Several
-// PHP processes may start launchers concurrently, so each tries to lock the
-// run directory. A launcher that cannot get the lock exits successfully because
-// another worker is already running or being started. The winning launcher
-// starts a detached worker, gives it the already-held lock, and then exits.
+// runLauncher handles the public, no-argument invocation from the PHP extension.
+// It either finds that another process owns Agent startup or starts one worker
+// while keeping the runtime-directory lock held across the process handoff.
 func runLauncher() error {
 	agentLock, err := acquireAgentLock()
 	if err == syscall.EWOULDBLOCK {
@@ -185,24 +190,22 @@ func runLauncher() error {
 	command.Stdin = nullDevice
 	command.Stdout = nullDevice
 	command.Stderr = nullDevice
-	// setsid separates the session and process group. The launcher's later exit,
-	// not setsid, is what causes the worker to be reparented.
+	// Start the worker in its own session. Reparenting happens when this launcher
+	// exits; setsid itself does not reparent the worker.
 	command.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
-	// The worker inherits the existing lock, so there is no unlocked handoff.
+	// Pass the locked directory as the worker's agentLockFD.
 	command.ExtraFiles = []*os.File{agentLock}
 	if err := command.Start(); err != nil {
 		return err
 	}
-	// Do not wait for the long-lived worker. Returning exits the launcher, after
-	// which init or a subreaper adopts the worker.
+	// Release only Go's process handle. The worker keeps running after this
+	// launcher exits and is then adopted by init or a subreaper.
 	return command.Process.Release()
 }
 
-// runWorker is the internal entry point started only by runLauncher with
-// --agent-worker. It validates and retains the inherited run-directory lock,
-// so the singleton lock is never released between launcher and worker. The
-// worker owns the PID file and gRPC socket and serves all PHP processes until
-// it is stopped.
+// runWorker handles only the launcher's private --agent-worker invocation. It
+// retains the inherited lock for its lifetime and owns the PID file, gRPC socket,
+// and Agent services until it receives a termination signal.
 func runWorker() error {
 	agentLock, err := getInheritedAgentLock()
 	if err != nil {
@@ -223,8 +226,8 @@ func runWorker() error {
 	return nil
 }
 
-// No arguments select the public launcher invocation. --agent-worker is a
-// private marker used only when the launcher invokes the same executable again.
+// No arguments select the public launcher role. --agent-worker selects the
+// private worker role and is accepted only with no additional arguments.
 func runCommand(arguments []string) error {
 	switch {
 	case len(arguments) == 0:
