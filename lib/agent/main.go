@@ -121,9 +121,6 @@ func acquireAgentLock() (*os.File, error) {
 	if err := os.MkdirAll(constants.RunPath, 0777); err != nil {
 		return nil, err
 	}
-	if err := os.Chmod(constants.RunPath, 0777); err != nil {
-		return nil, err
-	}
 
 	runDirectory, err := os.Open(constants.RunPath)
 	if err != nil {
@@ -179,17 +176,9 @@ func runLauncher() error {
 	if err != nil {
 		return err
 	}
-	nullDevice, err := os.OpenFile(os.DevNull, os.O_RDWR, 0)
-	if err != nil {
-		return err
-	}
-	defer nullDevice.Close()
 
 	command := exec.Command(executablePath, agentWorkerArg)
 	command.Dir = "/"
-	command.Stdin = nullDevice
-	command.Stdout = nullDevice
-	command.Stderr = nullDevice
 	// Start the worker in its own session. Reparenting happens when this launcher
 	// exits; setsid itself does not reparent the worker.
 	command.SysProcAttr = &syscall.SysProcAttr{Setsid: true}

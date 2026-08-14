@@ -31,17 +31,13 @@ bool Agent::Start(std::string aikidoAgentPath) {
     // posix_spawn() starts a new executable without asking this extension to run
     // code in a forked copy of the PHP host. That distinction is required for a
     // multithreaded host such as FrankenPHP.
-    posix_spawnattr_t attr;
-    posix_spawnattr_init(&attr);
-
     char* argv[] = {
         const_cast<char*>(aikidoAgentPath.c_str()),
         nullptr
     };
 
     pid_t agentPid;
-    int status = posix_spawn(&agentPid, aikidoAgentPath.c_str(), nullptr, &attr, argv, nullptr);
-    posix_spawnattr_destroy(&attr);
+    int status = posix_spawn(&agentPid, aikidoAgentPath.c_str(), nullptr, nullptr, argv, nullptr);
     if (status != 0) {
         AIKIDO_LOG_ERROR("Failed to start Aikido Agent process: %s\n", strerror(status));
         return false;
