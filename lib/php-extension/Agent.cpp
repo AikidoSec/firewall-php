@@ -19,15 +19,20 @@
  *   Agent startup does not.
  * - PHP CLI: PhpLifecycle::ModuleInit() intentionally skips Agent startup.
  *
- * C++ therefore does not inspect the PID file or socket and does not decide
+ * C++ therefore does not inspect process or socket state and does not decide
  * whether an Agent already exists. Each server startup uses posix_spawn() to run
  * the short-lived Go launcher and waits only for that launcher. The launcher
- * selects one shared worker using the runtime-directory lock; simultaneous
- * launchers either start that worker or return success because another process
- * is already starting or running it. The worker owns the PID file, Unix socket,
- * and lock, and is not owned or stopped by any individual PHP process.
+ * selects one shared worker using the runtime-directory lock. It reports success
+ * only after that worker is ready. Simultaneous launchers wait for the same
+ * result, and one retries if the first worker fails during startup. The worker
+ * owns the Unix socket and lock, and is not owned or stopped by any individual
+ * PHP process.
  */
-bool Agent::Start(std::string aikidoAgentPath) {
+bool Agent::Init() {
+    std::string aikidoAgentPath = "/opt/aikido-" + std::string(PHP_AIKIDO_VERSION) + "/aikido-agent";
+
+    AIKIDO_LOG_INFO("Starting Aikido Agent...\n");
+
     // posix_spawn() starts a new executable without asking this extension to run
     // code in a forked copy of the PHP host. That distinction is required for a
     // multithreaded host such as FrankenPHP.
@@ -44,8 +49,8 @@ bool Agent::Start(std::string aikidoAgentPath) {
     }
 
     // PHP must reap the child it starts, but it cannot wait for the long-lived
-    // Agent worker. It therefore waits only for the launcher, which starts the
-    // worker and exits immediately.
+    // Agent worker. It therefore waits only for the launcher, which exits after
+    // it knows that the shared worker is ready or that startup failed.
     int waitStatus;
     while (waitpid(agentPid, &waitStatus, 0) == -1) {
         if (errno != EINTR) {
@@ -55,19 +60,6 @@ bool Agent::Start(std::string aikidoAgentPath) {
     }
 
     return WIFEXITED(waitStatus) && WEXITSTATUS(waitStatus) == 0;
-}
-
-bool Agent::Init() {
-    std::string aikidoAgentPath = "/opt/aikido-" + std::string(PHP_AIKIDO_VERSION) + "/aikido-agent";
-
-    AIKIDO_LOG_INFO("Starting Aikido Agent...\n");
-
-    if (!this->Start(aikidoAgentPath)) {
-        AIKIDO_LOG_ERROR("Failed to start Aikido Agent!\n");
-        return false;
-    }
-
-    return true;
 }
 
 void Agent::Uninit() {

@@ -10,25 +10,33 @@
 // when it eventually exits.
 //
 // The short-lived launcher avoids both outcomes. PHP waits for and reaps only
-// the launcher. The launcher locks the versioned runtime directory, starts the
-// long-lived worker with that lock already inherited, and exits. The worker is
-// then reparented to init or a subreaper, which becomes responsible for reaping
-// it. The worker retains the lock, owns the PID file and Unix socket, and serves
-// all PHP processes using that runtime directory.
+// the launcher. The launcher starts a worker candidate and waits for the Unix
+// socket. The worker locks the versioned runtime directory before initializing,
+// so concurrent candidates exit without starting another Agent. If the worker
+// fails during startup, its lock is released and a launcher starts a replacement.
+//
+// After successful startup, the launcher exits and the worker is reparented to
+// init or a subreaper, which becomes responsible for reaping it. The worker
+// retains the lock, owns the Unix socket, and serves all PHP processes using
+// that runtime directory. The launcher watches only startup; after that, a
+// worker that dies is restarted by the next PHP startup.
 //
 // These roles share one executable only to avoid packaging and versioning a
 // separate launcher binary. They are separate processes with separate lifetimes.
 package main
 
 import (
-	"C"
+	"errors"
+	"fmt"
 	. "main/aikido_types"
+	"main/constants"
 	"main/globals"
 	"main/grpc"
 	"main/log"
 	"main/machine"
 	"main/server_utils"
 	"main/utils"
+	"net"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -36,21 +44,15 @@ import (
 	"syscall"
 	"time"
 )
-import (
-	"fmt"
-	"main/constants"
-)
 
 var serversCleanupChannel = make(chan struct{})
 var serversCleanupTicker = time.NewTicker(time.Minute)
 
 const (
-	agentWorkerArg = "--agent-worker"
-	// The launcher opens and locks the runtime directory using whatever descriptor
-	// its process receives. ExtraFiles maps that same open directory to descriptor
-	// 3 in the worker. The worker keeps its copy after the launcher exits, so the
-	// lock is never released; reopening the directory would leave an unlocked gap.
-	agentLockFD = 3
+	agentWorkerArg       = "--agent-worker"
+	agentStartupTimeout  = 10 * time.Second
+	agentStartupInterval = 10 * time.Millisecond
+	agentStartupAttempts = 2
 )
 
 func serversCleanupRoutine(_ *ServerData) {
@@ -68,22 +70,6 @@ func serversCleanupRoutine(_ *ServerData) {
 	}
 }
 
-func writePidFile() {
-	pidFile, err := os.Create(constants.PidPath)
-	if err != nil {
-		log.Errorf(log.MainLogger, "Failed to create pid file: %v", err)
-		return
-	}
-	defer pidFile.Close()
-	pidFile.WriteString(fmt.Sprintf("%d", os.Getpid()))
-}
-
-func removePidFile() {
-	if _, err := os.Stat(constants.PidPath); err == nil {
-		os.Remove(constants.PidPath)
-	}
-}
-
 func AgentInit() (initOk bool) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -98,7 +84,6 @@ func AgentInit() (initOk bool) {
 		return false
 	}
 
-	writePidFile()
 	utils.StartPollingRoutine(serversCleanupChannel, serversCleanupTicker, serversCleanupRoutine, nil)
 
 	log.Infof(log.MainLogger, "Aikido Agent v%s started!", constants.Version)
@@ -112,7 +97,6 @@ func AgentUninit() {
 		server_utils.Unregister(serverKey)
 	}
 	grpc.Uninit()
-	removePidFile()
 	log.Infof(log.MainLogger, "Aikido Agent v%s stopped!", constants.Version)
 	log.Uninit()
 }
@@ -134,47 +118,10 @@ func acquireAgentLock() (*os.File, error) {
 	return runDirectory, nil
 }
 
-// getInheritedAgentLock validates the directory descriptor passed by the launcher.
-func getInheritedAgentLock() (*os.File, error) {
-	runDirectory := os.NewFile(agentLockFD, constants.RunPath)
-	if runDirectory == nil {
-		return nil, fmt.Errorf("missing inherited Agent lock")
-	}
-
-	lockInfo, err := runDirectory.Stat()
-	if err != nil {
-		runDirectory.Close()
-		return nil, err
-	}
-	runDirectoryInfo, err := os.Stat(constants.RunPath)
-	if err != nil || !os.SameFile(lockInfo, runDirectoryInfo) {
-		runDirectory.Close()
-		return nil, fmt.Errorf("invalid inherited Agent lock")
-	}
-	if err := syscall.Flock(agentLockFD, syscall.LOCK_EX|syscall.LOCK_NB); err != nil {
-		runDirectory.Close()
-		return nil, err
-	}
-
-	return runDirectory, nil
-}
-
-// runLauncher handles the public, no-argument invocation from the PHP extension.
-// It either finds that another process owns Agent startup or starts one worker
-// while keeping the runtime-directory lock held across the process handoff.
-func runLauncher() error {
-	agentLock, err := acquireAgentLock()
-	if err == syscall.EWOULDBLOCK {
-		return nil
-	}
-	if err != nil {
-		return err
-	}
-	defer agentLock.Close()
-
+func startAgentWorker() (<-chan error, error) {
 	executablePath, err := os.Executable()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	command := exec.Command(executablePath, agentWorkerArg)
@@ -182,21 +129,87 @@ func runLauncher() error {
 	// Start the worker in its own session. Reparenting happens when this launcher
 	// exits; setsid itself does not reparent the worker.
 	command.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
-	// Pass the locked directory as the worker's agentLockFD.
-	command.ExtraFiles = []*os.File{agentLock}
 	if err := command.Start(); err != nil {
-		return err
+		return nil, err
 	}
-	// Release only Go's process handle. The worker keeps running after this
-	// launcher exits and is then adopted by init or a subreaper.
-	return command.Process.Release()
+
+	workerExit := make(chan error, 1)
+	// Reap candidates that exit during startup. If this candidate becomes the
+	// long-lived worker, the launcher exits and the worker is reparented.
+	go func() {
+		workerExit <- command.Wait()
+	}()
+	return workerExit, nil
 }
 
-// runWorker handles only the launcher's private --agent-worker invocation. It
-// retains the inherited lock for its lifetime and owns the PID file, gRPC socket,
-// and Agent services until it receives a termination signal.
+func isAgentReady() bool {
+	connection, err := net.DialTimeout("unix", constants.SocketPath, agentStartupInterval)
+	if err != nil {
+		return false
+	}
+	connection.Close()
+	return true
+}
+
+// runLauncher handles the public, no-argument invocation from the PHP extension.
+// It starts a worker candidate when the Agent lock is free and waits for the
+// shared socket. A failed candidate is reaped and retried.
+func runLauncher() error {
+	deadline := time.Now().Add(agentStartupTimeout)
+	startupFailures := 0
+	var workerExit <-chan error
+	for {
+		if isAgentReady() {
+			return nil
+		}
+		if time.Now().After(deadline) {
+			return fmt.Errorf("Agent startup timed out after %s", agentStartupTimeout)
+		}
+
+		if workerExit != nil {
+			select {
+			case err := <-workerExit:
+				workerExit = nil
+				if err != nil {
+					startupFailures++
+					if startupFailures == agentStartupAttempts {
+						return fmt.Errorf("Agent failed to become ready after %d startup attempts: %w", startupFailures, err)
+					}
+				}
+			default:
+				time.Sleep(agentStartupInterval)
+				continue
+			}
+		}
+
+		agentLock, err := acquireAgentLock()
+		if err == nil {
+			// Avoid spawning while a worker is active. Candidates take the lock
+			// again themselves, so concurrent launchers can safely reach this point.
+			agentLock.Close()
+			workerExit, err = startAgentWorker()
+			if err != nil {
+				startupFailures++
+				if startupFailures == agentStartupAttempts {
+					return err
+				}
+			}
+		} else if !errors.Is(err, syscall.EWOULDBLOCK) {
+			return err
+		}
+		time.Sleep(agentStartupInterval)
+	}
+}
+
+// runWorker handles only the launcher's private --agent-worker invocation. The
+// first candidate to lock the runtime directory owns the gRPC socket and Agent
+// services until it receives a termination signal. Other candidates exit
+// successfully because another worker is already starting or running.
 func runWorker() error {
-	agentLock, err := getInheritedAgentLock()
+	agentLock, err := acquireAgentLock()
+	if errors.Is(err, syscall.EWOULDBLOCK) {
+		return nil
+	}
 	if err != nil {
 		return err
 	}
@@ -206,6 +219,7 @@ func runWorker() error {
 		log.Errorf(log.MainLogger, "Agent initialization failed!")
 		return fmt.Errorf("Agent initialization failed")
 	}
+
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT)
 

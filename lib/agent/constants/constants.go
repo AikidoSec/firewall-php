@@ -4,7 +4,6 @@ const (
 	Version                             = "1.5.18"
 	RunPath                             = "/run/aikido-" + Version
 	SocketPath                          = RunPath + "/aikido-agent.sock"
-	PidPath                             = RunPath + "/aikido-agent.pid"
 	ConfigUpdatedAtMethod               = "GET"
 	ConfigUpdatedAtAPI                  = "/config"
 	ConfigAPIMethod                     = "GET"
