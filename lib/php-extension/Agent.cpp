@@ -22,11 +22,11 @@
  * C++ therefore does not inspect process or socket state and does not decide
  * whether an Agent already exists. Each server startup uses posix_spawn() to run
  * the short-lived Go launcher and waits only for that launcher. The launcher
- * selects one shared worker using the runtime-directory lock. It reports success
- * only after that worker is ready. Simultaneous launchers wait for the same
- * result, and one retries if the first worker fails during startup. The worker
- * owns the Unix socket and lock, and is not owned or stopped by any individual
- * PHP process.
+ * starts a worker candidate when the runtime-directory lock is available. The
+ * worker acquires and retains that lock, while every launcher waits for the
+ * shared socket. If a worker fails during startup, its launcher reaps it and
+ * retries. The worker owns the Unix socket and is not owned or stopped by any
+ * individual PHP process.
  */
 bool Agent::Init() {
     std::string aikidoAgentPath = "/opt/aikido-" + std::string(PHP_AIKIDO_VERSION) + "/aikido-agent";
