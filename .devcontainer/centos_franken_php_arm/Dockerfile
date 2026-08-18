@@ -16,8 +16,8 @@ RUN sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-* \
     && yum clean all && rm -rf /var/cache/yum
 
 # Go toolchain (arm64) and protoc (aarch_64) similar to centos_arm
-RUN curl -O https://dl.google.com/go/go1.23.3.linux-arm64.tar.gz \
-    && tar -C /usr/local -xzf go1.23.3.linux-arm64.tar.gz
+RUN curl -O https://dl.google.com/go/go1.26.6.linux-arm64.tar.gz \
+    && tar -C /usr/local -xzf go1.26.6.linux-arm64.tar.gz
 ENV PATH="/usr/local/go/bin:${PATH}"
 RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@latest \
     && go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
