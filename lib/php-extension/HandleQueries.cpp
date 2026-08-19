@@ -89,6 +89,34 @@ zend_class_entry* helper_load_mysqli_link_class_entry() {
     return mysqliLinkClassEntry;
 }
 
+AIKIDO_HANDLER_FUNCTION(handle_pre_pg_query) {
+    scopedTimer.SetSink(sink, "sql_op");
+
+    zval *firstArg = nullptr;
+    zend_string *queryArg = nullptr;
+
+    ZEND_PARSE_PARAMETERS_START(1, 2)
+        Z_PARAM_ZVAL(firstArg)
+        Z_PARAM_OPTIONAL
+        Z_PARAM_STR(queryArg)
+    ZEND_PARSE_PARAMETERS_END();
+
+    zend_string *query = queryArg;
+    if (ZEND_NUM_ARGS() == 1 && firstArg && Z_TYPE_P(firstArg) == IS_STRING) {
+        query = Z_STR_P(firstArg);
+    }
+
+    if (!query) {
+        return;
+    }
+
+    eventId = EVENT_PRE_SQL_QUERY_EXECUTED;
+    auto& eventCacheStack = AIKIDO_GLOBAL(eventCacheStack);
+    eventCacheStack.Top().moduleName = "pgsql";
+    eventCacheStack.Top().sqlQuery = ZSTR_VAL(query);
+    eventCacheStack.Top().sqlDialect = "postgres";
+}
+
 AIKIDO_HANDLER_FUNCTION(handle_pre_mysqli_query){
 	zval*     mysqliLinkObject = nullptr;
 	char*	  query = nullptr;
