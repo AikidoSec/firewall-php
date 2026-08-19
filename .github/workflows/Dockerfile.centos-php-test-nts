@@ -38,6 +38,7 @@ RUN yum install -y autoconf bison pkgconfig \
     git wget \
     python3 python3-devel python3-pip \
     nginx httpd httpd-devel procps-ng mysql-server \
+    postgresql-server postgresql-devel postgresql-contrib \
  && yum clean all
 
 # Install mariadb-devel separately (may need different repo or skip if not critical)
@@ -90,6 +91,8 @@ RUN ./configure \
       --with-extra-version="" \
       --with-curl \
       --with-mysqli \
+      --with-pgsql \
+      --with-pdo-pgsql \
       --with-openssl \
       --with-zlib \
       --with-zip \
@@ -116,7 +119,9 @@ RUN EXTENSION_DIR=$(php -i | grep "^extension_dir" | awk '{print $3}') && \
 
 # Verify NTS (ZTS should NOT be enabled)
 RUN php -v | grep -v "ZTS" >/dev/null || (echo "ERROR: ZTS is enabled but should be NTS!" && exit 1) && \
-    php -m | grep -E 'curl|mysqli' >/dev/null
+    php -m | grep -E 'curl|mysqli' >/dev/null && \
+    php -m | grep -qi '^pgsql$' && \
+    php -m | grep -qi '^pdo_pgsql$'
 
 ENV PATH="/usr/local/bin:${PATH}"
 
