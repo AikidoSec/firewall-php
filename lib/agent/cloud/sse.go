@@ -129,8 +129,26 @@ func handleConfigStreamEvent(server *ServerData, event sseEvent) {
 		return
 	}
 
+	if configStreamEventArrivedTooFast(server) {
+		log.Debug(server.Logger, "Ignoring config stream event during refresh throttle")
+		return
+	}
+
 	log.Infof(server.Logger, "Config stream reported a config update, fetching new config!")
 	FetchAndStoreCloudConfig(server)
+}
+
+func configStreamEventArrivedTooFast(server *ServerData) bool {
+	server.ConfigStreamRefreshMutex.Lock()
+	defer server.ConfigStreamRefreshMutex.Unlock()
+
+	now := time.Now()
+	if now.Sub(server.ConfigStreamLastRefreshStart) < 9*time.Second {
+		return true
+	}
+
+	server.ConfigStreamLastRefreshStart = now
+	return false
 }
 
 /*

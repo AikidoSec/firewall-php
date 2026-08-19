@@ -162,6 +162,9 @@ type ServerData struct {
 	// Config mutex used to sync access to configuration data across the multiple go routines that we run in parallel
 	CloudConfigMutex sync.Mutex
 
+	ConfigStreamRefreshMutex     sync.Mutex
+	ConfigStreamLastRefreshStart time.Time
+
 	// Polling data for the server, including mutex used to sync access to polling data across the go routines
 	PollingData *ServerDataPolling
 
