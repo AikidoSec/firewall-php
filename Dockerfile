@@ -10,8 +10,8 @@ RUN add-apt-repository ppa:ondrej/php -y
 RUN apt update
 RUN apt install php${PHP_VERSION} php${PHP_VERSION}-cli php${PHP_VERSION}-cgi php${PHP_VERSION}-fpm php${PHP_VERSION}-dev php${PHP_VERSION}-curl php${PHP_VERSION}-sqlite3 -y
 RUN apt-get install -y jq wget autoconf bison re2c libxml2-dev libssl-dev libcurl4-gnutls-dev protobuf-compiler protobuf-compiler-grpc git alien jq
-RUN wget https://go.dev/dl/go1.23.4.linux-amd64.tar.gz
-RUN tar -C /usr/local -xzf go1.23.4.linux-amd64.tar.gz
+RUN wget https://go.dev/dl/go1.26.6.linux-amd64.tar.gz
+RUN tar -C /usr/local -xzf go1.26.6.linux-amd64.tar.gz
 ENV PATH="/usr/local/go/bin:${PATH}"
 ENV GOPATH="${HOME}/go"
 ENV PATH="${PATH}:${GOPATH}/bin"
