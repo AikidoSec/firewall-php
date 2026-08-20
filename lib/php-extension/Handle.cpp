@@ -13,6 +13,11 @@ ACTION_STATUS aikido_process_event(EVENT_ID& eventId, std::string& sink) {
     std::string outputEvent;
     requestProcessorInstance.SendEvent(eventId, outputEvent);
 
+    // IDOR violations must be enforced even when blocking mode is off.
+    if (action.IsIdorViolation(outputEvent)) {
+        return action.Execute(outputEvent);
+    }
+
     if (action.IsDetection(outputEvent)) {
         statsMap[sink].IncrementAttacksDetected();
     }
