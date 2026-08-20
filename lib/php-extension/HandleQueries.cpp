@@ -124,3 +124,93 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_mysqli_query){
     eventCacheStack.Top().sqlQuery = query;
     eventCacheStack.Top().sqlDialect = "mysql";
 }
+
+AIKIDO_HANDLER_FUNCTION(handle_pre_pg_query) {
+    scopedTimer.SetSink(sink, "sql_op");
+
+    zval *firstArg = nullptr;
+    zend_string *queryArg = nullptr;
+
+    ZEND_PARSE_PARAMETERS_START(1, 2)
+        Z_PARAM_ZVAL(firstArg)
+        Z_PARAM_OPTIONAL
+        Z_PARAM_STR(queryArg)
+    ZEND_PARSE_PARAMETERS_END();
+
+    zend_string *query = queryArg;
+    if (ZEND_NUM_ARGS() == 1 && firstArg && Z_TYPE_P(firstArg) == IS_STRING) {
+        query = Z_STR_P(firstArg);
+    }
+
+    if (!query) {
+        return;
+    }
+
+    eventId = EVENT_PRE_SQL_QUERY_EXECUTED;
+    auto& eventCacheStack = AIKIDO_GLOBAL(eventCacheStack);
+    eventCacheStack.Top().moduleName = "pgsql";
+    eventCacheStack.Top().sqlQuery = ZSTR_VAL(query);
+    eventCacheStack.Top().sqlDialect = "postgres";
+}
+
+AIKIDO_HANDLER_FUNCTION(handle_pre_pg_query_params) {
+    scopedTimer.SetSink(sink, "sql_op");
+
+    zval *firstArg = nullptr;
+    zval *secondArg = nullptr;
+    zval *paramsArg = nullptr;
+
+    ZEND_PARSE_PARAMETERS_START(2, 3)
+        Z_PARAM_ZVAL(firstArg)
+        Z_PARAM_ZVAL(secondArg)
+        Z_PARAM_OPTIONAL
+        Z_PARAM_ARRAY(paramsArg)
+    ZEND_PARSE_PARAMETERS_END();
+
+    zend_string *query = nullptr;
+    if (ZEND_NUM_ARGS() == 2 && firstArg && Z_TYPE_P(firstArg) == IS_STRING) {
+        query = Z_STR_P(firstArg);
+    } else if (ZEND_NUM_ARGS() == 3 && secondArg && Z_TYPE_P(secondArg) == IS_STRING) {
+        query = Z_STR_P(secondArg);
+    }
+
+    if (!query) {
+        return;
+    }
+
+    eventId = EVENT_PRE_SQL_QUERY_EXECUTED;
+    auto& eventCacheStack = AIKIDO_GLOBAL(eventCacheStack);
+    eventCacheStack.Top().moduleName = "pgsql";
+    eventCacheStack.Top().sqlQuery = ZSTR_VAL(query);
+    eventCacheStack.Top().sqlDialect = "postgres";
+}
+
+AIKIDO_HANDLER_FUNCTION(handle_pre_pg_prepare) {
+    scopedTimer.SetSink(sink, "sql_op");
+
+    zval *firstArg = nullptr;
+    zval *secondArg = nullptr;
+    zend_string *queryArg = nullptr;
+
+    ZEND_PARSE_PARAMETERS_START(2, 3)
+        Z_PARAM_ZVAL(firstArg)
+        Z_PARAM_ZVAL(secondArg)
+        Z_PARAM_OPTIONAL
+        Z_PARAM_STR(queryArg)
+    ZEND_PARSE_PARAMETERS_END();
+
+    zend_string *query = queryArg;
+    if (ZEND_NUM_ARGS() == 2 && secondArg && Z_TYPE_P(secondArg) == IS_STRING) {
+        query = Z_STR_P(secondArg);
+    }
+
+    if (!query) {
+        return;
+    }
+
+    eventId = EVENT_PRE_SQL_QUERY_EXECUTED;
+    auto& eventCacheStack = AIKIDO_GLOBAL(eventCacheStack);
+    eventCacheStack.Top().moduleName = "pgsql";
+    eventCacheStack.Top().sqlQuery = ZSTR_VAL(query);
+    eventCacheStack.Top().sqlDialect = "postgres";
+}

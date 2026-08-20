@@ -25,7 +25,7 @@ RUN apt-get update && \
       build-essential autoconf bison re2c pkg-config \
       libxml2-dev libsqlite3-dev libcurl4-openssl-dev libssl-dev \
       libzip-dev libonig-dev libjpeg-dev libpng-dev libwebp-dev \
-      libicu-dev libreadline-dev libxslt1-dev default-libmysqlclient-dev cmake \
+      libicu-dev libreadline-dev libxslt1-dev default-libmysqlclient-dev cmake libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Timezone to UTC
@@ -89,6 +89,8 @@ RUN ./configure \
       --with-extra-version="" \
       --with-curl \
       --with-mysqli \
+      --with-pgsql \
+      --with-pdo-pgsql \
       --with-openssl \
       --with-zlib \
       --with-zip \
@@ -139,7 +141,9 @@ RUN EXTENSION_DIR=$(php -i | grep "^extension_dir" | awk '{print $3}') && \
 
 # Verify ZTS is enabled
 RUN php -v | grep -q "ZTS" || (echo "ERROR: ZTS not enabled!" && exit 1) && \
-    php -m | grep -E 'curl|mysqli' >/dev/null
+    php -m | grep -E 'curl|mysqli' >/dev/null && \
+    php -m | grep -qi '^pgsql$' && \
+    php -m | grep -qi '^pdo_pgsql$'
 
 ENV PATH="/usr/local/bin:${PATH}" \
     LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH:-}"
@@ -206,6 +210,8 @@ RUN apt-get update && \
       apache2 \
       mariadb-server \
       apache2-bin \
+      postgresql \
+      postgresql-contrib \
     && rm -rf /var/lib/apt/lists/*
 
 
@@ -248,6 +254,17 @@ RUN mkdir -p /usr/local/bin /var/lib/mysql /run/mysqld && \
       'wait $pid' \
     > /usr/local/bin/start-mariadb && \
     chmod +x /usr/local/bin/start-mariadb
+
+# Helper: start PostgreSQL
+RUN mkdir -p /usr/local/bin && \
+    printf '%s\n' '#!/usr/bin/env bash' \
+      'set -euo pipefail' \
+      'service postgresql start' \
+      'for i in {1..30}; do pg_isready -h 127.0.0.1 -p 5432 >/dev/null 2>&1 && break; sleep 1; done' \
+      'su postgres -c "psql -c \"ALTER USER postgres PASSWORD '\''postgres'\'';\""' \
+      'su postgres -c "psql -tc \"SELECT 1 FROM pg_database WHERE datname = '\''zen_test'\''\"" | grep -q 1 || su postgres -c "psql -c \"CREATE DATABASE zen_test;\""' \
+    > /usr/local/bin/start-postgres && \
+    chmod +x /usr/local/bin/start-postgres
 
 # Create PHP-CGI symlink for CGI tests (using source-built PHP)
 RUN mkdir -p /usr/lib/cgi-bin && \

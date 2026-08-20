@@ -383,7 +383,7 @@ jobs:
     name: CentOS NTS php-${{ matrix.php_version }} ${{ matrix.server }} ${{ matrix.arch == '' && 'x86_64' || 'arm' }}
     runs-on: ubuntu-24.04${{ matrix.arch }}
     container:
-      image: ghcr.io/aikidosec/firewall-php-test-centos-nts:${{ matrix.php_version }}-v2
+      image: ghcr.io/aikidosec/firewall-php-test-centos-nts:${{ matrix.php_version }}-v3
       options: --privileged
     needs: [ build_rpm ]
     strategy:
@@ -426,6 +426,29 @@ jobs:
             } else {
               echo "MySQL connection successful\n";
               $mysqli->close();
+            }
+          '
+
+      - name: Install and start PostgreSQL
+        run: |
+          mkdir -p /var/lib/pgsql/data /var/run/postgresql
+          chown -R postgres:postgres /var/lib/pgsql /var/run/postgresql
+          su postgres -c "initdb -D /var/lib/pgsql/data"
+          su postgres -c "pg_ctl -D /var/lib/pgsql/data -l /tmp/postgres.log -o '-p 5432' start"
+          sleep 5
+          su postgres -c "psql -p 5432 -c \"ALTER USER postgres PASSWORD 'postgres';\""
+          su postgres -c "psql -p 5432 -c 'CREATE DATABASE zen_test;'"
+
+      - name: Test PostgreSQL connection with pgsql
+        run: |
+          php -r '
+            $db = pg_connect("host=127.0.0.1 port=5432 dbname=zen_test user=postgres password=postgres");
+            if (!$db) {
+              echo "PostgreSQL connection failed\n";
+              exit(1);
+            } else {
+              echo "PostgreSQL connection successful\n";
+              pg_close($db);
             }
           '
 
@@ -472,7 +495,7 @@ jobs:
     name: Ubuntu NTS php-${{ matrix.php_version }} ${{ matrix.server }} ${{ matrix.arch == '' && 'x86_64' || 'arm' }}
     runs-on: ubuntu-24.04${{ matrix.arch }}
     container:
-      image: ghcr.io/aikidosec/firewall-php-test-ubuntu-nts:${{ matrix.php_version }}-v2
+      image: ghcr.io/aikidosec/firewall-php-test-ubuntu-nts:${{ matrix.php_version }}-v3
       options: --privileged
     needs: [ build_deb ]
     strategy:
@@ -519,13 +542,18 @@ jobs:
           sleep 5
           mysql -u root -ppwd -e "SELECT 1" || (echo "MySQL not up" && exit 1)
 
+      - name: Start PostgreSQL (background)
+        run: |
+          start-postgres   # provided by the image
+          PGPASSWORD=postgres psql -h 127.0.0.1 -p 5432 -U postgres -d zen_test -c "SELECT 1" || (echo "PostgreSQL not up" && exit 1)
+
       - name: Install DEB
         run: |
           dpkg -i -E ${{ env.AIKIDO_DEB }}/${{ env.AIKIDO_DEB }}
 
       - name: Run CLI tests
         run: |
-          export TEST_PHP_EXECUTABLE=/usr/local/bin/php        
+          export TEST_PHP_EXECUTABLE=/usr/local/bin/php
           cd lib/php-extension/
           phpize
           cd ../../
@@ -541,7 +569,7 @@ jobs:
     name: Ubuntu ZTS php-${{ matrix.php_version }} ${{ matrix.server }} ${{ matrix.arch == '' && 'x86_64' || 'arm' }}
     runs-on: ubuntu-24.04${{ matrix.arch }}
     container:
-      image: ghcr.io/aikidosec/firewall-php-test-ubuntu-zts:${{ matrix.php_version }}-v2
+      image: ghcr.io/aikidosec/firewall-php-test-ubuntu-zts:${{ matrix.php_version }}-v3
       options: --privileged
     needs: [ build_deb ]
     strategy:
@@ -592,6 +620,11 @@ jobs:
           sleep 5
           mysql -u root -ppwd -e "SELECT 1" || (echo "MySQL not up" && exit 1)
 
+      - name: Start PostgreSQL (background)
+        run: |
+          start-postgres   # provided by the image
+          PGPASSWORD=postgres psql -h 127.0.0.1 -p 5432 -U postgres -d zen_test -c "SELECT 1" || (echo "PostgreSQL not up" && exit 1)
+
       - name: Install DEB
         run: |
           dpkg -i -E ${{ env.AIKIDO_DEB }}/${{ env.AIKIDO_DEB }}
@@ -613,7 +646,7 @@ jobs:
     name: CentOS ZTS php-${{ matrix.php_version }} ${{ matrix.server }} ${{ matrix.arch == '' && 'x86_64' || 'arm' }}
     runs-on: ubuntu-24.04${{ matrix.arch }}
     container:
-      image: ghcr.io/aikidosec/firewall-php-test-centos-zts:${{ matrix.php_version }}-v2
+      image: ghcr.io/aikidosec/firewall-php-test-centos-zts:${{ matrix.php_version }}-v3
       options: --privileged
     needs: [ build_rpm ]
     strategy:
@@ -662,6 +695,29 @@ jobs:
             }
           '
 
+      - name: Install and start PostgreSQL
+        run: |
+          mkdir -p /var/lib/pgsql/data /var/run/postgresql
+          chown -R postgres:postgres /var/lib/pgsql /var/run/postgresql
+          su postgres -c "initdb -D /var/lib/pgsql/data"
+          su postgres -c "pg_ctl -D /var/lib/pgsql/data -l /tmp/postgres.log -o '-p 5432' start"
+          sleep 5
+          su postgres -c "psql -p 5432 -c \"ALTER USER postgres PASSWORD 'postgres';\""
+          su postgres -c "psql -p 5432 -c 'CREATE DATABASE zen_test;'"
+
+      - name: Test PostgreSQL connection with pgsql
+        run: |
+          php -r '
+            $db = pg_connect("host=127.0.0.1 port=5432 dbname=zen_test user=postgres password=postgres");
+            if (!$db) {
+              echo "PostgreSQL connection failed\n";
+              exit(1);
+            } else {
+              echo "PostgreSQL connection successful\n";
+              pg_close($db);
+            }
+          '
+
       - name: Get Arch
         run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
 
@@ -705,7 +761,7 @@ jobs:
     name: CentOS FrankenPHP php-${{ matrix.php_version }} ${{ matrix.server }} ${{ matrix.arch == '' && 'x86_64' || 'arm' }}
     runs-on: ubuntu-24.04${{ matrix.arch }}
     container:
-      image: ghcr.io/aikidosec/firewall-php-test-centos-zts:${{ matrix.php_version }}-v2
+      image: ghcr.io/aikidosec/firewall-php-test-centos-zts:${{ matrix.php_version }}-v3
       options: --privileged
     needs: [ build_rpm ]
     strategy:
@@ -781,7 +837,7 @@ jobs:
     name: Ubuntu FrankenPHP php-${{ matrix.php_version }} ${{ matrix.server }} ${{ matrix.arch == '' && 'x86_64' || 'arm' }}
     runs-on: ubuntu-24.04${{ matrix.arch }}
     container:
-      image: ghcr.io/aikidosec/firewall-php-test-ubuntu-zts:${{ matrix.php_version }}-v2
+      image: ghcr.io/aikidosec/firewall-php-test-ubuntu-zts:${{ matrix.php_version }}-v3
       options: --privileged
     needs: [ build_deb ]
     strategy:
