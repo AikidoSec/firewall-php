@@ -62,8 +62,21 @@ func ReloadAikidoConfig(instance *instance.RequestProcessorInstance, conf *Aikid
 	return ReloadWithNewToken
 }
 
+func getServerPID(platformName string) int32 {
+	switch platformName {
+	case "fpm-fcgi", "apache2handler":
+		// Requests run in child processes that share a stable server master.
+		return int32(os.Getppid())
+	case "cli-server", "frankenphp":
+		// Requests run in the server process itself.
+		return int32(os.Getpid())
+	default:
+		return int32(os.Getpid())
+	}
+}
+
 func Init(platformName string) {
-	globals.EnvironmentConfig.ServerPID = int32(os.Getppid())
+	globals.EnvironmentConfig.ServerPID = getServerPID(platformName)
 	globals.EnvironmentConfig.RequestProcessorPID = int32(os.Getpid())
 	globals.EnvironmentConfig.PlatformName = platformName
 }
