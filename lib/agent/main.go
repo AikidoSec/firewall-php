@@ -2,6 +2,7 @@ package main
 
 import (
 	"C"
+	"errors"
 	. "main/aikido_types"
 	"main/globals"
 	"main/grpc"
@@ -23,6 +24,15 @@ import (
 var serversCleanupChannel = make(chan struct{})
 var serversCleanupTicker = time.NewTicker(time.Minute)
 
+func isProcessAlive(pid int32) bool {
+	if pid <= 0 {
+		return false
+	}
+
+	err := syscall.Kill(int(pid), 0)
+	return err == nil || errors.Is(err, syscall.EPERM)
+}
+
 func serversCleanupRoutine(_ *ServerData) {
 	for _, serverKey := range globals.GetServersKeys() {
 		server := globals.GetServer(serverKey)
@@ -31,7 +41,7 @@ func serversCleanupRoutine(_ *ServerData) {
 		}
 		now := utils.GetTime()
 		lastConnectionTime := atomic.LoadInt64(&server.LastConnectionTime)
-		if now-lastConnectionTime > constants.MinServerInactivityForCleanup {
+		if now-lastConnectionTime > constants.MinServerInactivityForCleanup && !isProcessAlive(serverKey.ServerPID) {
 			log.InfofMainAndServer(server.Logger, "Server \"AIK_RUNTIME_***%s\" (server PID: %d) has been inactive for more than 2 minutes, unregistering...", utils.AnonymizeToken(serverKey.Token), serverKey.ServerPID)
 			server_utils.Unregister(serverKey)
 		}
