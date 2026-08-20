@@ -41,6 +41,8 @@ func serversCleanupRoutine(_ *ServerData) {
 		}
 		now := utils.GetTime()
 		lastConnectionTime := atomic.LoadInt64(&server.LastConnectionTime)
+		// Container platforms such as Google Cloud Run can suspend CPU between requests
+		// while keeping PHP alive. Only unregister after the process exits.
 		if now-lastConnectionTime > constants.MinServerInactivityForCleanup && !isProcessAlive(serverKey.ServerPID) {
 			log.InfofMainAndServer(server.Logger, "Server \"AIK_RUNTIME_***%s\" (server PID: %d) has been inactive for more than 2 minutes, unregistering...", utils.AnonymizeToken(serverKey.Token), serverKey.ServerPID)
 			server_utils.Unregister(serverKey)
