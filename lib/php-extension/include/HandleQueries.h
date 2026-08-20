@@ -7,3 +7,5 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_pdostatement_execute);
 AIKIDO_HANDLER_FUNCTION(handle_pre_mysqli_query);
 
 AIKIDO_HANDLER_FUNCTION(handle_pre_pg_query);
+AIKIDO_HANDLER_FUNCTION(handle_pre_pg_query_params);
+AIKIDO_HANDLER_FUNCTION(handle_pre_pg_prepare);
