@@ -81,6 +81,53 @@ namespace aikido {
     }
 
     /**
+     * Turns on IDOR protection: checks that every SQL query filters on the given
+     * tenant column, using the tenant id set with `set_tenant_id()`.
+     *
+     * @param string $tenantColumnName The column that says which tenant a row belongs to
+     *   (e.g. "account_id", "organization_id", "team_id").
+     * @param string[] $excludedTables Tables to skip, e.g. a shared "users" table with
+     *   users from every tenant.
+     * @see https://github.com/AikidoSec/firewall-php/blob/main/docs/idor-protection.md
+     */
+    function enable_idor_protection(string $tenantColumnName, array $excludedTables = []): bool
+    {
+    }
+
+    /**
+     * Sets the tenant id for the current request/script. Every query is checked against
+     * this tenant once `enable_idor_protection()` is on.
+     *
+     * @param string|int $tenantId
+     * @see https://github.com/AikidoSec/firewall-php/blob/main/docs/idor-protection.md
+     */
+    function set_tenant_id($tenantId): void
+    {
+    }
+
+    /**
+     * Returns the tenant id set with `set_tenant_id()`, or null if it was never set.
+     *
+     * @see https://github.com/AikidoSec/firewall-php/blob/main/docs/idor-protection.md
+     */
+    function get_tenant_id(): ?string
+    {
+    }
+
+    /**
+     * Runs the given callable with IDOR checks suspended, for queries that don't need
+     * a tenant filter (e.g. an admin dashboard counting across all tenants).
+     *
+     * @template T
+     * @param callable(): T $fn
+     * @return T
+     * @see https://github.com/AikidoSec/firewall-php/blob/main/docs/idor-protection.md
+     */
+    function without_idor_protection(callable $fn)
+    {
+    }
+
+    /**
      * Checks whether the current request should be blocked (user blocked,
      * or rate limit hit). Call after `set_user()`.
      *

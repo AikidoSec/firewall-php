@@ -5,6 +5,7 @@ import (
 	"main/context"
 	"main/instance"
 	"main/log"
+	"main/vulnerabilities/idor"
 	sql_injection "main/vulnerabilities/sql-injection"
 )
 
@@ -21,9 +22,15 @@ func OnPreSqlQueryExecuted(instance *instance.RequestProcessorInstance) string {
 		return ""
 	}
 
+	// Check SQL injection first: block malicious queries before spending time on IDOR analysis.
 	res := sql_injection.CheckContextForSqlInjection(instance, query, operation, dialect)
 	if res != nil {
 		return attack.ReportAttackDetected(res, instance)
 	}
+
+	if idorMessage := idor.CheckContextForIdor(instance, query, dialect); idorMessage != "" {
+		return idor.GetIdorThrowAction(idorMessage)
+	}
+
 	return ""
 }

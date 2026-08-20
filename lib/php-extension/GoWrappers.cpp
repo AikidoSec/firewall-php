@@ -135,6 +135,10 @@ CallbackResult GoContextCallback(int callbackId) {
                 ctx = "SQL_DIALECT";
                 ret = GetEventCacheField(&EventCache::sqlDialect);
                 break;
+            case SQL_PARAMS:
+                ctx = "SQL_PARAMS";
+                ret = GetEventCacheField(&EventCache::sqlParams);
+                break;
             case MODULE:
                 ctx = "MODULE";
                 ret = GetEventCacheField(&EventCache::moduleName);
@@ -150,6 +154,24 @@ CallbackResult GoContextCallback(int callbackId) {
             case PARAM_MATCHER_REGEX:
                 ctx = "PARAM_MATCHER_REGEX";
                 ret = GetEventCacheField(&EventCache::paramMatcherRegex);
+                break;
+            case CONTEXT_IDOR_CONFIG: {
+                ctx = "IDOR_CONFIG";
+                json config = {
+                    {"enabled", requestCache.idorProtectionEnabled},
+                    {"tenantColumnName", requestCache.idorTenantColumnName},
+                    {"excludedTables", requestCache.idorExcludedTables},
+                };
+                ret = config.dump();
+                break;
+            }
+            case CONTEXT_TENANT_ID:
+                ctx = "TENANT_ID";
+                ret = requestCache.tenantIdSet ? requestCache.tenantId : "";
+                break;
+            case CONTEXT_IDOR_IGNORED:
+                ctx = "IDOR_IGNORED";
+                ret = requestCache.idorIgnoredDepth > 0 ? "1" : "";
                 break;
         }
     } catch (std::exception& e) {

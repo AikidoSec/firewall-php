@@ -54,6 +54,32 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_pdo_exec) {
     eventCacheStack.Top().sqlDialect = GetSqlDialectFromPdo(pdo_object);
 }
 
+// Only stringify scalars: arrays/objects would warn or throw from inside a hook,
+// and null/resources have no value to compare a tenant ID against.
+static bool PdoBoundValueToString(zval* val, std::string& out) {
+    if (!val) {
+        return false;
+    }
+    ZVAL_DEREF(val);
+    switch (Z_TYPE_P(val)) {
+        case IS_STRING:
+        case IS_LONG:
+        case IS_DOUBLE:
+        case IS_TRUE:
+        case IS_FALSE:
+            break;
+        default:
+            return false;
+    }
+    zend_string* str = zval_try_get_string(val);
+    if (!str) {
+        return false;
+    }
+    out.assign(ZSTR_VAL(str), ZSTR_LEN(str));
+    zend_string_release(str);
+    return true;
+}
+
 AIKIDO_HANDLER_FUNCTION(handle_pre_pdostatement_execute) {
     scopedTimer.SetSink(sink, "sql_op");
 
@@ -63,7 +89,7 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_pdostatement_execute) {
     }
 
     pdo_stmt_t *stmt = Z_PDO_STMT_P(pdo_statement_object);
-    if (!stmt->dbh) { // object is not initialized 
+    if (!stmt->dbh) { // object is not initialized
         return;
     }
 
@@ -71,15 +97,78 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_pdostatement_execute) {
         return;
     }
 
+    zval* params = nullptr;
+    ZEND_PARSE_PARAMETERS_START(0, 1)
+        Z_PARAM_OPTIONAL
+        Z_PARAM_ARRAY_EX(params, 1, 0)
+    ZEND_PARSE_PARAMETERS_END();
+
     eventId = EVENT_PRE_SQL_QUERY_EXECUTED;
     auto& eventCacheStack = AIKIDO_GLOBAL(eventCacheStack);
     eventCacheStack.Top().moduleName = "PDOStatement";
-    
+
 #if PHP_VERSION_ID >= 80100
     eventCacheStack.Top().sqlQuery = std::string(ZSTR_VAL(stmt->query_string), ZSTR_LEN(stmt->query_string));
 #else
     eventCacheStack.Top().sqlQuery = std::string(stmt->query_string, stmt->query_stringlen);
 #endif
+
+    // Positional keys are 0-based (matches PDO's own paramno and zen-internals'
+    // placeholder_number), e.g. execute(['org_123']) for "WHERE tenant_id = ?" keys "0".
+    // Named keys keep PDO's own spelling, e.g. execute([':tenant_id' => 'org_123'])
+    // keys ":tenant_id"; the Go side also tries the name without the leading ':'.
+    json paramsJson = json::object();
+    bool collectedParams = false;
+
+    if (params) {
+        // execute($params) destroys any previously bound values (ext/pdo/pdo_stmt.c),
+        // so when present it's the only source to read.
+        zend_string* key;
+        zend_ulong index;
+        zval* val;
+        ZEND_HASH_FOREACH_KEY_VAL(Z_ARRVAL_P(params), index, key, val) {
+            std::string valueString;
+            if (!PdoBoundValueToString(val, valueString)) {
+                continue;
+            }
+            if (key) {
+                paramsJson[std::string(ZSTR_VAL(key), ZSTR_LEN(key))] = valueString;
+            } else {
+                paramsJson[std::to_string(index)] = valueString;
+            }
+        } ZEND_HASH_FOREACH_END();
+        collectedParams = true;
+    } else if (stmt->bound_params) {
+        // No array passed: values come from earlier bindValue(':tenant_id', 'org_123')/
+        // bindParam() calls (what Laravel and Doctrine do), still intact here since
+        // PDO only replaces stmt->bound_params on the next execute($params).
+        zend_string* key;
+        zend_ulong index;
+        zval* entry;
+        ZEND_HASH_FOREACH_KEY_VAL(stmt->bound_params, index, key, entry) {
+            auto* boundParam = static_cast<struct pdo_bound_param_data*>(Z_PTR_P(entry));
+            if (!boundParam) {
+                continue;
+            }
+            std::string valueString;
+            if (!PdoBoundValueToString(&boundParam->parameter, valueString)) {
+                continue;
+            }
+            if (key) {
+                paramsJson[std::string(ZSTR_VAL(key), ZSTR_LEN(key))] = valueString;
+            } else {
+                paramsJson[std::to_string(index)] = valueString;
+            }
+        } ZEND_HASH_FOREACH_END();
+        collectedParams = true;
+    }
+
+    if (collectedParams) {
+        // replace, not throw: bound values can be arbitrary bytes (blobs, encrypted
+        // columns), and an uncaught encoding exception here would abort the whole
+        // event, silently disabling IDOR and SQL injection detection for this query.
+        eventCacheStack.Top().sqlParams = paramsJson.dump(-1, ' ', false, json::error_handler_t::replace);
+    }
 
 #if PHP_VERSION_ID >= 80500
     if (!stmt->database_object_handle) {
