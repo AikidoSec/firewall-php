@@ -5,17 +5,22 @@
  *
  * - Concurrent initialization across processes: overlapping PHP-FPM masters,
  *   Apache generations, `php -S` processes, or FrankenPHP instances may call
- *   Agent::Init() at the same time. Each caller starts its own launcher. On the
- *   Go side, the versioned runtime-directory lock admits one worker, while every
- *   launcher waits for the shared Unix socket to become ready.
+ *   Agent::Init() at the same time. The Go-side versioned runtime-directory lock
+ *   ensures that their launchers converge on one shared worker.
  * - Initialization inside a multithreaded host: FrankenPHP may call Agent::Init()
  *   while other host threads exist. posix_spawn() starts the launcher as a fresh
  *   executable without running extension code in a manually forked child, which
  *   could inherit locks or runtime state from threads absent in that child.
  *
- * PHP waits for and reaps only the short-lived launcher. The long-lived worker
- * is shared and independent of any individual PHP process. PHP CLI intentionally
- * skips Agent startup.
+ * Startup follows this process sequence:
+ *
+ * PHP -> Agent in launcher mode (no arguments) -> Agent in worker mode (--agent-worker)
+ *
+ * The launcher exits after the shared Unix socket is ready or startup has failed.
+ * PHP waits only for its launcher to exit before Agent::Init() returns. The worker
+ * retains the runtime-directory lock and continues independently of the PHP
+ * process that initiated startup. The launcher and worker modes share one
+ * executable to avoid packaging a separate launcher.
  */
 bool Agent::Init() {
     std::string aikidoAgentPath = "/opt/aikido-" + std::string(PHP_AIKIDO_VERSION) + "/aikido-agent";
@@ -34,9 +39,6 @@ bool Agent::Init() {
         return false;
     }
 
-    // PHP must reap the child it starts, but it cannot wait for the long-lived
-    // Agent worker. It therefore waits only for the launcher, which exits after
-    // it knows that the shared worker is ready or that startup failed.
     int waitStatus;
     while (waitpid(agentPid, &waitStatus, 0) == -1) {
         if (errno != EINTR) {

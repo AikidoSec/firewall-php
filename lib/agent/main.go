@@ -1,12 +1,4 @@
-// Package main builds one executable used both as a short-lived launcher and as the
-// long-lived shared Agent worker:
-//
-//	PHP -> Agent in launcher mode (no arguments) -> Agent in worker mode (--agent-worker)
-//
-// The launcher starts the worker and exits only after the shared Unix socket is ready.
-// The worker retains the runtime-directory lock and continues independently of the PHP
-// process that initiated startup. Both roles share one executable to avoid packaging
-// a separate launcher.
+// Package main implements the Agent launcher and worker modes.
 package main
 
 import (
