@@ -1,41 +1,27 @@
 #include "Includes.h"
 
 /*
- * Agent startup overview
+ * Agent startup must be safe in two execution contexts:
  *
- * PhpLifecycle::ModuleInit() calls Agent::Init() during PHP module startup for
- * every enabled server SAPI. The supported environments reach this code in
- * different ways:
+ * - Concurrent initialization across processes: overlapping PHP-FPM masters,
+ *   Apache generations, `php -S` processes, or FrankenPHP instances may call
+ *   Agent::Init() at the same time. Each caller starts its own launcher. On the
+ *   Go side, the versioned runtime-directory lock admits one worker, while every
+ *   launcher waits for the shared Unix socket to become ready.
+ * - Initialization inside a multithreaded host: FrankenPHP may call Agent::Init()
+ *   while other host threads exist. posix_spawn() starts the launcher as a fresh
+ *   executable without running extension code in a manually forked child, which
+ *   could inherit locks or runtime state from threads absent in that child.
  *
- * - PHP-FPM (whether behind Nginx, Apache, or Caddy): the FPM master normally
- *   initializes the extension before it forks workers. Separate or overlapping
- *   FPM masters sharing /run/aikido-<version> may start at the same time.
- * - Apache mod_php: PHP is initialized for an Apache server generation. An old
- *   and a new generation, or separate Apache instances, may overlap.
- * - PHP built-in server: each independently started `php -S` server initializes
- *   the extension. This is also the small process used by the startup stress test.
- * - FrankenPHP classic and worker modes: both use this module-startup path inside
- *   the same kind of multithreaded host. Their request lifecycles differ, but
- *   Agent startup does not.
- * - PHP CLI: PhpLifecycle::ModuleInit() intentionally skips Agent startup.
- *
- * C++ therefore does not inspect process or socket state and does not decide
- * whether an Agent already exists. Each server startup uses posix_spawn() to run
- * the short-lived Go launcher and waits only for that launcher. The launcher
- * starts a worker candidate when the runtime-directory lock is available. The
- * worker acquires and retains that lock, while every launcher waits for the
- * shared socket. If a worker fails during startup, its launcher reaps it and
- * retries. The worker owns the Unix socket and is not owned or stopped by any
- * individual PHP process.
+ * PHP waits for and reaps only the short-lived launcher. The long-lived worker
+ * is shared and independent of any individual PHP process. PHP CLI intentionally
+ * skips Agent startup.
  */
 bool Agent::Init() {
     std::string aikidoAgentPath = "/opt/aikido-" + std::string(PHP_AIKIDO_VERSION) + "/aikido-agent";
 
     AIKIDO_LOG_INFO("Starting Aikido Agent...\n");
 
-    // posix_spawn() starts a new executable without asking this extension to run
-    // code in a forked copy of the PHP host. That distinction is required for a
-    // multithreaded host such as FrankenPHP.
     char* argv[] = {
         const_cast<char*>(aikidoAgentPath.c_str()),
         nullptr
