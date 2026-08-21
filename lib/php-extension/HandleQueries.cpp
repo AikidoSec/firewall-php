@@ -71,7 +71,7 @@ static bool PdoBoundValueToString(zval* val, std::string& out) {
         default:
             return false;
     }
-    zend_string* str = zval_try_get_string(val);
+    zend_string* str = zval_get_string(val);
     if (!str) {
         return false;
     }
