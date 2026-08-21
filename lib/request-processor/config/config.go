@@ -62,8 +62,8 @@ func ReloadAikidoConfig(instance *instance.RequestProcessorInstance, conf *Aikid
 	return ReloadWithNewToken
 }
 
-func Init(platformName string) {
-	globals.EnvironmentConfig.ServerPID = int32(os.Getppid())
+func Init(platformName string, serverPID int32) {
+	globals.EnvironmentConfig.ServerPID = serverPID
 	globals.EnvironmentConfig.RequestProcessorPID = int32(os.Getpid())
 	globals.EnvironmentConfig.PlatformName = platformName
 }
