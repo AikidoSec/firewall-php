@@ -55,6 +55,15 @@ const (
 	agentStartupAttempts = 2
 )
 
+func isProcessAlive(pid int32) bool {
+	if pid <= 0 {
+		return false
+	}
+
+	err := syscall.Kill(int(pid), 0)
+	return err == nil || errors.Is(err, syscall.EPERM)
+}
+
 func serversCleanupRoutine(_ *ServerData) {
 	for _, serverKey := range globals.GetServersKeys() {
 		server := globals.GetServer(serverKey)
@@ -63,7 +72,9 @@ func serversCleanupRoutine(_ *ServerData) {
 		}
 		now := utils.GetTime()
 		lastConnectionTime := atomic.LoadInt64(&server.LastConnectionTime)
-		if now-lastConnectionTime > constants.MinServerInactivityForCleanup {
+		// Container platforms such as Google Cloud Run can suspend CPU between requests
+		// while keeping PHP alive. Only unregister after the process exits.
+		if now-lastConnectionTime > constants.MinServerInactivityForCleanup && !isProcessAlive(serverKey.ServerPID) {
 			log.InfofMainAndServer(server.Logger, "Server \"AIK_RUNTIME_***%s\" (server PID: %d) has been inactive for more than 2 minutes, unregistering...", utils.AnonymizeToken(serverKey.Token), serverKey.ServerPID)
 			server_utils.Unregister(serverKey)
 		}

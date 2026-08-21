@@ -1,13 +1,15 @@
 #include "Includes.h"
 
 void PhpLifecycle::ModuleInit() {
+    this->mainPID = getpid();
+    requestProcessor.serverPID = this->mainPID;
+
     /* If SAPI name is "cli" run in "simple" mode */
     if (AIKIDO_GLOBAL(sapi_name) == "cli") {
         AIKIDO_LOG_INFO("MINIT finished earlier because we run in CLI mode!\n");
         return;
     }
 
-    this->mainPID = getpid();
     AIKIDO_LOG_INFO("Main PID is: %u\n", this->mainPID);
     if (!AIKIDO_GLOBAL(agent).Init()) {
         AIKIDO_LOG_INFO("Aikido Agent initialization failed!\n");

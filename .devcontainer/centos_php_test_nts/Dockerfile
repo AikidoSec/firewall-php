@@ -47,13 +47,13 @@ RUN yum install -y mariadb-devel || yum install -y mariadb-connector-c-devel || 
 # Install Go toolchain (architecture-aware)
 RUN ARCH=$(uname -m) && \
     if [ "$ARCH" = "x86_64" ] || [ "$ARCH" = "amd64" ]; then \
-        curl -O https://dl.google.com/go/go1.23.3.linux-amd64.tar.gz && \
-        tar -C /usr/local -xzf go1.23.3.linux-amd64.tar.gz && \
-        rm -f go1.23.3.linux-amd64.tar.gz; \
+        curl -O https://dl.google.com/go/go1.26.6.linux-amd64.tar.gz && \
+        tar -C /usr/local -xzf go1.26.6.linux-amd64.tar.gz && \
+        rm -f go1.26.6.linux-amd64.tar.gz; \
     elif [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then \
-        curl -O https://dl.google.com/go/go1.23.3.linux-arm64.tar.gz && \
-        tar -C /usr/local -xzf go1.23.3.linux-arm64.tar.gz && \
-        rm -f go1.23.3.linux-arm64.tar.gz; \
+        curl -O https://dl.google.com/go/go1.26.6.linux-arm64.tar.gz && \
+        tar -C /usr/local -xzf go1.26.6.linux-arm64.tar.gz && \
+        rm -f go1.26.6.linux-arm64.tar.gz; \
     else \
         echo "Unsupported architecture: $ARCH" && exit 1; \
     fi
