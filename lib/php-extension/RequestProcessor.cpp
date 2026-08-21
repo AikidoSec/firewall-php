@@ -62,7 +62,7 @@ bool RequestProcessor::Init() {
         return false;
     }
 
-    if (!requestProcessorInitFn(GoCreateString(AIKIDO_GLOBAL(sapi_name)))) {
+    if (!requestProcessorInitFn(GoCreateString(AIKIDO_GLOBAL(sapi_name)), static_cast<GoInt32>(this->serverPID))) {
         AIKIDO_LOG_ERROR("Failed to initialize Aikido Request Processor!\n");
         this->initFailed = true;
         return false;

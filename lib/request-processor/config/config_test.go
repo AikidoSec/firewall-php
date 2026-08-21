@@ -1,32 +1,21 @@
 package config
 
 import (
-	"os"
+	"main/globals"
 	"testing"
 )
 
-func TestGetServerPID(t *testing.T) {
-	currentPID := int32(os.Getpid())
-	parentPID := int32(os.Getppid())
+func TestInitUsesServerPIDFromExtension(t *testing.T) {
+	previousConfig := globals.EnvironmentConfig
+	t.Cleanup(func() {
+		globals.EnvironmentConfig = previousConfig
+	})
 
-	tests := []struct {
-		name         string
-		platformName string
-		expectedPID  int32
-	}{
-		{name: "PHP-FPM uses its master", platformName: "fpm-fcgi", expectedPID: parentPID},
-		{name: "Apache uses its master", platformName: "apache2handler", expectedPID: parentPID},
-		{name: "PHP built-in server uses itself", platformName: "cli-server", expectedPID: currentPID},
-		{name: "FrankenPHP uses itself", platformName: "frankenphp", expectedPID: currentPID},
-		{name: "unknown SAPI uses itself", platformName: "unknown", expectedPID: currentPID},
-	}
+	const platformName = "test-sapi"
+	const serverPID int32 = 1234
+	Init(platformName, serverPID)
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			actualPID := getServerPID(test.platformName)
-			if actualPID != test.expectedPID {
-				t.Fatalf("getServerPID(%q) = %d, expected %d", test.platformName, actualPID, test.expectedPID)
-			}
-		})
+	if globals.EnvironmentConfig.ServerPID != serverPID {
+		t.Fatalf("ServerPID = %d, expected %d", globals.EnvironmentConfig.ServerPID, serverPID)
 	}
 }

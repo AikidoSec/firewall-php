@@ -80,7 +80,7 @@ func DestroyInstance(threadID uint64) {
 }
 
 //export RequestProcessorInit
-func RequestProcessorInit(platformName string) (initOk bool) {
+func RequestProcessorInit(platformName string, serverPID int32) (initOk bool) {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Warn(nil, "Recovered from panic:", r)
@@ -88,7 +88,7 @@ func RequestProcessorInit(platformName string) (initOk bool) {
 		}
 	}()
 
-	config.Init(platformName)
+	config.Init(platformName, serverPID)
 
 	if globals.EnvironmentConfig.PlatformName != "cli" {
 		grpc.Init()
