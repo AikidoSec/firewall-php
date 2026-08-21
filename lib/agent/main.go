@@ -1,28 +1,12 @@
-// Package main builds one executable that is used in two roles:
+// Package main builds one executable used both as a short-lived launcher and as the
+// long-lived shared Agent worker:
 //
-//	PHP --posix_spawn--> launcher (no arguments)
-//	                           `--start--> worker (--agent-worker)
+//	PHP -> Agent in launcher mode (no arguments) -> Agent in worker mode (--agent-worker)
 //
-// The Agent must keep running after PHP module startup and serve every PHP
-// process using the same runtime directory. PHP cannot wait for that long-lived
-// process because module startup would never finish. If PHP started it without
-// waiting, each supported PHP host would instead be responsible for reaping it
-// when it eventually exits.
-//
-// The short-lived launcher avoids both outcomes. PHP waits for and reaps only
-// the launcher. The launcher starts a worker candidate and waits for the Unix
-// socket. The worker locks the versioned runtime directory before initializing,
-// so concurrent candidates exit without starting another Agent. If the worker
-// fails during startup, its lock is released and a launcher starts a replacement.
-//
-// After successful startup, the launcher exits and the worker is reparented to
-// init or a subreaper, which becomes responsible for reaping it. The worker
-// retains the lock, owns the Unix socket, and serves all PHP processes using
-// that runtime directory. The launcher watches only startup; after that, a
-// worker that dies is restarted by the next PHP startup.
-//
-// These roles share one executable only to avoid packaging and versioning a
-// separate launcher binary. They are separate processes with separate lifetimes.
+// The launcher starts the worker and exits only after the shared Unix socket is ready.
+// The worker retains the runtime-directory lock and continues independently of the PHP
+// process that initiated startup. Both roles share one executable to avoid packaging
+// a separate launcher.
 package main
 
 import (
