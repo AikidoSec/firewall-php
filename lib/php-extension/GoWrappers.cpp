@@ -167,12 +167,16 @@ CallbackResult GoContextCallback(int callbackId) {
         AIKIDO_LOG_DEBUG("Callback %s -> %s\n", ctx.c_str(), ret.c_str());
     }
 
-    int len = static_cast<int>(ret.length());
+    size_t len = ret.length();
+    if (len > INT_MAX) {
+        AIKIDO_LOG_WARN("Callback %s result too large (%zu bytes, max %d)\n", ctx.c_str(), len, INT_MAX);
+        return CallbackResult{nullptr, 0};
+    }
     char *buf = static_cast<char *>(malloc(len));
     if (!buf) {
-        AIKIDO_LOG_WARN("Failed to allocate %d bytes in GoContextCallback\n", len);
+        AIKIDO_LOG_WARN("Failed to allocate %zu bytes in GoContextCallback\n", len);
         return CallbackResult{nullptr, 0};
     }
     memcpy(buf, ret.data(), len);
-    return CallbackResult{buf, len};
+    return CallbackResult{buf, static_cast<int>(len)};
 }
