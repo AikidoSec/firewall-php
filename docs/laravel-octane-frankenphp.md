@@ -49,6 +49,19 @@ while ($requestCount < $maxRequests && frankenphp_handle_request($handleRequest)
 }
 ```
 
+> [!NOTE]
+> If you use [IDOR protection](idor-protection.md), call `\aikido\enable_idor_protection(...)` inside `$handleRequest`, right after `worker_rinit()`, not in the Octane bootstrap above. `worker_rinit()` resets the IDOR protection config on every request, so a call made only during bootstrap won't survive past the first request:
+>
+> ```php
+> $handleRequest = static function () use ($worker, $frankenPhpClient, $debugMode) {
+>     \aikido\worker_rinit();
+>     \aikido\enable_idor_protection("tenant_id", ["users"]);
+>     // Octane request handling logic, including your auth middleware, which
+>     // is where you call \aikido\set_tenant_id() once the current user is known
+>     \aikido\worker_rshutdown();
+> };
+> ```
+
 4. Install Aikido
 
 Insert Aikido deb installation step in the end of the script.
@@ -120,6 +133,19 @@ while ($requestCount < $maxRequests && frankenphp_handle_request($handleRequest)
     $requestCount++;
 }
 ```
+
+> [!NOTE]
+> If you use [IDOR protection](idor-protection.md), call `\aikido\enable_idor_protection(...)` inside `$handleRequest`, right after `worker_rinit()`, not in the Octane bootstrap above. `worker_rinit()` resets the IDOR protection config on every request, so a call made only during bootstrap won't survive past the first request:
+>
+> ```php
+> $handleRequest = static function () use ($worker, $frankenPhpClient, $debugMode) {
+>     \aikido\worker_rinit();
+>     \aikido\enable_idor_protection("tenant_id", ["users"]);
+>     // Octane request handling logic, including your auth middleware, which
+>     // is where you call \aikido\set_tenant_id() once the current user is known
+>     \aikido\worker_rshutdown();
+> };
+> ```
 
 4. Start the container
 
