@@ -42,6 +42,21 @@ while (frankenphp_handle_request(function () use ($app) {
 }
 ```
 
+> [!NOTE]
+> If you use [IDOR protection](idor-protection.md), call `\aikido\enable_idor_protection(...)` inside the handler, right after `worker_rinit()`, not in the one-time bootstrap code above the loop. `worker_rinit()` resets the IDOR protection config on every request, so a call made only during bootstrap won't survive past the first request:
+>
+> ```php
+> while (frankenphp_handle_request(function () use ($app) {
+>     \aikido\worker_rinit();
+>     \aikido\enable_idor_protection("tenant_id", ["users"]);
+>     // Your application logic, including your auth middleware, which is
+>     // where you call \aikido\set_tenant_id() once the current user is known
+>     \aikido\worker_rshutdown();
+> })) {
+>     // keep looping
+> }
+> ```
+
 3. Start FrankenPHP
 
 `frankenphp run --config Caddyfile`

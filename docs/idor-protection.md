@@ -26,6 +26,9 @@ if (extension_loaded('aikido')) {
 - First argument — the column that says which tenant a row belongs to (e.g. `account_id`, `organization_id`, `team_id`).
 - Second argument — tables to skip, because their rows aren't tied to one tenant (e.g. a shared `users` table with users from every account).
 
+> [!NOTE]
+> In FrankenPHP worker mode, call this inside your request handler (after `worker_rinit()`), not in the one-time worker bootstrap. See [FrankenPHP (Worker Mode)](frankenphp-worker.md).
+
 ### 2. Set the tenant ID on each request
 
 Call `set_tenant_id` early in the request, usually in middleware once you know who the user is. Zen then checks every query in that request against this tenant:
