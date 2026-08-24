@@ -250,6 +250,10 @@ func NewServerData() *ServerData {
 		UsersQueue:              NewQueue[string](MaxNumberOfStoredUsers),
 		Packages:                make(map[string]Package),
 		PollingData:             NewServerDataPolling(),
+		StatsData: StatsDataType{
+			StartedAt:            time.Now().UnixMilli(),
+			MonitoredSinkTimings: make(map[string]MonitoredSinkTimings),
+		},
 		AttackWave: AttackWaveState{
 			Threshold:       15,             // Default: 15 requests
 			WindowSize:      1,              // Default: 1 minute
