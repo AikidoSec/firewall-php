@@ -31,9 +31,9 @@ func storeConfig(server *ServerData, req *protos.Config) {
 
 func Register(serverKey ServerKey, requestProcessorPID int32, req *protos.Config) {
 	globals.ServersMutex.Lock()
-	defer globals.ServersMutex.Unlock()
 	server, exists := globals.GetOrCreateServer(serverKey)
 	if exists {
+		globals.ServersMutex.Unlock()
 		log.Debugf(log.MainLogger, "Server \"AIK_RUNTIME_***%s\" already exists, skipping registration (request processor PID: %d, server PID: %d)", utils.AnonymizeToken(serverKey.Token), requestProcessorPID, serverKey.ServerPID)
 		return
 	}
@@ -46,8 +46,14 @@ func Register(serverKey ServerKey, requestProcessorPID int32, req *protos.Config
 
 	atomic.StoreInt64(&server.LastConnectionTime, utils.GetTime())
 
+	wasPastDeleted := globals.IsPastDeletedServer(serverKey)
+
+	// PHP workers can use the local server state before the initial cloud sync
+	// finishes. Holding this lock would make them wait for network I/O and time out.
+	globals.ServersMutex.Unlock()
+
 	cloud.Init(server)
-	if globals.IsPastDeletedServer(serverKey) {
+	if wasPastDeleted {
 		log.InfofMainAndServer(server.Logger, "Server \"AIK_RUNTIME_***%s\" (server PID: %d) was registered before for this server PID, but deleted due to inactivity! Skipping start event as it was sent before...", utils.AnonymizeToken(serverKey.Token), serverKey.ServerPID)
 	} else {
 		cloud.SendStartEvent(server)
