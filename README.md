@@ -108,8 +108,8 @@ Zen for PHP can do this because the monitored functions are hooked at the PHP-co
     * ✅ [`Microsoft SQL Server`](https://www.php.net/manual/en/ref.pdo-dblib.php)
     * ✅ [`SQLite`](https://www.php.net/manual/en/ref.pdo-sqlite.php)
 * ✅ [`MySQLi`](https://www.php.net/manual/en/book.mysqli.php)
+* ✅ [`PostgreSQL`](https://www.php.net/manual/en/book.pgsql.php)
 * 🚧 [`Oracle OCI8`](https://www.php.net/manual/en/book.oci8.php)
-* 🚧 [`PostgreSQL`](https://www.php.net/manual/en/book.pgsql.php)
 * 🚧 [`SQLite3`](https://www.php.net/manual/en/book.sqlite3.php)
 
 ### Outgoing requests libraries
