@@ -168,10 +168,19 @@ func TestConfigStreamRoutine(t *testing.T) {
 		assert.Equal(t, int32(1), cloud.configRequests.Load())
 
 		cloud.publishConfig(t, 2000)
+		time.Sleep(200 * time.Millisecond)
+		assert.Equal(t, int64(1000), getConfigUpdatedAt(server))
+		assert.Equal(t, int32(1), cloud.configRequests.Load())
+
+		server.ConfigStreamRefreshMutex.Lock()
+		server.ConfigStreamLastRefreshStart = time.Now().Add(-9 * time.Second)
+		server.ConfigStreamRefreshMutex.Unlock()
+
+		cloud.publishConfig(t, 3000)
 
 		assert.True(t, waitFor(5*time.Second, func() bool {
-			return getConfigUpdatedAt(server) == 2000
-		}), "expected the second pushed config to be applied")
+			return getConfigUpdatedAt(server) == 3000
+		}), "expected the throttled config stream to refresh again")
 		assert.Equal(t, int32(2), cloud.configRequests.Load())
 
 		// The connection must be dropped when the routine is stopped
