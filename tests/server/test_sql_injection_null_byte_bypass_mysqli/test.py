@@ -3,13 +3,6 @@ import time
 import sys
 from testlib import *
 
-'''
-Test that SQL injection payloads containing embedded null bytes (\x00) are
-still detected and blocked. Before the fix, null bytes caused truncation in
-the C++/Go context pipeline, letting the detection logic see only the benign
-prefix (e.g. "1") while MySQL executed the full payload.
-'''
-
 def check_null_byte_sqli_blocked(response_code, response_body, event_id, expected_json):
     response = php_server_post("/testDetection", {"userId": "1\x00 OR 1=1"})
     assert_response_code_is(response, response_code)
