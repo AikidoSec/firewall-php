@@ -2,6 +2,7 @@
 
 #include <stack>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 class RequestCache {
@@ -19,8 +20,13 @@ class RequestCache {
     std::string tenantId;
     // Depth, not bool: allows nested without_idor_protection() calls.
     int idorIgnoredDepth = 0;
+    std::unordered_map<void*, int> idorIgnoredDepthByFiber;
 
     RequestCache() = default;
+
+    void EnterIdorIgnoredScope();
+    void LeaveIdorIgnoredScope();
+    bool IsIdorIgnored() const;
 
 /*
     Reset helper:
@@ -77,4 +83,3 @@ class ScopedEventContext {
     ScopedEventContext();
     ~ScopedEventContext();
 };
-
