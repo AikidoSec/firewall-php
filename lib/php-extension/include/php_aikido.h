@@ -30,7 +30,7 @@ bool environment_loaded;
 long log_level;
 bool blocking;
 bool disable;
-bool disk_logs; // When enabled, it writes logs to disk instead of stdout. It's usefull when debugging to have the logs grouped by PHP process.
+bool disk_logs; // When enabled, all configured log levels are written to disk. Otherwise, warnings and errors are written to stderr.
 bool collect_api_schema;
 // When enabled, the Agent listens for cloud config updates over a Server-Sent Events stream, on top of polling.
 bool sse;
