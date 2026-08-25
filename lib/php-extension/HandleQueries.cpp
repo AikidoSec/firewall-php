@@ -54,8 +54,8 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_pdo_exec) {
     eventCacheStack.Top().sqlDialect = GetSqlDialectFromPdo(pdo_object);
 }
 
-// Only stringify scalars: arrays/objects would warn or throw from inside a hook,
-// and null/resources have no value to compare a tenant ID against.
+// zval_get_string() warns on arrays and throws on objects; null/resources have
+// no value worth comparing to a tenant ID, so only scalars are handled here.
 static bool BoundValueToString(zval* val, std::string& out) {
     if (!val) {
         return false;
@@ -113,16 +113,13 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_pdostatement_execute) {
     eventCacheStack.Top().sqlQuery = std::string(stmt->query_string, stmt->query_stringlen);
 #endif
 
-    // Positional keys are 0-based (matches PDO's own paramno and zen-internals'
-    // placeholder_number), e.g. execute(['org_123']) for "WHERE tenant_id = ?" keys "0".
-    // Named keys keep PDO's own spelling, e.g. execute([':tenant_id' => 'org_123'])
-    // keys ":tenant_id"; the Go side also tries the name without the leading ':'.
+    // Positional keys are 0-based, matching PDO's paramno and zen-internals' placeholder_number.
     json paramsJson = json::object();
     bool collectedParams = false;
 
     if (params) {
-        // execute($params) destroys any previously bound values (ext/pdo/pdo_stmt.c),
-        // so when present it's the only source to read.
+        // execute($params) replaces any previously bound values, so params is the
+        // only source to read here; stmt->bound_params is stale until next execute().
         zend_string* key;
         zend_ulong index;
         zval* val;
@@ -139,9 +136,7 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_pdostatement_execute) {
         } ZEND_HASH_FOREACH_END();
         collectedParams = true;
     } else if (stmt->bound_params) {
-        // No array passed: values come from earlier bindValue(':tenant_id', 'org_123')/
-        // bindParam() calls (what Laravel and Doctrine do), still intact here since
-        // PDO only replaces stmt->bound_params on the next execute($params).
+        // No array passed: fall back to values from earlier bindValue()/bindParam() calls.
         zend_string* key;
         zend_ulong index;
         zval* entry;
@@ -164,9 +159,7 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_pdostatement_execute) {
     }
 
     if (collectedParams) {
-        // replace, not throw: bound values can be arbitrary bytes (blobs, encrypted
-        // columns), and an uncaught encoding exception here would abort the whole
-        // event, silently disabling IDOR and SQL injection detection for this query.
+        // Replace invalid UTF-8 (e.g. blobs) instead of throwing and losing detection for this query.
         eventCacheStack.Top().sqlParams = paramsJson.dump(-1, ' ', false, json::error_handler_t::replace);
     }
 

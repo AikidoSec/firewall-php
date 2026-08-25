@@ -1,8 +1,6 @@
 #include "Includes.h"
 
-// zval_get_string() on an array or object without __toString() emits a PHP
-// warning or throws — reject those before calling it instead of letting that
-// surface as a confusing error from inside this call.
+// zval_get_string() warns on arrays and throws on objects without __toString().
 static bool IsStringOrIntZval(zval* value) {
     switch (Z_TYPE_P(value)) {
         case IS_STRING:
@@ -13,10 +11,8 @@ static bool IsStringOrIntZval(zval* value) {
     }
 }
 
-// Invalid UTF-8 would otherwise get silently mangled when this value is later
-// JSON-encoded for the Go side, which would make it stop matching real column/
-// table/tenant values forever (e.g. every query would look like it's missing
-// its tenant filter). Reject it here instead, with a clear error.
+// Reject invalid UTF-8 up front: JSON-encoding it for the Go side would otherwise
+// throw there, silently disabling IDOR protection instead of erroring here.
 static bool IsValidUtf8(const std::string& value) {
     try {
         json(value).dump();

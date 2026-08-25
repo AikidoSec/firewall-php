@@ -52,8 +52,7 @@ func getIdorConfig(instance *instance.RequestProcessorInstance) IdorConfig {
 	return config
 }
 
-// analyzeSql parses (dialect, query) via zen-internals, cached since the result
-// only depends on query text, not on the bound parameter values.
+// analyzeSql parses (dialect, query) via zen-internals; cached by query text.
 func analyzeSql(query string, dialect int) ([]SqlQueryResult, bool) {
 	cacheKey := strconv.Itoa(dialect) + ":" + query
 	if cached, ok := sqlAnalysisCache.get(cacheKey); ok {
@@ -74,12 +73,8 @@ func analyzeSql(query string, dialect int) ([]SqlQueryResult, bool) {
 	return results, true
 }
 
-// lookupNamedParam finds a named placeholder in the bound params.
-//
-// PDO accepts both "tenant_id" and ":tenant_id" as the array key for a
-// :tenant_id placeholder, and normalizes bindParam()/bindValue() names to
-// ":tenant_id". zen-internals always reports the placeholder as written in the
-// query (":tenant_id"), so both spellings have to be tried.
+// lookupNamedParam tries both spellings of a named placeholder, since PDO accepts
+// "tenant_id" or ":tenant_id" as an execute() key but zen-internals reports it as written.
 func lookupNamedParam(params map[string]string, name string) (string, bool) {
 	if v, ok := params[name]; ok {
 		return v, true
@@ -108,8 +103,7 @@ func resolveValue(value string, placeholderNumber *int, isPlaceholder bool, para
 	if v, ok := lookupNamedParam(params, value); ok {
 		return v, true
 	}
-	// placeholder_number is the 0-based position of a "?" placeholder, matching
-	// how the PHP extension keys positional parameters.
+	// placeholder_number is 0-based, matching how the PHP extension keys positional params.
 	if placeholderNumber != nil {
 		if v, ok := params[strconv.Itoa(*placeholderNumber)]; ok {
 			return v, true
@@ -256,10 +250,8 @@ func CheckContextForIdor(instance *instance.RequestProcessorInstance, query stri
 			continue
 		}
 
-		// The tenant is only required once we know the statement actually reads
-		// or writes rows of a table we check. Demanding it earlier would break
-		// migrations, health checks and the pre-auth lookup on an excluded table
-		// that resolves which tenant to set in the first place.
+		// Only require a tenant once a checked table is touched, so migrations, health
+		// checks, and the pre-auth lookup that resolves the tenant itself still work.
 		if tenantId == "" {
 			if tables := nonExcludedTables(result, excludedTables); len(tables) > 0 {
 				return tenantNotSetMessage(tables)
