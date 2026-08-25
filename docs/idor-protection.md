@@ -46,6 +46,7 @@ That's everything you need for code that runs inside requests. The sections belo
 
 - SQLite, MySQL and PostgreSQL via `PDO` (`PDO::query`, `PDO::exec`, `PDOStatement::execute`). Values are resolved whether you pass them to `execute($params)` or bind them beforehand with `bindValue()` / `bindParam()`, with either named (`:tenant_id`) or positional (`?`) placeholders.
 - `mysqli` for queries with the values written directly in the query string (`mysqli_query`, `mysqli_real_query`).
+- PostgreSQL via `pgsql`.
 
 ## Advanced options
 
