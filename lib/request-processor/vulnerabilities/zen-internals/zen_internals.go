@@ -151,6 +151,5 @@ func IdorAnalyzeSql(query string, dialect int) string {
 	defer C.call_free_string(freeFn, resultPtr)
 
 	result := C.GoString(resultPtr)
-	log.Debugf(nil, "IdorAnalyzeSql(\"%s\", %d) -> %s", query, dialect, result)
 	return result
 }

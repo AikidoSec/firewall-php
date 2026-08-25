@@ -3,13 +3,10 @@
 // zval_get_string() on an array or object without __toString() emits a PHP
 // warning or throws — reject those before calling it instead of letting that
 // surface as a confusing error from inside this call.
-static bool IsScalarZval(zval* value) {
+static bool IsStringOrIntZval(zval* value) {
     switch (Z_TYPE_P(value)) {
         case IS_STRING:
         case IS_LONG:
-        case IS_DOUBLE:
-        case IS_TRUE:
-        case IS_FALSE:
             return true;
         default:
             return false;
@@ -59,7 +56,7 @@ ZEND_FUNCTION(enable_idor_protection) {
     if (excludedTablesArr) {
         zval* entry;
         ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(excludedTablesArr), entry) {
-            if (!IsScalarZval(entry)) {
+            if (Z_TYPE_P(entry) != IS_STRING) {
                 AIKIDO_LOG_WARN("enable_idor_protection: skipping non-string entry in excludedTables!\n");
                 continue;
             }
@@ -97,8 +94,8 @@ ZEND_FUNCTION(set_tenant_id) {
         Z_PARAM_ZVAL(tenantIdZv)
     ZEND_PARSE_PARAMETERS_END();
 
-    if (!IsScalarZval(tenantIdZv)) {
-        php_error_docref(NULL, E_WARNING, "aikido\\set_tenant_id(): tenantId must be a string or int");
+    if (!IsStringOrIntZval(tenantIdZv)) {
+        php_error_docref(NULL, E_WARNING, "tenantId must be a string or int");
         return;
     }
 
@@ -123,7 +120,6 @@ ZEND_FUNCTION(set_tenant_id) {
     requestCache.tenantId = tenantIdValue;
     requestCache.tenantIdSet = true;
 
-    AIKIDO_LOG_DEBUG("Set tenant id to %s\n", requestCache.tenantId.c_str());
 }
 
 ZEND_FUNCTION(get_tenant_id) {
