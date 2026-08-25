@@ -17,7 +17,21 @@ Test from the same environment where your app runs and follow the instructions o
 
 ## Check logs for errors
 
-`cat /var/log/aikido-*/*`
+The agent writes its main log to `/var/log/aikido-<version>/aikido-agent-*-main.log`:
+
+```sh
+cat /var/log/aikido-*/aikido-agent-*-main.log
+```
+
+`AIKIDO_DISK_LOGS` is disabled by default. With the default configuration, check both the main agent log above and your PHP, web server, or container logs for Zen warnings and errors.
+
+For additional troubleshooting, set `AIKIDO_DISK_LOGS=1`. Zen will then write additional logs under `/var/log/aikido-<version>/`. `AIKIDO_LOG_LEVEL` controls which messages are included, defaults to `WARN`, and supports `DEBUG`, `INFO`, `WARN`, and `ERROR`.
+
+Restart the service or container running your application after changing either `AIKIDO_DISK_LOGS` or `AIKIDO_LOG_LEVEL` so that every running process uses the new setting.
+
+```sh
+cat /var/log/aikido-*/*
+```
 
 ## Check if Aikido module has enabled
 
