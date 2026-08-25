@@ -219,9 +219,6 @@ type ServerData struct {
 	// MiddlewareInstalled boolean value to be reported on heartbeat events
 	MiddlewareInstalled uint32
 
-	// Got some request info passed via gRPC to the Agent
-	GotTraffic uint32
-
 	// Last time this server established a gRPC connection
 	LastConnectionTime int64
 
