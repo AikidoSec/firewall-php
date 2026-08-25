@@ -183,7 +183,9 @@ CallbackResult GoContextCallback(int callbackId) {
         return CallbackResult{nullptr, 0};
     }
 
-    if (ret.length() > 10000) {
+    if (ctx == "SQL_PARAMS" || ctx == "TENANT_ID") {
+        AIKIDO_LOG_DEBUG("Callback %s -> (sensitive value redacted)\n", ctx.c_str());
+    } else if (ret.length() > 10000) {
         AIKIDO_LOG_DEBUG("Callback %s -> (Result too large to print)\n", ctx.c_str());
     } else {
         AIKIDO_LOG_DEBUG("Callback %s -> %s\n", ctx.c_str(), ret.c_str());
