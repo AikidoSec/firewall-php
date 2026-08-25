@@ -8,7 +8,7 @@ AIKIDO_BLOCK=1
 --POST_RAW--
 Content-Type: application/json
 {
-    "petname": "foo'),--\\r(version()||'\\n"
+    "petname": "foo'),--\r(version()||'\n"
 }
 
 --FILE--
