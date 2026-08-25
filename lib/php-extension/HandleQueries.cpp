@@ -56,7 +56,7 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_pdo_exec) {
 
 // Only stringify scalars: arrays/objects would warn or throw from inside a hook,
 // and null/resources have no value to compare a tenant ID against.
-static bool PdoBoundValueToString(zval* val, std::string& out) {
+static bool BoundValueToString(zval* val, std::string& out) {
     if (!val) {
         return false;
     }
@@ -128,7 +128,7 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_pdostatement_execute) {
         zval* val;
         ZEND_HASH_FOREACH_KEY_VAL(Z_ARRVAL_P(params), index, key, val) {
             std::string valueString;
-            if (!PdoBoundValueToString(val, valueString)) {
+            if (!BoundValueToString(val, valueString)) {
                 continue;
             }
             if (key) {
@@ -151,7 +151,7 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_pdostatement_execute) {
                 continue;
             }
             std::string valueString;
-            if (!PdoBoundValueToString(&boundParam->parameter, valueString)) {
+            if (!BoundValueToString(&boundParam->parameter, valueString)) {
                 continue;
             }
             if (key) {
@@ -266,10 +266,13 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_pg_query_params) {
     ZEND_PARSE_PARAMETERS_END();
 
     zend_string *query = nullptr;
+    zval *params = nullptr;
     if (ZEND_NUM_ARGS() == 2 && firstArg && Z_TYPE_P(firstArg) == IS_STRING) {
         query = Z_STR_P(firstArg);
+        params = secondArg;
     } else if (ZEND_NUM_ARGS() == 3 && secondArg && Z_TYPE_P(secondArg) == IS_STRING) {
         query = Z_STR_P(secondArg);
+        params = paramsArg;
     }
 
     if (!query) {
@@ -281,6 +284,20 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_pg_query_params) {
     eventCacheStack.Top().moduleName = "pgsql";
     eventCacheStack.Top().sqlQuery = ZSTR_VAL(query);
     eventCacheStack.Top().sqlDialect = "postgres";
+
+    if (params && Z_TYPE_P(params) == IS_ARRAY) {
+        json paramsJson = json::object();
+        zend_ulong position = 1;
+        zval* value;
+        ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(params), value) {
+            std::string valueString;
+            if (BoundValueToString(value, valueString)) {
+                paramsJson[std::to_string(position)] = valueString;
+            }
+            position++;
+        } ZEND_HASH_FOREACH_END();
+        eventCacheStack.Top().sqlParams = paramsJson.dump(-1, ' ', false, json::error_handler_t::replace);
+    }
 }
 
 AIKIDO_HANDLER_FUNCTION(handle_pre_pg_prepare) {
