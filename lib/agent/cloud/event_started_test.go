@@ -11,7 +11,7 @@ import (
 	"testing"
 )
 
-func TestSendStartEventLogsFailureBeforeTraffic(t *testing.T) {
+func TestSendStartEventLogsFailure(t *testing.T) {
 	cloudServer := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) {
 		writer.WriteHeader(http.StatusServiceUnavailable)
 	}))

@@ -83,7 +83,6 @@ func (s *GrpcServer) OnRequestShutdown(ctx context.Context, req *protos.RequestM
 	}
 	go updateAttackWaveCountsAndDetect(server, req.GetIsWebScanner(), req.GetIp(), req.GetUser(), req.GetUserAgent(), req.GetMethod(), req.GetUrl())
 
-	atomic.StoreUint32(&server.GotTraffic, 1)
 	return &emptypb.Empty{}, nil
 }
 
