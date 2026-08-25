@@ -147,7 +147,7 @@ ZEND_FUNCTION(without_idor_protection) {
     ZEND_PARSE_PARAMETERS_END();
 
     auto& requestCache = AIKIDO_GLOBAL(requestCache);
-    requestCache.idorIgnoredDepth++;
+    requestCache.EnterIdorIgnoredScope();
 
     zval retval;
     ZVAL_UNDEF(&retval);
@@ -157,7 +157,7 @@ ZEND_FUNCTION(without_idor_protection) {
 
     zend_call_function(&fci, &fcc);
 
-    requestCache.idorIgnoredDepth--;
+    requestCache.LeaveIdorIgnoredScope();
 
     if (!Z_ISUNDEF(retval)) {
         RETVAL_ZVAL(&retval, 1, 1);

@@ -171,7 +171,7 @@ CallbackResult GoContextCallback(int callbackId) {
                 break;
             case CONTEXT_IDOR_IGNORED:
                 ctx = "IDOR_IGNORED";
-                ret = requestCache.idorIgnoredDepth > 0 ? "1" : "";
+                ret = requestCache.IsIdorIgnored() ? "1" : "";
                 break;
         }
     } catch (std::exception& e) {
