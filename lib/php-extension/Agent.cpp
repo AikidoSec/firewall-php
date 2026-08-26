@@ -17,16 +17,18 @@
  * PHP -> Agent in launcher mode (no arguments) -> Agent in worker mode (--agent-worker)
  *
  * The launcher exits after the shared Unix socket is ready or startup has failed.
- * PHP waits only for its launcher to exit before Agent::Init() returns. The worker
- * retains the runtime-directory lock and continues independently of the PHP
- * process that initiated startup. The launcher and worker modes share one
- * executable to avoid packaging a separate launcher.
+ * PHP waits for and reaps only that bounded launcher. The long-lived worker is
+ * then adopted by init or a subreaper, which owns its eventual exit; making it a
+ * direct PHP child would leave PHP responsible for reaping it after initialization.
+ * The launcher and worker modes share one executable to avoid packaging a
+ * separate launcher.
  */
 bool Agent::Init() {
     std::string aikidoAgentPath = "/opt/aikido-" + std::string(PHP_AIKIDO_VERSION) + "/aikido-agent";
 
     AIKIDO_LOG_INFO("Starting Aikido Agent...\n");
 
+    // exec requires argv[0] even though this launcher invocation has no options.
     char* argv[] = {
         const_cast<char*>(aikidoAgentPath.c_str()),
         nullptr
@@ -39,6 +41,8 @@ bool Agent::Init() {
         return false;
     }
 
+    // Waiting is safe because the launcher has a bounded startup timeout. It
+    // also guarantees that PHP never leaves its short-lived child unreaped.
     int waitStatus;
     while (waitpid(agentPid, &waitStatus, 0) == -1) {
         if (errno != EINTR) {

@@ -89,6 +89,8 @@ func AgentUninit() {
 }
 
 func acquireAgentLock() (*os.File, error) {
+	// The versioned directory lock elects one worker across all PHP processes and
+	// is released automatically if that worker exits unexpectedly.
 	if err := os.MkdirAll(constants.RunPath, 0777); err != nil {
 		return nil, err
 	}
@@ -112,9 +114,12 @@ func startAgentWorker() (<-chan error, error) {
 	}
 
 	command := exec.Command(executablePath, agentWorkerArg)
+	// The worker can outlive both this launcher and its PHP process. A stable root
+	// directory and nil standard streams keep it from retaining app files or pipes;
+	// os/exec connects nil streams to the null device.
 	command.Dir = "/"
-	// Start the worker in its own session. Reparenting happens when this launcher
-	// exits; setsid itself does not reparent the worker.
+	// A separate session prevents PHP process-group shutdowns from stopping the
+	// shared worker. The launcher's exit is what reparents it to init or a subreaper.
 	command.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
 	if err := command.Start(); err != nil {
 		return nil, err
@@ -130,6 +135,8 @@ func startAgentWorker() (<-chan error, error) {
 }
 
 func isAgentReady() bool {
+	// A socket path can remain after a crash, so only a successful connection
+	// proves that the selected worker is ready for PHP requests.
 	connection, err := net.DialTimeout("unix", constants.SocketPath, agentStartupInterval)
 	if err != nil {
 		return false
