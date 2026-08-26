@@ -59,7 +59,12 @@ FROM go-base AS toolchain
 
 COPY --from=go-source /usr/local/go-pr /usr/local/go-pr
 
-RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.12 && \
+# Use the pinned PR toolchain for every Go command in the Alpine build. The
+# official release above is only the bootstrap compiler used by make.bash.
+ENV PATH=/usr/local/go-pr/bin:/go/bin:/usr/local/go/bin:$PATH
+
+RUN go version && \
+    go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.12 && \
     go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.5.1
 
 FROM toolchain AS build
@@ -80,8 +85,8 @@ RUN mkdir -p build && \
     cd agent && \
     go mod download && \
     go mod verify && \
-    go test ./... && \
-    go build -buildvcs=false -ldflags "-s -w" \
+    go test -ldflags "-linkmode=external" ./... && \
+    go build -buildvcs=false -ldflags "-s -w -linkmode=external" \
       -o ../../build/aikido-agent
 
 RUN cd lib && \
@@ -89,14 +94,14 @@ RUN cd lib && \
     cd request-processor && \
     go mod download && \
     go mod verify && \
-    go test ./... && \
-    /usr/local/go-pr/bin/go build -buildvcs=false -ldflags "-s -w" -buildmode=c-shared \
+    go test -ldflags "-linkmode=external" ./... && \
+    go build -buildvcs=false -ldflags "-s -w -linkmode=external" -buildmode=c-shared \
       -o ../../build/aikido-request-processor.so
 
 RUN cc tools/dlopen-smoke.c -ldl -o /tmp/dlopen-smoke && \
     /tmp/dlopen-smoke build/aikido-request-processor.so && \
     file build/aikido-agent build/aikido-request-processor.so && \
-    /usr/local/go-pr/bin/go version && \
+    go version && \
     go version -m build/aikido-agent && \
     go version -m build/aikido-request-processor.so
 
