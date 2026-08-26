@@ -1,0 +1,41 @@
+#!/bin/sh
+set -eu
+
+VERSION="__VERSION__"
+
+echo "Removing Aikido PHP Firewall v${VERSION} configuration..."
+
+PHP_BINS=""
+if command -v php >/dev/null 2>&1; then
+	PHP_BINS="$(command -v php)"
+fi
+
+for php_bin in /usr/bin/php /usr/local/bin/php /usr/bin/php[0-9]* /usr/local/bin/php[0-9]*; do
+	if [ -x "$php_bin" ]; then
+		case " $PHP_BINS " in
+			*" $php_bin "*) ;;
+			*) PHP_BINS="$PHP_BINS $php_bin" ;;
+		esac
+	fi
+done
+
+for php_bin in $PHP_BINS; do
+	extension_dir=$("$php_bin" -r 'echo ini_get("extension_dir");' 2>/dev/null) || continue
+	scan_dir=$("$php_bin" --ini 2>/dev/null | awk -F ': ' '/Scan for additional .ini files in/ { print $2; exit }')
+	rm -f "$extension_dir/aikido-${VERSION}.so"
+	case "$scan_dir" in
+		""|"(none)") ;;
+		*) rm -f "$scan_dir/zz-aikido-${VERSION}.ini" ;;
+	esac
+done
+
+rm -f "/usr/lib/frankenphp/modules/aikido-${VERSION}.so"
+rm -f "/etc/frankenphp/php.d/zz-aikido-${VERSION}.ini"
+
+for pid in $(pidof aikido-agent 2>/dev/null || true); do
+	kill "$pid" 2>/dev/null || true
+done
+
+rm -rf "/var/log/aikido-${VERSION}" "/run/aikido-${VERSION}"
+
+echo "Aikido PHP Firewall v${VERSION} configuration was removed."
