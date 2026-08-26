@@ -8,9 +8,9 @@ arch="x86_64 aarch64"
 license="AGPL-3.0-or-later"
 # The runtime currently resolves its versioned binaries from /opt/aikido-*.
 options="!check !strip !fhs"
-install="$pkgname.post-install $pkgname.pre-deinstall"
+install="$pkgname.post-install $pkgname.post-upgrade $pkgname.pre-deinstall"
 
-_php_versions="8.2 8.3 8.4 8.5"
+_php_versions="7.2 7.3 7.4 8.0 8.1 8.2 8.3 8.4 8.5"
 
 source="
 	aikido-agent
@@ -28,18 +28,11 @@ done
 
 package() {
 	local dest="$pkgdir/opt/aikido-$pkgver"
-	local zen_arch
-
-	case "$CARCH" in
-		x86_64) zen_arch=x86_64 ;;
-		aarch64) zen_arch=aarch64 ;;
-		*) die "Unsupported architecture: $CARCH" ;;
-	esac
 
 	install -Dm755 "$srcdir/aikido-agent" "$dest/aikido-agent"
 	install -Dm755 "$srcdir/aikido-request-processor.so" "$dest/aikido-request-processor.so"
 	install -Dm755 "$srcdir/libzen-internals.so" \
-		"$dest/libzen_internals_${zen_arch}-unknown-linux-musl.so"
+		"$dest/libzen_internals_${CARCH}-unknown-linux-musl.so"
 	install -Dm644 "$srcdir/aikido.ini" "$dest/aikido.ini"
 	sed -i "s/extension=aikido.so/extension=aikido-$pkgver.so/" "$dest/aikido.ini"
 

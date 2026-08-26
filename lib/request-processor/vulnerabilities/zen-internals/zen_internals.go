@@ -44,12 +44,13 @@ type ZenInternalsLibrary struct {
 
 var zenLib = &ZenInternalsLibrary{}
 
-func getZenInternalsLibPath(version string, arch string, libcVariant string) string {
-	return fmt.Sprintf("/opt/aikido-%s/libzen_internals_%s-unknown-linux-%s.so", version, arch, libcVariant)
-}
-
 func Init() bool {
-	zenInternalsLibPath := C.CString(getZenInternalsLibPath(globals.Version, utils.GetArch(), C.GoString(C.aikido_libc_variant())))
+	zenInternalsLibPath := C.CString(fmt.Sprintf(
+		"/opt/aikido-%s/libzen_internals_%s-unknown-linux-%s.so",
+		globals.Version,
+		utils.GetArch(),
+		C.GoString(C.aikido_libc_variant()),
+	))
 	defer C.free(unsafe.Pointer(zenInternalsLibPath))
 
 	handle := C.dlopen(zenInternalsLibPath, C.RTLD_LAZY)

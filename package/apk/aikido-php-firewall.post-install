@@ -3,9 +3,21 @@ set -eu
 
 VERSION="__VERSION__"
 PAYLOAD_DIR="/opt/aikido-${VERSION}"
+OLD_VERSION="${2:-}"
+OLD_VERSION="${OLD_VERSION%-r*}"
 FOUND_PHP=0
 
 echo "Configuring Aikido PHP Firewall v${VERSION}..."
+
+for pid in $(pidof aikido-agent 2>/dev/null || true); do
+	kill "$pid" 2>/dev/null || true
+done
+
+if [ -n "$OLD_VERSION" ]; then
+	rm -rf "/var/log/aikido-${OLD_VERSION}" "/run/aikido-${OLD_VERSION}"
+	rm -f "/usr/lib/frankenphp/modules/aikido-${OLD_VERSION}.so"
+	rm -f "/etc/frankenphp/php.d/zz-aikido-${OLD_VERSION}.ini"
+fi
 
 install -d -m 0777 "/var/log/aikido-${VERSION}" "/run/aikido-${VERSION}"
 
@@ -28,6 +40,15 @@ for php_bin in $PHP_BINS; do
 	extension_dir=$("$php_bin" -r 'echo ini_get("extension_dir");' 2>/dev/null) || continue
 	abi=$("$php_bin" -r 'echo PHP_ZTS ? "zts" : "nts";' 2>/dev/null) || continue
 	extension_file="$PAYLOAD_DIR/aikido-extension-php-${php_version}-${abi}.so"
+
+	if [ -n "$OLD_VERSION" ]; then
+		rm -f "$extension_dir/aikido-${OLD_VERSION}.so"
+		old_scan_dir=$("$php_bin" --ini 2>/dev/null | awk -F ': ' '/Scan for additional .ini files in/ { print $2; exit }')
+		case "$old_scan_dir" in
+			""|"(none)") ;;
+			*) rm -f "$old_scan_dir/zz-aikido-${OLD_VERSION}.ini" ;;
+		esac
+	fi
 
 	if [ ! -f "$extension_file" ]; then
 		echo "Warning: no Aikido extension for PHP ${php_version} ${abi}; skipping ${php_bin}."
@@ -77,7 +98,7 @@ if [ -n "$FRANKENPHP_BIN" ]; then
 fi
 
 if [ "$FOUND_PHP" -ne 1 ]; then
-	echo "No supported PHP installation was configured. Install PHP 8.2-8.5 before this package." >&2
+	echo "No supported PHP installation was configured. Install PHP 7.2-8.5 before this package." >&2
 	exit 1
 fi
 

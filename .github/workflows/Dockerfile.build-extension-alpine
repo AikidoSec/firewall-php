@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 
-ARG ALPINE_VERSION=3.22
+ARG ALPINE_VERSION=3.16
 ARG PHP_VERSION=8.4
 ARG PHP_ZTS=0
 
@@ -26,13 +26,16 @@ RUN git clone --depth 1 --branch "${PHP_SRC_REF}" \
       https://github.com/php/php-src.git
 
 WORKDIR /usr/src/php-src
-RUN ./buildconf --force && \
+RUN sed -i 's/\[\([0-9]\+\.[0-9]\+\.[0-9]\+\)-dev\]/[\1]/' configure.ac && \
+    ./buildconf --force && \
     if [ "${PHP_ZTS}" = "1" ]; then \
-      ZTS_FLAGS="--enable-zts"; \
+      ZTS_FLAGS="--enable-zts --enable-maintainer-zts"; \
     else \
-      ZTS_FLAGS="--disable-zts"; \
+      ZTS_FLAGS=""; \
     fi && \
-    ./configure \
+    ac_cv_func_fopencookie=no \
+    ac_cv_what_readdir_r=POSIX \
+      ./configure \
       --prefix=/usr/local \
       --with-config-file-path=/usr/local/lib \
       --with-config-file-scan-dir=/usr/local/etc/php/conf.d \

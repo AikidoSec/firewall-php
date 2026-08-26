@@ -107,5 +107,4 @@ RUN cc tools/dlopen-smoke.c -ldl -o /tmp/dlopen-smoke && \
 
 FROM scratch AS artifacts
 COPY --from=build /workspace/build/aikido-agent /
-COPY --from=build /workspace/build/aikido-request-processor.h /
 COPY --from=build /workspace/build/aikido-request-processor.so /

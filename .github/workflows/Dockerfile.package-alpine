@@ -22,8 +22,10 @@ COPY --from=package-input --chown=builder:builder / ./
 
 RUN test "$(apk --print-arch)" = "${APK_ARCH}" && \
     AIKIDO_VERSION="$(awk -F= '/^pkgver=/ { print $2 }' APKBUILD)" && \
+    cp aikido-php-firewall.post-install aikido-php-firewall.post-upgrade && \
     sed -i "s/__VERSION__/${AIKIDO_VERSION}/g" \
       aikido-php-firewall.post-install \
+      aikido-php-firewall.post-upgrade \
       aikido-php-firewall.pre-deinstall
 
 USER builder
