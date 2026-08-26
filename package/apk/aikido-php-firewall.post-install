@@ -1,0 +1,84 @@
+#!/bin/sh
+set -eu
+
+VERSION="__VERSION__"
+PAYLOAD_DIR="/opt/aikido-${VERSION}"
+FOUND_PHP=0
+
+echo "Configuring Aikido PHP Firewall v${VERSION}..."
+
+install -d -m 0777 "/var/log/aikido-${VERSION}" "/run/aikido-${VERSION}"
+
+PHP_BINS=""
+if command -v php >/dev/null 2>&1; then
+	PHP_BINS="$(command -v php)"
+fi
+
+for php_bin in /usr/bin/php /usr/local/bin/php /usr/bin/php[0-9]* /usr/local/bin/php[0-9]*; do
+	if [ -x "$php_bin" ]; then
+		case " $PHP_BINS " in
+			*" $php_bin "*) ;;
+			*) PHP_BINS="$PHP_BINS $php_bin" ;;
+		esac
+	fi
+done
+
+for php_bin in $PHP_BINS; do
+	php_version=$("$php_bin" -r 'echo PHP_MAJOR_VERSION . "." . PHP_MINOR_VERSION;' 2>/dev/null) || continue
+	extension_dir=$("$php_bin" -r 'echo ini_get("extension_dir");' 2>/dev/null) || continue
+	abi=$("$php_bin" -r 'echo PHP_ZTS ? "zts" : "nts";' 2>/dev/null) || continue
+	extension_file="$PAYLOAD_DIR/aikido-extension-php-${php_version}-${abi}.so"
+
+	if [ ! -f "$extension_file" ]; then
+		echo "Warning: no Aikido extension for PHP ${php_version} ${abi}; skipping ${php_bin}."
+		continue
+	fi
+
+	if [ ! -d "$extension_dir" ]; then
+		echo "Warning: extension directory ${extension_dir} does not exist; skipping ${php_bin}."
+		continue
+	fi
+
+	ln -sf "$extension_file" "$extension_dir/aikido-${VERSION}.so"
+
+	scan_dir=$("$php_bin" --ini 2>/dev/null | awk -F ': ' '/Scan for additional .ini files in/ { print $2; exit }')
+	case "$scan_dir" in
+		""|"(none)")
+			echo "Warning: ${php_bin} has no additional INI scan directory."
+			continue
+			;;
+	esac
+
+	mkdir -p "$scan_dir"
+	ln -sf "$PAYLOAD_DIR/aikido.ini" "$scan_dir/zz-aikido-${VERSION}.ini"
+	FOUND_PHP=1
+	echo "Configured ${php_bin} (PHP ${php_version}, ${abi})."
+done
+
+FRANKENPHP_BIN=""
+if command -v frankenphp >/dev/null 2>&1; then
+	FRANKENPHP_BIN=$(command -v frankenphp)
+elif [ -x /usr/local/bin/frankenphp ]; then
+	FRANKENPHP_BIN=/usr/local/bin/frankenphp
+elif [ -x /usr/bin/frankenphp ]; then
+	FRANKENPHP_BIN=/usr/bin/frankenphp
+fi
+
+if [ -n "$FRANKENPHP_BIN" ]; then
+	frankenphp_version=$("$FRANKENPHP_BIN" -v 2>/dev/null | sed -n 's/.*PHP \([0-9][0-9]*\.[0-9][0-9]*\).*/\1/p' | head -n 1)
+	frankenphp_extension="$PAYLOAD_DIR/aikido-extension-php-${frankenphp_version}-zts.so"
+	if [ -n "$frankenphp_version" ] && [ -f "$frankenphp_extension" ]; then
+		mkdir -p /usr/lib/frankenphp/modules /etc/frankenphp/php.d
+		ln -sf "$frankenphp_extension" "/usr/lib/frankenphp/modules/aikido-${VERSION}.so"
+		ln -sf "$PAYLOAD_DIR/aikido.ini" "/etc/frankenphp/php.d/zz-aikido-${VERSION}.ini"
+		FOUND_PHP=1
+		echo "Configured FrankenPHP (PHP ${frankenphp_version}, zts)."
+	fi
+fi
+
+if [ "$FOUND_PHP" -ne 1 ]; then
+	echo "No supported PHP installation was configured. Install PHP 8.2-8.5 before this package." >&2
+	exit 1
+fi
+
+echo "Aikido PHP Firewall v${VERSION} is configured."

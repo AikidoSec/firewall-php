@@ -1,0 +1,198 @@
+name: Build Alpine
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_call:
+
+permissions:
+  contents: read
+
+env:
+  ZEN_INTERNALS_VERSION: 0.1.64
+
+jobs:
+  build_libs:
+    name: Go libs (${{ matrix.package_arch }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            package_arch: x86_64
+          - runner: ubuntu-24.04-arm
+            package_arch: aarch64
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - name: Build and test musl Go libraries
+        run: |
+          docker build \
+            --file .github/workflows/Dockerfile.build-libs-alpine \
+            --target artifacts \
+            --output type=local,dest=out \
+            .
+
+      - name: Archive musl Go libraries
+        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4
+        with:
+          name: aikido-alpine-libs-${{ matrix.package_arch }}
+          if-no-files-found: error
+          path: |
+            out/aikido-agent
+            out/aikido-request-processor.so
+
+  build_extension:
+    name: PHP ${{ matrix.php_version }} ${{ matrix.zts == 1 && 'ZTS' || 'NTS' }} (${{ matrix.package_arch }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        php_version: ['8.2', '8.3', '8.4', '8.5']
+        zts: [0, 1]
+        package_arch: [x86_64, aarch64]
+        include:
+          - package_arch: x86_64
+            runner: ubuntu-24.04
+          - package_arch: aarch64
+            runner: ubuntu-24.04-arm
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - name: Select extension ABI
+        run: |
+          if [ "${{ matrix.zts }}" = "1" ]; then
+            echo "EXTENSION_ABI=zts" >> "$GITHUB_ENV"
+          else
+            echo "EXTENSION_ABI=nts" >> "$GITHUB_ENV"
+          fi
+
+      - name: Build and load extension
+        run: |
+          docker build \
+            --file .github/workflows/Dockerfile.build-extension-alpine \
+            --target artifact \
+            --build-arg PHP_VERSION=${{ matrix.php_version }} \
+            --build-arg PHP_ZTS=${{ matrix.zts }} \
+            --output type=local,dest=out \
+            .
+          mv out/aikido.so \
+            "out/aikido-extension-php-${{ matrix.php_version }}-${EXTENSION_ABI}.so"
+
+      - name: Archive extension
+        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4
+        with:
+          name: aikido-alpine-extension-${{ matrix.php_version }}-${{ env.EXTENSION_ABI }}-${{ matrix.package_arch }}
+          if-no-files-found: error
+          path: out/aikido-extension-php-${{ matrix.php_version }}-${{ env.EXTENSION_ABI }}.so
+
+  build_apk:
+    name: APK (${{ matrix.package_arch }})
+    needs: [build_libs, build_extension]
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            package_arch: x86_64
+            zen_sha256: 913edc48bc95e551695a37a27eb1ad49061c49befbbcd527a1bf52397a2bd52a
+          - runner: ubuntu-24.04-arm
+            package_arch: aarch64
+            zen_sha256: d6c89db778a8a21056a865c484cdb44f3940faad3814e330f2f2bb0f358965c3
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - name: Download musl Go libraries
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4
+        with:
+          name: aikido-alpine-libs-${{ matrix.package_arch }}
+          path: package-input
+
+      - name: Download PHP extensions
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4
+        with:
+          pattern: aikido-alpine-extension-*-${{ matrix.package_arch }}
+          merge-multiple: true
+          path: package-input
+
+      - name: Download and verify musl Zen Internals
+        run: |
+          ZEN_FILE="libzen_internals_${{ matrix.package_arch }}-unknown-linux-musl.so"
+          curl --fail --location --retry 3 \
+            --output package-input/libzen-internals.so \
+            "https://github.com/AikidoSec/zen-internals/releases/download/v${ZEN_INTERNALS_VERSION}/${ZEN_FILE}"
+          echo "${{ matrix.zen_sha256 }}  package-input/libzen-internals.so" | sha256sum -c -
+
+      - name: Build APK
+        run: |
+          APK_NAME="aikido-php-firewall.${{ matrix.package_arch }}.apk"
+          echo "APK_NAME=${APK_NAME}" >> "$GITHUB_ENV"
+          docker build \
+            --file .github/workflows/Dockerfile.package-alpine \
+            --build-context package-input=package-input \
+            --target artifact \
+            --build-arg APK_ARCH=${{ matrix.package_arch }} \
+            --build-arg APK_OUTPUT=${APK_NAME} \
+            --output type=local,dest=out \
+            .
+
+      - name: Install and load APK in Alpine PHP
+        run: |
+          AIKIDO_VERSION=$(awk -F= '/^pkgver=/ { print $2 }' package/apk/APKBUILD)
+          for PHP_IMAGE in php:8.4-cli-alpine3.22 php:8.4-zts-alpine3.22; do
+            docker run --rm \
+              -e AIKIDO_VERSION="${AIKIDO_VERSION}" \
+              -e AIKIDO_LOG_LEVEL=DEBUG \
+              -v "${PWD}/out/${APK_NAME}:/tmp/firewall.apk:ro" \
+              "${PHP_IMAGE}" sh -ec '
+                apk add --allow-untrusted /tmp/firewall.apk
+                php -m | grep -qx aikido
+                php -r "echo 1;" 2>&1 | tee /tmp/aikido.log
+                grep -q "Init data:" /tmp/aikido.log
+                test -x "/opt/aikido-${AIKIDO_VERSION}/aikido-agent"
+                test -f "/opt/aikido-${AIKIDO_VERSION}/aikido-request-processor.so"
+                test -f "/opt/aikido-${AIKIDO_VERSION}/libzen_internals_$(uname -m)-unknown-linux-musl.so"
+                find /usr/local/lib/php/extensions -name "aikido-${AIKIDO_VERSION}.so" -type l | grep -q .
+                apk del aikido-php-firewall
+                ! find /usr/local/lib/php/extensions -name "aikido-${AIKIDO_VERSION}.so" -type l | grep -q .
+                test ! -e "/usr/local/etc/php/conf.d/zz-aikido-${AIKIDO_VERSION}.ini"
+                test ! -e "/run/aikido-${AIKIDO_VERSION}"
+                test ! -e "/var/log/aikido-${AIKIDO_VERSION}"
+              '
+          done
+
+          docker run --rm \
+            -e AIKIDO_VERSION="${AIKIDO_VERSION}" \
+            -e AIKIDO_LOG_LEVEL=DEBUG \
+            -v "${PWD}/out/${APK_NAME}:/tmp/firewall.apk:ro" \
+            alpine:3.22 sh -ec '
+              apk add --no-cache php84
+              apk add --allow-untrusted /tmp/firewall.apk
+              php84 -m | grep -qx aikido
+              php84 -r "echo 1;" 2>&1 | tee /tmp/aikido.log
+              grep -q "Init data:" /tmp/aikido.log
+              test -L "/usr/lib/php84/modules/aikido-${AIKIDO_VERSION}.so"
+              test -L "/etc/php84/conf.d/zz-aikido-${AIKIDO_VERSION}.ini"
+              apk del aikido-php-firewall
+              test ! -e "/usr/lib/php84/modules/aikido-${AIKIDO_VERSION}.so"
+              test ! -e "/etc/php84/conf.d/zz-aikido-${AIKIDO_VERSION}.ini"
+            '
+
+      - name: Archive APK
+        uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4
+        with:
+          name: ${{ env.APK_NAME }}
+          if-no-files-found: error
+          path: out/${{ env.APK_NAME }}

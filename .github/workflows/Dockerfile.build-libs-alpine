@@ -1,0 +1,106 @@
+# syntax=docker/dockerfile:1.7
+
+FROM alpine:3.22@sha256:14358309a308569c32bdc37e2e0e9694be33a9d99e68afb0f5ff33cc1f695dce AS go-base
+
+ARG TARGETARCH
+ARG GO_VERSION=1.26.7
+ARG GO_AMD64_SHA256=ffb5f8de10c62550dfddab66b36b57030721e0a44a3218e9e1181d7b59f121ca
+ARG GO_ARM64_SHA256=5a4ec883379d51ee9ce1040d5e87f8d35e20387574dd8c947feb01eabc3c1b37
+
+RUN apk add --no-cache \
+    bash \
+    build-base \
+    ca-certificates \
+    curl \
+    file \
+    git \
+    protobuf \
+    protobuf-dev
+
+RUN case "${TARGETARCH}" in \
+      amd64) GO_SHA256="${GO_AMD64_SHA256}" ;; \
+      arm64) GO_SHA256="${GO_ARM64_SHA256}" ;; \
+      *) echo "Unsupported architecture: ${TARGETARCH}" >&2; exit 1 ;; \
+    esac && \
+    GO_ARCHIVE="go${GO_VERSION}.linux-${TARGETARCH}.tar.gz" && \
+    curl --fail --location --retry 3 \
+      --output "/tmp/${GO_ARCHIVE}" \
+      "https://go.dev/dl/${GO_ARCHIVE}" && \
+    echo "${GO_SHA256}  /tmp/${GO_ARCHIVE}" | sha256sum -c - && \
+    tar -C /usr/local -xzf "/tmp/${GO_ARCHIVE}" && \
+    rm "/tmp/${GO_ARCHIVE}"
+
+ENV GOPATH=/go \
+    GOBIN=/go/bin \
+    GOTOOLCHAIN=local \
+    PATH=/go/bin:/usr/local/go/bin:$PATH
+
+RUN go version
+
+FROM go-base AS go-source
+
+# GitHub PR #75048: cmd/link,runtime: fix c-shared dlopen on non-glibc systems.
+# Pin the exact reviewed source commit rather than the mutable PR branch.
+ARG GO_PR_REPOSITORY=https://github.com/jgowdy/go.git
+ARG GO_PR_COMMIT=1a087d05b5cf9573876b18812d8d5516f16bbe57
+
+RUN git init /usr/local/go-pr && \
+    cd /usr/local/go-pr && \
+    git remote add origin "${GO_PR_REPOSITORY}" && \
+    git fetch --depth 1 origin "${GO_PR_COMMIT}" && \
+    test "$(git rev-parse FETCH_HEAD)" = "${GO_PR_COMMIT}" && \
+    git checkout --detach FETCH_HEAD && \
+    cd src && \
+    GOROOT_BOOTSTRAP=/usr/local/go ./make.bash && \
+    /usr/local/go-pr/bin/go version && \
+    rm -rf /usr/local/go-pr/.git
+
+FROM go-base AS toolchain
+
+COPY --from=go-source /usr/local/go-pr /usr/local/go-pr
+
+RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.12 && \
+    go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.5.1
+
+FROM toolchain AS build
+
+WORKDIR /workspace
+COPY . .
+
+# Git symlinks are materialized as text files in some Windows checkouts.
+RUN if [ ! -L lib/agent/api_discovery/getDataSchema.go ]; then \
+      rm lib/agent/api_discovery/getDataSchema.go && \
+      ln -s ../../request-processor/api_discovery/getDataSchema.go \
+        lib/agent/api_discovery/getDataSchema.go; \
+    fi
+
+RUN mkdir -p build && \
+    cd lib && \
+    protoc --go_out=agent --go-grpc_out=agent ipc.proto && \
+    cd agent && \
+    go mod download && \
+    go mod verify && \
+    go test ./... && \
+    go build -buildvcs=false -ldflags "-s -w" \
+      -o ../../build/aikido-agent
+
+RUN cd lib && \
+    protoc --go_out=request-processor --go-grpc_out=request-processor ipc.proto && \
+    cd request-processor && \
+    go mod download && \
+    go mod verify && \
+    go test ./... && \
+    /usr/local/go-pr/bin/go build -buildvcs=false -ldflags "-s -w" -buildmode=c-shared \
+      -o ../../build/aikido-request-processor.so
+
+RUN cc tools/dlopen-smoke.c -ldl -o /tmp/dlopen-smoke && \
+    /tmp/dlopen-smoke build/aikido-request-processor.so && \
+    file build/aikido-agent build/aikido-request-processor.so && \
+    /usr/local/go-pr/bin/go version && \
+    go version -m build/aikido-agent && \
+    go version -m build/aikido-request-processor.so
+
+FROM scratch AS artifacts
+COPY --from=build /workspace/build/aikido-agent /
+COPY --from=build /workspace/build/aikido-request-processor.h /
+COPY --from=build /workspace/build/aikido-request-processor.so /
