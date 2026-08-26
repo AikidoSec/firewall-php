@@ -13,7 +13,7 @@ permissions:
   contents: read
 
 env:
-  ZEN_INTERNALS_VERSION: 0.1.64
+  AIKIDO_LIBZEN_VERSION: 0.1.64
 
 jobs:
   build_libs:
@@ -132,7 +132,7 @@ jobs:
           ZEN_FILE="libzen_internals_${{ matrix.package_arch }}-unknown-linux-musl.so"
           curl --fail --location --retry 3 \
             --output package-input/libzen-internals.so \
-            "https://github.com/AikidoSec/zen-internals/releases/download/v${ZEN_INTERNALS_VERSION}/${ZEN_FILE}"
+            "https://github.com/AikidoSec/zen-internals/releases/download/v${AIKIDO_LIBZEN_VERSION}/${ZEN_FILE}"
           echo "${{ matrix.zen_sha256 }}  package-input/libzen-internals.so" | sha256sum -c -
 
       - name: Build APK
