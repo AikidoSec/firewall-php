@@ -19,7 +19,7 @@
 extern zend_module_entry aikido_module_entry;
 #define phpext_aikido_ptr &aikido_module_entry
 
-#define PHP_AIKIDO_VERSION "1.5.20"
+#define PHP_AIKIDO_VERSION "1.5.21"
 
 #if defined(ZTS) && defined(COMPILE_DL_AIKIDO)
 ZEND_TSRMLS_CACHE_EXTERN()
@@ -30,7 +30,7 @@ bool environment_loaded;
 long log_level;
 bool blocking;
 bool disable;
-bool disk_logs; // When enabled, it writes logs to disk instead of stdout. It's usefull when debugging to have the logs grouped by PHP process.
+bool disk_logs; // When enabled, all configured log levels are written to disk. Otherwise, warnings and errors are written to stderr.
 bool collect_api_schema;
 // When enabled, the Agent listens for cloud config updates over a Server-Sent Events stream, on top of polling.
 bool sse;

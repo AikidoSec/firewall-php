@@ -85,7 +85,7 @@ void HookFunctions() {
     for (auto &it : HOOKED_FUNCTIONS) {
         zend_function *function_data = (zend_function *)zend_hash_str_find_ptr(CG(function_table), it.first.c_str(), it.first.length());
         if (!function_data) {
-            AIKIDO_LOG_WARN("Function \"%s\" does not exist!\n", it.first.c_str());
+            AIKIDO_LOG_INFO("Function \"%s\" does not exist!\n", it.first.c_str());
             continue;
         }
         if (it.second.original_handler) {
@@ -103,7 +103,7 @@ void UnhookFunctions() {
     for (auto &it : HOOKED_FUNCTIONS) {
         zend_function *function_data = (zend_function *)zend_hash_str_find_ptr(CG(function_table), it.first.c_str(), it.first.length());
         if (!function_data) {
-            AIKIDO_LOG_WARN("Function \"%s\" does not exist!\n", it.first.c_str());
+            AIKIDO_LOG_INFO("Function \"%s\" does not exist!\n", it.first.c_str());
             continue;
         }
         if (!it.second.original_handler) {
@@ -120,13 +120,13 @@ void HookMethods() {
     for (auto &it : HOOKED_METHODS) {
         zend_class_entry *class_entry = (zend_class_entry *)zend_hash_str_find_ptr(CG(class_table), it.first.class_name.c_str(), it.first.class_name.length());
         if (!class_entry) {
-            AIKIDO_LOG_WARN("Class \"%s\" does not exist!\n", it.first.class_name.c_str());
+            AIKIDO_LOG_INFO("Class \"%s\" does not exist!\n", it.first.class_name.c_str());
             continue;
         }
 
         zend_function *method = (zend_function *)zend_hash_str_find_ptr(&class_entry->function_table, it.first.method_name.c_str(), it.first.method_name.length());
         if (!method) {
-            AIKIDO_LOG_WARN("Method \"%s->%s\" does not exist!\n", it.first.class_name.c_str(), it.first.method_name.c_str());
+            AIKIDO_LOG_INFO("Method \"%s->%s\" does not exist!\n", it.first.class_name.c_str(), it.first.method_name.c_str());
             continue;
         }
 
@@ -145,13 +145,13 @@ void UnhookMethods() {
     for (auto &it : HOOKED_METHODS) {
         zend_class_entry *class_entry = (zend_class_entry *)zend_hash_str_find_ptr(CG(class_table), it.first.class_name.c_str(), it.first.class_name.length());
         if (!class_entry) {
-            AIKIDO_LOG_WARN("Class \"%s\" does not exist!\n", it.first.class_name.c_str());
+            AIKIDO_LOG_INFO("Class \"%s\" does not exist!\n", it.first.class_name.c_str());
             continue;
         }
 
         zend_function *method = (zend_function *)zend_hash_str_find_ptr(&class_entry->function_table, it.first.method_name.c_str(), it.first.method_name.length());
         if (!method) {
-            AIKIDO_LOG_WARN("Method \"%s->%s\" does not exist!\n", it.first.class_name.c_str(), it.first.method_name.c_str());
+            AIKIDO_LOG_INFO("Method \"%s->%s\" does not exist!\n", it.first.class_name.c_str(), it.first.method_name.c_str());
             continue;
         }
 

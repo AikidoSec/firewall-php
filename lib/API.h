@@ -67,8 +67,13 @@ enum CALLBACK_ID {
     MAX_CALLBACK_ID
 };
 
-typedef char *(*ContextCallback)(int);
+typedef struct {
+    char *data;
+    int   len;
+} CallbackResult;
 
-static char *call(ContextCallback callback, int callback_id) {
+typedef CallbackResult (*ContextCallback)(int);
+
+static CallbackResult call(ContextCallback callback, int callback_id) {
     return callback(callback_id);
 }

@@ -39,25 +39,25 @@ Prerequisites:
 
 ##### x86_64
 ```
-rpm -Uvh --oldpackage https://github.com/AikidoSec/firewall-php/releases/download/v1.5.20/aikido-php-firewall.x86_64.rpm
+rpm -Uvh --oldpackage https://github.com/AikidoSec/firewall-php/releases/download/v1.5.21/aikido-php-firewall.x86_64.rpm
 ```
 
 ##### arm64 / aarch64
 ```
-rpm -Uvh --oldpackage https://github.com/AikidoSec/firewall-php/releases/download/v1.5.20/aikido-php-firewall.aarch64.rpm
+rpm -Uvh --oldpackage https://github.com/AikidoSec/firewall-php/releases/download/v1.5.21/aikido-php-firewall.aarch64.rpm
 ```
 
 #### For Debian-based Systems (Debian, Ubuntu)
 
 ##### x86_64
 ```
-curl -L -O https://github.com/AikidoSec/firewall-php/releases/download/v1.5.20/aikido-php-firewall.x86_64.deb
+curl -L -O https://github.com/AikidoSec/firewall-php/releases/download/v1.5.21/aikido-php-firewall.x86_64.deb
 dpkg -i -E ./aikido-php-firewall.x86_64.deb
 ```
 
 ##### arm64 / aarch64
 ```
-curl -L -O https://github.com/AikidoSec/firewall-php/releases/download/v1.5.20/aikido-php-firewall.aarch64.deb
+curl -L -O https://github.com/AikidoSec/firewall-php/releases/download/v1.5.21/aikido-php-firewall.aarch64.deb
 dpkg -i -E ./aikido-php-firewall.aarch64.deb
 ```
 
@@ -108,8 +108,8 @@ Zen for PHP can do this because the monitored functions are hooked at the PHP-co
     * ✅ [`Microsoft SQL Server`](https://www.php.net/manual/en/ref.pdo-dblib.php)
     * ✅ [`SQLite`](https://www.php.net/manual/en/ref.pdo-sqlite.php)
 * ✅ [`MySQLi`](https://www.php.net/manual/en/book.mysqli.php)
+* ✅ [`PostgreSQL`](https://www.php.net/manual/en/book.pgsql.php)
 * 🚧 [`Oracle OCI8`](https://www.php.net/manual/en/book.oci8.php)
-* 🚧 [`PostgreSQL`](https://www.php.net/manual/en/book.pgsql.php)
 * 🚧 [`SQLite3`](https://www.php.net/manual/en/book.sqlite3.php)
 
 ### Outgoing requests libraries

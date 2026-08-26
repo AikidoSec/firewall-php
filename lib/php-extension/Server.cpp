@@ -27,10 +27,10 @@ zval* Server::GetServerVar() {
 std::string Server::GetVar(const char* var) {
     GET_SERVER_VAR();
     zval* data = zend_hash_str_find(Z_ARRVAL_P(serverVars), var, strlen(var));
-    if (!data) {
+    if (!data || Z_TYPE_P(data) != IS_STRING) {
         return "";
     }
-    return Z_STRVAL_P(data);
+    return std::string(Z_STRVAL_P(data), Z_STRLEN_P(data));
 }
 
 // Return the method from the query param _method (_GET["_method"])
@@ -48,7 +48,7 @@ std::string Server::GetMethodFromQuery() {
     if (Z_TYPE_P(query_method) != IS_STRING) {
         return "";
     }
-    std::string query_method_str = Z_STRVAL_P(query_method);
+    std::string query_method_str(Z_STRVAL_P(query_method), Z_STRLEN_P(query_method));
     return ToUppercase(query_method_str);
 }
  
@@ -160,9 +160,9 @@ std::string Server::GetHeaders() {
     zval* val;
     ZEND_HASH_FOREACH_STR_KEY_VAL(Z_ARRVAL_P(serverVars), key, val) {
         if (key && Z_TYPE_P(val) == IS_STRING) {
-            std::string header_name(ZSTR_VAL(key));
+            std::string header_name(ZSTR_VAL(key), ZSTR_LEN(key));
             std::string http_header_key;
-            std::string http_header_value(Z_STRVAL_P(val));
+            std::string http_header_value(Z_STRVAL_P(val), Z_STRLEN_P(val));
 
             if (header_name.find("HTTP_") == 0) {
                 http_header_key = header_name.substr(5);

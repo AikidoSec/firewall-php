@@ -6,6 +6,7 @@ import (
 
 	. "main/aikido_types"
 	"main/ipc/protos"
+	"main/log"
 	"main/utils"
 
 	"github.com/stretchr/testify/assert"
@@ -111,6 +112,7 @@ func TestAttackWaveThrottling(t *testing.T) {
 
 	t.Run("returns true and populates LastSent map when IP reaches threshold for first time", func(t *testing.T) {
 		server := &ServerData{
+			Logger: log.CreateLogger("test", "ERROR", false),
 			AttackWave: AttackWaveState{
 				Threshold:  10,
 				WindowSize: 20,

@@ -126,6 +126,13 @@ std::string ArrayToJson(zval* array) {
     return NormalizeAndDumpJson(query_json);
 }
 
+static std::string NormalizePdoSqlDialect(const std::string& dialect) {
+    if (dialect == "pgsql") {
+        return "postgres";
+    }
+    return dialect;
+}
+
 std::string GetSqlDialectFromPdo(zval *pdo_object) {
     if (!pdo_object) {
         return "unknown";
@@ -135,7 +142,7 @@ std::string GetSqlDialectFromPdo(zval *pdo_object) {
     std::string result = "unknown";
     if (CallPhpFunctionWithOneParam("getAttribute", PDO_ATTR_DRIVER_NAME, &retval, pdo_object)) {
         if (Z_TYPE(retval) == IS_STRING) {
-            result = Z_STRVAL(retval);
+            result = NormalizePdoSqlDialect(Z_STRVAL(retval));
         }
     }
     zval_ptr_dtor(&retval);

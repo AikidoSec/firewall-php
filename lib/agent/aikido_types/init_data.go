@@ -162,6 +162,9 @@ type ServerData struct {
 	// Config mutex used to sync access to configuration data across the multiple go routines that we run in parallel
 	CloudConfigMutex sync.Mutex
 
+	ConfigStreamRefreshMutex     sync.Mutex
+	ConfigStreamLastRefreshStart time.Time
+
 	// Polling data for the server, including mutex used to sync access to polling data across the go routines
 	PollingData *ServerDataPolling
 
@@ -216,9 +219,6 @@ type ServerData struct {
 	// MiddlewareInstalled boolean value to be reported on heartbeat events
 	MiddlewareInstalled uint32
 
-	// Got some request info passed via gRPC to the Agent
-	GotTraffic uint32
-
 	// Last time this server established a gRPC connection
 	LastConnectionTime int64
 
@@ -250,6 +250,10 @@ func NewServerData() *ServerData {
 		UsersQueue:              NewQueue[string](MaxNumberOfStoredUsers),
 		Packages:                make(map[string]Package),
 		PollingData:             NewServerDataPolling(),
+		StatsData: StatsDataType{
+			StartedAt:            time.Now().UnixMilli(),
+			MonitoredSinkTimings: make(map[string]MonitoredSinkTimings),
+		},
 		AttackWave: AttackWaveState{
 			Threshold:       15,             // Default: 15 requests
 			WindowSize:      1,              // Default: 1 minute

@@ -28,12 +28,17 @@ void Log::Write(AIKIDO_LOG_LEVEL level, const char* format, ...) {
         return;
     }
 
-    FILE* logFile = stdout;
-    if (AIKIDO_GLOBAL(disk_logs)) {
-        logFile = this->logFile;
+    FILE* logFile = this->logFile;
+    if (!AIKIDO_GLOBAL(disk_logs)) {
+        // Keep verbose extension logs opt-in via disk logging. Warnings and
+        // errors still need a default destination for container observability.
+        if (level < AIKIDO_LOG_LEVEL_WARN) {
+            return;
+        }
+        logFile = stderr;
     }
 
-    if (!this->logFile) {
+    if (!logFile) {
         return;
     }
 

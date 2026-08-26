@@ -40,9 +40,8 @@ using json = nlohmann::json;
 #include "zend_builtin_functions.h"
 
 #include "GoCGO.h"
-#include "GoWrappers.h"
-
 #include "../../API.h"
+#include "GoWrappers.h"
 #include "php_aikido.h"
 #include "Environment.h"
 #include "Stats.h"
