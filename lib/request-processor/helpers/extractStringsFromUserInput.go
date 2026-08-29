@@ -90,8 +90,12 @@ func ExtractStringsFromUserInput(obj interface{}, pathToPayload []PathPart, dept
 
 func ExtractResourceOrOriginal(filePath string) string {
 	if len(filePath) >= len("php://filter/") && strings.ToLower(filePath[:len("php://filter/")]) == "php://filter/" {
+		// PHP's php://filter wrapper uses strstr() to find the FIRST occurrence of
+		// "/resource=" and opens everything after it. We must match that behaviour,
+		// otherwise an attacker can append a second "/resource=<benign>" to make Zen
+		// inspect a benign host while PHP actually fetches the first (internal) one.
 		// https://github.com/php/php-src/blob/8b61c49987750b74bee19838c7f7c9fbbf53aace/ext/standard/php_fopen_wrapper.c#L348
-		index := strings.LastIndex(filePath, "/resource=")
+		index := strings.Index(filePath, "/resource=")
 		if index != -1 {
 			return filePath[index+len("/resource="):]
 		}
