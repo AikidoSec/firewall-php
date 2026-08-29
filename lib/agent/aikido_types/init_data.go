@@ -20,7 +20,7 @@ type AikidoConfigData struct {
 	PlatformVersion           string `json:"platform_version"`                       // PHP version
 	Token                     string `json:"token,omitempty"`                        // default: ''
 	Endpoint                  string `json:"endpoint,omitempty"`                     // default: 'https://guard.aikido.dev/'
-	ConfigEndpoint            string `json:"config_endpoint,omitempty"`              // default: 'https://runtime.aikido.dev/'
+	ConfigEndpoint            string `json:"config_endpoint,omitempty"`              // default: 'https://guard.aikido.dev/'
 	LogLevel                  string `json:"log_level,omitempty"`                    // default: 'INFO'
 	DiskLogs                  bool   `json:"disk_logs,omitempty"`                    // default: false
 	Blocking                  bool   `json:"blocking,omitempty"`                     // default: false
