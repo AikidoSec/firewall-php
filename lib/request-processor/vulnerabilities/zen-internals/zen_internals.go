@@ -25,6 +25,7 @@ import (
 	"main/globals"
 	"main/log"
 	"main/utils"
+	"os"
 	"unsafe"
 )
 
@@ -35,8 +36,24 @@ type ZenInternalsLibrary struct {
 
 var zenLib = &ZenInternalsLibrary{}
 
+func getZenInternalsLibPath() string {
+	arch := utils.GetArch()
+	candidates := []string{
+		fmt.Sprintf("/opt/aikido-%s/libzen_internals_%s-unknown-linux-musl.so", globals.Version, arch),
+		fmt.Sprintf("/opt/aikido-%s/libzen_internals_%s-unknown-linux-gnu.so", globals.Version, arch),
+	}
+
+	for _, candidate := range candidates {
+		if _, err := os.Stat(candidate); err == nil {
+			return candidate
+		}
+	}
+
+	return candidates[len(candidates)-1]
+}
+
 func Init() bool {
-	zenInternalsLibPath := C.CString(fmt.Sprintf("/opt/aikido-%s/libzen_internals_%s-unknown-linux-gnu.so", globals.Version, utils.GetArch()))
+	zenInternalsLibPath := C.CString(getZenInternalsLibPath())
 	defer C.free(unsafe.Pointer(zenInternalsLibPath))
 
 	handle := C.dlopen(zenInternalsLibPath, C.RTLD_LAZY)
