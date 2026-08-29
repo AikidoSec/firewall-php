@@ -18,6 +18,7 @@ class Action {
         std::string description;
         std::string ip;
         std::string userAgent;
+        int retryAfterSeconds = 0;
 
     private:
         ACTION_STATUS executeThrow(json &event);
@@ -49,4 +50,5 @@ class Action {
         char* Description();
         char* Ip();
         char* UserAgent();
+        int RetryAfterSeconds();
 };

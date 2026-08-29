@@ -38,6 +38,9 @@ ACTION_STATUS Action::executeStore(json &event) {
     if (trigger == "user-agent") {
         userAgent = event["user-agent"];
     }
+    if (event.contains("retryAfterSeconds") && event["retryAfterSeconds"].is_number()) {
+        retryAfterSeconds = event["retryAfterSeconds"].get<int>();
+    }
     return CONTINUE;
 }
 
@@ -102,6 +105,7 @@ void Action::Reset() {
     description = "";
     ip = "";
     userAgent = "";
+    retryAfterSeconds = 0;
 }
 
 bool Action::Exit() {
@@ -134,4 +138,8 @@ char *Action::Ip() {
 
 char *Action::UserAgent() {
     return (char *)userAgent.c_str();
+}
+
+int Action::RetryAfterSeconds() {
+    return retryAfterSeconds;
 }
