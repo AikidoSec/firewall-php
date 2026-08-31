@@ -26,8 +26,6 @@
 #include <chrono>
 #include <spawn.h>
 #include <fstream>
-#include <iostream>
-#include <set>
 #include <mutex>
 
 #include "3rdparty/json.hpp"

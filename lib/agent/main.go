@@ -1,28 +1,35 @@
+// Package main implements the Agent launcher and worker modes.
 package main
 
 import (
-	"C"
 	"errors"
+	"fmt"
 	. "main/aikido_types"
+	"main/constants"
 	"main/globals"
 	"main/grpc"
 	"main/log"
 	"main/machine"
 	"main/server_utils"
 	"main/utils"
+	"net"
 	"os"
+	"os/exec"
 	"os/signal"
 	"sync/atomic"
 	"syscall"
 	"time"
 )
-import (
-	"fmt"
-	"main/constants"
-)
 
 var serversCleanupChannel = make(chan struct{})
 var serversCleanupTicker = time.NewTicker(time.Minute)
+
+const (
+	agentWorkerArg       = "--agent-worker"
+	agentStartupTimeout  = 10 * time.Second
+	agentStartupInterval = 10 * time.Millisecond
+	agentStartupAttempts = 2
+)
 
 func isProcessAlive(pid int32) bool {
 	if pid <= 0 {
@@ -50,22 +57,6 @@ func serversCleanupRoutine(_ *ServerData) {
 	}
 }
 
-func writePidFile() {
-	pidFile, err := os.Create(constants.PidPath)
-	if err != nil {
-		log.Errorf(log.MainLogger, "Failed to create pid file: %v", err)
-		return
-	}
-	defer pidFile.Close()
-	pidFile.WriteString(fmt.Sprintf("%d", os.Getpid()))
-}
-
-func removePidFile() {
-	if _, err := os.Stat(constants.PidPath); err == nil {
-		os.Remove(constants.PidPath)
-	}
-}
-
 func AgentInit() (initOk bool) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -80,7 +71,6 @@ func AgentInit() (initOk bool) {
 		return false
 	}
 
-	writePidFile()
 	utils.StartPollingRoutine(serversCleanupChannel, serversCleanupTicker, serversCleanupRoutine, nil)
 
 	log.Infof(log.MainLogger, "Aikido Agent v%s started!", constants.Version)
@@ -94,21 +84,145 @@ func AgentUninit() {
 		server_utils.Unregister(serverKey)
 	}
 	grpc.Uninit()
-	removePidFile()
 	log.Infof(log.MainLogger, "Aikido Agent v%s stopped!", constants.Version)
 	log.Uninit()
 }
 
-func main() {
+func acquireAgentLock() (*os.File, error) {
+	if err := os.MkdirAll(constants.RunPath, 0777); err != nil {
+		return nil, err
+	}
+
+	runDirectory, err := os.Open(constants.RunPath)
+	if err != nil {
+		return nil, err
+	}
+	if err := syscall.Flock(int(runDirectory.Fd()), syscall.LOCK_EX|syscall.LOCK_NB); err != nil {
+		runDirectory.Close()
+		return nil, err
+	}
+
+	return runDirectory, nil
+}
+
+func startAgentWorker() (<-chan error, error) {
+	executablePath, err := os.Executable()
+	if err != nil {
+		return nil, err
+	}
+
+	command := exec.Command(executablePath, agentWorkerArg)
+	// Avoid retaining the PHP application's working directory.
+	command.Dir = "/"
+	// Keep PHP process-group shutdowns from reaching the shared worker.
+	command.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
+	if err := command.Start(); err != nil {
+		return nil, err
+	}
+
+	workerExit := make(chan error, 1)
+	// Reap candidates that fail before readiness; successful workers outlive us.
+	go func() {
+		workerExit <- command.Wait()
+	}()
+	return workerExit, nil
+}
+
+func isAgentReady() bool {
+	// Connecting rejects a stale socket path left by a crashed worker.
+	connection, err := net.DialTimeout("unix", constants.SocketPath, agentStartupInterval)
+	if err != nil {
+		return false
+	}
+	connection.Close()
+	return true
+}
+
+func runLauncher() error {
+	deadline := time.Now().Add(agentStartupTimeout)
+	startupFailures := 0
+	var workerExit <-chan error
+	for {
+		if isAgentReady() {
+			return nil
+		}
+		if time.Now().After(deadline) {
+			return fmt.Errorf("Agent startup timed out after %s", agentStartupTimeout)
+		}
+
+		if workerExit != nil {
+			select {
+			case err := <-workerExit:
+				workerExit = nil
+				if err != nil {
+					startupFailures++
+					if startupFailures == agentStartupAttempts {
+						return fmt.Errorf("Agent failed to become ready after %d startup attempts: %w", startupFailures, err)
+					}
+				}
+			default:
+				time.Sleep(agentStartupInterval)
+				continue
+			}
+		}
+
+		agentLock, err := acquireAgentLock()
+		if err == nil {
+			// The worker must own this lock for its full lifetime.
+			agentLock.Close()
+			workerExit, err = startAgentWorker()
+			if err != nil {
+				startupFailures++
+				if startupFailures == agentStartupAttempts {
+					return err
+				}
+			}
+		} else if !errors.Is(err, syscall.EWOULDBLOCK) {
+			return err
+		}
+		time.Sleep(agentStartupInterval)
+	}
+}
+
+func runWorker() error {
+	agentLock, err := acquireAgentLock()
+	if errors.Is(err, syscall.EWOULDBLOCK) {
+		// Another worker is already starting or serving.
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	defer agentLock.Close()
+
 	if !AgentInit() {
 		log.Errorf(log.MainLogger, "Agent initialization failed!")
-		os.Exit(-2)
+		return fmt.Errorf("Agent initialization failed")
 	}
+
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT)
 
 	signal := <-sigChan
 	log.Infof(log.MainLogger, "Received signal: %s", signal)
 	AgentUninit()
-	os.Exit(0)
+	return nil
+}
+
+func runCommand(arguments []string) error {
+	switch {
+	case len(arguments) == 0:
+		return runLauncher()
+	case len(arguments) == 1 && arguments[0] == agentWorkerArg:
+		return runWorker()
+	default:
+		return fmt.Errorf("unsupported Agent arguments: %v", arguments)
+	}
+}
+
+func main() {
+	if err := runCommand(os.Args[1:]); err != nil {
+		fmt.Fprintf(os.Stderr, "Aikido Agent failed: %v\n", err)
+		os.Exit(-2)
+	}
 }
