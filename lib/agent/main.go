@@ -89,8 +89,6 @@ func AgentUninit() {
 }
 
 func acquireAgentLock() (*os.File, error) {
-	// The versioned directory lock elects one worker across all PHP processes and
-	// is released automatically if that worker exits unexpectedly.
 	if err := os.MkdirAll(constants.RunPath, 0777); err != nil {
 		return nil, err
 	}
@@ -114,20 +112,16 @@ func startAgentWorker() (<-chan error, error) {
 	}
 
 	command := exec.Command(executablePath, agentWorkerArg)
-	// The worker can outlive both this launcher and its PHP process. A stable root
-	// directory and nil standard streams keep it from retaining app files or pipes;
-	// os/exec connects nil streams to the null device.
+	// Avoid retaining the PHP application's working directory.
 	command.Dir = "/"
-	// A separate session prevents PHP process-group shutdowns from stopping the
-	// shared worker. The launcher's exit is what reparents it to init or a subreaper.
+	// Keep PHP process-group shutdowns from reaching the shared worker.
 	command.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
 	if err := command.Start(); err != nil {
 		return nil, err
 	}
 
 	workerExit := make(chan error, 1)
-	// Reap candidates that exit during startup. If this candidate becomes the
-	// long-lived worker, the launcher exits and the worker is reparented.
+	// Reap candidates that fail before readiness; successful workers outlive us.
 	go func() {
 		workerExit <- command.Wait()
 	}()
@@ -135,8 +129,7 @@ func startAgentWorker() (<-chan error, error) {
 }
 
 func isAgentReady() bool {
-	// A socket path can remain after a crash, so only a successful connection
-	// proves that the selected worker is ready for PHP requests.
+	// Connecting rejects a stale socket path left by a crashed worker.
 	connection, err := net.DialTimeout("unix", constants.SocketPath, agentStartupInterval)
 	if err != nil {
 		return false
@@ -145,9 +138,6 @@ func isAgentReady() bool {
 	return true
 }
 
-// runLauncher handles the public, no-argument invocation from the PHP extension.
-// It starts a worker candidate when the Agent lock is free and waits for the
-// shared socket. A failed candidate is reaped and retried.
 func runLauncher() error {
 	deadline := time.Now().Add(agentStartupTimeout)
 	startupFailures := 0
@@ -178,8 +168,7 @@ func runLauncher() error {
 
 		agentLock, err := acquireAgentLock()
 		if err == nil {
-			// Avoid spawning while a worker is active. Candidates take the lock
-			// again themselves, so concurrent launchers can safely reach this point.
+			// The worker must own this lock for its full lifetime.
 			agentLock.Close()
 			workerExit, err = startAgentWorker()
 			if err != nil {
@@ -195,13 +184,10 @@ func runLauncher() error {
 	}
 }
 
-// runWorker handles only the launcher's private --agent-worker invocation. The
-// first candidate to lock the runtime directory owns the gRPC socket and Agent
-// services until it receives a termination signal. Other candidates exit
-// successfully because another worker is already starting or running.
 func runWorker() error {
 	agentLock, err := acquireAgentLock()
 	if errors.Is(err, syscall.EWOULDBLOCK) {
+		// Another worker is already starting or serving.
 		return nil
 	}
 	if err != nil {
@@ -223,8 +209,6 @@ func runWorker() error {
 	return nil
 }
 
-// No arguments select the public launcher role. --agent-worker selects the
-// private worker role and is accepted only with no additional arguments.
 func runCommand(arguments []string) error {
 	switch {
 	case len(arguments) == 0:
