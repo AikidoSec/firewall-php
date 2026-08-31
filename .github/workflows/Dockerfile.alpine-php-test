@@ -55,10 +55,10 @@ WORKDIR /usr/src
 RUN git clone --depth 1 --branch "${PHP_SRC_REF}" https://github.com/php/php-src.git
 WORKDIR /usr/src/php-src
 
-# PHP 7.2's grammar references helpers removed by Alpine's newer Bison.
+# PHP 7.2 and 7.3 grammars reference helpers removed by Alpine's newer Bison.
 RUN sed -i 's/\[\([0-9]\+\.[0-9]\+\.[0-9]\+\)-dev\]/[\1]/' configure.ac && \
     ./buildconf --force && \
-    if [ "${PHP_VERSION}" = "7.2" ]; then \
+    if [ "${PHP_VERSION}" = "7.2" ] || [ "${PHP_VERSION}" = "7.3" ]; then \
       sed -i -e 's/yystpcpy/strcpy/g' -e 's/yystrlen/strlen/g' \
         Zend/zend_language_parser.y; \
     fi
@@ -132,6 +132,11 @@ RUN mkdir -p /usr/local/etc/php/conf.d && \
         --disable-zend-signals \
         --enable-zend-max-execution-timers \
       ); \
+      # JIT is not exercised by these test images, and older x86_64 ZTS JIT
+      # assembly fails with Alpine's current toolchain. Opcache stays enabled.
+      if [ "${PHP_VERSION%%.*}" = "8" ]; then \
+        configure_args+=(--disable-opcache-jit); \
+      fi; \
     else \
       configure_args+=(--disable-zts --with-apxs2=/usr/bin/apxs); \
     fi && \
