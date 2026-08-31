@@ -1,0 +1,258 @@
+# syntax=docker/dockerfile:1.7
+
+ARG ALPINE_VERSION=3.22
+FROM alpine:${ALPINE_VERSION} AS base
+
+ENV LANG=C.UTF-8
+
+RUN apk add --no-cache \
+      apache2 \
+      apache2-dev \
+      autoconf \
+      bash \
+      bison \
+      build-base \
+      ca-certificates \
+      curl \
+      curl-dev \
+      git \
+      libxml2-dev \
+      libxslt-dev \
+      libzip-dev \
+      linux-headers \
+      mariadb \
+      mariadb-client \
+      mariadb-connector-c-dev \
+      nginx \
+      oniguruma-dev \
+      openssl-dev \
+      pkgconf \
+      postgresql \
+      postgresql-client \
+      postgresql-dev \
+      procps \
+      py3-flask \
+      py3-psutil \
+      py3-requests \
+      python3 \
+      re2c \
+      sqlite-dev \
+      tzdata \
+      zlib-dev
+
+SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
+
+ARG PHP_VERSION=8.4
+ARG PHP_SRC_REF=PHP-${PHP_VERSION}
+ARG PHP_ZTS=0
+ARG MAKE_JOBS
+
+ENV PHP_VERSION=${PHP_VERSION}
+
+FROM base AS php-build
+
+WORKDIR /usr/src
+RUN git clone --depth 1 --branch "${PHP_SRC_REF}" https://github.com/php/php-src.git
+WORKDIR /usr/src/php-src
+
+# PHP 7.2's grammar references helpers removed by Alpine's newer Bison.
+RUN sed -i 's/\[\([0-9]\+\.[0-9]\+\.[0-9]\+\)-dev\]/[\1]/' configure.ac && \
+    ./buildconf --force && \
+    if [ "${PHP_VERSION}" = "7.2" ]; then \
+      sed -i -e 's/yystpcpy/strcpy/g' -e 's/yystrlen/strlen/g' \
+        Zend/zend_language_parser.y; \
+    fi
+
+# Older PHP releases need small compatibility fixes for current Alpine headers.
+RUN if [ -f ext/openssl/openssl.c ] && grep -q 'REGISTER_LONG_CONSTANT("OPENSSL_SSLV23_PADDING"' ext/openssl/openssl.c; then \
+      awk '/REGISTER_LONG_CONSTANT\("OPENSSL_SSLV23_PADDING"/ { \
+        indent = $0; \
+        gsub(/[^[:space:]].*/, "", indent); \
+        print indent "#ifdef RSA_SSLV23_PADDING"; \
+        gsub(/^[[:space:]]*/, indent "    "); \
+        print; \
+        print indent "#endif"; \
+        next \
+      } \
+      { print }' ext/openssl/openssl.c > ext/openssl/openssl.c.new && \
+      mv ext/openssl/openssl.c.new ext/openssl/openssl.c; \
+    fi && \
+    if grep -q '^static void _php_list_set_error_structure(xmlErrorPtr error, const char \*msg)$' ext/libxml/libxml.c; then \
+      awk ' \
+        /^static void _php_list_set_error_structure\(xmlErrorPtr error, const char \*msg\)$/ { \
+          print "#if LIBXML_VERSION >= 21200"; \
+          print "static void _php_list_set_error_structure(const xmlError *error, const char *msg)"; \
+          print "#else"; \
+          print; \
+          print "#endif"; \
+          next \
+        } \
+        /^PHP_LIBXML_API void php_libxml_structured_error_handler\(void \*userData, xmlErrorPtr error\)$/ { \
+          print "#if LIBXML_VERSION >= 21200"; \
+          print "PHP_LIBXML_API void php_libxml_structured_error_handler(void *userData, const xmlError *error)"; \
+          print "#else"; \
+          print; \
+          print "#endif"; \
+          next \
+        } \
+        { print }' ext/libxml/libxml.c > ext/libxml/libxml.c.new && \
+      mv ext/libxml/libxml.c.new ext/libxml/libxml.c; \
+    fi
+
+RUN mkdir -p /usr/local/etc/php/conf.d && \
+    configure_args=( \
+      --prefix=/usr/local \
+      --with-config-file-path=/usr/local/etc/php \
+      --with-config-file-scan-dir=/usr/local/etc/php/conf.d \
+      --enable-fpm \
+      --enable-mbstring \
+      --enable-pcntl \
+      --enable-cgi \
+      --enable-dom \
+      --enable-xml \
+      --enable-simplexml \
+      --enable-xmlreader \
+      --enable-xmlwriter \
+      --with-xsl \
+      --with-extra-version= \
+      --with-curl \
+      --with-mysqli \
+      --with-pdo-mysql \
+      --with-pgsql \
+      --with-pdo-pgsql \
+      --with-openssl \
+      --with-zlib \
+      --with-zip \
+    ) && \
+    if [ "${PHP_ZTS}" = "1" ]; then \
+      configure_args+=( \
+        --enable-zts \
+        --enable-maintainer-zts \
+        --enable-embed \
+        --disable-zend-signals \
+        --enable-zend-max-execution-timers \
+      ); \
+    else \
+      configure_args+=(--disable-zts --with-apxs2=/usr/bin/apxs); \
+    fi && \
+    ac_cv_func_fopencookie=no \
+    ac_cv_what_readdir_r=POSIX \
+      ./configure "${configure_args[@]}" && \
+    make -j"${MAKE_JOBS:-$(nproc)}" && \
+    make install
+
+FROM base AS final
+
+ARG PHP_VERSION
+ARG PHP_ZTS
+
+COPY --from=php-build /usr/local/ /usr/local/
+COPY --from=php-build /usr/lib/apache2/ /usr/lib/apache2/
+COPY --from=php-build /etc/apache2/httpd.conf /etc/apache2/httpd.conf
+COPY frankenphp-binary/ /tmp/frankenphp-binary/
+
+ENV PATH="/usr/local/bin:${PATH}"
+
+RUN if [ -f /tmp/frankenphp-binary/frankenphp ]; then \
+      install -m 0755 /tmp/frankenphp-binary/frankenphp /usr/local/bin/frankenphp; \
+      install -m 0755 /tmp/frankenphp-binary/libwatcher-c.so.0 /usr/local/lib/libwatcher-c.so.0; \
+      ldd /usr/local/bin/frankenphp | (! grep -q 'not found'); \
+      frankenphp -v; \
+    fi && \
+    rm -rf /tmp/frankenphp-binary && \
+    ln -sf /usr/local/bin/php /usr/bin/php && \
+    ln -sf /usr/local/bin/php-cgi /usr/bin/php-cgi && \
+    ln -sf /usr/local/sbin/php-fpm /usr/sbin/php-fpm && \
+    mkdir -p /usr/lib/cgi-bin && \
+    ln -sf /usr/local/bin/php-cgi /usr/lib/cgi-bin/php-cgi && \
+    test "$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;')" = "${PHP_VERSION}" && \
+    if [ "${PHP_ZTS}" = "1" ]; then php -v | grep -q ZTS; else ! php -v | grep -q ZTS; fi && \
+    php -m | grep -qi '^curl$' && \
+    php -m | grep -qi '^mysqli$' && \
+    php -m | grep -qi '^pgsql$' && \
+    php -m | grep -qi '^pdo_pgsql$' && \
+    php -m | grep -qi '^pdo_sqlite$'
+
+RUN PHP_VER=$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;') && \
+    mkdir -p \
+      /etc/php/${PHP_VER}/fpm/pool.d \
+      /run/php-fpm \
+      /var/log/php-fpm \
+      /usr/local/etc/php-fpm.d && \
+    ln -sf /usr/local/etc/php/conf.d /etc/php/${PHP_VER}/fpm/conf.d && \
+    printf '%s\n' \
+      '[global]' \
+      'pid = /run/php-fpm/php-fpm.pid' \
+      'error_log = /var/log/php-fpm.log' \
+      'daemonize = yes' \
+      'include=/etc/php/'"${PHP_VER}"'/fpm/pool.d/*.conf' \
+      > /usr/local/etc/php-fpm.conf && \
+    printf '%s\n' \
+      '[www]' \
+      'user = root' \
+      'group = root' \
+      'listen = 127.0.0.1:9000' \
+      'pm = dynamic' \
+      'pm.max_children = 5' \
+      'pm.start_servers = 2' \
+      'pm.min_spare_servers = 1' \
+      'pm.max_spare_servers = 3' \
+      > /usr/local/etc/php-fpm.d/www.conf && \
+    ln -sf /usr/local/etc/php-fpm.conf /etc/php/${PHP_VER}/fpm/php-fpm.conf && \
+    ln -sf /usr/local/etc/php-fpm.d/www.conf /etc/php/${PHP_VER}/fpm/pool.d/www.conf && \
+    echo 'mysqli.default_socket = /run/mysqld/mysqld.sock' \
+      > /usr/local/etc/php/conf.d/mysql-socket.ini && \
+    php-fpm -t -y /usr/local/etc/php-fpm.conf
+
+RUN if [ "${PHP_ZTS}" = "0" ]; then \
+      PHP_MODULE=$(find /usr/lib/apache2 -maxdepth 1 -type f -name 'libphp*.so' | head -n 1); \
+      test -n "${PHP_MODULE}"; \
+      if [ "${PHP_VERSION%%.*}" = "7" ]; then PHP_MODULE_NAME=php7_module; else PHP_MODULE_NAME=php_module; fi; \
+      sed -i "s|^LoadModule php.*_module .*libphp.*\\.so$|LoadModule ${PHP_MODULE_NAME} ${PHP_MODULE}|" \
+        /etc/apache2/httpd.conf; \
+      grep -q "^LoadModule ${PHP_MODULE_NAME} ${PHP_MODULE}$" /etc/apache2/httpd.conf; \
+      printf '%s\n' \
+        '<IfModule '"${PHP_MODULE_NAME}"'>' \
+        '  PHPIniDir /usr/local/etc/php' \
+        '  <FilesMatch \.php$>' \
+        '    SetHandler application/x-httpd-php' \
+        '  </FilesMatch>' \
+        '</IfModule>' \
+        > /etc/apache2/conf.d/php.conf; \
+      sed -i 's/^#LoadModule rewrite_module/LoadModule rewrite_module/' /etc/apache2/httpd.conf; \
+      httpd -M | grep -q php; \
+    fi && \
+    ln -sf /etc/apache2/mime.types /etc/mime.types
+
+RUN printf '%s\n' \
+      '#!/usr/bin/env bash' \
+      'set -euo pipefail' \
+      'install -d -m 0755 -o mysql -g mysql /run/mysqld' \
+      'if [ ! -d /var/lib/mysql/mysql ]; then' \
+      '  mariadb-install-db --user=mysql --datadir=/var/lib/mysql' \
+      'fi' \
+      'mariadbd --user=mysql --datadir=/var/lib/mysql --bind-address=127.0.0.1 --skip-networking=0 &' \
+      'pid=$!' \
+      'for i in {1..30}; do mariadb-admin ping --silent && break; sleep 1; done' \
+      'mariadb -u root -e "CREATE DATABASE IF NOT EXISTS db;"' \
+      'mariadb -u root -e "ALTER USER '\''root'\''@'\''localhost'\'' IDENTIFIED BY '\''pwd'\''; FLUSH PRIVILEGES;"' \
+      'wait "$pid"' \
+      > /usr/local/bin/start-mariadb && \
+    chmod +x /usr/local/bin/start-mariadb
+
+RUN printf '%s\n' \
+      '#!/usr/bin/env bash' \
+      'set -euo pipefail' \
+      'install -d -m 0700 -o postgres -g postgres /var/lib/postgresql/data' \
+      'install -d -m 0755 -o postgres -g postgres /run/postgresql' \
+      'if [ ! -f /var/lib/postgresql/data/PG_VERSION ]; then' \
+      '  su postgres -c "initdb -D /var/lib/postgresql/data"' \
+      'fi' \
+      'su postgres -c "pg_ctl -D /var/lib/postgresql/data -l /tmp/postgresql.log -w start"' \
+      'su postgres -c "psql -c \"ALTER USER postgres PASSWORD '\''postgres'\'';\""' \
+      'su postgres -c "psql -tc \"SELECT 1 FROM pg_database WHERE datname = '\''zen_test'\''\"" | grep -q 1 || su postgres -c "createdb zen_test"' \
+      > /usr/local/bin/start-postgres && \
+    chmod +x /usr/local/bin/start-postgres
+
+WORKDIR /work
+CMD ["/bin/bash"]

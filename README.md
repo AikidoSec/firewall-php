@@ -30,7 +30,7 @@ Zen for PHP comes as a single package that needs to be installed on the system t
 
 Prerequisites:
 * Ensure you have sudo privileges on your system.
-* Check that you have a supported PHP version installed (PHP version >= 7.2 and tested up to 8.5).
+* Check that you have a supported PHP version installed (PHP version >= 7.2 and tested up to 8.5). See the [support matrix](./docs/support-matrix.md) for platform and runtime details.
 * Make sure to use the appropriate commands for your system or cloud provider.
 
 ### Manual install
@@ -63,6 +63,18 @@ dpkg -i -E ./aikido-php-firewall.aarch64.deb
 
 We support Debian >= 11 and Ubuntu >= 20.04.
 You can run on Debian 10, by doing this setup before install: [Debian10 setup](./docs/debian10.md)
+
+#### For Alpine Linux
+
+Alpine 3.20 or newer is supported. Download the APK matching your architecture:
+
+```
+ARCH="$(uname -m)"
+curl -L -O "https://github.com/AikidoSec/firewall-php/releases/download/v1.5.22/aikido-php-firewall.${ARCH}.apk"
+apk add --allow-untrusted "./aikido-php-firewall.${ARCH}.apk"
+```
+
+The APK is distributed as a standalone package, so its signing key is not installed in Alpine. This is why `--allow-untrusted` is required.
 
 #### Deployment setup
 - [Caddy & PHP-FPM](./docs/caddy-php-fpm.md)
@@ -195,6 +207,12 @@ rpm -e aikido-php-firewall
 
 ```
 dpkg --purge aikido-php-firewall
+```
+
+#### For Alpine Linux
+
+```
+apk del aikido-php-firewall
 ```
 
 ## Bug bounty program

@@ -36,14 +36,9 @@ jobs:
   build:
     needs: validate_version
     uses: ./.github/workflows/build.yml
-
-  build_alpine:
-    needs: validate_version
-    uses: ./.github/workflows/build-alpine.yml
-
   release:
     runs-on: open-source-releaser
-    needs: [build, build_alpine]
+    needs: build
     permissions:
       contents: write
     steps:

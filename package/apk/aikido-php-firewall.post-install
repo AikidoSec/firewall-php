@@ -43,7 +43,7 @@ for php_bin in $PHP_BINS; do
 
 	if [ -n "$OLD_VERSION" ]; then
 		rm -f "$extension_dir/aikido-${OLD_VERSION}.so"
-		old_scan_dir=$("$php_bin" --ini 2>/dev/null | awk -F ': ' '/Scan for additional .ini files in/ { print $2; exit }')
+		old_scan_dir=$("$php_bin" --ini 2>/dev/null | awk -F ': ' '/Scan for additional .ini files in/ { gsub(/^"|"$/, "", $2); print $2; exit }')
 		case "$old_scan_dir" in
 			""|"(none)") ;;
 			*) rm -f "$old_scan_dir/zz-aikido-${OLD_VERSION}.ini" ;;
@@ -62,7 +62,7 @@ for php_bin in $PHP_BINS; do
 
 	ln -sf "$extension_file" "$extension_dir/aikido-${VERSION}.so"
 
-	scan_dir=$("$php_bin" --ini 2>/dev/null | awk -F ': ' '/Scan for additional .ini files in/ { print $2; exit }')
+	scan_dir=$("$php_bin" --ini 2>/dev/null | awk -F ': ' '/Scan for additional .ini files in/ { gsub(/^"|"$/, "", $2); print $2; exit }')
 	case "$scan_dir" in
 		""|"(none)")
 			echo "Warning: ${php_bin} has no additional INI scan directory."

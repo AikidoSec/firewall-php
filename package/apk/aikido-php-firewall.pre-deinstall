@@ -21,7 +21,7 @@ done
 
 for php_bin in $PHP_BINS; do
 	extension_dir=$("$php_bin" -r 'echo ini_get("extension_dir");' 2>/dev/null) || continue
-	scan_dir=$("$php_bin" --ini 2>/dev/null | awk -F ': ' '/Scan for additional .ini files in/ { print $2; exit }')
+	scan_dir=$("$php_bin" --ini 2>/dev/null | awk -F ': ' '/Scan for additional .ini files in/ { gsub(/^"|"$/, "", $2); print $2; exit }')
 	rm -f "$extension_dir/aikido-${VERSION}.so"
 	case "$scan_dir" in
 		""|"(none)") ;;

@@ -67,44 +67,6 @@ RUN go version && \
     go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.12 && \
     go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.5.1
 
-FROM toolchain AS build
-
 WORKDIR /workspace
-COPY . .
 
-# Git symlinks are materialized as text files in some Windows checkouts.
-RUN if [ ! -L lib/agent/api_discovery/getDataSchema.go ]; then \
-      rm lib/agent/api_discovery/getDataSchema.go && \
-      ln -s ../../request-processor/api_discovery/getDataSchema.go \
-        lib/agent/api_discovery/getDataSchema.go; \
-    fi
-
-RUN mkdir -p build && \
-    cd lib && \
-    protoc --go_out=agent --go-grpc_out=agent ipc.proto && \
-    cd agent && \
-    go mod download && \
-    go mod verify && \
-    go test -ldflags "-linkmode=external" ./... && \
-    go build -buildvcs=false -ldflags "-s -w -linkmode=external" \
-      -o ../../build/aikido-agent
-
-RUN cd lib && \
-    protoc --go_out=request-processor --go-grpc_out=request-processor ipc.proto && \
-    cd request-processor && \
-    go mod download && \
-    go mod verify && \
-    go test -ldflags "-linkmode=external" ./... && \
-    go build -buildvcs=false -ldflags "-s -w -linkmode=external" -buildmode=c-shared \
-      -o ../../build/aikido-request-processor.so
-
-RUN cc tools/dlopen-smoke.c -ldl -o /tmp/dlopen-smoke && \
-    /tmp/dlopen-smoke build/aikido-request-processor.so && \
-    file build/aikido-agent build/aikido-request-processor.so && \
-    go version && \
-    go version -m build/aikido-agent && \
-    go version -m build/aikido-request-processor.so
-
-FROM scratch AS artifacts
-COPY --from=build /workspace/build/aikido-agent /
-COPY --from=build /workspace/build/aikido-request-processor.so /
+CMD ["/bin/bash"]
