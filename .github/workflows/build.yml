@@ -397,13 +397,12 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Restore repository symlink
-        run: |
-          if [ ! -L lib/agent/api_discovery/getDataSchema.go ]; then
-            rm lib/agent/api_discovery/getDataSchema.go
-            ln -s ../../request-processor/api_discovery/getDataSchema.go \
-              lib/agent/api_discovery/getDataSchema.go
-          fi
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and test musl Go libraries
         run: |
