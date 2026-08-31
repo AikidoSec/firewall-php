@@ -382,8 +382,6 @@ jobs:
   build_alpine_libs:
     name: Build Alpine Go libs ${{ matrix.package_arch }}
     runs-on: ${{ matrix.runner }}
-    container:
-      image: ghcr.io/aikidosec/firewall-php-build-libs-alpine:v1
     strategy:
       fail-fast: false
       matrix:
@@ -410,32 +408,37 @@ jobs:
       - name: Build and test musl Go libraries
         run: |
           mkdir -p build
-          cd lib
-          protoc --go_out=agent --go-grpc_out=agent ipc.proto
-          cd agent
-          go mod download
-          go mod verify
-          go test -ldflags "-linkmode=external" ./...
-          go build -buildvcs=false -ldflags "-s -w -linkmode=external" \
-            -o ../../build/aikido-agent
+          docker run --rm \
+            -v "${PWD}:/source" \
+            -w /source \
+            ghcr.io/aikidosec/firewall-php-build-libs-alpine:v1 sh -ec '
+              cd lib
+              protoc --go_out=agent --go-grpc_out=agent ipc.proto
+              cd agent
+              go mod download
+              go mod verify
+              go test -ldflags "-linkmode=external" ./...
+              go build -buildvcs=false -ldflags "-s -w -linkmode=external" \
+                -o ../../build/aikido-agent
 
-          cd ..
-          protoc --go_out=request-processor --go-grpc_out=request-processor ipc.proto
-          cd request-processor
-          go mod download
-          go mod verify
-          go test -ldflags "-linkmode=external" ./...
-          go build -buildvcs=false -ldflags "-s -w -linkmode=external" \
-            -buildmode=c-shared \
-            -o ../../build/aikido-request-processor.so
+              cd ..
+              protoc --go_out=request-processor --go-grpc_out=request-processor ipc.proto
+              cd request-processor
+              go mod download
+              go mod verify
+              go test -ldflags "-linkmode=external" ./...
+              go build -buildvcs=false -ldflags "-s -w -linkmode=external" \
+                -buildmode=c-shared \
+                -o ../../build/aikido-request-processor.so
 
-          cd ../..
-          cc tools/dlopen-smoke.c -ldl -o /tmp/dlopen-smoke
-          /tmp/dlopen-smoke build/aikido-request-processor.so
-          file build/aikido-agent build/aikido-request-processor.so
-          go version
-          go version -m build/aikido-agent
-          go version -m build/aikido-request-processor.so
+              cd ../..
+              cc tools/dlopen-smoke.c -ldl -o /tmp/dlopen-smoke
+              /tmp/dlopen-smoke build/aikido-request-processor.so
+              file build/aikido-agent build/aikido-request-processor.so
+              go version
+              go version -m build/aikido-agent
+              go version -m build/aikido-request-processor.so
+            '
 
       - name: Archive musl Go libraries
         uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4
