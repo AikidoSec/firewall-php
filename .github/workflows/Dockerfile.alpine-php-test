@@ -171,12 +171,14 @@ RUN if [ -f /tmp/frankenphp-binary/frankenphp ]; then \
     mkdir -p /usr/lib/cgi-bin && \
     ln -sf /usr/local/bin/php-cgi /usr/lib/cgi-bin/php-cgi && \
     test "$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;')" = "${PHP_VERSION}" && \
-    if [ "${PHP_ZTS}" = "1" ]; then php -v | grep -q ZTS; else ! php -v | grep -q ZTS; fi && \
-    php -m | grep -qi '^curl$' && \
-    php -m | grep -qi '^mysqli$' && \
-    php -m | grep -qi '^pgsql$' && \
-    php -m | grep -qi '^pdo_pgsql$' && \
-    php -m | grep -qi '^pdo_sqlite$'
+    PHP_INFO="$(php -v)" && \
+    if [ "${PHP_ZTS}" = "1" ]; then grep -q ZTS <<< "${PHP_INFO}"; else ! grep -q ZTS <<< "${PHP_INFO}"; fi && \
+    PHP_MODULES="$(php -m)" && \
+    grep -qi '^curl$' <<< "${PHP_MODULES}" && \
+    grep -qi '^mysqli$' <<< "${PHP_MODULES}" && \
+    grep -qi '^pgsql$' <<< "${PHP_MODULES}" && \
+    grep -qi '^pdo_pgsql$' <<< "${PHP_MODULES}" && \
+    grep -qi '^pdo_sqlite$' <<< "${PHP_MODULES}"
 
 RUN PHP_VER=$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;') && \
     mkdir -p \
