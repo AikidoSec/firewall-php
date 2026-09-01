@@ -16,7 +16,6 @@ RUN apk add --no-cache \
       curl \
       curl-dev \
       git \
-      github-cli \
       libxml2-dev \
       libxslt-dev \
       libzip-dev \

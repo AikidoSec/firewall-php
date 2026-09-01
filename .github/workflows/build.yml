@@ -667,9 +667,8 @@ jobs:
     needs: [build_apk]
     permissions: { actions: read, contents: read, packages: read }
     runs-on: ubuntu-24.04${{ matrix.arch }}
-    container:
-      image: ghcr.io/aikidosec/firewall-php-test-alpine-${{ matrix.abi }}:${{ matrix.php_version }}-v1
-      options: --privileged
+    env:
+      TEST_IMAGE: ghcr.io/aikidosec/firewall-php-test-alpine-${{ matrix.abi }}:${{ matrix.php_version }}-v1
     strategy:
       fail-fast: false
       matrix:
@@ -681,16 +680,13 @@ jobs:
           - abi: zts
             server: apache-mod-php
 
-    # JavaScript actions cannot run in Alpine ARM job containers, so checkout and
-    # artifact download use the native Git and GitHub CLI clients from the image.
+    # JavaScript actions run on Ubuntu because Alpine ARM job containers do not
+    # support them. The PHP tests still run inside the Alpine image.
     steps:
       - name: Checkout repository
-        run: |
-          git config --global --add safe.directory "${GITHUB_WORKSPACE}"
-          git init .
-          git remote add origin "https://github.com/${GITHUB_REPOSITORY}.git"
-          git fetch --no-tags --depth=1 origin "${GITHUB_REF}"
-          git checkout --detach FETCH_HEAD
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          persist-credentials: false
 
       - name: Get package details
         run: |
@@ -698,72 +694,92 @@ jobs:
           echo "APK_NAME=aikido-php-firewall.${ARCH}.apk" >> "$GITHUB_ENV"
           AIKIDO_VERSION=$(awk -F= '/^pkgver=/ { print $2 }' package/apk/APKBUILD)
           echo "AIKIDO_VERSION=${AIKIDO_VERSION}" >> "$GITHUB_ENV"
-          php -v
-          if [ "${{ matrix.abi }}" = "zts" ]; then
-            php -v | grep -q ZTS
-          else
-            if php -v | grep -q ZTS; then
-              echo "Expected an NTS PHP build" >&2
-              exit 1
-            fi
-          fi
 
       - name: Download APK
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4
+        with:
+          name: ${{ env.APK_NAME }}
+          path: package-input
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run Alpine PHP tests
         env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh run download "${GITHUB_RUN_ID}" --repo "${GITHUB_REPOSITORY}" --name "${APK_NAME}" --dir package-input
-
-      - name: Start MariaDB
+          ABI: ${{ matrix.abi }}
+          EXPECTED_PHP_VERSION: ${{ matrix.php_version }}
+          SERVER: ${{ matrix.server }}
         run: |
-          start-mariadb &
-          for _ in $(seq 1 30); do
-            mysql -h 127.0.0.1 -u root -ppwd -e "SELECT 1" && exit 0
-            sleep 1
-          done
-          exit 1
+          docker run --rm --privileged --interactive \
+            --env ABI \
+            --env AIKIDO_VERSION \
+            --env APK_NAME \
+            --env EXPECTED_PHP_VERSION \
+            --env SERVER \
+            --volume "${GITHUB_WORKSPACE}:/work" \
+            --workdir /work \
+            "${TEST_IMAGE}" bash -euo pipefail <<'BASH'
+              test "$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;')" = "${EXPECTED_PHP_VERSION}"
+              PHP_INFO="$(php -v)"
+              printf "%s\n" "${PHP_INFO}"
+              if [ "${ABI}" = "zts" ]; then
+                grep -q ZTS <<< "${PHP_INFO}"
+              else
+                ! grep -q ZTS <<< "${PHP_INFO}"
+              fi
 
-      - name: Start PostgreSQL
-        run: |
-          start-postgres
-          PGPASSWORD=postgres psql -h 127.0.0.1 -U postgres -d zen_test -c "SELECT 1"
+              start-mariadb >/tmp/mariadb.log 2>&1 &
+              MARIADB_READY=0
+              for _ in $(seq 1 30); do
+                if mysql -h 127.0.0.1 -u root -ppwd -e "SELECT 1"; then
+                  MARIADB_READY=1
+                  break
+                fi
+                sleep 1
+              done
+              if [ "${MARIADB_READY}" -ne 1 ]; then
+                cat /tmp/mariadb.log
+                exit 1
+              fi
 
-      - name: Install APK
-        run: apk add --allow-untrusted "package-input/${APK_NAME}"
+              start-postgres
+              PGPASSWORD=postgres psql -h 127.0.0.1 -U postgres -d zen_test -c "SELECT 1"
+              apk add --allow-untrusted "package-input/${APK_NAME}"
 
-      - name: Run CLI tests
-        run: |
-          export TEST_PHP_EXECUTABLE=/usr/local/bin/php
-          export TEST_PHP_CGI_EXECUTABLE=/usr/local/bin/php-cgi
-          cd lib/php-extension
-          phpize
-          cd ../..
-          php lib/php-extension/run-tests.php ./tests/cli
+              export TEST_PHP_EXECUTABLE=/usr/local/bin/php
+              export TEST_PHP_CGI_EXECUTABLE=/usr/local/bin/php-cgi
+              cd lib/php-extension
+              phpize
+              cd ../..
+              php lib/php-extension/run-tests.php ./tests/cli
 
-      - name: Run ${{ matrix.server }} server tests
-        run: |
-          cd tools
-          python3 run_server_tests.py ../tests/server ../tests/testlib --server=${{ matrix.server }} --max-runs=3
+              cd tools
+              python3 run_server_tests.py ../tests/server ../tests/testlib \
+                --server="${SERVER}" --max-runs=3
+              cd ..
 
-      - name: Verify APK removal
-        if: matrix.server == 'php-built-in'
-        run: |
-          EXTENSION_DIR=$(php -r 'echo ini_get("extension_dir");')
-          apk del aikido-php-firewall
-          test ! -e "${EXTENSION_DIR}/aikido-${AIKIDO_VERSION}.so"
-          test ! -e "/usr/local/etc/php/conf.d/zz-aikido-${AIKIDO_VERSION}.ini"
-          test ! -e "/run/aikido-${AIKIDO_VERSION}"
-          test ! -e "/var/log/aikido-${AIKIDO_VERSION}"
+              if [ "${SERVER}" = "php-built-in" ]; then
+                EXTENSION_DIR=$(php -r 'echo ini_get("extension_dir");')
+                apk del aikido-php-firewall
+                test ! -e "${EXTENSION_DIR}/aikido-${AIKIDO_VERSION}.so"
+                test ! -e "/usr/local/etc/php/conf.d/zz-aikido-${AIKIDO_VERSION}.ini"
+                test ! -e "/run/aikido-${AIKIDO_VERSION}"
+                test ! -e "/var/log/aikido-${AIKIDO_VERSION}"
+              fi
+          BASH
 
   test_php_frankenphp_alpine:
     name: Alpine FrankenPHP php-${{ matrix.php_version }} ${{ matrix.server }} ${{ matrix.arch == '' && 'x86_64' || 'arm' }}
     needs: [build_apk]
     permissions: { actions: read, contents: read, packages: read }
     runs-on: ubuntu-24.04${{ matrix.arch }}
-    container:
-      image: ghcr.io/aikidosec/firewall-php-test-alpine-zts:${{ matrix.php_version }}-v1
-      options: --privileged
     env:
       AIKIDO_LOG_LEVEL: DEBUG
+      TEST_IMAGE: ghcr.io/aikidosec/firewall-php-test-alpine-zts:${{ matrix.php_version }}-v1
     strategy:
       fail-fast: false
       matrix:
@@ -771,16 +787,13 @@ jobs:
         server: [frankenphp-worker, frankenphp-classic]
         arch: ['', '-arm']
 
-    # JavaScript actions cannot run in Alpine ARM job containers, so checkout and
-    # artifact download use the native Git and GitHub CLI clients from the image.
+    # JavaScript actions run on Ubuntu because Alpine ARM job containers do not
+    # support them. The FrankenPHP tests still run inside the Alpine image.
     steps:
       - name: Checkout repository
-        run: |
-          git config --global --add safe.directory "${GITHUB_WORKSPACE}"
-          git init .
-          git remote add origin "https://github.com/${GITHUB_REPOSITORY}.git"
-          git fetch --no-tags --depth=1 origin "${GITHUB_REF}"
-          git checkout --detach FETCH_HEAD
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          persist-credentials: false
 
       - name: Get package details
         run: |
@@ -788,45 +801,72 @@ jobs:
           echo "APK_NAME=aikido-php-firewall.${ARCH}.apk" >> "$GITHUB_ENV"
           AIKIDO_VERSION=$(awk -F= '/^pkgver=/ { print $2 }' package/apk/APKBUILD)
           echo "AIKIDO_VERSION=${AIKIDO_VERSION}" >> "$GITHUB_ENV"
-          frankenphp -v | grep -q "PHP ${{ matrix.php_version }}"
-          php -v | grep -q ZTS
-          php -m | grep -qi '^mysqli$'
 
       - name: Download APK
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4
+        with:
+          name: ${{ env.APK_NAME }}
+          path: package-input
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run Alpine FrankenPHP tests
         env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh run download "${GITHUB_RUN_ID}" --repo "${GITHUB_REPOSITORY}" --name "${APK_NAME}" --dir package-input
-
-      - name: Start MariaDB
+          EXPECTED_PHP_VERSION: ${{ matrix.php_version }}
+          SERVER: ${{ matrix.server }}
         run: |
-          start-mariadb >/tmp/mariadb.log 2>&1 &
-          for _ in $(seq 1 30); do
-            mysql -h 127.0.0.1 -u root -ppwd -e "SELECT 1" && exit 0
-            sleep 1
-          done
-          cat /tmp/mariadb.log
-          exit 1
+          docker run --rm --privileged --interactive \
+            --env AIKIDO_LOG_LEVEL \
+            --env AIKIDO_VERSION \
+            --env APK_NAME \
+            --env EXPECTED_PHP_VERSION \
+            --env SERVER \
+            --volume "${GITHUB_WORKSPACE}:/work" \
+            --workdir /work \
+            "${TEST_IMAGE}" bash -euo pipefail <<'BASH'
+              FRANKENPHP_INFO="$(frankenphp -v)"
+              grep -q "PHP ${EXPECTED_PHP_VERSION}" <<< "${FRANKENPHP_INFO}"
+              PHP_INFO="$(php -v)"
+              grep -q ZTS <<< "${PHP_INFO}"
+              PHP_MODULES="$(php -m)"
+              grep -qi "^mysqli$" <<< "${PHP_MODULES}"
 
-      - name: Install APK and verify FrankenPHP loading
-        run: |
-          apk add --allow-untrusted "package-input/${APK_NAME}"
-          test -L /usr/lib/frankenphp/modules/aikido-*.so
-          test -L /etc/frankenphp/php.d/zz-aikido-*.ini
-          printf '%s\n' '<?php exit(extension_loaded("aikido") ? 0 : 1);' > /tmp/check-aikido.php
-          frankenphp php-cli /tmp/check-aikido.php
+              start-mariadb >/tmp/mariadb.log 2>&1 &
+              MARIADB_READY=0
+              for _ in $(seq 1 30); do
+                if mysql -h 127.0.0.1 -u root -ppwd -e "SELECT 1"; then
+                  MARIADB_READY=1
+                  break
+                fi
+                sleep 1
+              done
+              if [ "${MARIADB_READY}" -ne 1 ]; then
+                cat /tmp/mariadb.log
+                exit 1
+              fi
 
-      - name: Run ${{ matrix.server }} server tests
-        run: |
-          cd tools
-          python3 run_server_tests.py ../tests/server ../tests/testlib --server=${{ matrix.server }} --max-runs=3
+              apk add --allow-untrusted "package-input/${APK_NAME}"
+              test -L /usr/lib/frankenphp/modules/aikido-*.so
+              test -L /etc/frankenphp/php.d/zz-aikido-*.ini
+              printf '%s\n' '<?php exit(extension_loaded("aikido") ? 0 : 1);' > /tmp/check-aikido.php
+              frankenphp php-cli /tmp/check-aikido.php
 
-      - name: Verify APK removal
-        run: |
-          apk del aikido-php-firewall
-          ! find /usr/lib/frankenphp/modules -name 'aikido-*.so' -type l | grep -q .
-          ! find /etc/frankenphp/php.d -name 'zz-aikido-*.ini' -type l | grep -q .
-          test ! -e "/run/aikido-${AIKIDO_VERSION}"
-          test ! -e "/var/log/aikido-${AIKIDO_VERSION}"
+              cd tools
+              python3 run_server_tests.py ../tests/server ../tests/testlib \
+                --server="${SERVER}" --max-runs=3
+              cd ..
+
+              apk del aikido-php-firewall
+              ! find /usr/lib/frankenphp/modules -name "aikido-*.so" -type l | grep -q .
+              ! find /etc/frankenphp/php.d -name "zz-aikido-*.ini" -type l | grep -q .
+              test ! -e "/run/aikido-${AIKIDO_VERSION}"
+              test ! -e "/var/log/aikido-${AIKIDO_VERSION}"
+          BASH
 
   test_php_centos:
     name: CentOS NTS php-${{ matrix.php_version }} ${{ matrix.server }} ${{ matrix.arch == '' && 'x86_64' || 'arm' }}
