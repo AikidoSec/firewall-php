@@ -686,6 +686,7 @@ jobs:
     steps:
       - name: Checkout repository
         run: |
+          git config --global --add safe.directory "${GITHUB_WORKSPACE}"
           git init .
           git remote add origin "https://github.com/${GITHUB_REPOSITORY}.git"
           git fetch --no-tags --depth=1 origin "${GITHUB_REF}"
@@ -775,6 +776,7 @@ jobs:
     steps:
       - name: Checkout repository
         run: |
+          git config --global --add safe.directory "${GITHUB_WORKSPACE}"
           git init .
           git remote add origin "https://github.com/${GITHUB_REPOSITORY}.git"
           git fetch --no-tags --depth=1 origin "${GITHUB_REF}"
