@@ -53,6 +53,7 @@ using json = nlohmann::json;
 
 #include "Handle.h"
 #include "HandleUsers.h"
+#include "HandleIdorProtection.h"
 #include "HandleSetToken.h"
 #include "HandleRegisterParamMatcher.h"
 #include "HandleWorkerLifecycle.h"

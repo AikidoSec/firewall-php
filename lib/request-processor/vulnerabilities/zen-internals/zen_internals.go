@@ -7,6 +7,8 @@ package zen_internals
 
 typedef int (*detect_sql_injection_func)(const char*, size_t, const char*, size_t, int);
 typedef int (*detect_shell_injection_func)(const char*, const char*);
+typedef char* (*idor_analyze_sql_func)(const unsigned char*, size_t, int);
+typedef void (*free_string_func)(char*);
 
 int call_detect_shell_injection(detect_shell_injection_func func, const char* command, const char* user_input) {
     return func(command, user_input);
@@ -17,6 +19,14 @@ int call_detect_sql_injection(detect_sql_injection_func func,
                               const char* input, size_t input_len,
                               int sql_dialect) {
     return func(query, query_len, input, input_len, sql_dialect);
+}
+
+char* call_idor_analyze_sql(idor_analyze_sql_func func, const unsigned char* query, size_t query_len, int dialect) {
+    return func(query, query_len, dialect);
+}
+
+void call_free_string(free_string_func func, char* ptr) {
+    func(ptr);
 }
 */
 import "C"
@@ -31,6 +41,8 @@ import (
 type ZenInternalsLibrary struct {
 	handle             unsafe.Pointer
 	detectSqlInjection C.detect_sql_injection_func
+	idorAnalyzeSql     C.idor_analyze_sql_func
+	freeString         C.free_string_func
 }
 
 var zenLib = &ZenInternalsLibrary{}
@@ -55,14 +67,38 @@ func Init() bool {
 		return false
 	}
 
+	idorAnalyzeSqlFnName := C.CString("idor_analyze_sql_ffi")
+	defer C.free(unsafe.Pointer(idorAnalyzeSqlFnName))
+	freeStringFnName := C.CString("free_string")
+	defer C.free(unsafe.Pointer(freeStringFnName))
+
+	vIdorAnalyzeSql := C.dlsym(handle, idorAnalyzeSqlFnName)
+	if vIdorAnalyzeSql == nil {
+		log.Error(nil, "Failed to load idor_analyze_sql_ffi function from zen-internals library!")
+		C.dlclose(handle)
+		return false
+	}
+
+	vFreeString := C.dlsym(handle, freeStringFnName)
+	if vFreeString == nil {
+		log.Error(nil, "Failed to load free_string function from zen-internals library!")
+		C.dlclose(handle)
+		return false
+	}
+
 	zenLib.handle = handle
 	zenLib.detectSqlInjection = (C.detect_sql_injection_func)(vDetectSqlInjection)
+	zenLib.idorAnalyzeSql = (C.idor_analyze_sql_func)(vIdorAnalyzeSql)
+	zenLib.freeString = (C.free_string_func)(vFreeString)
+
 	log.Debugf(nil, "Loaded zen-internals library!")
 	return true
 }
 
 func Uninit() {
 	zenLib.detectSqlInjection = nil
+	zenLib.idorAnalyzeSql = nil
+	zenLib.freeString = nil
 
 	if zenLib.handle != nil {
 		C.dlclose(zenLib.handle)
@@ -93,5 +129,27 @@ func DetectSQLInjection(query string, user_input string, dialect int) int {
 		C.int(dialect)))
 
 	log.Debugf(nil, "DetectSqlInjection(\"%s\", \"%s\", %d) -> %d", query, user_input, dialect, result)
+	return result
+}
+
+// IdorAnalyzeSql returns the raw JSON result from zen-internals, or "" if unavailable.
+func IdorAnalyzeSql(query string, dialect int) string {
+	analyzeFn := zenLib.idorAnalyzeSql
+	freeFn := zenLib.freeString
+	if analyzeFn == nil || freeFn == nil {
+		return ""
+	}
+
+	cQuery := C.CString(query)
+	defer C.free(unsafe.Pointer(cQuery))
+	queryLen := C.size_t(len(query))
+
+	resultPtr := C.call_idor_analyze_sql(analyzeFn, (*C.uchar)(unsafe.Pointer(cQuery)), queryLen, C.int(dialect))
+	if resultPtr == nil {
+		return ""
+	}
+	defer C.call_free_string(freeFn, resultPtr)
+
+	result := C.GoString(resultPtr)
 	return result
 }

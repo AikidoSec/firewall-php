@@ -1,6 +1,9 @@
 #pragma once
 
 #include <stack>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 class RequestCache {
    public:
@@ -10,7 +13,20 @@ class RequestCache {
     std::string outgoingRequestUrl;
     std::string outgoingRequestRedirectUrl;
 
+    bool idorProtectionEnabled = false;
+    std::string idorTenantColumnName;
+    std::vector<std::string> idorExcludedTables;
+    bool tenantIdSet = false;
+    std::string tenantId;
+    // Depth, not bool: allows nested without_idor_protection() calls.
+    int idorIgnoredDepth = 0;
+    std::unordered_map<void*, int> idorIgnoredDepthByFiber;
+
     RequestCache() = default;
+
+    void EnterIdorIgnoredScope();
+    void LeaveIdorIgnoredScope();
+    bool IsIdorIgnored() const;
 
 /*
     Reset helper:
@@ -42,6 +58,7 @@ class EventCache {
 
     std::string sqlQuery;
     std::string sqlDialect;
+    std::string sqlParams;
 
     std::string paramMatcherParam;
     std::string paramMatcherRegex;
@@ -66,4 +83,3 @@ class ScopedEventContext {
     ScopedEventContext();
     ~ScopedEventContext();
 };
-
