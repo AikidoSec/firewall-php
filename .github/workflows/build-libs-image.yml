@@ -3,6 +3,8 @@ name: Build libs toolchain image
 on:
   workflow_dispatch:
   push:
+    branches:
+      - main
     paths:
       - .github/workflows/Dockerfile.build-libs
       - .github/workflows/build-libs-image.yml
@@ -14,6 +16,7 @@ env:
 
 jobs:
   build-amd64:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -39,6 +42,7 @@ jobs:
           cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LIBS }}:cache-${{ env.VERSION }}-amd64,mode=max
 
   build-arm64:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04-arm
     permissions:
       contents: read
@@ -64,6 +68,7 @@ jobs:
           cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LIBS }}:cache-${{ env.VERSION }}-arm64,mode=max
 
   publish-manifest:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     needs: [build-amd64, build-arm64]
     permissions:

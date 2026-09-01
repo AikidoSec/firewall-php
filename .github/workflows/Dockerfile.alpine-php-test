@@ -8,6 +8,7 @@ ENV LANG=C.UTF-8
 RUN apk add --no-cache \
       apache2 \
       apache2-dev \
+      argon2-libs \
       autoconf \
       bash \
       bison \

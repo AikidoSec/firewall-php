@@ -3,6 +3,8 @@ name: Build CentOS PHP test images (NTS)
 on:
   workflow_dispatch:
   push:
+    branches:
+      - main
     paths:
       - .github/workflows/Dockerfile.centos-php-test-nts
       - .github/workflows/build-centos-php-test-images-nts.yml
@@ -14,6 +16,7 @@ env:
 
 jobs:
   build-amd64:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     strategy:
       matrix:
@@ -42,6 +45,7 @@ jobs:
           #cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:cache-${{ matrix.php_version }}-amd64-${{ env.VERSION }},mode=max
 
   build-arm64:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04-arm
     strategy:
       matrix:
@@ -70,6 +74,7 @@ jobs:
           #cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:cache-${{ matrix.php_version }}-arm64-${{ env.VERSION }},mode=max
 
   publish-manifests:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     needs: [build-amd64, build-arm64]
     strategy:

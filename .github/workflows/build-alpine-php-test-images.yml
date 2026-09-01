@@ -3,6 +3,8 @@ name: Build Alpine PHP test images
 on:
   workflow_dispatch:
   push:
+    branches:
+      - main
     paths:
       - .github/workflows/Dockerfile.alpine-php-test
       - .github/workflows/build-alpine-php-test-images.yml
@@ -13,6 +15,7 @@ env:
 
 jobs:
   build-amd64:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
@@ -52,6 +55,7 @@ jobs:
           tags: ${{ env.REGISTRY }}/aikidosec/firewall-php-test-alpine-${{ matrix.abi }}:${{ matrix.php_version }}-amd64-${{ env.VERSION }}
 
   build-arm64:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04-arm
     strategy:
       fail-fast: false
@@ -91,6 +95,7 @@ jobs:
           tags: ${{ env.REGISTRY }}/aikidosec/firewall-php-test-alpine-${{ matrix.abi }}:${{ matrix.php_version }}-arm64-${{ env.VERSION }}
 
   publish-manifests:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     needs: [build-amd64, build-arm64]
     strategy:
