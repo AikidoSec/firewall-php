@@ -1027,9 +1027,19 @@ jobs:
       # MariaDB startup compatible with your current approach
       - name: Start MariaDB (background)
         run: |
-          start-mariadb &   # provided by the image
-          sleep 5
-          mysql -u root -ppwd -e "SELECT 1" || (echo "MySQL not up" && exit 1)
+          start-mariadb >/tmp/mariadb.log 2>&1 &
+          MARIADB_READY=0
+          for _ in $(seq 1 30); do
+            if mysql -h 127.0.0.1 -u root -ppwd -e "SELECT 1"; then
+              MARIADB_READY=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "${MARIADB_READY}" -ne 1 ]; then
+            cat /tmp/mariadb.log
+            exit 1
+          fi
 
       - name: Start PostgreSQL (background)
         run: |
@@ -1105,9 +1115,19 @@ jobs:
 
       - name: Start MariaDB (background)
         run: |
-          start-mariadb &   # provided by the image
-          sleep 5
-          mysql -u root -ppwd -e "SELECT 1" || (echo "MySQL not up" && exit 1)
+          start-mariadb >/tmp/mariadb.log 2>&1 &
+          MARIADB_READY=0
+          for _ in $(seq 1 30); do
+            if mysql -h 127.0.0.1 -u root -ppwd -e "SELECT 1"; then
+              MARIADB_READY=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "${MARIADB_READY}" -ne 1 ]; then
+            cat /tmp/mariadb.log
+            exit 1
+          fi
 
       - name: Start PostgreSQL (background)
         run: |
@@ -1360,9 +1380,19 @@ jobs:
 
       - name: Start MariaDB (background)
         run: |
-          start-mariadb &   # provided by the image
-          sleep 5
-          mysql -u root -ppwd -e "SELECT 1" || (echo "MySQL not up" && exit 1)
+          start-mariadb >/tmp/mariadb.log 2>&1 &
+          MARIADB_READY=0
+          for _ in $(seq 1 30); do
+            if mysql -h 127.0.0.1 -u root -ppwd -e "SELECT 1"; then
+              MARIADB_READY=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "${MARIADB_READY}" -ne 1 ]; then
+            cat /tmp/mariadb.log
+            exit 1
+          fi
 
       - name: Download artifacts
         uses: actions/download-artifact@v4
