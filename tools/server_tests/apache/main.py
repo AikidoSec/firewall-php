@@ -2,7 +2,6 @@ import os
 import subprocess
 import re
 import pwd
-import grp
 import psutil
 import time
 import glob
@@ -212,19 +211,10 @@ def select_apache_user():
 
 
 def get_user_and_group(folder_path):
-    # Get the folder's status, which includes owner and group info
     folder_stat = os.stat(folder_path)
-
-    # Get the user ID and group ID
-    user_id = folder_stat.st_uid
-    group_id = folder_stat.st_gid
-
-    # Get the username from the user ID
-    user_name = pwd.getpwuid(user_id).pw_name
-
-    # Get the group name from the group ID
-    group_name = grp.getgrgid(group_id).gr_name
-    return user_name, group_name
+    # Bind-mounted CI files may have IDs absent from the container's user database.
+    # chown accepts numeric IDs, so no name lookup is needed to restore ownership.
+    return folder_stat.st_uid, folder_stat.st_gid
 
 
 def apache_create_config_file(test_name, test_dir, server_port, env):
