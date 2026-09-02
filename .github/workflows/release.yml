@@ -29,6 +29,7 @@ jobs:
         check_version "$(awk -F'"' '/^[[:space:]]*Version[[:space:]]*=/ { print $2; exit }' lib/agent/constants/constants.go)" "lib/agent/constants/constants.go"
         check_version "$(awk -F'"' '/^[[:space:]]*Version[[:space:]]*=/ { print $2; exit }' lib/request-processor/globals/globals.go)" "lib/request-processor/globals/globals.go"
         check_version "$(awk '/^Version:/ { print $2 }' package/rpm/aikido.spec)" "package/rpm/aikido.spec"
+        check_version "$(awk -F= '/^pkgver=/ { print $2 }' package/apk/APKBUILD)" "package/apk/APKBUILD"
 
         exit "$FAILED"
 

@@ -2,7 +2,6 @@ import os
 import subprocess
 import re
 import pwd
-import grp
 import psutil
 import time
 import glob
@@ -23,6 +22,21 @@ if os.path.exists('/etc/httpd'):
     apache_include_conf = """Include conf.modules.d/*.conf
 IncludeOptional conf.d/*.conf"""
     apache_error_log = "logs/error_log"
+elif os.path.exists('/etc/alpine-release'):
+    # Alpine
+    apache_binary = "httpd"
+    apache_server_root = "/var/www"
+    apache_conf_global_file = "/etc/apache2/httpd.conf"
+    apache_conf_proxy_module_file = apache_conf_global_file
+    apache_conf_proxy_h2_module_file = apache_conf_global_file
+    apache_conf_mpm_worker_file = apache_conf_global_file
+    apache_conf_mpm_event_file = apache_conf_global_file
+    apache_conf_mpm_prefork_file = apache_conf_global_file
+    apache_conf_folder = "/etc/apache2/conf.d"
+    apache_log_folder = "/var/log/apache2"
+    apache_run_folder = "/run/apache2"
+    apache_include_conf = ""
+    apache_error_log = f"{apache_log_folder}/error.log"
 else:
     # Debian
     apache_binary = "apache2"
@@ -197,19 +211,10 @@ def select_apache_user():
 
 
 def get_user_and_group(folder_path):
-    # Get the folder's status, which includes owner and group info
     folder_stat = os.stat(folder_path)
-
-    # Get the user ID and group ID
-    user_id = folder_stat.st_uid
-    group_id = folder_stat.st_gid
-
-    # Get the username from the user ID
-    user_name = pwd.getpwuid(user_id).pw_name
-
-    # Get the group name from the group ID
-    group_name = grp.getgrgid(group_id).gr_name
-    return user_name, group_name
+    # Bind-mounted CI files may have IDs absent from the container's user database.
+    # chown accepts numeric IDs, so no name lookup is needed to restore ownership.
+    return folder_stat.st_uid, folder_stat.st_gid
 
 
 def apache_create_config_file(test_name, test_dir, server_port, env):
@@ -311,7 +316,7 @@ def apache_mod_php_pre_tests():
     # Wait a moment for processes to fully terminate
     time.sleep(3)
     
-    if not os.path.exists('/etc/httpd'):
+    if apache_binary == "apache2":
         # Debian/Ubuntu Apache - use apache2ctl which sources /etc/apache2/envvars
         # This ensures APACHE_RUN_DIR and other variables are properly set
         # apache2ctl will source envvars and then start Apache with the correct environment

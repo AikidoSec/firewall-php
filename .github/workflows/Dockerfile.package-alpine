@@ -1,0 +1,50 @@
+# syntax=docker/dockerfile:1.7
+
+ARG ALPINE_VERSION=3.22
+
+FROM alpine:${ALPINE_VERSION} AS package-build
+
+ARG APK_ARCH
+ARG APK_OUTPUT=aikido-php-firewall.apk
+
+RUN apk add --no-cache alpine-sdk
+RUN adduser -D builder && \
+    addgroup builder abuild && \
+    mkdir -p /home/builder/package /home/builder/packages /out && \
+    chown -R builder:builder /home/builder
+
+WORKDIR /home/builder/package
+COPY --chown=builder:builder package/apk/APKBUILD ./APKBUILD
+COPY --chown=builder:builder package/apk/aikido-php-firewall.post-install ./
+COPY --chown=builder:builder package/apk/aikido-php-firewall.pre-deinstall ./
+COPY --chown=builder:builder package/rpm/opt/aikido/aikido.ini ./
+COPY --from=package-input --chown=builder:builder / ./
+
+RUN test "$(apk --print-arch)" = "${APK_ARCH}" && \
+    AIKIDO_VERSION="$(awk -F= '/^pkgver=/ { print $2 }' APKBUILD)" && \
+    cp aikido-php-firewall.post-install aikido-php-firewall.post-upgrade && \
+    sed -i "s/__VERSION__/${AIKIDO_VERSION}/g" \
+      aikido-php-firewall.post-install \
+      aikido-php-firewall.post-upgrade \
+      aikido-php-firewall.pre-deinstall
+
+USER builder
+RUN abuild-keygen -a -n
+
+USER root
+RUN cp /home/builder/.abuild/*.rsa.pub /etc/apk/keys/
+
+USER builder
+RUN abuild checksum && \
+    abuild -r
+
+USER root
+RUN APK_FILE="$(find /home/builder/packages -type f -name 'aikido-php-firewall-*.apk' | head -n 1)" && \
+    test -n "${APK_FILE}" && \
+    cp "${APK_FILE}" "/out/${APK_OUTPUT}" && \
+    apk verify --allow-untrusted "/out/${APK_OUTPUT}" && \
+    tar -tzf "/out/${APK_OUTPUT}" >/dev/null
+
+FROM scratch AS artifact
+ARG APK_OUTPUT=aikido-php-firewall.apk
+COPY --from=package-build /out/${APK_OUTPUT} /

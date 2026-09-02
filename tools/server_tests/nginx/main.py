@@ -7,7 +7,10 @@ import time
 import glob
 
 nginx_global_conf = "/etc/nginx/nginx.conf"
-nginx_config_dir = "/etc/nginx/conf.d"
+if os.path.exists('/etc/alpine-release'):
+    nginx_config_dir = "/etc/nginx/http.d"
+else:
+    nginx_config_dir = "/etc/nginx/conf.d"
 
 php_fpm_bin = "/usr/sbin/php-fpm"
 php_fpm_run_dir = "/run/php-fpm"

@@ -1,4 +1,6 @@
 build
+package-input
+out
 lib/php-extension/build
 lib/php-extension/autom4te.cache
 lib/php-extension/config.h.in

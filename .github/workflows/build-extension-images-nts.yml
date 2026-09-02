@@ -3,6 +3,8 @@ name: Create images for building extension (NTS)
 on:
   workflow_dispatch:
   push:
+    branches:
+      - main
     paths:
       - .github/workflows/Dockerfile.build-extension-nts
       - .github/workflows/build-extension-images-nts.yml
@@ -14,6 +16,7 @@ env:
 
 jobs:
   build-amd64:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
@@ -49,6 +52,7 @@ jobs:
           cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:cache-${{ matrix.php_version }}-amd64-${{ env.VERSION }},mode=max
 
   build-arm64:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04-arm
     strategy:
       fail-fast: false
@@ -86,6 +90,7 @@ jobs:
 
   # ---- stitch images into multi-arch manifests ----
   publish-manifests:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     needs: [build-amd64, build-arm64]
     strategy:
