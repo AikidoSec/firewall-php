@@ -66,4 +66,6 @@ jobs:
       with:
         draft: true
         files: |
-          ./**/aikido-php-firewall*
+          ./**/aikido-php-firewall*.deb
+          ./**/aikido-php-firewall*.rpm
+          ./**/aikido-php-firewall*.apk
