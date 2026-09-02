@@ -64,7 +64,7 @@ dpkg -i -E ./aikido-php-firewall.aarch64.deb
 We support Debian >= 11 and Ubuntu >= 20.04.
 You can run on Debian 10, by doing this setup before install: [Debian10 setup](./docs/debian10.md)
 
-#### For Alpine Linux
+#### For Alpine Linux (beta)
 
 Alpine 3.20 or newer is supported. Download the APK matching your architecture:
 
