@@ -35,6 +35,7 @@ jobs:
 
   build:
     needs: validate_version
+    permissions: { actions: read, contents: read, packages: read }
     uses: ./.github/workflows/build.yml
   release:
     runs-on: open-source-releaser
