@@ -1420,7 +1420,6 @@ jobs:
         with:
           repository: Aikido-demo-apps/zen-demo-php
           path: zen-demo-php
-          ref: apache-mod-php-control-server
           submodules: recursive
 
       - name: Get Arch
@@ -1439,7 +1438,7 @@ jobs:
       - name: Run Firewall QA Tests
         uses: AikidoSec/firewall-tester-action@releases/v1
         with:
-          dockerfile_path: ./zen-demo-php/Dockerfile
+          dockerfile_path: ./zen-demo-php/Dockerfile.qa-control-apache-mod-php
           extra_args: '--env-file=./zen-demo-php/.env.example -e APP_KEY=base64:W2v6u6VR4lURkxuMT9xZ6pdhXSt5rxsmWTbd1HGqlIM='
           sleep_before_test: 20
           max_parallel_tests: 7
@@ -1456,7 +1455,6 @@ jobs:
         with:
           repository: Aikido-demo-apps/zen-demo-php
           path: zen-demo-php
-          ref: apache-php-fpm-control-server
           submodules: recursive
 
       - name: Get Arch
@@ -1475,7 +1473,7 @@ jobs:
       - name: Run Firewall QA Tests
         uses: AikidoSec/firewall-tester-action@releases/v1
         with:
-          dockerfile_path: ./zen-demo-php/Dockerfile
+          dockerfile_path: ./zen-demo-php/Dockerfile.qa-control-apache-php-fpm
           extra_args: '--env-file=./zen-demo-php/.env.example -e APP_KEY=base64:W2v6u6VR4lURkxuMT9xZ6pdhXSt5rxsmWTbd1HGqlIM='
           sleep_before_test: 20
           max_parallel_tests: 7
@@ -1492,7 +1490,6 @@ jobs:
         with:
           repository: Aikido-demo-apps/zen-demo-php
           path: zen-demo-php
-          ref: nginx-php-fpm-control-server
           submodules: recursive
 
       - name: Get Arch
@@ -1511,7 +1508,7 @@ jobs:
       - name: Run Firewall QA Tests
         uses: AikidoSec/firewall-tester-action@releases/v1
         with:
-          dockerfile_path: ./zen-demo-php/Dockerfile
+          dockerfile_path: ./zen-demo-php/Dockerfile.qa-control-nginx-php-fpm
           extra_args: '--env-file=./zen-demo-php/.env.example -e APP_KEY=base64:W2v6u6VR4lURkxuMT9xZ6pdhXSt5rxsmWTbd1HGqlIM='
           sleep_before_test: 20
           max_parallel_tests: 7
