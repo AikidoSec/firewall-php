@@ -209,7 +209,7 @@ rpm -e aikido-php-firewall
 dpkg --purge aikido-php-firewall
 ```
 
-#### For Alpine Linux
+#### For Alpine Linux (beta)
 
 ```
 apk del aikido-php-firewall
