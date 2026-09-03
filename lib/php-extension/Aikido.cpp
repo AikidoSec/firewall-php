@@ -81,6 +81,17 @@ static void aikido_do_request_shutdown() {
     AIKIDO_LOG_DEBUG("RSHUTDOWN finished!\n");
 }
 
+static void aikido_do_worker_request_shutdown() {
+    if (!AIKIDO_GLOBAL(isFrankenPhpWorkerRequestActive)) {
+        return;
+    }
+
+    // Mark the request inactive before cleanup so this fallback remains
+    // idempotent if shutdown itself causes the worker to terminate.
+    AIKIDO_GLOBAL(isFrankenPhpWorkerRequestActive) = false;
+    aikido_do_request_shutdown();
+}
+
 static void aikido_detect_frankenphp_worker_mode() {
     if (!AIKIDO_GLOBAL(isFrankenPhpWorkerMode) &&
         std::string(sapi_module.name) == "frankenphp" &&
@@ -103,10 +114,14 @@ PHP_RINIT_FUNCTION(aikido) {
 }
 
 // PHP normally calls this hook at the end of each request. FrankenPHP worker
-// mode does not call it after each HTTP request; worker_rshutdown() performs
-// Aikido's per-request shutdown instead.
+// mode does not call it after each handled HTTP request, so worker_rshutdown()
+// performs the usual cleanup. exit()/die() terminate the worker script before
+// its handler can call worker_rshutdown(), however, and PHP does invoke this
+// hook while terminating that script. Clean up only when such a request is
+// still active, avoiding a second shutdown after a normal handler return.
 PHP_RSHUTDOWN_FUNCTION(aikido) {
     if (AIKIDO_GLOBAL(isFrankenPhpWorkerMode)) {
+        aikido_do_worker_request_shutdown();
         return SUCCESS;
     }
     aikido_do_request_shutdown();
@@ -126,6 +141,7 @@ PHP_FUNCTION(worker_rinit) {
         RETURN_FALSE;
     }
 
+    AIKIDO_GLOBAL(isFrankenPhpWorkerRequestActive) = true;
     aikido_do_request_init();
 
     RETURN_TRUE;
@@ -144,7 +160,7 @@ PHP_FUNCTION(worker_rshutdown) {
         RETURN_FALSE;
     }
 
-    aikido_do_request_shutdown();
+    aikido_do_worker_request_shutdown();
 
     RETURN_TRUE;
 }
@@ -187,6 +203,7 @@ PHP_GINIT_FUNCTION(aikido) {
     aikido_globals->checkedWhitelistRequest = false;
     aikido_globals->isIpBypassed = false;
     aikido_globals->isFrankenPhpWorkerMode = false;
+    aikido_globals->isFrankenPhpWorkerRequestActive = false;
     aikido_globals->globalAstToClean = nullptr;
     aikido_globals->originalAstProcess = nullptr;
 #ifdef ZTS
