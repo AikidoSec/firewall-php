@@ -56,6 +56,8 @@ $test_dir = '{test_dir}';
 $handler = function() use ($test_dir) {{
     \\aikido\\worker_rinit();
     try {{
+        // Match normal server behavior and reset cwd changes from prior requests.
+        chdir($test_dir);
         $uri = $_SERVER['REQUEST_URI'] ?? '/';
         $path = parse_url($uri, PHP_URL_PATH) ?: '/';
 

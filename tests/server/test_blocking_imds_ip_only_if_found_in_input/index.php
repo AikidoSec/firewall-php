@@ -1,6 +1,6 @@
 <?php
     
-function get_instance_metadata_id($url) {
+$get_instance_metadata_id = function($url) {
     $url = 'http://' . $url . '/tests/latest/meta-data/instance-id';
     
     $ch = curl_init($url);
@@ -11,7 +11,7 @@ function get_instance_metadata_id($url) {
     curl_exec($ch);
     
     return "test_instance_id";
-}
+};
 
 // Read the raw POST body
 $requestBody = file_get_contents('php://input');
@@ -24,6 +24,6 @@ if (isset($data['url'])) {
     $url = $data['url'];
 }
 
-echo "Instance id: " . get_instance_metadata_id($url) . "\n";
+echo "Instance id: " . $get_instance_metadata_id($url) . "\n";
 
 ?>
