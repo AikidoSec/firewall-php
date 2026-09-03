@@ -7,7 +7,7 @@ url="https://github.com/AikidoSec/firewall-php"
 arch="x86_64 aarch64"
 license="AGPL-3.0-or-later"
 # The runtime currently resolves its versioned binaries from /opt/aikido-*.
-options="!check !strip !fhs"
+options="!check !fhs"
 install="$pkgname.post-install $pkgname.post-upgrade $pkgname.pre-deinstall"
 
 _php_versions="7.2 7.3 7.4 8.0 8.1 8.2 8.3 8.4 8.5"
