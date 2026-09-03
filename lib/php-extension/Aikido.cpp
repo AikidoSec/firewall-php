@@ -54,7 +54,7 @@ PHP_MSHUTDOWN_FUNCTION(aikido) {
     AIKIDO_LOG_DEBUG("MSHUTDOWN finished!\n");
     return SUCCESS;
 }
-// Common request initialization logic shared by RINIT and worker_rinit().
+
 static void aikido_do_request_init() {
     ScopedTimer scopedTimer("request_init", "request_op");
 
@@ -65,7 +65,6 @@ static void aikido_do_request_init() {
     AIKIDO_LOG_DEBUG("RINIT finished!\n");
 }
 
-// Common request shutdown logic shared by RSHUTDOWN and worker_rshutdown().
 static void aikido_do_request_shutdown() {
     ScopedTimer scopedTimer("request_shutdown", "request_op");
 
