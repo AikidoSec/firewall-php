@@ -82,13 +82,11 @@ static void aikido_do_request_shutdown() {
 }
 
 static void aikido_do_worker_request_shutdown() {
-    if (!AIKIDO_GLOBAL(isFrankenPhpWorkerRequestActive)) {
+    if (!AIKIDO_GLOBAL(requestProcessorInstance).IsRequestInitialized() &&
+        AIKIDO_GLOBAL(globalAstToClean) == nullptr) {
         return;
     }
 
-    // Mark the request inactive before cleanup so this fallback remains
-    // idempotent if shutdown itself causes the worker to terminate.
-    AIKIDO_GLOBAL(isFrankenPhpWorkerRequestActive) = false;
     aikido_do_request_shutdown();
 }
 
@@ -141,7 +139,6 @@ PHP_FUNCTION(worker_rinit) {
         RETURN_FALSE;
     }
 
-    AIKIDO_GLOBAL(isFrankenPhpWorkerRequestActive) = true;
     aikido_do_request_init();
 
     RETURN_TRUE;
@@ -203,7 +200,6 @@ PHP_GINIT_FUNCTION(aikido) {
     aikido_globals->checkedWhitelistRequest = false;
     aikido_globals->isIpBypassed = false;
     aikido_globals->isFrankenPhpWorkerMode = false;
-    aikido_globals->isFrankenPhpWorkerRequestActive = false;
     aikido_globals->globalAstToClean = nullptr;
     aikido_globals->originalAstProcess = nullptr;
 #ifdef ZTS

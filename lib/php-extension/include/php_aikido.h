@@ -57,7 +57,6 @@ bool checkedWhitelistRequest;
 // if true, all blocking checks will be skipped.
 bool isIpBypassed;
 bool isFrankenPhpWorkerMode;
-bool isFrankenPhpWorkerRequestActive;
 HashTable *globalAstToClean;
 void (*originalAstProcess)(zend_ast *ast);
 // IMPORTANT: The order of these objects MUST NOT be changed due to object interdependencies.
