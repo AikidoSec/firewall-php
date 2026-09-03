@@ -55,25 +55,28 @@ $test_dir = '{test_dir}';
 
 $handler = function() use ($test_dir) {{
     \\aikido\\worker_rinit();
-    $uri = $_SERVER['REQUEST_URI'] ?? '/';
-    $path = parse_url($uri, PHP_URL_PATH) ?: '/';
-    
-    if ($path === '/' || $path === '') {{
-        $file = $test_dir . '/index.php';
-    }} else {{
-        $file = $test_dir . $path;
-        if (!file_exists($file) || !is_file($file)) {{
+    try {{
+        $uri = $_SERVER['REQUEST_URI'] ?? '/';
+        $path = parse_url($uri, PHP_URL_PATH) ?: '/';
+
+        if ($path === '/' || $path === '') {{
             $file = $test_dir . '/index.php';
+        }} else {{
+            $file = $test_dir . $path;
+            if (!file_exists($file) || !is_file($file)) {{
+                $file = $test_dir . '/index.php';
+            }}
         }}
+
+        if (file_exists($file) && is_file($file)) {{
+            include $file;
+        }} else {{
+            http_response_code(404);
+            echo "Not Found";
+        }}
+    }} finally {{
+        \\aikido\\worker_rshutdown();
     }}
-    
-    if (file_exists($file) && is_file($file)) {{
-        include $file;
-    }} else {{
-        http_response_code(404);
-        echo "Not Found";
-    }}
-    \\aikido\\worker_rshutdown();
 }};
 
 for ($nbWorkers = frankenphp_handle_request($handler); $nbWorkers > 0; $nbWorkers = frankenphp_handle_request($handler)) {{
