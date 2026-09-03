@@ -212,7 +212,9 @@ bool RequestProcessorInstance::RequestInit() {
     std::string sapiName = sapi_module.name;
 
     if (sapiName == "frankenphp") {
-        if (GetEnvBoolWithAllGetters("FRANKENPHP_WORKER", false)) {
+        // FRANKENPHP_WORKER stays set for real worker requests, so only the
+        // first automatic RINIT is warm-up; worker_rinit() must continue below.
+        if (GetEnvBoolWithAllGetters("FRANKENPHP_WORKER", false) && !AIKIDO_GLOBAL(isWorkerMode)) {
             AIKIDO_GLOBAL(isWorkerMode) = true;
             AIKIDO_LOG_INFO("FrankenPHP worker warm-up request detected, skipping RequestInit\n");
             return true;
