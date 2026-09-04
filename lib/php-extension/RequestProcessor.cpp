@@ -303,6 +303,10 @@ void RequestProcessorInstance::LoadConfigWithTokenFromPHPSetToken(const std::str
 }
 
 void RequestProcessorInstance::RequestShutdown() {
+    if (!this->requestInitialized) {
+        return;
+    }
+
     SendPostRequestEvent();
     this->requestInitialized = false;
 }

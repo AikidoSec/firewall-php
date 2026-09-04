@@ -68,10 +68,6 @@ static void aikido_do_request_init() {
 static void aikido_do_request_shutdown() {
     DestroyAstToClean();
 
-    if (!AIKIDO_GLOBAL(requestProcessorInstance).IsRequestInitialized()) {
-        return;
-    }
-
     ScopedTimer scopedTimer("request_shutdown", "request_op");
 
     AIKIDO_LOG_DEBUG("RSHUTDOWN started!\n");
