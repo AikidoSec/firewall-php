@@ -68,6 +68,16 @@ func TestNormalizeHostname(t *testing.T) {
 			input:    "example.com\u200B",
 			expected: "example.com",
 		},
+		{
+			name:     "FQDN with trailing dot",
+			input:    "example.com.",
+			expected: "example.com",
+		},
+		{
+			name:     "GCP IMDS hostname with trailing dot",
+			input:    "metadata.google.internal.",
+			expected: "metadata.google.internal",
+		},
 	}
 
 	for _, tt := range tests {
