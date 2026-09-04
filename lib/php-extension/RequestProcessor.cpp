@@ -211,14 +211,6 @@ bool RequestProcessorInstance::ReportStats() {
 bool RequestProcessorInstance::RequestInit() {
     std::string sapiName = sapi_module.name;
 
-    if (sapiName == "frankenphp") {
-        if (GetEnvBoolWithAllGetters("FRANKENPHP_WORKER", false)) {
-            AIKIDO_GLOBAL(isWorkerMode) = true;
-            AIKIDO_LOG_INFO("FrankenPHP worker warm-up request detected, skipping RequestInit\n");
-            return true;
-        }
-    }
-
     if (sapiName == "apache2handler" || sapiName == "frankenphp") {
         // Apache-mod-php and FrankenPHP can serve multiple sites per process
         // We need to reload config each request to detect token changes
@@ -311,6 +303,10 @@ void RequestProcessorInstance::LoadConfigWithTokenFromPHPSetToken(const std::str
 }
 
 void RequestProcessorInstance::RequestShutdown() {
+    if (!this->requestInitialized) {
+        return;
+    }
+
     SendPostRequestEvent();
     this->requestInitialized = false;
 }

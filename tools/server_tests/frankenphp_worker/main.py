@@ -39,7 +39,7 @@ def get_caddyfile_base_template():
 """
 
 site_block_template = """http://:{port} {{
-    root * {test_dir}
+    root * {worker_dir}
     php_server {{
 {env_vars}
         worker {{
@@ -54,26 +54,31 @@ worker_script_template = """<?php
 $test_dir = '{test_dir}';
 
 $handler = function() use ($test_dir) {{
-    \\aikido\\worker_request_init();
-    $uri = $_SERVER['REQUEST_URI'] ?? '/';
-    $path = parse_url($uri, PHP_URL_PATH) ?: '/';
-    
-    if ($path === '/' || $path === '') {{
-        $file = $test_dir . '/index.php';
-    }} else {{
-        $file = $test_dir . $path;
-        if (!file_exists($file) || !is_file($file)) {{
+    \\aikido\\worker_rinit();
+    try {{
+        // Match normal server behavior and reset cwd changes from prior requests.
+        chdir($test_dir);
+        $uri = $_SERVER['REQUEST_URI'] ?? '/';
+        $path = parse_url($uri, PHP_URL_PATH) ?: '/';
+
+        if ($path === '/' || $path === '') {{
             $file = $test_dir . '/index.php';
+        }} else {{
+            $file = $test_dir . $path;
+            if (!file_exists($file) || !is_file($file)) {{
+                $file = $test_dir . '/index.php';
+            }}
         }}
+
+        if (file_exists($file) && is_file($file)) {{
+            include $file;
+        }} else {{
+            http_response_code(404);
+            echo "Not Found";
+        }}
+    }} finally {{
+        \\aikido\\worker_rshutdown();
     }}
-    
-    if (file_exists($file) && is_file($file)) {{
-        include $file;
-    }} else {{
-        http_response_code(404);
-        echo "Not Found";
-    }}
-    \\aikido\\worker_rshutdown();
 }};
 
 for ($nbWorkers = frankenphp_handle_request($handler); $nbWorkers > 0; $nbWorkers = frankenphp_handle_request($handler)) {{
@@ -86,7 +91,9 @@ def create_folder(folder_path):
         os.makedirs(folder_path)
 
 def frankenphp_worker_create_script(test_dir, test_name):
-    worker_script_path = os.path.join(worker_scripts_dir, f"{test_name}.php")
+    worker_dir = os.path.join(worker_scripts_dir, test_name)
+    create_folder(worker_dir)
+    worker_script_path = os.path.join(worker_dir, "index.php")
     worker_script_content = worker_script_template.format(test_dir=test_dir)
     
     with open(worker_script_path, 'w') as f:
@@ -101,7 +108,7 @@ def frankenphp_worker_create_site_block(test_data, worker_script_path):
     
     return site_block_template.format(
         port=test_data["server_port"],
-        test_dir=test_data["test_dir"],
+        worker_dir=os.path.dirname(worker_script_path),
         worker_script=worker_script_path,
         env_vars=env_vars,
         num_workers=num_workers

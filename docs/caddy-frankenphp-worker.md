@@ -35,8 +35,11 @@ $app = require_once __DIR__ . '/../bootstrap/app.php';
 
 while (frankenphp_handle_request(function () use ($app) {
     \aikido\worker_rinit();
-    // Your application logic
-    \aikido\worker_rshutdown();
+    try {
+        // Your application logic
+    } finally {
+        \aikido\worker_rshutdown();
+    }
 })) {
     // keep looping
 }

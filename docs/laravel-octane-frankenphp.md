@@ -40,8 +40,11 @@ Wrap your request handler with these calls to ensure Aikido processes each reque
 
 $handleRequest = static function () use ($worker, $frankenPhpClient, $debugMode) {
     \aikido\worker_rinit();
-    // Octane request handling logic
-    \aikido\worker_rshutdown();
+    try {
+        // Octane request handling logic
+    } finally {
+        \aikido\worker_rshutdown();
+    }
 };
 
 while ($requestCount < $maxRequests && frankenphp_handle_request($handleRequest)) {
@@ -112,8 +115,11 @@ Wrap your request handler with these calls to ensure Aikido processes each reque
 
 $handleRequest = static function () use ($worker, $frankenPhpClient, $debugMode) {
     \aikido\worker_rinit();
-    // Octane request handling logic
-    \aikido\worker_rshutdown();
+    try {
+        // Octane request handling logic
+    } finally {
+        \aikido\worker_rshutdown();
+    }
 };
 
 while ($requestCount < $maxRequests && frankenphp_handle_request($handleRequest)) {

@@ -56,7 +56,7 @@ bool checkedWhitelistRequest;
 // This variable is used to check if the request is bypassed,
 // if true, all blocking checks will be skipped.
 bool isIpBypassed;
-bool isWorkerMode;
+bool isFrankenPhpWorkerMode;
 HashTable *globalAstToClean;
 void (*originalAstProcess)(zend_ast *ast);
 // IMPORTANT: The order of these objects MUST NOT be changed due to object interdependencies.

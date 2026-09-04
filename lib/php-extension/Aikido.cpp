@@ -54,7 +54,7 @@ PHP_MSHUTDOWN_FUNCTION(aikido) {
     AIKIDO_LOG_DEBUG("MSHUTDOWN finished!\n");
     return SUCCESS;
 }
-// Common request initialization logic shared between RINIT and aikido_worker_rinit
+
 static void aikido_do_request_init() {
     ScopedTimer scopedTimer("request_init", "request_op");
 
@@ -65,7 +65,6 @@ static void aikido_do_request_init() {
     AIKIDO_LOG_DEBUG("RINIT finished!\n");
 }
 
-// Common request shutdown logic shared between RSHUTDOWN and aikidoworker_rshutdown
 static void aikido_do_request_shutdown() {
     ScopedTimer scopedTimer("request_shutdown", "request_op");
 
@@ -82,33 +81,38 @@ static void aikido_do_request_shutdown() {
     AIKIDO_LOG_DEBUG("RSHUTDOWN finished!\n");
 }
 
+static void aikido_detect_frankenphp_worker_mode() {
+    if (!AIKIDO_GLOBAL(isFrankenPhpWorkerMode) &&
+        std::string(sapi_module.name) == "frankenphp" &&
+        GetEnvBoolWithAllGetters("FRANKENPHP_WORKER", false)) {
+        AIKIDO_GLOBAL(isFrankenPhpWorkerMode) = true;
+        AIKIDO_LOG_INFO("FrankenPHP worker mode detected\n");
+    }
+}
+
+// PHP calls RINIT before every request in normal server modes.
+// FrankenPHP calls it only once in worker mode.
 PHP_RINIT_FUNCTION(aikido) {
-    // If we are in FrankenPHP worker mode, worker_rinit is called by the worker script, so we don't need to do anything here. (RINIT is called sometimes by the worker script when it includes other files, but we don't want to do anything in that case.)
-    if (std::string(sapi_module.name) == "frankenphp" && AIKIDO_GLOBAL(isWorkerMode)) {
+    aikido_detect_frankenphp_worker_mode();
+    if (AIKIDO_GLOBAL(isFrankenPhpWorkerMode)) {
         return SUCCESS;
     }
     aikido_do_request_init();
     return SUCCESS;
 }
 
+// PHP calls RSHUTDOWN after every request in normal server modes.
+// FrankenPHP calls it only when a worker stops, as a cleanup fallback.
 PHP_RSHUTDOWN_FUNCTION(aikido) {
-    // If we are in FrankenPHP worker mode, worker_rshutdown is called by the worker script, so we don't need to do anything here. (RINIT is called sometimes by the worker script when it includes other files, but we don't want to do anything in that case.)
-    if (std::string(sapi_module.name) == "frankenphp" && AIKIDO_GLOBAL(isWorkerMode)) {
-        return SUCCESS;
-    }
     aikido_do_request_shutdown();
     return SUCCESS;
 }
 
-// PHP function: \aikido\worker_rinit()
-// Because FrankenPHP doesn't call RINIT for each request in worker mode,
-// we need to call it manually at the start of each request.
-// Only works with FrankenPHP worker mode
+// Initializes Aikido for the current FrankenPHP worker request.
 PHP_FUNCTION(worker_rinit) {
     ZEND_PARSE_PARAMETERS_NONE();
 
-    // Only allow this function in FrankenPHP worker mode
-    if (std::string(sapi_module.name) != "frankenphp" || !AIKIDO_GLOBAL(isWorkerMode)) {
+    if (!AIKIDO_GLOBAL(isFrankenPhpWorkerMode)) {
         zend_throw_exception(
             GetFirewallDefaultExceptionCe(),
             "aikido\\worker_rinit() can only be called in FrankenPHP worker mode", 0);
@@ -120,15 +124,11 @@ PHP_FUNCTION(worker_rinit) {
     RETURN_TRUE;
 }
 
-// PHP function: \aikido\worker_rshutdown()
-// Because FrankenPHP doesn't call RSHUTDOWN for each request in worker mode,
-// we need to call it manually at the end of each request.
-// Only works with FrankenPHP worker mode
+// Cleans up Aikido after the current FrankenPHP worker request.
 PHP_FUNCTION(worker_rshutdown) {
     ZEND_PARSE_PARAMETERS_NONE();
 
-    // Only allow this function in FrankenPHP worker mode
-    if (std::string(sapi_module.name) != "frankenphp" || !AIKIDO_GLOBAL(isWorkerMode)) {
+    if (!AIKIDO_GLOBAL(isFrankenPhpWorkerMode)) {
         zend_throw_exception(
             GetFirewallDefaultExceptionCe(),
             "aikido\\worker_rshutdown() can only be called in FrankenPHP worker mode", 0);
@@ -177,7 +177,7 @@ PHP_GINIT_FUNCTION(aikido) {
     aikido_globals->checkedShouldBlockRequest = false;
     aikido_globals->checkedWhitelistRequest = false;
     aikido_globals->isIpBypassed = false;
-    aikido_globals->isWorkerMode = false;
+    aikido_globals->isFrankenPhpWorkerMode = false;
     aikido_globals->globalAstToClean = nullptr;
     aikido_globals->originalAstProcess = nullptr;
 #ifdef ZTS
