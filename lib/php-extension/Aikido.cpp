@@ -90,9 +90,8 @@ static void aikido_detect_frankenphp_worker_mode() {
     }
 }
 
-// PHP normally calls this hook at the start of each request. FrankenPHP worker
-// mode calls it only when starting the long-lived worker script, before any
-// HTTP request is handled, so Aikido must not initialize a request here.
+// PHP calls RINIT before every request in normal server modes.
+// FrankenPHP calls it only once in worker mode.
 PHP_RINIT_FUNCTION(aikido) {
     aikido_detect_frankenphp_worker_mode();
     if (AIKIDO_GLOBAL(isFrankenPhpWorkerMode)) {
@@ -102,18 +101,14 @@ PHP_RINIT_FUNCTION(aikido) {
     return SUCCESS;
 }
 
-// PHP normally calls this hook at the end of each request. FrankenPHP worker
-// mode does not call it after each handled HTTP request, so worker_rshutdown()
-// performs the usual cleanup. exit()/die() bypass the handler's finally block,
-// but PHP invokes this hook while unwinding that request.
+// PHP calls RSHUTDOWN after every request in normal server modes.
+// FrankenPHP calls it only when a worker stops, as a cleanup fallback.
 PHP_RSHUTDOWN_FUNCTION(aikido) {
     aikido_do_request_shutdown();
     return SUCCESS;
 }
 
-// FrankenPHP invokes the worker handler once per HTTP request without running
-// PHP's normal RINIT phase. The handler calls this function to initialize
-// Aikido for that request.
+// Initializes Aikido for the current FrankenPHP worker request.
 PHP_FUNCTION(worker_rinit) {
     ZEND_PARSE_PARAMETERS_NONE();
 
@@ -129,9 +124,7 @@ PHP_FUNCTION(worker_rinit) {
     RETURN_TRUE;
 }
 
-// FrankenPHP finishes a worker-handled HTTP request without running PHP's
-// normal RSHUTDOWN phase. The handler calls this function to finalize Aikido
-// for that request.
+// Cleans up Aikido after the current FrankenPHP worker request.
 PHP_FUNCTION(worker_rshutdown) {
     ZEND_PARSE_PARAMETERS_NONE();
 
