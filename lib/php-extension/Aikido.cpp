@@ -66,12 +66,16 @@ static void aikido_do_request_init() {
 }
 
 static void aikido_do_request_shutdown() {
-    DestroyAstToClean();
-
     ScopedTimer scopedTimer("request_shutdown", "request_op");
 
     AIKIDO_LOG_DEBUG("RSHUTDOWN started!\n");
 
+    if (AIKIDO_GLOBAL(disable) == true) {
+        AIKIDO_LOG_DEBUG("RSHUTDOWN finished earlier because AIKIDO_DISABLE is set to 1!\n");
+        return;
+    }
+
+    DestroyAstToClean();
     AIKIDO_GLOBAL(phpLifecycle).RequestShutdown();
 
     AIKIDO_LOG_DEBUG("RSHUTDOWN finished!\n");
