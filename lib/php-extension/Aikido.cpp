@@ -66,28 +66,19 @@ static void aikido_do_request_init() {
 }
 
 static void aikido_do_request_shutdown() {
+    DestroyAstToClean();
+
+    if (!AIKIDO_GLOBAL(requestProcessorInstance).IsRequestInitialized()) {
+        return;
+    }
+
     ScopedTimer scopedTimer("request_shutdown", "request_op");
 
     AIKIDO_LOG_DEBUG("RSHUTDOWN started!\n");
 
-    if (AIKIDO_GLOBAL(disable) == true) {
-        AIKIDO_LOG_DEBUG("RSHUTDOWN finished earlier because AIKIDO_DISABLE is set to 1!\n");
-        return;
-    }
-
-    DestroyAstToClean();
     AIKIDO_GLOBAL(phpLifecycle).RequestShutdown();
 
     AIKIDO_LOG_DEBUG("RSHUTDOWN finished!\n");
-}
-
-static void aikido_do_worker_request_shutdown() {
-    if (!AIKIDO_GLOBAL(requestProcessorInstance).IsRequestInitialized() &&
-        AIKIDO_GLOBAL(globalAstToClean) == nullptr) {
-        return;
-    }
-
-    aikido_do_request_shutdown();
 }
 
 static void aikido_detect_frankenphp_worker_mode() {
@@ -113,15 +104,9 @@ PHP_RINIT_FUNCTION(aikido) {
 
 // PHP normally calls this hook at the end of each request. FrankenPHP worker
 // mode does not call it after each handled HTTP request, so worker_rshutdown()
-// performs the usual cleanup. exit()/die() terminate the worker script before
-// its handler can call worker_rshutdown(), however, and PHP does invoke this
-// hook while terminating that script. Clean up only when such a request is
-// still active, avoiding a second shutdown after a normal handler return.
+// performs the usual cleanup. exit()/die() bypass the handler's finally block,
+// but PHP invokes this hook while unwinding that request.
 PHP_RSHUTDOWN_FUNCTION(aikido) {
-    if (AIKIDO_GLOBAL(isFrankenPhpWorkerMode)) {
-        aikido_do_worker_request_shutdown();
-        return SUCCESS;
-    }
     aikido_do_request_shutdown();
     return SUCCESS;
 }
@@ -157,7 +142,7 @@ PHP_FUNCTION(worker_rshutdown) {
         RETURN_FALSE;
     }
 
-    aikido_do_worker_request_shutdown();
+    aikido_do_request_shutdown();
 
     RETURN_TRUE;
 }
