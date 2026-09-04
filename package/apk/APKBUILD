@@ -1,6 +1,6 @@
 # Maintainer: Aikido Security <support@aikido.dev>
 pkgname=aikido-php-firewall
-pkgver=1.5.23
+pkgver=1.5.24
 pkgrel=0
 pkgdesc="Aikido PHP Firewall"
 url="https://github.com/AikidoSec/firewall-php"
