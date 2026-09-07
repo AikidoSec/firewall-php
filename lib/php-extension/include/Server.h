@@ -9,6 +9,8 @@ class Server {
 
     std::string GetVar(const char* var);
 
+    std::string GetHeader(const std::string& name);
+
     std::string GetMethod();
     
     std::string GetMethodFromQuery();

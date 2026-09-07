@@ -67,6 +67,7 @@ std::string sapi_name;
 std::string token;
 std::string endpoint;
 std::string config_endpoint;
+std::string client_ip_header;
 /*
     Cache objects used by the PHP extension to share state with the Go request processor.
 

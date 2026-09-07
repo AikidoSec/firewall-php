@@ -186,6 +186,7 @@ PHP_GINIT_FUNCTION(aikido) {
     new (&aikido_globals->token) std::string();
     new (&aikido_globals->endpoint) std::string();
     new (&aikido_globals->config_endpoint) std::string();
+    new (&aikido_globals->client_ip_header) std::string();
     new (&aikido_globals->logger) Log();
     new (&aikido_globals->agent) Agent();
     new (&aikido_globals->server) Server();
@@ -213,6 +214,7 @@ PHP_GSHUTDOWN_FUNCTION(aikido) {
     aikido_globals->eventCache.~EventCache();
     aikido_globals->eventCacheStack.~EventCacheStack();
     aikido_globals->requestCache.~RequestCache();
+    aikido_globals->client_ip_header.~string();
     aikido_globals->config_endpoint.~string();
     aikido_globals->endpoint.~string();
     aikido_globals->token.~string();

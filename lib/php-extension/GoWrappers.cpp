@@ -51,9 +51,9 @@ CallbackResult GoContextCallback(int callbackId) {
                 ctx = "BODY";
                 ret = server.GetBody();
                 break;
-            case CONTEXT_HEADER_X_FORWARDED_FOR:
-                ctx = "HEADER_X_FORWARDED_FOR";
-                ret = server.GetVar("HTTP_X_FORWARDED_FOR");
+            case CONTEXT_HEADER_CLIENT_IP:
+                ctx = "HEADER_CLIENT_IP";
+                ret = server.GetHeader(AIKIDO_GLOBAL(client_ip_header));
                 break;
             case CONTEXT_COOKIES:
                 ctx = "COOKIES";

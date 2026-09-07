@@ -243,7 +243,7 @@ func IsIpBypassed(instance *instance.RequestProcessorInstance, server *ServerDat
 	return IsIpInSet(instance, server.CloudConfig.BypassedIps, ip) == Found
 }
 
-func getIpFromXForwardedFor(value string) string {
+func getClientIpFromHeader(value string) string {
 	if strings.TrimSpace(value) == "" {
 		return ""
 	}
@@ -289,12 +289,12 @@ func getIpFromXForwardedFor(value string) string {
 	return ""
 }
 
-func GetIpFromRequest(server *ServerData, remoteAddress string, xForwardedFor string) string {
+func GetIpFromRequest(server *ServerData, remoteAddress string, clientIpHeader string) string {
 	if server == nil {
 		return ""
 	}
-	if xForwardedFor != "" && server.AikidoConfig.TrustProxy {
-		ip := getIpFromXForwardedFor(xForwardedFor)
+	if clientIpHeader != "" && server.AikidoConfig.TrustProxy {
+		ip := getClientIpFromHeader(clientIpHeader)
 		if isIP(ip) {
 			return ip
 		}
