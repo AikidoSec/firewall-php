@@ -1,4 +1,5 @@
 #include "Includes.h"
+#include <algorithm>
 
 // Minimum value to use for reporting once every X requests the collected stats to Agent
 // As the report_stats_interval_to_agent is configurable, this define is used to ensure that the configured interval is NEVER less that 50 requests
@@ -242,6 +243,9 @@ void LoadEnvironmentFromGetters(const std::vector<EnvGetterFn>& envGetters) {
     AIKIDO_GLOBAL(sse) = GetEnvBool(envGetters, "AIKIDO_FEATURE_SSE", false);
     AIKIDO_GLOBAL(localhost_allowed_by_default) = GetEnvBool(envGetters, "AIKIDO_LOCALHOST_ALLOWED_BY_DEFAULT", true);
     AIKIDO_GLOBAL(trust_proxy) = GetEnvBool(envGetters, "AIKIDO_TRUST_PROXY", true);
+    std::string clientIpHeader = ToUppercase(GetEnvString(envGetters, "AIKIDO_CLIENT_IP_HEADER", "X-Forwarded-For"));
+    std::replace(clientIpHeader.begin(), clientIpHeader.end(), '-', '_');
+    AIKIDO_GLOBAL(client_ip_header) = "HTTP_" + clientIpHeader;
     AIKIDO_GLOBAL(disk_logs) = GetEnvBool(envGetters, "AIKIDO_DISK_LOGS", false);
     AIKIDO_GLOBAL(sapi_name) = sapi_module.name;
     AIKIDO_GLOBAL(token) = GetEnvString(envGetters, "AIKIDO_TOKEN", "");

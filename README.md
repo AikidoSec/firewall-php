@@ -166,6 +166,8 @@ See [Reporting to Aikido](#reporting-to-your-aikido-security-dashboard) to learn
 
 [Configure Zen using environment variables for authentication, mode settings, debugging, and more.](https://help.aikido.dev/doc/configuration-via-env-vars/docrSItUkeR9)
 
+See [proxy settings](docs/proxy.md) to configure the header used to determine the client's IP address.
+
 ## Benchmarks
 
 Zen for PHP benchmarks are splitted into 2 categories:
