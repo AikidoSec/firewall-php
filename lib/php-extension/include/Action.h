@@ -38,6 +38,8 @@ class Action {
 
         ACTION_STATUS Execute(std::string &event);
         bool IsDetection(std::string &event);
+        // IDOR violations throw even when blocking mode is disabled.
+        bool IsIdorViolation(std::string &event);
 
         void Reset();
 

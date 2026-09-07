@@ -135,6 +135,10 @@ CallbackResult GoContextCallback(int callbackId) {
                 ctx = "SQL_DIALECT";
                 ret = GetEventCacheField(&EventCache::sqlDialect);
                 break;
+            case SQL_PARAMS:
+                ctx = "SQL_PARAMS";
+                ret = GetEventCacheField(&EventCache::sqlParams);
+                break;
             case MODULE:
                 ctx = "MODULE";
                 ret = GetEventCacheField(&EventCache::moduleName);
@@ -151,6 +155,24 @@ CallbackResult GoContextCallback(int callbackId) {
                 ctx = "PARAM_MATCHER_REGEX";
                 ret = GetEventCacheField(&EventCache::paramMatcherRegex);
                 break;
+            case CONTEXT_IDOR_CONFIG: {
+                ctx = "IDOR_CONFIG";
+                json config = {
+                    {"enabled", requestCache.idorProtectionEnabled},
+                    {"tenantColumnName", requestCache.idorTenantColumnName},
+                    {"excludedTables", requestCache.idorExcludedTables},
+                };
+                ret = config.dump();
+                break;
+            }
+            case CONTEXT_TENANT_ID:
+                ctx = "TENANT_ID";
+                ret = requestCache.tenantIdSet ? requestCache.tenantId : "";
+                break;
+            case CONTEXT_IDOR_IGNORED:
+                ctx = "IDOR_IGNORED";
+                ret = requestCache.IsIdorIgnored() ? "1" : "";
+                break;
         }
     } catch (std::exception& e) {
         AIKIDO_LOG_DEBUG("Exception in GoContextCallback: %s\n", e.what());
@@ -161,7 +183,9 @@ CallbackResult GoContextCallback(int callbackId) {
         return CallbackResult{nullptr, 0};
     }
 
-    if (ret.length() > 10000) {
+    if (ctx == "SQL_PARAMS" || ctx == "TENANT_ID") {
+        AIKIDO_LOG_DEBUG("Callback %s -> (sensitive value redacted)\n", ctx.c_str());
+    } else if (ret.length() > 10000) {
         AIKIDO_LOG_DEBUG("Callback %s -> (Result too large to print)\n", ctx.c_str());
     } else {
         AIKIDO_LOG_DEBUG("Callback %s -> %s\n", ctx.c_str(), ret.c_str());

@@ -5,6 +5,8 @@ import (
 	"main/context"
 	"main/instance"
 	"main/log"
+	"main/utils"
+	"main/vulnerabilities/idor"
 	sql_injection "main/vulnerabilities/sql-injection"
 )
 
@@ -21,9 +23,21 @@ func OnPreSqlQueryExecuted(instance *instance.RequestProcessorInstance) string {
 		return ""
 	}
 
+	// Check SQL injection first: block malicious queries before spending time on IDOR analysis.
 	res := sql_injection.CheckContextForSqlInjection(instance, query, operation, dialect)
+	sqlInjectionAction := ""
 	if res != nil {
-		return attack.ReportAttackDetected(res, instance)
+		sqlInjectionAction = attack.ReportAttackDetected(res, instance)
+		if utils.IsBlockingEnabled(instance.GetCurrentServer()) {
+			return sqlInjectionAction
+		}
 	}
-	return ""
+
+	if operation != "pg_prepare" && operation != "pg_send_prepare" {
+		if idorMessage := idor.CheckContextForIdor(instance, query, dialect); idorMessage != "" {
+			return idor.GetIdorThrowAction(idorMessage)
+		}
+	}
+
+	return sqlInjectionAction
 }

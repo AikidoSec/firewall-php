@@ -94,6 +94,18 @@ bool Action::IsDetection(std::string &event) {
     return !event.empty();
 }
 
+bool Action::IsIdorViolation(std::string &event) {
+    if (event.empty()) {
+        return false;
+    }
+    try {
+        json eventJson = json::parse(event);
+        return eventJson.value("idorViolation", false);
+    } catch (const std::exception &e) {
+        return false;
+    }
+}
+
 void Action::Reset() {
     block = false;
     whitelisted = false;
