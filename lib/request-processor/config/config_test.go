@@ -33,8 +33,8 @@ func TestReloadClearsTokenlessSiteAndRestoresCachedServer(t *testing.T) {
 		{"site-a", "WARN"},
 		{"site-a", "WARN"},
 		{"site-b", "WARN"},
-		{"", "WARN"},
-		{"", "WARN"},
+		{"", "INFO"},
+		{"", "INFO"},
 		{"site-a", "WARN"},
 		{"", "info"},
 		{"", "info"},
@@ -45,6 +45,9 @@ func TestReloadClearsTokenlessSiteAndRestoresCachedServer(t *testing.T) {
 		conf := aikido_types.AikidoConfigData{}
 		if !ReloadAikidoConfig(processor, &conf, configJson) {
 			t.Fatalf("token %q, log level %q: reload failed", token, testCase.logLevel)
+		}
+		if testCase.logLevel == "INFO" && globals.CurrentLogLevel != globals.LogInfoLevel {
+			t.Fatal("valid log level was ignored for tokenless config")
 		}
 		if processor.GetCurrentToken() != token {
 			t.Fatalf("token %q: retained token %q", token, processor.GetCurrentToken())

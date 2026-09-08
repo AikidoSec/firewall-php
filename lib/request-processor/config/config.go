@@ -35,15 +35,15 @@ func ReloadAikidoConfig(instance *instance.RequestProcessorInstance, conf *Aikid
 		return false
 	}
 
+	if err := log.SetLogLevel(conf.LogLevel); err != nil && conf.Token != "" {
+		return false
+	}
+
 	if conf.Token == "" {
 		// A tokenless site must not retain the previous site's policy or reporting token.
 		instance.SetCurrentToken("")
 		instance.SetCurrentServer(nil)
 		return true
-	}
-
-	if err := log.SetLogLevel(conf.LogLevel); err != nil {
-		return false
 	}
 
 	if !globals.ServerExists(conf.Token) {

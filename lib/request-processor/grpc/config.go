@@ -91,6 +91,10 @@ func setCloudConfig(server *ServerData, cloudConfigFromAgent *protos.CloudConfig
 	server.CloudConfigMutex.Lock()
 	defer server.CloudConfigMutex.Unlock()
 
+	if cloudConfigFromAgent.ConfigUpdatedAt <= server.CloudConfig.ConfigUpdatedAt {
+		return
+	}
+
 	server.CloudConfig.ConfigUpdatedAt = cloudConfigFromAgent.ConfigUpdatedAt
 
 	server.CloudConfig.Endpoints = map[EndpointKey]EndpointData{}
