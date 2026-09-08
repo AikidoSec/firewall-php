@@ -36,14 +36,13 @@ std::string GetSystemEnvVariable(const std::string& env_key) {
 
 bool LoadDotEnvFile() {
     std::string docRoot = AIKIDO_GLOBAL(server).GetVar("DOCUMENT_ROOT");
-    auto& cache = AIKIDO_GLOBAL(dotEnvCache);
-    if (cache.find(docRoot) != cache.end()) {
+    if (AIKIDO_GLOBAL(dotEnvCache).find(docRoot) != AIKIDO_GLOBAL(dotEnvCache).end()) {
         return true;
     }
 
-    // Cache missing files too, so switching sites never rechecks a previously seen root.
-    // Adding or changing a .env file requires a worker restart.
-    auto& values = cache[docRoot];
+    // Try to load .env once per document root in this worker/thread.
+    // Cached results remain unchanged until the worker restarts.
+    AIKIDO_GLOBAL(dotEnvCache)[docRoot] = {};
     AIKIDO_LOG_DEBUG("Trying to load .env file, starting with DOCUMENT_ROOT: %s\n", docRoot.c_str());
     if (docRoot.empty()) {
         AIKIDO_LOG_DEBUG("DOCUMENT_ROOT is empty!\n");
@@ -91,7 +90,7 @@ bool LoadDotEnvFile() {
                      (value.front() == '\'' && value.back() == '\''))) {
                     value = value.substr(1, value.length() - 2);
                 }
-                values[key] = value;
+                AIKIDO_GLOBAL(dotEnvCache)[docRoot][key] = value;
             }
         }
     }
