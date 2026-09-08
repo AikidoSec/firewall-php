@@ -231,7 +231,6 @@ bool RequestProcessorInstance::RequestInit() {
         // the request processor is a go library that brings in the Go runtime, which (once initialized) 
         // can start threads, install signal handlers, set up GC, etc)
         if(!requestProcessor.Init()){
-            AIKIDO_LOG_ERROR("Failed to initialize Aikido Request Processor!\n");
             return false;
         } 
     
