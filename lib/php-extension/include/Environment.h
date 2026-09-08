@@ -4,7 +4,7 @@ void LoadEnvironment();
 
 void LoadSystemEnvironment();
 
-bool LoadDotEnvFile();
+void LoadDotEnvFile();
 
 bool GetEnvBoolWithAllGetters(const std::string& env_key, bool default_value);
 

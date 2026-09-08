@@ -34,10 +34,10 @@ std::string GetSystemEnvVariable(const std::string& env_key) {
 }
 
 
-bool LoadDotEnvFile() {
+void LoadDotEnvFile() {
     std::string docRoot = AIKIDO_GLOBAL(server).GetVar("DOCUMENT_ROOT");
     if (AIKIDO_GLOBAL(dotEnvCache).find(docRoot) != AIKIDO_GLOBAL(dotEnvCache).end()) {
-        return true;
+        return;
     }
 
     // Try to load .env once per document root in this worker/thread.
@@ -46,7 +46,7 @@ bool LoadDotEnvFile() {
     AIKIDO_LOG_DEBUG("Trying to load .env file, starting with DOCUMENT_ROOT: %s\n", docRoot.c_str());
     if (docRoot.empty()) {
         AIKIDO_LOG_DEBUG("DOCUMENT_ROOT is empty!\n");
-        return false;
+        return;
     }
     std::string dotEnvPath = docRoot + "/../.env";
     std::ifstream envFile(dotEnvPath);
@@ -59,7 +59,7 @@ bool LoadDotEnvFile() {
         envFile.open(dotEnvPath);
         if (!envFile.is_open()) {
             AIKIDO_LOG_DEBUG("Failed to open .env file: %s\n", dotEnvPath.c_str());
-            return false;
+            return;
         }
     }
     AIKIDO_LOG_DEBUG("Found .env file: %s\n", dotEnvPath.c_str());
@@ -95,7 +95,6 @@ bool LoadDotEnvFile() {
         }
     }
     AIKIDO_LOG_DEBUG("Loaded .env file: %s\n", dotEnvPath.c_str());
-    return true;
 }
 
 
