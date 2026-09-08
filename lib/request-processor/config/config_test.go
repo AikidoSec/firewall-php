@@ -29,11 +29,22 @@ func TestReloadClearsTokenlessSiteAndRestoresCachedServer(t *testing.T) {
 
 	processor := instance.NewRequestProcessorInstance(1)
 	var siteA *aikido_types.ServerData
-	for _, token := range []string{"site-a", "site-a", "site-b", "", "", "site-a"} {
-		configJson := `{"token":"` + token + `","log_level":"WARN"}`
+	for _, testCase := range []struct{ token, logLevel string }{
+		{"site-a", "WARN"},
+		{"site-a", "WARN"},
+		{"site-b", "WARN"},
+		{"", "WARN"},
+		{"", "WARN"},
+		{"site-a", "WARN"},
+		{"", "info"},
+		{"", "info"},
+		{"site-a", "WARN"},
+	} {
+		token := testCase.token
+		configJson := `{"token":"` + token + `","log_level":"` + testCase.logLevel + `"}`
 		conf := aikido_types.AikidoConfigData{}
 		if !ReloadAikidoConfig(processor, &conf, configJson) {
-			t.Fatalf("token %q: reload failed", token)
+			t.Fatalf("token %q, log level %q: reload failed", token, testCase.logLevel)
 		}
 		if processor.GetCurrentToken() != token {
 			t.Fatalf("token %q: retained token %q", token, processor.GetCurrentToken())
