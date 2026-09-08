@@ -4,7 +4,7 @@ void LoadEnvironment();
 
 void LoadSystemEnvironment();
 
-bool LoadLaravelEnvFile();
+bool LoadDotEnvFile();
 
 bool GetEnvBoolWithAllGetters(const std::string& env_key, bool default_value);
 

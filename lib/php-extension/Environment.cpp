@@ -34,32 +34,36 @@ std::string GetSystemEnvVariable(const std::string& env_key) {
 }
 
 
-bool LoadLaravelEnvFile() {
-    if (AIKIDO_GLOBAL(laravelEnvLoaded)) {
+bool LoadDotEnvFile() {
+    std::string docRoot = AIKIDO_GLOBAL(server).GetVar("DOCUMENT_ROOT");
+    auto& cache = AIKIDO_GLOBAL(dotEnvCache);
+    if (cache.find(docRoot) != cache.end()) {
         return true;
     }
 
-    std::string docRoot = AIKIDO_GLOBAL(server).GetVar("DOCUMENT_ROOT");
+    // Cache missing files too, so switching sites never rechecks a previously seen root.
+    // Adding or changing a .env file requires a worker restart.
+    auto& values = cache[docRoot];
     AIKIDO_LOG_DEBUG("Trying to load .env file, starting with DOCUMENT_ROOT: %s\n", docRoot.c_str());
     if (docRoot.empty()) {
         AIKIDO_LOG_DEBUG("DOCUMENT_ROOT is empty!\n");
         return false;
     }
-    std::string laravelEnvPath = docRoot + "/../.env";
-    std::ifstream envFile(laravelEnvPath);
+    std::string dotEnvPath = docRoot + "/../.env";
+    std::ifstream envFile(dotEnvPath);
 
     if (!envFile.is_open()) {
-        AIKIDO_LOG_DEBUG("Failed to open .env file: %s\n", laravelEnvPath.c_str());
+        AIKIDO_LOG_DEBUG("Failed to open .env file: %s\n", dotEnvPath.c_str());
 
         // Try to open .env file from docRoot + "/.env" if not found at docRoot + "/../.env"
-        laravelEnvPath = docRoot + "/.env";
-        envFile.open(laravelEnvPath);
+        dotEnvPath = docRoot + "/.env";
+        envFile.open(dotEnvPath);
         if (!envFile.is_open()) {
-            AIKIDO_LOG_DEBUG("Failed to open .env file: %s\n", laravelEnvPath.c_str());
+            AIKIDO_LOG_DEBUG("Failed to open .env file: %s\n", dotEnvPath.c_str());
             return false;
         }
     }
-    AIKIDO_LOG_DEBUG("Found .env file: %s\n", laravelEnvPath.c_str());
+    AIKIDO_LOG_DEBUG("Found .env file: %s\n", dotEnvPath.c_str());
 
     std::string line;
     while (std::getline(envFile, line)) {
@@ -87,12 +91,11 @@ bool LoadLaravelEnvFile() {
                      (value.front() == '\'' && value.back() == '\''))) {
                     value = value.substr(1, value.length() - 2);
                 }
-                AIKIDO_GLOBAL(laravelEnv)[key] = value;
+                values[key] = value;
             }
         }
     }
-    AIKIDO_GLOBAL(laravelEnvLoaded) = true;
-    AIKIDO_LOG_DEBUG("Loaded Laravel env file: %s\n", laravelEnvPath.c_str());
+    AIKIDO_LOG_DEBUG("Loaded .env file: %s\n", dotEnvPath.c_str());
     return true;
 }
 
@@ -126,15 +129,20 @@ std::string GetFrankenEnvVariable(const std::string& env_key) {
     return env_value;
 }
 
-std::string GetLaravelEnvVariable(const std::string& env_key) {
-    const auto& laravelEnv = AIKIDO_GLOBAL(laravelEnv);
-    if (laravelEnv.find(env_key) != laravelEnv.end()) {
+std::string GetDotEnvVariable(const std::string& env_key) {
+    const auto& cache = AIKIDO_GLOBAL(dotEnvCache);
+    auto cached = cache.find(AIKIDO_GLOBAL(server).GetVar("DOCUMENT_ROOT"));
+    if (cached == cache.end()) {
+        return "";
+    }
+    const auto& dotEnv = cached->second;
+    if (dotEnv.find(env_key) != dotEnv.end()) {
         if (env_key == "AIKIDO_TOKEN") {
-            AIKIDO_LOG_DEBUG("laravel_env[%s] = %s\n", env_key.c_str(), AnonymizeToken(laravelEnv.at(env_key)).c_str());
+            AIKIDO_LOG_DEBUG("dotenv[%s] = %s\n", env_key.c_str(), AnonymizeToken(dotEnv.at(env_key)).c_str());
         } else {
-            AIKIDO_LOG_DEBUG("laravel_env[%s] = %s\n", env_key.c_str(), laravelEnv.at(env_key).c_str());
+            AIKIDO_LOG_DEBUG("dotenv[%s] = %s\n", env_key.c_str(), dotEnv.at(env_key).c_str());
         }
-        return laravelEnv.at(env_key);
+        return dotEnv.at(env_key);
     }
     return "";
 }
@@ -144,7 +152,7 @@ std::string GetLaravelEnvVariable(const std::string& env_key) {
     - System environment variables
     - FrankenPHP environment variables ($_SERVER - request-specific, thread-safe)
     - PHP environment variables 
-    - Laravel environment variables
+    - .env file variables
     
     Order is critical: In multithreaded environments (FrankenPHP worker/classic, ZTS),
     getenv() returns cached process-level values that may belong to a different request.
@@ -157,7 +165,7 @@ const std::vector<EnvGetterFn> completeEnvGetters = {
     &GetSystemEnvVariable,
     &GetFrankenEnvVariable,
     &GetPhpEnvVariable,
-    &GetLaravelEnvVariable
+    &GetDotEnvVariable
 };
 
 const std::vector<EnvGetterFn> systemEnvGetters = {
@@ -252,6 +260,7 @@ void LoadEnvironmentFromGetters(const std::vector<EnvGetterFn>& envGetters) {
 }
 
 void LoadEnvironment() {
+    LoadDotEnvFile();
     LoadEnvironmentFromGetters(completeEnvGetters);
 }
 

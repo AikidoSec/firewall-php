@@ -13,7 +13,6 @@ import (
 	"main/utils"
 	zen_internals "main/vulnerabilities/zen-internals"
 	"strings"
-	"time"
 	"unsafe"
 )
 
@@ -36,12 +35,6 @@ var eventHandlers = map[int]HandlerFunction{
 	C.EVENT_PRE_SQL_QUERY_EXECUTED:   OnPreSqlQueryExecuted,
 }
 
-func initializeServer(server *ServerData) {
-	grpc.SendAikidoConfig(server)
-	grpc.OnPackages(server, server.AikidoConfig.Packages)
-	grpc.GetCloudConfig(server, 5*time.Second)
-}
-
 //export CreateInstance
 func CreateInstance(threadID uint64) unsafe.Pointer {
 	return instance.CreateInstance(threadID)
@@ -59,18 +52,6 @@ func InitInstance(instancePtr unsafe.Pointer, initJson string) bool {
 	log.Debugf(instanceObject, "Init data: %s", initJson)
 	log.Debugf(instanceObject, "Started with token: \"AIK_RUNTIME_***%s\"", utils.AnonymizeToken(instanceObject.GetCurrentToken()))
 
-	if globals.EnvironmentConfig.PlatformName != "cli" {
-		server := instanceObject.GetCurrentServer()
-		if server != nil {
-			server.ServerInitMutex.Lock()
-			defer server.ServerInitMutex.Unlock()
-			if server.ServerInitialized {
-				return true
-			}
-			initializeServer(server)
-			server.ServerInitialized = true
-		}
-	}
 	return true
 }
 
@@ -173,27 +154,7 @@ func RequestProcessorConfigUpdate(instancePtr unsafe.Pointer, configJson string)
 
 	log.Debugf(instance, "Reloading Aikido config...")
 	conf := AikidoConfigData{}
-
-	reloadResult := config.ReloadAikidoConfig(instance, &conf, configJson)
-
-	server := instance.GetCurrentServer()
-
-	if server == nil {
-		return false
-	}
-	switch reloadResult {
-	case config.ReloadWithNewToken:
-		initializeServer(server)
-		return true
-	case config.ReloadWithPastSeenToken:
-		grpc.GetCloudConfig(server, 5*time.Second)
-		return true
-	case config.ReloadWithSameToken:
-		return true
-	case config.ReloadError:
-		return false
-	}
-	return false
+	return config.ReloadAikidoConfig(instance, &conf, configJson)
 }
 
 //export RequestProcessorOnEvent
