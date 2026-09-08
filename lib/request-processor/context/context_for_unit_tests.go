@@ -32,8 +32,8 @@ func UnitTestsCallback(instance *instance.RequestProcessorInstance, context_id i
 		return TestContext["statusCode"]
 	case C.CONTEXT_HEADERS:
 		return TestContext["headers"]
-	case C.CONTEXT_HEADER_X_FORWARDED_FOR:
-		return TestContext["xForwardedFor"]
+	case C.CONTEXT_HEADER_CLIENT_IP:
+		return TestContext["clientIpHeader"]
 	case C.CONTEXT_HEADER_USER_AGENT:
 		return TestContext["userAgent"]
 	case C.CONTEXT_COOKIES:

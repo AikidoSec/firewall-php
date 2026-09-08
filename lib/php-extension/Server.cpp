@@ -33,6 +33,12 @@ std::string Server::GetVar(const char* var) {
     return std::string(Z_STRVAL_P(data), Z_STRLEN_P(data));
 }
 
+std::string Server::GetHeader(const std::string& name) {
+    std::string serverVar = "HTTP_" + ToUppercase(name);
+    std::replace(serverVar.begin(), serverVar.end(), '-', '_');
+    return GetVar(serverVar.c_str());
+}
+
 // Return the method from the query param _method (_GET["_method"])
 std::string Server::GetMethodFromQuery() {
     zval *get_array;

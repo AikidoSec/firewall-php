@@ -1,0 +1,21 @@
+{
+    "success": true,
+    "serviceId": 1,
+    "heartbeatIntervalInMS": 600000,
+    "endpoints": [],
+    "blockedUserIds": [],
+    "allowedIPAddresses": [],
+    "receivedAnyStats": true,
+    "block": true,
+    "blockedIPAddresses": [
+        {
+            "key": "geoip/United States;us",
+            "source": "geoip",
+            "description": "geo restrictions",
+            "ips": [
+                "185.141.119.0/24",
+                "2a02:6ea0:d200::/40"
+            ]
+        }
+    ]
+}

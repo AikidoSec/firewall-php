@@ -135,10 +135,10 @@ func ContextSetIp(instance *instance.RequestProcessorInstance) {
 		return
 	}
 	remoteAddress := c.Callback(instance, C.CONTEXT_REMOTE_ADDRESS)
-	xForwardedFor := c.Callback(instance, C.CONTEXT_HEADER_X_FORWARDED_FOR)
+	clientIpHeader := c.Callback(instance, C.CONTEXT_HEADER_CLIENT_IP)
 
 	server := c.instance.GetCurrentServer()
-	ip := utils.GetIpFromRequest(server, remoteAddress, xForwardedFor)
+	ip := utils.GetIpFromRequest(server, remoteAddress, clientIpHeader)
 	c.IP = &ip
 }
 

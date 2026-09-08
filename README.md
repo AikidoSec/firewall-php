@@ -164,7 +164,8 @@ See [Reporting to Aikido](#reporting-to-your-aikido-security-dashboard) to learn
 
 ## Additional configuration
 
-[Configure Zen using environment variables for authentication, mode settings, debugging, and more.](https://help.aikido.dev/doc/configuration-via-env-vars/docrSItUkeR9)
+- [Configure trusted proxies and custom client IP headers](./docs/proxy.md)
+- [Configure Zen using environment variables for authentication, mode settings, debugging, and more](https://help.aikido.dev/doc/configuration-via-env-vars/docrSItUkeR9)
 
 ## Benchmarks
 
