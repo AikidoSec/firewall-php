@@ -4,6 +4,7 @@ import (
 	"main/aikido_types"
 	"main/globals"
 	"main/instance"
+	"sync"
 	"testing"
 )
 
@@ -39,6 +40,7 @@ func TestReloadClearsTokenlessSiteAndRestoresCachedServer(t *testing.T) {
 		{"", "info"},
 		{"", "info"},
 		{"site-a", "WARN"},
+		{"site-c", "info"},
 	} {
 		token := testCase.token
 		configJson := `{"token":"` + token + `","log_level":"` + testCase.logLevel + `"}`

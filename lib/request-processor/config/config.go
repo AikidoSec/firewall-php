@@ -35,9 +35,8 @@ func ReloadAikidoConfig(instance *instance.RequestProcessorInstance, conf *Aikid
 		return false
 	}
 
-	if err := log.SetLogLevel(conf.LogLevel); err != nil && conf.Token != "" {
-		return false
-	}
+	// Invalid logging config must not prevent switching to the site's server.
+	_ = log.SetLogLevel(conf.LogLevel)
 
 	if conf.Token == "" {
 		// A tokenless site must not retain the previous site's policy or reporting token.
