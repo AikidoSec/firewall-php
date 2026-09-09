@@ -35,9 +35,8 @@ func ReloadAikidoConfig(instance *instance.RequestProcessorInstance, conf *Aikid
 		return false
 	}
 
-	if err := log.SetLogLevel(conf.LogLevel); err != nil && conf.Token != "" {
-		return false
-	}
+	// Invalid logging config must not prevent switching to the site's server.
+	_ = log.SetLogLevel(conf.LogLevel)
 
 	if conf.Token == "" {
 		// A tokenless site must not retain the previous site's policy or reporting token.
@@ -46,10 +45,7 @@ func ReloadAikidoConfig(instance *instance.RequestProcessorInstance, conf *Aikid
 		return true
 	}
 
-	if !globals.ServerExists(conf.Token) {
-		server := globals.CreateServer(conf.Token)
-		server.AikidoConfig = *conf
-	}
+	globals.GetOrCreateServer(conf.Token, *conf)
 	if !UpdateToken(instance, conf.Token) {
 		return true
 	}
@@ -59,13 +55,17 @@ func ReloadAikidoConfig(instance *instance.RequestProcessorInstance, conf *Aikid
 }
 
 func initializeServer(server *ServerData) {
-	server.ServerInitMutex.Lock()
-	if !server.ServerInitialized {
-		grpc.SendAikidoConfig(server)
-		grpc.OnPackages(server, server.AikidoConfig.Packages)
-		server.ServerInitialized = true
-	}
-	server.ServerInitMutex.Unlock()
+	// Release the lock before GetCloudConfig because network calls can block.
+	func() {
+		server.ServerInitMutex.Lock()
+		defer server.ServerInitMutex.Unlock()
+
+		if !server.ServerInitialized {
+			grpc.SendAikidoConfig(server)
+			grpc.OnPackages(server, server.AikidoConfig.Packages)
+			server.ServerInitialized = true
+		}
+	}()
 	grpc.GetCloudConfig(server, 5*time.Second)
 }
 
