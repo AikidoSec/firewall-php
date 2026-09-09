@@ -55,13 +55,17 @@ func ReloadAikidoConfig(instance *instance.RequestProcessorInstance, conf *Aikid
 }
 
 func initializeServer(server *ServerData) {
-	server.ServerInitMutex.Lock()
-	if !server.ServerInitialized {
-		grpc.SendAikidoConfig(server)
-		grpc.OnPackages(server, server.AikidoConfig.Packages)
-		server.ServerInitialized = true
-	}
-	server.ServerInitMutex.Unlock()
+	// Release the lock before GetCloudConfig because network calls can block.
+	func() {
+		server.ServerInitMutex.Lock()
+		defer server.ServerInitMutex.Unlock()
+
+		if !server.ServerInitialized {
+			grpc.SendAikidoConfig(server)
+			grpc.OnPackages(server, server.AikidoConfig.Packages)
+			server.ServerInitialized = true
+		}
+	}()
 	grpc.GetCloudConfig(server, 5*time.Second)
 }
 
