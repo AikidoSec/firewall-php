@@ -97,7 +97,7 @@ func TestConcurrentReloadUsesOneServerPerToken(t *testing.T) {
 	expected := <-servers
 	for i := 1; i < workers; i++ {
 		if server := <-servers; server != expected {
-			t.Fatalf("processor selected server %p, expected %p", server, expected)
+			t.Errorf("processor selected server %p, expected %p", server, expected)
 		}
 	}
 	if server := globals.GetServer("shared-site"); server != expected {
