@@ -75,7 +75,6 @@ bool RequestProcessor::Init() {
 }
 
 std::string RequestProcessor::GetInitData(const std::string& userProvidedToken) {
-    LoadLaravelEnvFile();
     LoadEnvironment();
 
     auto& globalToken = AIKIDO_GLOBAL(token);
@@ -211,15 +210,14 @@ bool RequestProcessorInstance::ReportStats() {
 bool RequestProcessorInstance::RequestInit() {
     std::string sapiName = sapi_module.name;
 
-    if (sapiName == "apache2handler" || sapiName == "frankenphp") {
-        // Apache-mod-php and FrankenPHP can serve multiple sites per process
+    if (sapiName == "apache2handler" || sapiName == "frankenphp" || sapiName == "fpm-fcgi") {
+        // These SAPIs can serve multiple sites per process.
         // We need to reload config each request to detect token changes
           this->LoadConfigFromEnvironment();
       } else {
-          // Server APIs that are not apache-mod-php/frankenphp (like php-fpm, cli-server, ...) 
-          //  can only serve one site per process, so the config should be loaded at the first request.
+          // Other SAPIs retain their config after the first token is loaded.
           // If the token is not set at the first request, we try to reload it until we get a valid token.
-          // The user can update .env file via zero downtime deployments after the PHP server is started.
+          // Cached .env files are checked again only after the worker restarts.
           if (AIKIDO_GLOBAL(token) == "") {
               AIKIDO_LOG_INFO("Loading Aikido config until we get a valid token for SAPI: %s...\n", AIKIDO_GLOBAL(sapi_name).c_str());
               this->LoadConfigFromEnvironment();
@@ -276,16 +274,14 @@ void RequestProcessorInstance::LoadConfig(const std::string& previousToken, cons
     if (requestProcessor.requestProcessorConfigUpdateFn == nullptr || this->requestProcessorInstance == nullptr) {
         return;
     }
-    if (currentToken.empty()) {
-        AIKIDO_LOG_INFO("Current token is empty, skipping config reload...!\n");
-        return;
-    }
     if (previousToken == currentToken) {
         AIKIDO_LOG_INFO("Token is the same as previous one, skipping config reload...\n");
         return;
     }
 
     AIKIDO_LOG_INFO("Reloading Aikido config...\n");
+    // Attribute accumulated stats to the old site before selecting the new one.
+    this->ReportStats();
     std::string initJson = requestProcessor.GetInitData(currentToken);
     requestProcessor.requestProcessorConfigUpdateFn(this->requestProcessorInstance, GoCreateString(initJson));
 }

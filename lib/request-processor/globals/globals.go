@@ -64,18 +64,18 @@ func GetServers() []*ServerData {
 	return servers
 }
 
-func ServerExists(token string) bool {
-	ServersMutex.RLock()
-	defer ServersMutex.RUnlock()
-	_, exists := Servers[token]
-	return exists
-}
-
-func CreateServer(token string) *ServerData {
+func GetOrCreateServer(token string, aikidoConfig AikidoConfigData) *ServerData {
 	ServersMutex.Lock()
 	defer ServersMutex.Unlock()
-	Servers[token] = NewServerData()
-	return Servers[token]
+
+	if server, exists := Servers[token]; exists {
+		return server
+	}
+
+	server := NewServerData()
+	server.AikidoConfig = aikidoConfig
+	Servers[token] = server
+	return server
 }
 
 const (

@@ -4,10 +4,12 @@ import (
 	"encoding/json"
 	. "main/aikido_types"
 	"main/globals"
+	"main/grpc"
 	"main/instance"
 	"main/log"
 	"main/utils"
 	"os"
+	"time"
 )
 
 func UpdateToken(instance *instance.RequestProcessorInstance, token string) bool {
@@ -27,39 +29,44 @@ func UpdateToken(instance *instance.RequestProcessorInstance, token string) bool
 	return true
 }
 
-type ReloadResult int
-
-const (
-	ReloadError ReloadResult = iota
-	ReloadWithSameToken
-	ReloadWithNewToken
-	ReloadWithPastSeenToken
-)
-
-func ReloadAikidoConfig(instance *instance.RequestProcessorInstance, conf *AikidoConfigData, initJson string) ReloadResult {
+func ReloadAikidoConfig(instance *instance.RequestProcessorInstance, conf *AikidoConfigData, initJson string) bool {
 	err := json.Unmarshal([]byte(initJson), conf)
 	if err != nil {
-		return ReloadError
+		return false
 	}
 
-	if err := log.SetLogLevel(conf.LogLevel); err != nil {
-		return ReloadError
-	}
+	// Invalid logging config must not prevent switching to the site's server.
+	_ = log.SetLogLevel(conf.LogLevel)
 
 	if conf.Token == "" {
-		return ReloadError
+		// A tokenless site must not retain the previous site's policy or reporting token.
+		instance.SetCurrentToken("")
+		instance.SetCurrentServer(nil)
+		return true
 	}
 
-	if globals.ServerExists(conf.Token) {
-		if !UpdateToken(instance, conf.Token) {
-			return ReloadWithSameToken
-		}
-		return ReloadWithPastSeenToken
+	globals.GetOrCreateServer(conf.Token, *conf)
+	if !UpdateToken(instance, conf.Token) {
+		return true
 	}
-	server := globals.CreateServer(conf.Token)
-	server.AikidoConfig = *conf
-	UpdateToken(instance, conf.Token)
-	return ReloadWithNewToken
+
+	initializeServer(instance.GetCurrentServer())
+	return true
+}
+
+func initializeServer(server *ServerData) {
+	// Release the lock before GetCloudConfig because network calls can block.
+	func() {
+		server.ServerInitMutex.Lock()
+		defer server.ServerInitMutex.Unlock()
+
+		if !server.ServerInitialized {
+			grpc.SendAikidoConfig(server)
+			grpc.OnPackages(server, server.AikidoConfig.Packages)
+			server.ServerInitialized = true
+		}
+	}()
+	grpc.GetCloudConfig(server, 5*time.Second)
 }
 
 func Init(platformName string, serverPID int32) {

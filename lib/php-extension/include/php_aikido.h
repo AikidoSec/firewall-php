@@ -40,7 +40,6 @@ bool uses_symfony_http_foundation; // If true, method override is supported usin
 unsigned int report_stats_interval_to_agent; // Report once every X requests the collected stats to Agent
 std::chrono::high_resolution_clock::time_point currentRequestStart;
 uint64_t totalOverheadForCurrentRequest;
-bool laravelEnvLoaded;
 // The checkedAutoBlock module global variable is used to check if auto_block_request function
 // has already been called, in order to avoid multiple calls to this function.
 // Accessed via AIKIDO_GLOBAL(checkedAutoBlock).
@@ -92,7 +91,7 @@ std::unordered_map<std::string, SinkStats> stats;
 RequestProcessorInstance requestProcessorInstance;
 Action action;
 PhpLifecycle phpLifecycle;
-std::unordered_map<std::string, std::string> laravelEnv;
+std::unordered_map<std::string, std::unordered_map<std::string, std::string>> dotEnvCache;
 ZEND_END_MODULE_GLOBALS(aikido)
 
 ZEND_EXTERN_MODULE_GLOBALS(aikido)
