@@ -70,3 +70,37 @@ func TestReloadClearsTokenlessSiteAndRestoresCachedServer(t *testing.T) {
 		}
 	}
 }
+
+func TestConcurrentReloadUsesOneServerPerToken(t *testing.T) {
+	previousServers := globals.Servers
+	globals.Servers = make(map[string]*aikido_types.ServerData)
+	t.Cleanup(func() { globals.Servers = previousServers })
+
+	const workers = 64
+	servers := make(chan *aikido_types.ServerData, workers)
+	var ready sync.WaitGroup
+	ready.Add(workers)
+
+	globals.ServersMutex.Lock()
+	for i := 0; i < workers; i++ {
+		go func(threadID uint64) {
+			ready.Done()
+			processor := instance.NewRequestProcessorInstance(threadID)
+			conf := aikido_types.AikidoConfigData{}
+			ReloadAikidoConfig(processor, &conf, `{"token":"shared-site","log_level":"WARN"}`)
+			servers <- processor.GetCurrentServer()
+		}(uint64(i + 1))
+	}
+	ready.Wait()
+	globals.ServersMutex.Unlock()
+
+	expected := <-servers
+	for i := 1; i < workers; i++ {
+		if server := <-servers; server != expected {
+			t.Fatalf("processor selected server %p, expected %p", server, expected)
+		}
+	}
+	if server := globals.GetServer("shared-site"); server != expected {
+		t.Fatalf("stored server %p, expected %p", server, expected)
+	}
+}

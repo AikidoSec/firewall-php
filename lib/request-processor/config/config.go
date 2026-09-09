@@ -45,10 +45,7 @@ func ReloadAikidoConfig(instance *instance.RequestProcessorInstance, conf *Aikid
 		return true
 	}
 
-	if !globals.ServerExists(conf.Token) {
-		server := globals.CreateServer(conf.Token)
-		server.AikidoConfig = *conf
-	}
+	globals.GetOrCreateServer(conf.Token, *conf)
 	if !UpdateToken(instance, conf.Token) {
 		return true
 	}
