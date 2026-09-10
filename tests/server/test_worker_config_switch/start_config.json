@@ -1,0 +1,7 @@
+{
+    "success": true,
+    "serviceId": 1,
+    "heartbeatIntervalInMS": 600000,
+    "endpoints": [],
+    "receivedAnyStats": true
+}
