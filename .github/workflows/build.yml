@@ -13,6 +13,8 @@ jobs:
   build_libs:
     name: Build Go libs ${{ matrix.arch == '' && 'x86_64' || 'arm' }}
     runs-on: ubuntu-24.04${{ matrix.arch }}
+    env:
+      GOTOOLCHAIN: go1.26.8
     container:
       image: ghcr.io/aikidosec/firewall-php-build-libs:v1
     strategy:
@@ -39,9 +41,8 @@ jobs:
         cd lib
         protoc --go_out=agent --go-grpc_out=agent ipc.proto
         cd agent
-        go get main/ipc/protos
-        go get google.golang.org/grpc
-        go get github.com/stretchr/testify/assert
+        go mod download
+        go mod verify
         go test ./...
         go build -buildvcs=false -ldflags "-s -w" -o ../../build/aikido-agent
         ls -l ../../build
@@ -52,10 +53,8 @@ jobs:
         cd lib
         protoc --go_out=request-processor --go-grpc_out=request-processor ipc.proto
         cd request-processor
-        go mod tidy
-        go get google.golang.org/grpc
-        go get github.com/stretchr/testify/assert
-        go get main/ipc/protos
+        go mod download
+        go mod verify
         go test ./...
         go build -ldflags "-s -w" -buildmode=c-shared -o ../../build/aikido-request-processor.so
         ls -l ../../build
