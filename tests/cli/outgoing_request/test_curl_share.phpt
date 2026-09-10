@@ -18,10 +18,13 @@ curl_share_setopt($sh, CURLSHOPT_SHARE, CURL_LOCK_DATA_COOKIE);
 curl_share_setopt($sh, CURLSHOPT_SHARE, CURL_LOCK_DATA_DNS);
 curl_share_setopt($sh, CURLSHOPT_SHARE, CURL_LOCK_DATA_SSL_SESSION);
 
+// Test hostname logging without waiting for public DNS or remote servers.
 $ch1 = curl_init("https://example.com/");
 curl_setopt($ch1, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch1, CURLOPT_TIMEOUT, 1);
 curl_setopt($ch1, CURLOPT_SHARE, $sh);
+curl_setopt($ch1, CURLOPT_CONNECT_TO, ["::127.0.0.1:1"]);
+curl_setopt($ch1, CURLOPT_PROXY, "");
 curl_exec($ch1);
 
 $ch2 = curl_init("https://httpbin.org/get");
@@ -33,6 +36,8 @@ curl_setopt($ch2, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch2, CURLOPT_URL, "https://httpbin.org/get?" . $queryParams);
 curl_setopt($ch2, CURLOPT_TIMEOUT, 10);
 curl_setopt($ch2, CURLOPT_SHARE, $sh);
+curl_setopt($ch2, CURLOPT_CONNECT_TO, ["::127.0.0.1:1"]);
+curl_setopt($ch2, CURLOPT_PROXY, "");
 curl_exec($ch2);
 
 $ch3 = curl_init();
@@ -44,24 +49,32 @@ $options = [
     CURLOPT_SHARE => $sh
 ];
 curl_setopt_array($ch3, $options);
+curl_setopt($ch3, CURLOPT_CONNECT_TO, ["::127.0.0.1:1"]);
+curl_setopt($ch3, CURLOPT_PROXY, "");
 curl_exec($ch3);
 
 $ch4 = curl_init("https://facebook.com:443");
 curl_setopt($ch4, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch4, CURLOPT_TIMEOUT, 1);
 curl_setopt($ch4, CURLOPT_SHARE, $sh);
+curl_setopt($ch4, CURLOPT_CONNECT_TO, ["::127.0.0.1:1"]);
+curl_setopt($ch4, CURLOPT_PROXY, "");
 curl_exec($ch4);
 
 $ch5 = curl_init("http://www.aikido.dev:80");
 curl_setopt($ch5, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch5, CURLOPT_TIMEOUT, 1);
 curl_setopt($ch5, CURLOPT_SHARE, $sh);
+curl_setopt($ch5, CURLOPT_CONNECT_TO, ["::127.0.0.1:1"]);
+curl_setopt($ch5, CURLOPT_PROXY, "");
 curl_exec($ch5);
 
 $ch6 = curl_init("http://some-invalid-domain.com:4113");
 curl_setopt($ch6, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch6, CURLOPT_TIMEOUT, 1);
 curl_setopt($ch6, CURLOPT_SHARE, $sh);
+curl_setopt($ch6, CURLOPT_CONNECT_TO, ["::127.0.0.1:1"]);
+curl_setopt($ch6, CURLOPT_PROXY, "");
 curl_exec($ch6);
 
 ?>
