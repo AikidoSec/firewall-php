@@ -3,6 +3,7 @@ module main
 go 1.26.8
 
 require (
+	github.com/golang/protobuf v1.5.4
 	github.com/stretchr/testify v1.12.0
 	go4.org/netipx v0.0.0-20231129151722-fdeea329fbba
 	golang.org/x/net v0.58.0
