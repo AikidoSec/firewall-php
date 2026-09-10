@@ -13,8 +13,6 @@ jobs:
   build_libs:
     name: Build Go libs ${{ matrix.arch == '' && 'x86_64' || 'arm' }}
     runs-on: ubuntu-24.04${{ matrix.arch }}
-    env:
-      GOTOOLCHAIN: go1.26.8
     container:
       image: ghcr.io/aikidosec/firewall-php-build-libs:v1
     strategy:
