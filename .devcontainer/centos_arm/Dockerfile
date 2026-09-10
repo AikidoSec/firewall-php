@@ -22,9 +22,9 @@ RUN yum install -y nano
 RUN yum install -y lsof
 RUN yum install -y jq
 RUN yum install -y libcurl-devel
-RUN curl -O https://dl.google.com/go/go1.26.6.linux-arm64.tar.gz && \
-     echo "d0507e9e9d7fe012aae570108cbd76c15de879e17130ab8cb90d4d7445cb1f2e go1.26.6.linux-arm64.tar.gz" | sha256sum -c
-RUN tar -C /usr/local -xzf go1.26.6.linux-arm64.tar.gz
+RUN curl -O https://dl.google.com/go/go1.26.8.linux-arm64.tar.gz && \
+     echo "211ffced9dcb9633a55eac6364816ec0ddd951389a740e88fa8b3337971bdda0 go1.26.8.linux-arm64.tar.gz" | sha256sum -c
+RUN tar -C /usr/local -xzf go1.26.8.linux-arm64.tar.gz
 ENV PATH="/usr/local/go/bin:${PATH}"
 RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
 RUN go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest

@@ -20,46 +20,45 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 type GrpcServer struct {
 	protos.AikidoServer
 }
 
-func (s *GrpcServer) OnConfig(ctx context.Context, req *protos.Config) (*emptypb.Empty, error) {
+func (s *GrpcServer) OnConfig(ctx context.Context, req *protos.Config) (*protos.Empty, error) {
 	token := req.GetToken()
 	if token == "" {
-		return &emptypb.Empty{}, nil
+		return &protos.Empty{}, nil
 	}
 
 	server := globals.GetServer(ServerKey{Token: token, ServerPID: req.GetServerPid()})
 	if server != nil {
 		log.Debugf(server.Logger, "Server \"AIK_RUNTIME_***%s\" already exists, skipping config update (request processor PID: %d, server PID: %d)", utils.AnonymizeToken(token), req.GetRequestProcessorPid(), req.GetServerPid())
-		return &emptypb.Empty{}, nil
+		return &protos.Empty{}, nil
 	}
 
 	server_utils.Register(ServerKey{Token: token, ServerPID: req.GetServerPid()}, req.GetRequestProcessorPid(), req)
-	return &emptypb.Empty{}, nil
+	return &protos.Empty{}, nil
 }
 
-func (s *GrpcServer) OnPackages(ctx context.Context, req *protos.Packages) (*emptypb.Empty, error) {
+func (s *GrpcServer) OnPackages(ctx context.Context, req *protos.Packages) (*protos.Empty, error) {
 	server := globals.GetServer(ServerKey{Token: req.GetToken(), ServerPID: req.GetServerPid()})
 	if server == nil {
-		return &emptypb.Empty{}, nil
+		return &protos.Empty{}, nil
 	}
 	storePackages(server, req.GetPackages())
-	return &emptypb.Empty{}, nil
+	return &protos.Empty{}, nil
 }
 
-func (s *GrpcServer) OnDomain(ctx context.Context, req *protos.Domain) (*emptypb.Empty, error) {
+func (s *GrpcServer) OnDomain(ctx context.Context, req *protos.Domain) (*protos.Empty, error) {
 	server := globals.GetServer(ServerKey{Token: req.GetToken(), ServerPID: req.GetServerPid()})
 	if server == nil {
-		return &emptypb.Empty{}, nil
+		return &protos.Empty{}, nil
 	}
 	log.Debugf(server.Logger, "Received domain: %s:%d", req.GetDomain(), req.GetPort())
 	storeDomain(server, req.GetDomain(), req.GetPort())
-	return &emptypb.Empty{}, nil
+	return &protos.Empty{}, nil
 }
 
 func (s *GrpcServer) GetRateLimitingStatus(ctx context.Context, req *protos.RateLimitingInfo) (*protos.RateLimitingStatus, error) {
@@ -71,10 +70,10 @@ func (s *GrpcServer) GetRateLimitingStatus(ctx context.Context, req *protos.Rate
 	return getRateLimitingStatus(server, req.GetMethod(), req.GetRoute(), req.GetRouteParsed(), req.GetUser(), req.GetIp(), req.GetRateLimitGroup()), nil
 }
 
-func (s *GrpcServer) OnRequestShutdown(ctx context.Context, req *protos.RequestMetadataShutdown) (*emptypb.Empty, error) {
+func (s *GrpcServer) OnRequestShutdown(ctx context.Context, req *protos.RequestMetadataShutdown) (*protos.Empty, error) {
 	server := globals.GetServer(ServerKey{Token: req.GetToken(), ServerPID: req.GetServerPid()})
 	if server == nil {
-		return &emptypb.Empty{}, nil
+		return &protos.Empty{}, nil
 	}
 	log.Debugf(server.Logger, "Received request metadata: %s %s %d %s %s %v", req.GetMethod(), req.GetRouteParsed(), req.GetStatusCode(), req.GetUser(), req.GetIp(), req.GetApiSpec())
 	if req.GetShouldDiscoverRoute() || req.GetRateLimited() {
@@ -83,7 +82,7 @@ func (s *GrpcServer) OnRequestShutdown(ctx context.Context, req *protos.RequestM
 	}
 	go updateAttackWaveCountsAndDetect(server, req.GetIsWebScanner(), req.GetIp(), req.GetUser(), req.GetUserAgent(), req.GetMethod(), req.GetUrl())
 
-	return &emptypb.Empty{}, nil
+	return &protos.Empty{}, nil
 }
 
 func (s *GrpcServer) GetCloudConfig(ctx context.Context, req *protos.CloudConfigUpdatedAt) (*protos.CloudConfig, error) {
@@ -102,49 +101,49 @@ func (s *GrpcServer) GetCloudConfig(ctx context.Context, req *protos.CloudConfig
 	return cloudConfig, nil
 }
 
-func (s *GrpcServer) OnUser(ctx context.Context, req *protos.User) (*emptypb.Empty, error) {
+func (s *GrpcServer) OnUser(ctx context.Context, req *protos.User) (*protos.Empty, error) {
 	server := globals.GetServer(ServerKey{Token: req.GetToken(), ServerPID: req.GetServerPid()})
 	if server == nil {
-		return &emptypb.Empty{}, nil
+		return &protos.Empty{}, nil
 	}
 	log.Debugf(server.Logger, "Received user event: %s", req.GetId())
 	go onUserEvent(server, req.GetId(), req.GetUsername(), req.GetIp())
-	return &emptypb.Empty{}, nil
+	return &protos.Empty{}, nil
 }
 
-func (s *GrpcServer) OnAttackDetected(ctx context.Context, req *protos.AttackDetected) (*emptypb.Empty, error) {
+func (s *GrpcServer) OnAttackDetected(ctx context.Context, req *protos.AttackDetected) (*protos.Empty, error) {
 	server := globals.GetServer(ServerKey{Token: req.GetToken(), ServerPID: req.GetServerPid()})
 	if server == nil {
-		return &emptypb.Empty{}, nil
+		return &protos.Empty{}, nil
 	}
 	cloud.SendAttackDetectedEvent(server, req, "detected_attack")
 	storeAttackStats(server, req)
-	return &emptypb.Empty{}, nil
+	return &protos.Empty{}, nil
 }
 
-func (s *GrpcServer) OnMonitoredSinkStats(ctx context.Context, req *protos.MonitoredSinkStats) (*emptypb.Empty, error) {
+func (s *GrpcServer) OnMonitoredSinkStats(ctx context.Context, req *protos.MonitoredSinkStats) (*protos.Empty, error) {
 	server := globals.GetServer(ServerKey{Token: req.GetToken(), ServerPID: req.GetServerPid()})
 	if server == nil {
-		return &emptypb.Empty{}, nil
+		return &protos.Empty{}, nil
 	}
 	storeSinkStats(server, req)
-	return &emptypb.Empty{}, nil
+	return &protos.Empty{}, nil
 }
 
-func (s *GrpcServer) OnMiddlewareInstalled(ctx context.Context, req *protos.MiddlewareInstalledInfo) (*emptypb.Empty, error) {
+func (s *GrpcServer) OnMiddlewareInstalled(ctx context.Context, req *protos.MiddlewareInstalledInfo) (*protos.Empty, error) {
 	server := globals.GetServer(ServerKey{Token: req.GetToken(), ServerPID: req.GetServerPid()})
 	if server == nil {
-		return &emptypb.Empty{}, nil
+		return &protos.Empty{}, nil
 	}
 	log.Debugf(server.Logger, "Received MiddlewareInstalled")
 	atomic.StoreUint32(&server.MiddlewareInstalled, 1)
-	return &emptypb.Empty{}, nil
+	return &protos.Empty{}, nil
 }
 
-func (s *GrpcServer) OnMonitoredIpMatch(ctx context.Context, req *protos.MonitoredIpMatch) (*emptypb.Empty, error) {
+func (s *GrpcServer) OnMonitoredIpMatch(ctx context.Context, req *protos.MonitoredIpMatch) (*protos.Empty, error) {
 	server := globals.GetServer(ServerKey{Token: req.GetToken(), ServerPID: req.GetServerPid()})
 	if server == nil {
-		return &emptypb.Empty{}, nil
+		return &protos.Empty{}, nil
 	}
 	log.Debugf(server.Logger, "Received MonitoredIpMatch: %v", req.GetLists())
 
@@ -152,13 +151,13 @@ func (s *GrpcServer) OnMonitoredIpMatch(ctx context.Context, req *protos.Monitor
 	defer server.StatsData.StatsMutex.Unlock()
 
 	storeMonitoredListsMatches(&server.StatsData.IpAddressesMatches, req.GetLists())
-	return &emptypb.Empty{}, nil
+	return &protos.Empty{}, nil
 }
 
-func (s *GrpcServer) OnMonitoredUserAgentMatch(ctx context.Context, req *protos.MonitoredUserAgentMatch) (*emptypb.Empty, error) {
+func (s *GrpcServer) OnMonitoredUserAgentMatch(ctx context.Context, req *protos.MonitoredUserAgentMatch) (*protos.Empty, error) {
 	server := globals.GetServer(ServerKey{Token: req.GetToken(), ServerPID: req.GetServerPid()})
 	if server == nil {
-		return &emptypb.Empty{}, nil
+		return &protos.Empty{}, nil
 	}
 	log.Debugf(server.Logger, "Received MonitoredUserAgentMatch: %v", req.GetLists())
 
@@ -166,7 +165,7 @@ func (s *GrpcServer) OnMonitoredUserAgentMatch(ctx context.Context, req *protos.
 	defer server.StatsData.StatsMutex.Unlock()
 
 	storeMonitoredListsMatches(&server.StatsData.UserAgentsMatches, req.GetLists())
-	return &emptypb.Empty{}, nil
+	return &protos.Empty{}, nil
 }
 
 var grpcServer *grpc.Server
