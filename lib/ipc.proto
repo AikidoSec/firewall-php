@@ -1,25 +1,25 @@
 syntax = "proto3";
 
-import "google/protobuf/empty.proto";
-
 package ipc;
 
 option go_package = "ipc/protos;protos";
 
 service Aikido {
-  rpc OnConfig (Config) returns (google.protobuf.Empty);
-  rpc OnPackages(Packages) returns (google.protobuf.Empty);
-  rpc OnDomain (Domain) returns (google.protobuf.Empty);
+  rpc OnConfig (Config) returns (Empty);
+  rpc OnPackages(Packages) returns (Empty);
+  rpc OnDomain (Domain) returns (Empty);
   rpc GetRateLimitingStatus (RateLimitingInfo) returns (RateLimitingStatus);
-  rpc OnRequestShutdown (RequestMetadataShutdown) returns (google.protobuf.Empty);
+  rpc OnRequestShutdown (RequestMetadataShutdown) returns (Empty);
   rpc GetCloudConfig(CloudConfigUpdatedAt) returns (CloudConfig);
-  rpc OnUser(User) returns (google.protobuf.Empty);
-  rpc OnAttackDetected(AttackDetected) returns (google.protobuf.Empty);
-  rpc OnMonitoredSinkStats(MonitoredSinkStats) returns (google.protobuf.Empty);
-  rpc OnMiddlewareInstalled(MiddlewareInstalledInfo) returns (google.protobuf.Empty);
-  rpc OnMonitoredIpMatch(MonitoredIpMatch) returns (google.protobuf.Empty);
-  rpc OnMonitoredUserAgentMatch(MonitoredUserAgentMatch) returns (google.protobuf.Empty);
+  rpc OnUser(User) returns (Empty);
+  rpc OnAttackDetected(AttackDetected) returns (Empty);
+  rpc OnMonitoredSinkStats(MonitoredSinkStats) returns (Empty);
+  rpc OnMiddlewareInstalled(MiddlewareInstalledInfo) returns (Empty);
+  rpc OnMonitoredIpMatch(MonitoredIpMatch) returns (Empty);
+  rpc OnMonitoredUserAgentMatch(MonitoredUserAgentMatch) returns (Empty);
 }
+
+message Empty {}
 
 message Config {
   string token = 1;
