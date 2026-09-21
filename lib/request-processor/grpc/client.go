@@ -229,6 +229,20 @@ func OnUserEvent(server *ServerData, token string, id string, username string, i
 	log.Debugf(nil, "User event sent via socket (%v %v %v)", id, username, ip)
 }
 
+func OnCustomEvent(server *ServerData, event *protos.CustomEvent) {
+	if client == nil || server == nil {
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	_, err := client.OnCustomEvent(ctx, event)
+	if err != nil {
+		log.Debugf(nil, "Could not send custom event: %v", err)
+	}
+}
+
 func OnAttackDetected(instance *instance.RequestProcessorInstance, attackDetected *protos.AttackDetected) {
 	if client == nil {
 		return

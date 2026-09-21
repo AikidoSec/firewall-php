@@ -43,6 +43,7 @@ bool RequestProcessor::Init() {
     this->initInstanceFn = (InitInstanceFn)dlsym(libHandle, "InitInstance");
     this->requestProcessorContextInitFn = (RequestProcessorContextInitFn)dlsym(libHandle, "RequestProcessorContextInit");
     this->requestProcessorConfigUpdateFn = (RequestProcessorConfigUpdateFn)dlsym(libHandle, "RequestProcessorConfigUpdate");
+    this->requestProcessorSetUserFn = (RequestProcessorSetUserFn)dlsym(libHandle, "RequestProcessorSetUser");
     this->requestProcessorOnEventFn = (RequestProcessorOnEventFn)dlsym(libHandle, "RequestProcessorOnEvent");
     this->requestProcessorGetBlockingModeFn = (RequestProcessorGetBlockingModeFn)dlsym(libHandle, "RequestProcessorGetBlockingMode");
     this->requestProcessorReportStatsFn = (RequestProcessorReportStats)dlsym(libHandle, "RequestProcessorReportStats");
@@ -53,6 +54,7 @@ bool RequestProcessor::Init() {
         !requestProcessorInitFn ||
         !this->requestProcessorContextInitFn ||
         !this->requestProcessorConfigUpdateFn ||
+        !this->requestProcessorSetUserFn ||
         !this->requestProcessorOnEventFn ||
         !this->requestProcessorGetBlockingModeFn ||
         !this->requestProcessorReportStatsFn ||
@@ -140,6 +142,14 @@ bool RequestProcessorInstance::SendEvent(EVENT_ID eventId, std::string& output) 
     output = charPtr;
     free(charPtr);
     return true;
+}
+
+bool RequestProcessorInstance::SetUser(const std::string& id, const std::string& username) {
+    if (!this->requestInitialized || requestProcessor.requestProcessorSetUserFn == nullptr || this->requestProcessorInstance == nullptr) {
+        return false;
+    }
+
+    return requestProcessor.requestProcessorSetUserFn(this->requestProcessorInstance, GoCreateString(id), GoCreateString(username));
 }
 
 void RequestProcessorInstance::SendPreRequestEvent() {

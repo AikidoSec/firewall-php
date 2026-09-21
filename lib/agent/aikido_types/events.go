@@ -143,3 +143,25 @@ type DetectedAttack struct {
 	Agent   AgentInfo     `json:"agent"`
 	Time    int64         `json:"time"`
 }
+
+type CustomEventRequest struct {
+	Method    string `json:"method,omitempty"`
+	IPAddress string `json:"ipAddress,omitempty"`
+	UserAgent string `json:"userAgent,omitempty"`
+	Source    string `json:"source"`
+	Route     string `json:"route,omitempty"`
+}
+
+type CustomEventUser struct {
+	ID   string `json:"id"`
+	Name string `json:"name,omitempty"`
+}
+
+type CustomEvent struct {
+	Type    string             `json:"type"`
+	Name    string             `json:"name"`
+	Request CustomEventRequest `json:"request"`
+	Agent   AgentInfo          `json:"agent"`
+	User    *CustomEventUser   `json:"user,omitempty"`
+	Time    int64              `json:"time"`
+}

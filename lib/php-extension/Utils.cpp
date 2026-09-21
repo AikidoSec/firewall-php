@@ -42,8 +42,8 @@ const char* GetEventName(EVENT_ID event) {
             return "PreRequest";
         case EVENT_POST_REQUEST:
             return "PostRequest";
-        case EVENT_SET_USER:
-            return "SetUser";
+        case EVENT_TRACK:
+            return "Track";
         case EVENT_GET_AUTO_BLOCKING_STATUS:
             return "GetAutoBlockingStatus";
         case EVENT_GET_BLOCKING_STATUS:
