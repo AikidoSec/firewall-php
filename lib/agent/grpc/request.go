@@ -340,23 +340,27 @@ func getRateLimitingStatus(server *ServerData, method, route, routeParsed, user,
 		return &protos.RateLimitingStatus{Block: false}
 	}
 
+	// A full window is a conservative retry delay; existing counts expire
+	// within that time. This does not change how requests are rate limited.
+	retryAfter := int64(rateLimitingDataMatch.Config.WindowSizeInMinutes) * 60
+
 	if rateLimitGroup != "" {
 		// If the rate limit group exists, we only try to rate limit by rate limit group
 		if isRateLimitingThresholdExceededAndIncrement(rateLimitingDataMatch, rateLimitingDataMatch.RateLimitGroupCounts, rateLimitGroup) {
 			log.Infof(server.Logger, "Rate limited request for group %s - %s %s - %v", rateLimitGroup, method, routeParsed, rateLimitingDataMatch.RateLimitGroupCounts[rateLimitGroup])
-			return &protos.RateLimitingStatus{Block: true, Trigger: "group"}
+			return &protos.RateLimitingStatus{Block: true, Trigger: "group", RetryAfter: retryAfter}
 		}
 	} else if user != "" {
 		// Otherwise, if the user exists, we try to rate limit by user
 		if isRateLimitingThresholdExceededAndIncrement(rateLimitingDataMatch, rateLimitingDataMatch.UserCounts, user) {
 			log.Infof(server.Logger, "Rate limited request for user %s - %s %s - %v", user, method, routeParsed, rateLimitingDataMatch.UserCounts[user])
-			return &protos.RateLimitingStatus{Block: true, Trigger: "user"}
+			return &protos.RateLimitingStatus{Block: true, Trigger: "user", RetryAfter: retryAfter}
 		}
 	} else {
 		// Otherwise, we try to rate limit by ip
 		if isRateLimitingThresholdExceededAndIncrement(rateLimitingDataMatch, rateLimitingDataMatch.IpCounts, ip) {
 			log.Infof(server.Logger, "Rate limited request for ip %s - %s %s - %v", ip, method, routeParsed, rateLimitingDataMatch.IpCounts[ip])
-			return &protos.RateLimitingStatus{Block: true, Trigger: "ip"}
+			return &protos.RateLimitingStatus{Block: true, Trigger: "ip", RetryAfter: retryAfter}
 		}
 	}
 
