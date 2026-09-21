@@ -17,6 +17,10 @@ import (
 )
 
 func SendCloudRequest(server *ServerData, endpoint string, route string, method string, payload interface{}) ([]byte, error) {
+	return sendCloudRequest(server, endpoint, route, method, payload, true)
+}
+
+func sendCloudRequest(server *ServerData, endpoint string, route string, method string, payload interface{}, logPayload bool) ([]byte, error) {
 	token := config.GetToken(server)
 	if token == "" {
 		return nil, fmt.Errorf("no token set")
@@ -35,7 +39,12 @@ func SendCloudRequest(server *ServerData, endpoint string, route string, method 
 			return nil, fmt.Errorf("failed to marshal payload: %v", err)
 		}
 
-		log.Infof(server.Logger, "[%s] Sending %s request to %s with size %d and content: %s", utils.AnonymizeToken(token), method, apiEndpoint, len(jsonData), jsonData)
+		// Unlike attack events, custom events come from normal requests and may contain private data.
+		if logPayload {
+			log.Infof(server.Logger, "[%s] Sending %s request to %s with size %d and content: %s", utils.AnonymizeToken(token), method, apiEndpoint, len(jsonData), jsonData)
+		} else {
+			log.Infof(server.Logger, "[%s] Sending %s request to %s with size %d", utils.AnonymizeToken(token), method, apiEndpoint, len(jsonData))
+		}
 
 		req, err = http.NewRequest(method, apiEndpoint, bytes.NewBuffer(jsonData))
 	} else {

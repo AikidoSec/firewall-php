@@ -153,16 +153,6 @@ func ContextSetIsIpBypassed(instance *instance.RequestProcessorInstance) {
 	c.IsIpBypassed = &isIpBypassed
 }
 
-func ContextSetUserId(instance *instance.RequestProcessorInstance) {
-	c := GetContext(instance)
-	ContextSetString(instance, C.CONTEXT_USER_ID, &c.UserId)
-}
-
-func ContextSetUserName(instance *instance.RequestProcessorInstance) {
-	c := GetContext(instance)
-	ContextSetString(instance, C.CONTEXT_USER_NAME, &c.UserName)
-}
-
 func ContextSetRateLimitGroup(instance *instance.RequestProcessorInstance) {
 	c := GetContext(instance)
 	if c.RateLimitGroup != nil {
