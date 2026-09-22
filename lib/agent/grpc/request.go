@@ -10,6 +10,7 @@ import (
 	"main/utils"
 	"slices"
 	"strings"
+	"time"
 )
 
 func storeTotalStats(server *ServerData, rateLimited bool) {
@@ -289,9 +290,6 @@ func getWildcardMatchingRateLimitingValues(server *ServerData, method, route, ro
 }
 
 func getRateLimitingDataForEndpoint(server *ServerData, method, route, routeParsed string) *RateLimitingValue {
-	server.RateLimitingMutex.RLock()
-	defer server.RateLimitingMutex.RUnlock()
-
 	// Check for exact match first
 	rateLimitingDataMatch := getRateLimitingValue(server, method, routeParsed)
 	if rateLimitingDataMatch != nil {
@@ -313,20 +311,22 @@ func getRateLimitingDataForEndpoint(server *ServerData, method, route, routePars
 	return wildcardMatches[0]
 }
 
-func isRateLimitingThresholdExceededAndIncrement(rateLimitingDataMatch *RateLimitingValue,
+func checkRateLimitingThresholdAndIncrement(rateLimitingDataMatch *RateLimitingValue,
 	countsMap map[string]*SlidingWindow,
 	key string,
-) bool {
+	nextReset time.Time,
+) (bool, int64) {
 	rateLimitingDataMatch.Mutex.Lock()
 	defer rateLimitingDataMatch.Mutex.Unlock()
 
 	if isRateLimitingThresholdExceeded(&rateLimitingDataMatch.Config, countsMap, key) {
-		return true
+		return true, countsMap[key].RetryAfter(rateLimitingDataMatch.Config.WindowSizeInMinutes,
+			rateLimitingDataMatch.Config.MaxRequests, nextReset, time.Now())
 	}
 
 	incrementSlidingWindowEntry(countsMap, key)
 
-	return false
+	return false, 0
 }
 
 func getRateLimitingStatus(server *ServerData, method, route, routeParsed, user, ip, rateLimitGroup string) *protos.RateLimitingStatus {
@@ -334,31 +334,31 @@ func getRateLimitingStatus(server *ServerData, method, route, routeParsed, user,
 		return nil
 	}
 
+	// Read the counters and their next rotation under the same lock.
+	server.RateLimitingMutex.RLock()
+	defer server.RateLimitingMutex.RUnlock()
+
 	rateLimitingDataMatch := getRateLimitingDataForEndpoint(server, method, route, routeParsed)
 
 	if rateLimitingDataMatch == nil {
 		return &protos.RateLimitingStatus{Block: false}
 	}
 
-	// A full window is a conservative retry delay; existing counts expire
-	// within that time. This does not change how requests are rate limited.
-	retryAfter := int64(rateLimitingDataMatch.Config.WindowSizeInMinutes) * 60
-
 	if rateLimitGroup != "" {
 		// If the rate limit group exists, we only try to rate limit by rate limit group
-		if isRateLimitingThresholdExceededAndIncrement(rateLimitingDataMatch, rateLimitingDataMatch.RateLimitGroupCounts, rateLimitGroup) {
+		if block, retryAfter := checkRateLimitingThresholdAndIncrement(rateLimitingDataMatch, rateLimitingDataMatch.RateLimitGroupCounts, rateLimitGroup, server.RateLimitingNextResetAt); block {
 			log.Infof(server.Logger, "Rate limited request for group %s - %s %s - %v", rateLimitGroup, method, routeParsed, rateLimitingDataMatch.RateLimitGroupCounts[rateLimitGroup])
 			return &protos.RateLimitingStatus{Block: true, Trigger: "group", RetryAfter: retryAfter}
 		}
 	} else if user != "" {
 		// Otherwise, if the user exists, we try to rate limit by user
-		if isRateLimitingThresholdExceededAndIncrement(rateLimitingDataMatch, rateLimitingDataMatch.UserCounts, user) {
+		if block, retryAfter := checkRateLimitingThresholdAndIncrement(rateLimitingDataMatch, rateLimitingDataMatch.UserCounts, user, server.RateLimitingNextResetAt); block {
 			log.Infof(server.Logger, "Rate limited request for user %s - %s %s - %v", user, method, routeParsed, rateLimitingDataMatch.UserCounts[user])
 			return &protos.RateLimitingStatus{Block: true, Trigger: "user", RetryAfter: retryAfter}
 		}
 	} else {
 		// Otherwise, we try to rate limit by ip
-		if isRateLimitingThresholdExceededAndIncrement(rateLimitingDataMatch, rateLimitingDataMatch.IpCounts, ip) {
+		if block, retryAfter := checkRateLimitingThresholdAndIncrement(rateLimitingDataMatch, rateLimitingDataMatch.IpCounts, ip, server.RateLimitingNextResetAt); block {
 			log.Infof(server.Logger, "Rate limited request for ip %s - %s %s - %v", ip, method, routeParsed, rateLimitingDataMatch.IpCounts[ip])
 			return &protos.RateLimitingStatus{Block: true, Trigger: "ip", RetryAfter: retryAfter}
 		}

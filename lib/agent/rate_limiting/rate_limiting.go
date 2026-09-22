@@ -3,11 +3,15 @@ package rate_limiting
 import (
 	. "main/aikido_types"
 	"main/utils"
+	"time"
 )
 
-func AdvanceRateLimitingQueues(server *ServerData) {
-	server.RateLimitingMutex.RLock()
-	defer server.RateLimitingMutex.RUnlock()
+func advanceRateLimitingQueues(server *ServerData, tick, now time.Time) {
+	server.RateLimitingMutex.Lock()
+	defer server.RateLimitingMutex.Unlock()
+	// Tickers can drop ticks when processing is delayed. Keep the next reset
+	// aligned with the next scheduled tick, rather than the callback's finish time.
+	server.RateLimitingNextResetAt = tick.Add((now.Sub(tick)/time.Minute + 1) * time.Minute)
 
 	for _, endpoint := range server.RateLimitingMap {
 		endpoint.Mutex.Lock()
@@ -19,8 +23,21 @@ func AdvanceRateLimitingQueues(server *ServerData) {
 }
 
 func Init(server *ServerData) {
-	utils.StartPollingRoutine(server.PollingData.RateLimitingChannel, server.PollingData.RateLimitingTicker, AdvanceRateLimitingQueues, server)
-	AdvanceRateLimitingQueues(server)
+	ticker := server.PollingData.RateLimitingTicker
+	now := time.Now()
+	ticker.Reset(time.Minute)
+	advanceRateLimitingQueues(server, now, now)
+	go func() {
+		for {
+			select {
+			case tick := <-ticker.C:
+				advanceRateLimitingQueues(server, tick, time.Now())
+			case <-server.PollingData.RateLimitingChannel:
+				ticker.Stop()
+				return
+			}
+		}
+	}()
 }
 
 func Uninit(server *ServerData) {

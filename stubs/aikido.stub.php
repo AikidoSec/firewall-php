@@ -44,7 +44,7 @@ namespace {
         /** User-Agent of the request, if known. */
         public string $user_agent = '';
 
-        /** Conservative retry delay in seconds; null when not rate limited. */
+        /** Seconds to wait before retrying; null when not rate limited. */
         public ?int $retry_after = null;
     }
 

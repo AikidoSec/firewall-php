@@ -4,7 +4,7 @@ In order to enable the user blocking and rate limiting features, the protected a
 We provide middleware examples that can be used in different scenarious.
 Make sure to add this middleware as early as possible in the request handling process, but after the authentication middleware, so that the user information is available.
 
-For rate-limited requests, `$decision->retry_after` contains a conservative retry delay in seconds, based on the matched rule's full window. It is not an exact countdown to the next available request. For other decisions it is `null`. The function only returns a decision; your middleware should set the `Retry-After` header when returning a 429 response, as shown below.
+`$decision->retry_after` is the number of seconds to wait before retrying, or `null` when the request is not rate limited. Set it as the `Retry-After` header on your 429 response, as shown below.
 
 ## No framework
 

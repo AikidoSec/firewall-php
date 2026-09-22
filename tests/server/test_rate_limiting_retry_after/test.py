@@ -21,14 +21,23 @@ def run_test():
             for _ in range(2):
                 response = php_server_get(route + query)
                 assert_response_code_is(response, 429)
-                assert response.headers.get("Retry-After") == str(delay)
+                retry_after = int(response.headers["Retry-After"])
+                assert 1 <= retry_after <= delay
                 decision = response.json()
                 assert decision["type"] == "ratelimited"
                 assert decision["trigger"] == trigger
-                assert decision["retry_after"] == delay
+                assert decision["retry_after"] == retry_after
 
         # An unrelated identity must not inherit another request's delay.
         assert_allowed(php_server_get(route + "?user=bob"))
+
+    response = php_server_get("/long-window?user=alice")
+    assert_response_code_is(response, 429)
+    initial_delay = int(response.headers["Retry-After"])
+    time.sleep(2)
+    response = php_server_get("/long-window?user=alice")
+    assert_response_code_is(response, 429)
+    assert 0 < int(response.headers["Retry-After"]) < initial_delay
 
     response = php_server_get("/?user=blocked-user")
     assert_response_code_is(response, 403)

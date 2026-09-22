@@ -2,9 +2,51 @@ package aikido_types
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
+
+func TestSlidingWindowRetryAfter(t *testing.T) {
+	now := time.Unix(1000, 0)
+	for _, tc := range []struct {
+		name       string
+		buckets    []int
+		windowSize int
+		limit      int
+		nextReset  time.Duration
+		want       int64
+	}{
+		{"below limit", []int{2}, 1, 3, 5 * time.Second, 0},
+		{"remaining time", []int{3}, 1, 3, 5 * time.Second, 5},
+		{"round up", []int{3}, 1, 3, 5*time.Second + time.Millisecond, 6},
+		{"at reset", []int{3}, 1, 3, 0, 1},
+		{"pending reset", []int{3}, 1, 3, -time.Second, 1},
+		{"new ten minute window", []int{3}, 10, 3, 5 * time.Second, 545},
+		{"partially filled window", []int{1, 2}, 3, 3, 5 * time.Second, 65},
+		{"empty oldest bucket", []int{0, 3}, 2, 3, 5 * time.Second, 65},
+		{"one expiry frees capacity", []int{1, 2}, 2, 3, 5 * time.Second, 5},
+		{"multiple expiries needed", []int{1, 1, 3}, 3, 3, 5 * time.Second, 125},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			window := &SlidingWindow{Queue: NewQueue[int](0)}
+			for _, count := range tc.buckets {
+				window.Queue.Push(count)
+				window.Total += count
+			}
+			total := window.Total
+			assert.Equal(t, tc.want, window.RetryAfter(tc.windowSize, tc.limit, now.Add(tc.nextReset), now))
+			assert.Equal(t, total, window.Total, "checking the delay must not consume capacity")
+		})
+	}
+	window := NewSlidingWindow()
+	window.Increment()
+	nextReset := now.Add(time.Minute)
+	assert.Equal(t, int64(60), window.RetryAfter(1, 1, nextReset, now))
+	assert.Equal(t, int64(5), window.RetryAfter(1, 1, nextReset, now.Add(55*time.Second)))
+	window.Advance(1)
+	assert.Zero(t, window.RetryAfter(1, 1, nextReset.Add(time.Minute), nextReset))
+}
 
 func TestNewSlidingWindow(t *testing.T) {
 	t.Run("initializes with correct default values", func(t *testing.T) {
