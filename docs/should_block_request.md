@@ -147,17 +147,15 @@ class AikidoMiddleware
                 }
             }
             else if ($decision->type == "ratelimited") {
+                $headers = ['Retry-After' => (string) $decision->retry_after];
                 if ($decision->trigger == "user") {
-                    return response('Your user exceeded the rate limit for this endpoint!', 429)
-                        ->header('Retry-After', (string) $decision->retry_after);
+                    return response('Your user exceeded the rate limit for this endpoint!', 429, $headers);
                 }
                 else if ($decision->trigger == "ip") {
-                    return response("Your IP ({$decision->ip}) exceeded the rate limit for this endpoint!", 429)
-                        ->header('Retry-After', (string) $decision->retry_after);
+                    return response("Your IP ({$decision->ip}) exceeded the rate limit for this endpoint!", 429, $headers);
                 }
                 else if ($decision->trigger == "group") {
-                    return response("Your group exceeded the rate limit for this endpoint!", 429)
-                        ->header('Retry-After', (string) $decision->retry_after);
+                    return response("Your group exceeded the rate limit for this endpoint!", 429, $headers);
                 }
             }
         }

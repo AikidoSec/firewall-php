@@ -13,10 +13,8 @@ func NextResetAt(server *ServerData, now time.Time) time.Time {
 
 func advanceRateLimitingQueues(server *ServerData, nextReset time.Time) {
 	server.RateLimitingMutex.RLock()
-	endpoints := make([]*RateLimitingValue, 0, len(server.RateLimitingMap))
-	for _, endpoint := range server.RateLimitingMap {
-		endpoints = append(endpoints, endpoint)
-	}
+	// Config updates replace the whole map, so we can iterate this map after unlocking.
+	endpoints := server.RateLimitingMap
 	server.RateLimitingMutex.RUnlock()
 
 	for _, endpoint := range endpoints {

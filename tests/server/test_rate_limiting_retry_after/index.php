@@ -11,13 +11,9 @@ if (isset($_GET['group'])) {
 
 $decision = \aikido\should_block_request();
 if ($decision->block) {
-    if ($decision->type === 'ratelimited') {
-        http_response_code(429);
-        if (($decision->retry_after ?? 0) > 0) {
-            header('Retry-After: ' . $decision->retry_after);
-        }
-    } else {
-        http_response_code(403);
+    http_response_code($decision->type === 'ratelimited' ? 429 : 403);
+    if ($decision->retry_after !== null) {
+        header('Retry-After: ' . $decision->retry_after);
     }
 }
 header('Content-Type: application/json');

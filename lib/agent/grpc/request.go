@@ -184,15 +184,6 @@ func incrementSlidingWindowEntry(m map[string]*SlidingWindow, key string) *Slidi
 	return entry
 }
 
-func isRateLimitingThresholdExceeded(config *RateLimitingConfig, countsMap map[string]*SlidingWindow, key string) bool {
-	counts, exists := countsMap[key]
-	if !exists {
-		return false
-	}
-
-	return counts.Total >= config.MaxRequests
-}
-
 // updateAttackWaveCountsAndDetect implements the attack wave detection logic:
 //  1. Validates the request is from a web scanner and has a valid IP address
 //  2. Increments the sliding window counter for this IP and collects request samples
@@ -337,14 +328,15 @@ func getRateLimitingStatus(server *ServerData, method, route, routeParsed, user,
 	rateLimitingDataMatch.Mutex.Lock()
 	defer rateLimitingDataMatch.Mutex.Unlock()
 
-	if !isRateLimitingThresholdExceeded(&rateLimitingDataMatch.Config, countsMap, key) {
+	window := countsMap[key]
+	if window == nil || window.Total < rateLimitingDataMatch.Config.MaxRequests {
 		incrementSlidingWindowEntry(countsMap, key)
 		return &protos.RateLimitingStatus{Block: false}
 	}
 
-	retryAfter := countsMap[key].RetryAfter(rateLimitingDataMatch.Config.WindowSizeInMinutes,
+	retryAfter := window.RetryAfter(rateLimitingDataMatch.Config.WindowSizeInMinutes,
 		rateLimitingDataMatch.Config.MaxRequests, rateLimitingDataMatch.NextResetAt, time.Now())
-	log.Infof(server.Logger, "Rate limited request for %s %s - %s %s - %v", trigger, key, method, routeParsed, countsMap[key])
+	log.Infof(server.Logger, "Rate limited request for %s %s - %s %s - %v", trigger, key, method, routeParsed, window)
 	return &protos.RateLimitingStatus{Block: true, Trigger: trigger, RetryAfter: retryAfter}
 }
 

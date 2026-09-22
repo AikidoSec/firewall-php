@@ -6,8 +6,6 @@
         {
             "method": "GET",
             "route": "/*",
-            "forceProtectionOff": false,
-            "allowedIPAddresses": [],
             "rateLimiting": {
                 "enabled": true,
                 "maxRequests": 3,
@@ -17,8 +15,6 @@
         {
             "method": "GET",
             "route": "/long-window",
-            "forceProtectionOff": false,
-            "allowedIPAddresses": [],
             "rateLimiting": {
                 "enabled": true,
                 "maxRequests": 3,
@@ -27,6 +23,5 @@
         }
     ],
     "blockedUserIds": ["blocked-user"],
-    "allowedIPAddresses": [],
     "receivedAnyStats": true
 }
