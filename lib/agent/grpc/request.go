@@ -310,34 +310,51 @@ func getRateLimitingStatus(server *ServerData, method, route, routeParsed, user,
 		return nil
 	}
 
-	rateLimitingDataMatch := getRateLimitingDataForEndpoint(server, method, route, routeParsed)
-
-	if rateLimitingDataMatch == nil {
+	endpoint := getRateLimitingDataForEndpoint(server, method, route, routeParsed)
+	if endpoint == nil {
 		return &protos.RateLimitingStatus{Block: false}
 	}
 
 	// Rate limit by group first, then user, then IP.
-	countsMap, key, trigger := rateLimitingDataMatch.IpCounts, ip, "ip"
+	countsMap := endpoint.IpCounts
+	key := ip
+	trigger := "ip"
 	if rateLimitGroup != "" {
-		countsMap, key, trigger = rateLimitingDataMatch.RateLimitGroupCounts, rateLimitGroup, "group"
+		countsMap = endpoint.RateLimitGroupCounts
+		key = rateLimitGroup
+		trigger = "group"
 	} else if user != "" {
-		countsMap, key, trigger = rateLimitingDataMatch.UserCounts, user, "user"
+		countsMap = endpoint.UserCounts
+		key = user
+		trigger = "user"
 	}
 
 	// Keep the threshold check and increment atomic across concurrent requests.
-	rateLimitingDataMatch.Mutex.Lock()
-	defer rateLimitingDataMatch.Mutex.Unlock()
+	endpoint.Mutex.Lock()
+	defer endpoint.Mutex.Unlock()
 
 	window := countsMap[key]
-	if window == nil || window.Total < rateLimitingDataMatch.Config.MaxRequests {
+	if window == nil || window.Total < endpoint.Config.MaxRequests {
 		incrementSlidingWindowEntry(countsMap, key)
 		return &protos.RateLimitingStatus{Block: false}
 	}
 
-	retryAfter := window.RetryAfter(rateLimitingDataMatch.Config.WindowSizeInMinutes,
-		rateLimitingDataMatch.Config.MaxRequests, rateLimitingDataMatch.NextResetAt, time.Now())
-	log.Infof(server.Logger, "Rate limited request for %s %s - %s %s - %v", trigger, key, method, routeParsed, window)
-	return &protos.RateLimitingStatus{Block: true, Trigger: trigger, RetryAfter: retryAfter}
+	retryAfter := window.RetryAfter(
+		endpoint.Config.WindowSizeInMinutes,
+		endpoint.Config.MaxRequests,
+		endpoint.NextResetAt,
+		time.Now(),
+	)
+
+	log.Infof(server.Logger,
+		"Rate limited request for %s %s - %s %s - %v",
+		trigger, key, method, routeParsed, window)
+
+	return &protos.RateLimitingStatus{
+		Block:      true,
+		Trigger:    trigger,
+		RetryAfter: retryAfter,
+	}
 }
 
 func getIpsList(ipsList map[string]IpBlocklist) map[string]*protos.IpList {
