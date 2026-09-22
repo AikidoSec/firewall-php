@@ -311,7 +311,7 @@ func getRateLimitingDataForEndpoint(server *ServerData, method, route, routePars
 	return wildcardMatches[0]
 }
 
-func checkRateLimitingThresholdAndIncrement(rateLimitingDataMatch *RateLimitingValue,
+func getRateLimitingDecisionAndIncrement(rateLimitingDataMatch *RateLimitingValue,
 	countsMap map[string]*SlidingWindow,
 	key string,
 	nextReset time.Time,
@@ -346,19 +346,19 @@ func getRateLimitingStatus(server *ServerData, method, route, routeParsed, user,
 
 	if rateLimitGroup != "" {
 		// If the rate limit group exists, we only try to rate limit by rate limit group
-		if block, retryAfter := checkRateLimitingThresholdAndIncrement(rateLimitingDataMatch, rateLimitingDataMatch.RateLimitGroupCounts, rateLimitGroup, server.RateLimitingNextResetAt); block {
+		if block, retryAfter := getRateLimitingDecisionAndIncrement(rateLimitingDataMatch, rateLimitingDataMatch.RateLimitGroupCounts, rateLimitGroup, server.RateLimitingNextResetAt); block {
 			log.Infof(server.Logger, "Rate limited request for group %s - %s %s - %v", rateLimitGroup, method, routeParsed, rateLimitingDataMatch.RateLimitGroupCounts[rateLimitGroup])
 			return &protos.RateLimitingStatus{Block: true, Trigger: "group", RetryAfter: retryAfter}
 		}
 	} else if user != "" {
 		// Otherwise, if the user exists, we try to rate limit by user
-		if block, retryAfter := checkRateLimitingThresholdAndIncrement(rateLimitingDataMatch, rateLimitingDataMatch.UserCounts, user, server.RateLimitingNextResetAt); block {
+		if block, retryAfter := getRateLimitingDecisionAndIncrement(rateLimitingDataMatch, rateLimitingDataMatch.UserCounts, user, server.RateLimitingNextResetAt); block {
 			log.Infof(server.Logger, "Rate limited request for user %s - %s %s - %v", user, method, routeParsed, rateLimitingDataMatch.UserCounts[user])
 			return &protos.RateLimitingStatus{Block: true, Trigger: "user", RetryAfter: retryAfter}
 		}
 	} else {
 		// Otherwise, we try to rate limit by ip
-		if block, retryAfter := checkRateLimitingThresholdAndIncrement(rateLimitingDataMatch, rateLimitingDataMatch.IpCounts, ip, server.RateLimitingNextResetAt); block {
+		if block, retryAfter := getRateLimitingDecisionAndIncrement(rateLimitingDataMatch, rateLimitingDataMatch.IpCounts, ip, server.RateLimitingNextResetAt); block {
 			log.Infof(server.Logger, "Rate limited request for ip %s - %s %s - %v", ip, method, routeParsed, rateLimitingDataMatch.IpCounts[ip])
 			return &protos.RateLimitingStatus{Block: true, Trigger: "ip", RetryAfter: retryAfter}
 		}
