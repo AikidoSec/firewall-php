@@ -22,14 +22,23 @@ func TestAdvanceTracksNextReset(t *testing.T) {
 		{Method: "GET", Route: "/"}: endpoint,
 	}}
 	tick := time.Unix(1000, 0)
-	advanceRateLimitingQueues(server, tick, tick.Add(250*time.Millisecond))
-	assert.Equal(t, tick.Add(time.Minute), server.RateLimitingNextResetAt)
+	server.RateLimitingStartedAt = tick
+	nextReset := NextResetAt(server, tick.Add(250*time.Millisecond))
+	assert.Equal(t, tick.Add(time.Minute), nextReset)
+	advanceRateLimitingQueues(server, nextReset)
+	assert.Equal(t, nextReset, endpoint.NextResetAt)
 	for _, entries := range []map[string]*SlidingWindow{endpoint.UserCounts, endpoint.IpCounts, endpoint.RateLimitGroupCounts} {
-		assert.Equal(t, int64(5), entries["identity"].RetryAfter(2, 1, server.RateLimitingNextResetAt, tick.Add(55*time.Second)))
+		assert.Equal(t, int64(5), entries["identity"].RetryAfter(2, 1, endpoint.NextResetAt, tick.Add(55*time.Second)))
 	}
+	// An endpoint already initialized for this minute must not rotate again.
+	advanceRateLimitingQueues(server, nextReset)
+	assert.Equal(t, 1, endpoint.UserCounts["identity"].Total)
+
 	// A delayed callback still advances one bucket, matching the existing limiter.
-	advanceRateLimitingQueues(server, tick.Add(time.Minute), tick.Add(150*time.Second))
-	assert.Equal(t, tick.Add(3*time.Minute), server.RateLimitingNextResetAt)
+	nextReset = NextResetAt(server, tick.Add(150*time.Second))
+	assert.Equal(t, tick.Add(3*time.Minute), nextReset)
+	advanceRateLimitingQueues(server, nextReset)
+	assert.Equal(t, nextReset, endpoint.NextResetAt)
 	assert.Empty(t, endpoint.UserCounts)
 	assert.Empty(t, endpoint.IpCounts)
 	assert.Empty(t, endpoint.RateLimitGroupCounts)

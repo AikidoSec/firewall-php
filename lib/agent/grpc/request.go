@@ -290,6 +290,9 @@ func getWildcardMatchingRateLimitingValues(server *ServerData, method, route, ro
 }
 
 func getRateLimitingDataForEndpoint(server *ServerData, method, route, routeParsed string) *RateLimitingValue {
+	server.RateLimitingMutex.RLock()
+	defer server.RateLimitingMutex.RUnlock()
+
 	// Check for exact match first
 	rateLimitingDataMatch := getRateLimitingValue(server, method, routeParsed)
 	if rateLimitingDataMatch != nil {
@@ -316,10 +319,6 @@ func getRateLimitingStatus(server *ServerData, method, route, routeParsed, user,
 		return nil
 	}
 
-	// Read the counters and their next rotation under the same lock.
-	server.RateLimitingMutex.RLock()
-	defer server.RateLimitingMutex.RUnlock()
-
 	rateLimitingDataMatch := getRateLimitingDataForEndpoint(server, method, route, routeParsed)
 
 	if rateLimitingDataMatch == nil {
@@ -344,7 +343,7 @@ func getRateLimitingStatus(server *ServerData, method, route, routeParsed, user,
 	}
 
 	retryAfter := countsMap[key].RetryAfter(rateLimitingDataMatch.Config.WindowSizeInMinutes,
-		rateLimitingDataMatch.Config.MaxRequests, server.RateLimitingNextResetAt, time.Now())
+		rateLimitingDataMatch.Config.MaxRequests, rateLimitingDataMatch.NextResetAt, time.Now())
 	log.Infof(server.Logger, "Rate limited request for %s %s - %s %s - %v", trigger, key, method, routeParsed, countsMap[key])
 	return &protos.RateLimitingStatus{Block: true, Trigger: trigger, RetryAfter: retryAfter}
 }

@@ -6,38 +6,40 @@ import (
 	"time"
 )
 
-func advanceRateLimitingQueues(server *ServerData, tick, now time.Time) {
-	server.RateLimitingMutex.Lock()
-	defer server.RateLimitingMutex.Unlock()
-	// Tickers can drop ticks when processing is delayed. Keep the next reset
-	// aligned with the next scheduled tick, rather than the callback's finish time.
-	server.RateLimitingNextResetAt = tick.Add((now.Sub(tick)/time.Minute + 1) * time.Minute)
+// NextResetAt returns the next tick on this server's minute timer.
+func NextResetAt(server *ServerData, now time.Time) time.Time {
+	return server.RateLimitingStartedAt.Add((now.Sub(server.RateLimitingStartedAt)/time.Minute + 1) * time.Minute)
+}
 
+func advanceRateLimitingQueues(server *ServerData, nextReset time.Time) {
+	server.RateLimitingMutex.RLock()
+	endpoints := make([]*RateLimitingValue, 0, len(server.RateLimitingMap))
 	for _, endpoint := range server.RateLimitingMap {
+		endpoints = append(endpoints, endpoint)
+	}
+	server.RateLimitingMutex.RUnlock()
+
+	for _, endpoint := range endpoints {
 		endpoint.Mutex.Lock()
-		defer endpoint.Mutex.Unlock()
-		AdvanceSlidingWindowMap(endpoint.UserCounts, endpoint.Config.WindowSizeInMinutes)
-		AdvanceSlidingWindowMap(endpoint.IpCounts, endpoint.Config.WindowSizeInMinutes)
-		AdvanceSlidingWindowMap(endpoint.RateLimitGroupCounts, endpoint.Config.WindowSizeInMinutes)
+		// An endpoint created after this tick already belongs to the new minute.
+		if endpoint.NextResetAt.Before(nextReset) {
+			AdvanceSlidingWindowMap(endpoint.UserCounts, endpoint.Config.WindowSizeInMinutes)
+			AdvanceSlidingWindowMap(endpoint.IpCounts, endpoint.Config.WindowSizeInMinutes)
+			AdvanceSlidingWindowMap(endpoint.RateLimitGroupCounts, endpoint.Config.WindowSizeInMinutes)
+			endpoint.NextResetAt = nextReset
+		}
+		endpoint.Mutex.Unlock()
 	}
 }
 
+func AdvanceRateLimitingQueues(server *ServerData) {
+	advanceRateLimitingQueues(server, NextResetAt(server, time.Now()))
+}
+
 func Init(server *ServerData) {
-	ticker := server.PollingData.RateLimitingTicker
-	now := time.Now()
-	ticker.Reset(time.Minute)
-	advanceRateLimitingQueues(server, now, now)
-	go func() {
-		for {
-			select {
-			case tick := <-ticker.C:
-				advanceRateLimitingQueues(server, tick, time.Now())
-			case <-server.PollingData.RateLimitingChannel:
-				ticker.Stop()
-				return
-			}
-		}
-	}()
+	server.RateLimitingStartedAt = time.Now()
+	server.PollingData.RateLimitingTicker.Reset(time.Minute)
+	utils.StartPollingRoutine(server.PollingData.RateLimitingChannel, server.PollingData.RateLimitingTicker, AdvanceRateLimitingQueues, server)
 }
 
 func Uninit(server *ServerData) {

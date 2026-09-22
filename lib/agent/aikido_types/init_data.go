@@ -199,8 +199,8 @@ type ServerData struct {
 	// Rate limiting mutex used to sync access across the go routines
 	RateLimitingMutex sync.RWMutex
 
-	// Next counter rotation, protected by RateLimitingMutex.
-	RateLimitingNextResetAt time.Time
+	// Timer origin, set once before the server accepts requests.
+	RateLimitingStartedAt time.Time
 
 	// Attack wave detection state
 	AttackWave      AttackWaveState

@@ -3,6 +3,7 @@ package aikido_types
 import (
 	"regexp"
 	"sync"
+	"time"
 )
 
 type MonitoredSinkTimings struct {
@@ -50,6 +51,7 @@ type RateLimitingValue struct {
 	UserCounts           map[string]*SlidingWindow
 	IpCounts             map[string]*SlidingWindow
 	RateLimitGroupCounts map[string]*SlidingWindow
+	NextResetAt          time.Time // Protected by Mutex, together with the counters.
 	Mutex                sync.Mutex
 }
 
