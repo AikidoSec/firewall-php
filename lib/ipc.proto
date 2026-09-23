@@ -12,6 +12,7 @@ service Aikido {
   rpc OnRequestShutdown (RequestMetadataShutdown) returns (Empty);
   rpc GetCloudConfig(CloudConfigUpdatedAt) returns (CloudConfig);
   rpc OnUser(User) returns (Empty);
+  rpc OnCustomEvent(CustomEvent) returns (Empty);
   rpc OnAttackDetected(AttackDetected) returns (Empty);
   rpc OnMonitoredSinkStats(MonitoredSinkStats) returns (Empty);
   rpc OnMiddlewareInstalled(MiddlewareInstalledInfo) returns (Empty);
@@ -154,6 +155,20 @@ message User {
   string id = 3;
   string username = 4;
   string ip = 5;
+}
+
+message CustomEventUser {
+  string id = 1;
+  string name = 2;
+}
+
+message CustomEvent {
+  string token = 1;
+  int32 server_pid = 2;
+  string name = 3;
+  Request request = 4;
+  CustomEventUser user = 5;
+  int64 time = 6;
 }
 
 message Header {

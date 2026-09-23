@@ -79,17 +79,13 @@ CallbackResult GoContextCallback(int callbackId) {
                 ctx = "USER_AGENT";
                 ret = server.GetVar("HTTP_USER_AGENT");
                 break;
-            case CONTEXT_USER_ID:
-                ctx = "USER_ID";
-                ret = requestCache.userId;
-                break;
-            case CONTEXT_USER_NAME:
-                ctx = "USER_NAME";
-                ret = requestCache.userName;
-                break;
             case CONTEXT_RATE_LIMIT_GROUP:
                 ctx = "RATE_LIMIT_GROUP";
                 ret = requestCache.rateLimitGroup;
+                break;
+            case CUSTOM_EVENT_NAME:
+                ctx = "CUSTOM_EVENT_NAME";
+                ret = GetEventCacheField(&EventCache::customEventName);
                 break;
             case FUNCTION_NAME:
                 ctx = "FUNCTION_NAME";

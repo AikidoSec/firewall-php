@@ -59,6 +59,10 @@ func GetParamMatcher(instance *instance.RequestProcessorInstance) (string, strin
 	return param, regex
 }
 
+func GetCustomEventName(instance *instance.RequestProcessorInstance) string {
+	return GetContext(instance).Callback(instance, C.CUSTOM_EVENT_NAME)
+}
+
 func getHostNameAndPort(instance *instance.RequestProcessorInstance, urlCallbackId int, portCallbackId int) (string, uint32) {
 	ctx := GetContext(instance)
 	urlStr := ctx.Callback(instance, urlCallbackId)

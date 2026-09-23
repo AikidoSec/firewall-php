@@ -84,6 +84,16 @@ namespace aikido {
     }
 
     /**
+     * Triggers a custom event that Playbooks can use to take actions, such as
+     * blocking an IP address.
+     *
+     * @see https://github.com/AikidoSec/firewall-php/blob/main/docs/track.md
+     */
+    function track(string $event_name): bool
+    {
+    }
+
+    /**
      * Checks whether the current request should be blocked (user blocked,
      * or rate limit hit). Call after `set_user()`.
      *

@@ -7,6 +7,7 @@ import (
 	"main/globals"
 	"main/instance"
 	"main/log"
+	"strings"
 	"unsafe"
 )
 
@@ -32,8 +33,8 @@ type RequestContextData struct {
 	IsEndpointIpAllowed           *int
 	IsEndpointRateLimited         bool
 	UserAgent                     *string
-	UserId                        *string
-	UserName                      *string
+	UserId                        string
+	UserName                      string
 	BodyRaw                       *string
 	BodyParsed                    *map[string]interface{}
 	BodyParsedFlattened           *map[string]string
@@ -129,7 +130,10 @@ func GetIp(instance *instance.RequestProcessorInstance) string {
 
 func GetUserId(instance *instance.RequestProcessorInstance) string {
 	ctx := GetContext(instance)
-	return GetFromCache(instance, ContextSetUserId, &ctx.UserId)
+	if ctx == nil {
+		return ""
+	}
+	return ctx.UserId
 }
 
 func GetUserAgent(instance *instance.RequestProcessorInstance) string {
@@ -223,7 +227,20 @@ func GetHeadersParsedFlattened(instance *instance.RequestProcessorInstance) map[
 
 func GetUserName(instance *instance.RequestProcessorInstance) string {
 	ctx := GetContext(instance)
-	return GetFromCache(instance, ContextSetUserName, &ctx.UserName)
+	if ctx == nil {
+		return ""
+	}
+	return ctx.UserName
+}
+
+func SetUser(instance *instance.RequestProcessorInstance, id string, name string) bool {
+	ctx := GetContext(instance)
+	if ctx == nil {
+		return false
+	}
+	ctx.UserId = strings.Clone(strings.ToValidUTF8(id, ""))
+	ctx.UserName = strings.Clone(strings.ToValidUTF8(name, ""))
+	return true
 }
 
 func GetEndpointConfig(instance *instance.RequestProcessorInstance) *EndpointData {

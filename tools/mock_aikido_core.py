@@ -144,6 +144,8 @@ def post_events():
             platform_name = e["agent"]["platform"]["name"]
             print("Platform name: ", platform_name)
         events.append(e)
+        if e["type"] == "custom":
+            return gzip_response({"success": True})
     return gzip_response(responses["config"])
 
 @app.route('/mock/config', methods=['POST'])

@@ -4,8 +4,6 @@
 
 class RequestCache {
    public:
-    std::string userId;
-    std::string userName;
     std::string rateLimitGroup;
     std::string outgoingRequestUrl;
     std::string outgoingRequestRedirectUrl;
@@ -45,6 +43,7 @@ class EventCache {
 
     std::string paramMatcherParam;
     std::string paramMatcherRegex;
+    std::string customEventName;
 
     EventCache() = default;
     void Reset();

@@ -148,6 +148,7 @@ PHP_MINFO_FUNCTION(aikido) {
 
 static const zend_function_entry ext_functions[] = {
     ZEND_NS_FE("aikido", set_user, arginfo_aikido_set_user)
+    ZEND_NS_FE("aikido", track, arginfo_aikido_track)
     ZEND_NS_FE("aikido", should_block_request, arginfo_aikido_should_block_request)
     ZEND_NS_FE("aikido", auto_block_request, arginfo_aikido_auto_block_request)
     ZEND_NS_FE("aikido", should_whitelist_request, arginfo_aikido_should_whitelist_request)
