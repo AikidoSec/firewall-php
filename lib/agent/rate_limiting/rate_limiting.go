@@ -6,12 +6,27 @@ import (
 	"time"
 )
 
-// NextResetAt returns the next tick on this server's minute timer.
-func NextResetAt(server *ServerData, now time.Time) time.Time {
-	return server.RateLimitingStartedAt.Add((now.Sub(server.RateLimitingStartedAt)/time.Minute + 1) * time.Minute)
+// The caller must hold endpoint.Mutex to keep counters and reset time consistent.
+func AdvanceEndpointQueues(endpoint *RateLimitingValue, now time.Time) {
+	if now.Before(endpoint.NextResetAt) {
+		return
+	}
+	elapsedMinutes := int(now.Sub(endpoint.NextResetAt)/time.Minute) + 1
+	if elapsedMinutes >= endpoint.Config.WindowSizeInMinutes {
+		clear(endpoint.UserCounts)
+		clear(endpoint.IpCounts)
+		clear(endpoint.RateLimitGroupCounts)
+	} else {
+		for range elapsedMinutes {
+			AdvanceSlidingWindowMap(endpoint.UserCounts, endpoint.Config.WindowSizeInMinutes)
+			AdvanceSlidingWindowMap(endpoint.IpCounts, endpoint.Config.WindowSizeInMinutes)
+			AdvanceSlidingWindowMap(endpoint.RateLimitGroupCounts, endpoint.Config.WindowSizeInMinutes)
+		}
+	}
+	endpoint.NextResetAt = endpoint.NextResetAt.Add(time.Duration(elapsedMinutes) * time.Minute)
 }
 
-func advanceRateLimitingQueues(server *ServerData, nextReset time.Time) {
+func AdvanceRateLimitingQueues(server *ServerData) {
 	server.RateLimitingMutex.RLock()
 	// Config updates replace the whole map, so we can iterate this map after unlocking.
 	endpoints := server.RateLimitingMap
@@ -19,24 +34,12 @@ func advanceRateLimitingQueues(server *ServerData, nextReset time.Time) {
 
 	for _, endpoint := range endpoints {
 		endpoint.Mutex.Lock()
-		// An endpoint created after this tick already belongs to the new minute.
-		if endpoint.NextResetAt.Before(nextReset) {
-			AdvanceSlidingWindowMap(endpoint.UserCounts, endpoint.Config.WindowSizeInMinutes)
-			AdvanceSlidingWindowMap(endpoint.IpCounts, endpoint.Config.WindowSizeInMinutes)
-			AdvanceSlidingWindowMap(endpoint.RateLimitGroupCounts, endpoint.Config.WindowSizeInMinutes)
-			endpoint.NextResetAt = nextReset
-		}
+		AdvanceEndpointQueues(endpoint, time.Now())
 		endpoint.Mutex.Unlock()
 	}
 }
 
-func AdvanceRateLimitingQueues(server *ServerData) {
-	advanceRateLimitingQueues(server, NextResetAt(server, time.Now()))
-}
-
 func Init(server *ServerData) {
-	server.RateLimitingStartedAt = time.Now()
-	server.PollingData.RateLimitingTicker.Reset(time.Minute)
 	utils.StartPollingRoutine(server.PollingData.RateLimitingChannel, server.PollingData.RateLimitingTicker, AdvanceRateLimitingQueues, server)
 }
 

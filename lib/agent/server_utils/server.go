@@ -47,7 +47,6 @@ func Register(serverKey ServerKey, requestProcessorPID int32, req *protos.Config
 	atomic.StoreInt64(&server.LastConnectionTime, utils.GetTime())
 
 	wasPastDeleted := globals.IsPastDeletedServer(serverKey)
-	rate_limiting.Init(server)
 
 	// PHP workers can use the local server state before the initial cloud sync
 	// finishes. Holding this lock would make them wait for network I/O and time out.
@@ -63,6 +62,7 @@ func Register(serverKey ServerKey, requestProcessorPID int32, req *protos.Config
 	// Started after the start event, as the config it returns can be the one enabling realtime updates
 	cloud.StartConfigStreamRoutine(server)
 
+	rate_limiting.Init(server)
 	attack_wave_detection.Init(server)
 }
 

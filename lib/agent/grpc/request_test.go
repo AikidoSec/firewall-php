@@ -3,14 +3,69 @@ package grpc
 import (
 	"sync"
 	"testing"
+	"testing/synctest"
+	"time"
 
 	. "main/aikido_types"
 	"main/ipc/protos"
 	"main/log"
+	"main/rate_limiting"
 	"main/utils"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
+
+func TestRateLimitingCatchesUpAfterDelayedTicks(t *testing.T) {
+	for _, tc := range []struct {
+		name, user, group string
+		tickFirst         bool
+	}{
+		{"IP/request first", "", "", false},
+		{"IP/ticker first", "", "", true},
+		{"user/request first", "alice", "", false},
+		{"user/ticker first", "alice", "", true},
+		{"group/request first", "alice", "team", false},
+		{"group/ticker first", "alice", "team", true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			synctest.Test(t, func(t *testing.T) {
+				endpoint := &RateLimitingValue{
+					Config:               RateLimitingConfig{MaxRequests: 1, WindowSizeInMinutes: 3},
+					UserCounts:           make(map[string]*SlidingWindow),
+					IpCounts:             make(map[string]*SlidingWindow),
+					RateLimitGroupCounts: make(map[string]*SlidingWindow),
+					NextResetAt:          time.Now().Add(time.Minute),
+				}
+				server := &ServerData{
+					Logger: log.CreateLogger("test", "ERROR", false),
+					RateLimitingMap: map[RateLimitingKey]*RateLimitingValue{
+						{Method: "GET", Route: "/"}: endpoint,
+					},
+				}
+				status := func() *protos.RateLimitingStatus {
+					return getRateLimitingStatus(server, "GET", "/", "/", tc.user, "203.0.113.1", tc.group)
+				}
+				require.False(t, status().Block)
+				require.Equal(t, int64(180), status().RetryAfter)
+				time.Sleep(55 * time.Second)
+				rate_limiting.AdvanceRateLimitingQueues(server)
+				require.Equal(t, int64(125), status().RetryAfter, "cleanup must wait for the endpoint's deadline")
+				time.Sleep(135 * time.Second)
+				if tc.tickFirst {
+					rate_limiting.AdvanceRateLimitingQueues(server)
+				}
+				require.False(t, status().Block, "expired requests must not keep blocking")
+				rate_limiting.AdvanceRateLimitingQueues(server)
+				blocked := status()
+				require.True(t, blocked.Block, "the delayed callback must preserve the new request")
+				require.Equal(t, int64(170), blocked.RetryAfter)
+				time.Sleep(time.Duration(blocked.RetryAfter) * time.Second)
+				require.False(t, status().Block, "retry must succeed without waiting for a ticker callback")
+			})
+		})
+	}
+}
 
 func TestStoreTotalStats(t *testing.T) {
 	t.Run("increments Requests on every call, and RequestsRateLimited only when rate limited", func(t *testing.T) {

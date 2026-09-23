@@ -6,7 +6,6 @@ import (
 	"main/constants"
 	"main/globals"
 	"main/log"
-	"main/rate_limiting"
 	"main/utils"
 	"regexp"
 	"runtime"
@@ -104,7 +103,7 @@ func UpdateRateLimitingConfig(server *ServerData) {
 			UserCounts:           make(map[string]*SlidingWindow),
 			IpCounts:             make(map[string]*SlidingWindow),
 			RateLimitGroupCounts: make(map[string]*SlidingWindow),
-			NextResetAt:          rate_limiting.NextResetAt(server, time.Now()),
+			NextResetAt:          time.Now().Add(time.Minute),
 		}
 
 		// Handle wildcard routes

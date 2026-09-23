@@ -7,6 +7,7 @@ import (
 	"main/constants"
 	"main/ipc/protos"
 	"main/log"
+	"main/rate_limiting"
 	"main/utils"
 	"slices"
 	"strings"
@@ -331,11 +332,13 @@ func getRateLimitingStatus(server *ServerData, method, route, routeParsed, user,
 
 	// Keep the threshold check and increment atomic across concurrent requests.
 	endpoint.Mutex.Lock()
-	defer endpoint.Mutex.Unlock()
+	now := time.Now()
+	rate_limiting.AdvanceEndpointQueues(endpoint, now)
 
 	window := countsMap[key]
 	if window == nil || window.Total < endpoint.Config.MaxRequests {
 		incrementSlidingWindowEntry(countsMap, key)
+		endpoint.Mutex.Unlock()
 		return &protos.RateLimitingStatus{Block: false}
 	}
 
@@ -343,12 +346,14 @@ func getRateLimitingStatus(server *ServerData, method, route, routeParsed, user,
 		endpoint.Config.WindowSizeInMinutes,
 		endpoint.Config.MaxRequests,
 		endpoint.NextResetAt,
-		time.Now(),
+		now,
 	)
+	requestCount := window.Total
+	endpoint.Mutex.Unlock()
 
 	log.Infof(server.Logger,
-		"Rate limited request for %s %s - %s %s - %v",
-		trigger, key, method, routeParsed, window)
+		"Rate limited request for %s %s - %s %s - count %d",
+		trigger, key, method, routeParsed, requestCount)
 
 	return &protos.RateLimitingStatus{
 		Block:      true,
