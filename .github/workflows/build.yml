@@ -9,10 +9,14 @@ on:
       - main
   workflow_call:
 
+permissions:
+  contents: read
+
 jobs:
   build_libs:
     name: Build Go libs ${{ matrix.arch == '' && 'x86_64' || 'arm' }}
     runs-on: ubuntu-24.04${{ matrix.arch }}
+    permissions: { contents: read, packages: read }
     container:
       image: ghcr.io/aikidosec/firewall-php-build-libs:v1
     strategy:
@@ -23,6 +27,8 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      with:
+        persist-credentials: false
 
     - name: Get Arch
       run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
@@ -67,7 +73,7 @@ jobs:
           ${{ github.workspace }}/build/aikido-agent
 
     - name: Archive request processor
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
       if: always()
       with:
         name: aikido-request-processor-${{ env.ARCH }}
@@ -78,6 +84,7 @@ jobs:
   build_php_extension_nts:
     name: Build php ${{ matrix.php_version }} extension NTS ${{ matrix.arch == '' && 'x86_64' || 'arm' }}
     runs-on: ubuntu-24.04${{ matrix.arch }}
+    permissions: { contents: read, packages: read }
     container: ghcr.io/aikidosec/firewall-php-build-extension-nts:${{ matrix.php_version }}-v2
     strategy:
       matrix:
@@ -87,7 +94,9 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      with:
+        persist-credentials: false
 
     - name: Get Arch
       run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
@@ -117,10 +126,10 @@ jobs:
     - name: Version Aikido extension
       run: |
         cd ./build/modules
-        mv aikido.so ${{ env.AIKIDO_ARTIFACT }}-nts.so
+        mv aikido.so ${AIKIDO_ARTIFACT}-nts.so
 
     - name: Archive build artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
       if: always()
       with:
         name: ${{ env.AIKIDO_ARTIFACT }}-nts-${{ env.ARCH }}
@@ -132,6 +141,7 @@ jobs:
   build_php_extension_zts:
     name: Build php ${{ matrix.php_version }} extension ZTS ${{ matrix.arch == '' && 'x86_64' || 'arm' }}
     runs-on: ubuntu-24.04${{ matrix.arch }}
+    permissions: { contents: read, packages: read }
     container: ghcr.io/aikidosec/firewall-php-build-extension-zts:${{ matrix.php_version }}-v2
     strategy:
       matrix:
@@ -141,7 +151,9 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      with:
+        persist-credentials: false
 
     - name: Get Arch
       run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
@@ -170,10 +182,10 @@ jobs:
     - name: Version Aikido extension
       run: |
         cd ./build/modules
-        mv aikido.so ${{ env.AIKIDO_ARTIFACT }}-zts.so
+        mv aikido.so ${AIKIDO_ARTIFACT}-zts.so
 
     - name: Archive build artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
       if: always()
       with:
         name: ${{ env.AIKIDO_ARTIFACT }}-zts-${{ env.ARCH }}
@@ -194,7 +206,9 @@ jobs:
     needs: [ build_libs, build_php_extension_nts, build_php_extension_zts ]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
 
       - name: Install rpmdevtools
         run: |
@@ -210,7 +224,7 @@ jobs:
           AIKIDO_VERSION=$(grep '#define PHP_AIKIDO_VERSION' lib/php-extension/include/php_aikido.h | awk -F'"' '{print $2}')
           echo $AIKIDO_VERSION
           echo "AIKIDO_VERSION=$AIKIDO_VERSION" >> $GITHUB_ENV
-          echo "AIKIDO_LIBZEN=libzen_internals_${{ env.ARCH }}-unknown-linux-gnu.so" >> $GITHUB_ENV
+          echo "AIKIDO_LIBZEN=libzen_internals_${ARCH}-unknown-linux-gnu.so" >> $GITHUB_ENV
           echo "AIKIDO_LIBZEN_VERSION=0.1.64" >> $GITHUB_ENV
 
       - name: Download artifacts (NTS)
@@ -220,31 +234,31 @@ jobs:
             aikido-extension-php-*-nts-${{ env.ARCH }}
 
       - name: Download artifacts (ZTS)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           pattern: |
             aikido-extension-php-*-zts-${{ env.ARCH }}
 
       - name: Download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           pattern: |
             aikido-agent-${{ env.ARCH }}
 
       - name: Download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           pattern: |
             aikido-request-processor-${{ env.ARCH }}
 
       - name: Download Aikido Zen Internals Lib
         run: |
-          curl -L -O https://github.com/AikidoSec/zen-internals/releases/download/v${{ env.AIKIDO_LIBZEN_VERSION }}/${{ env.AIKIDO_LIBZEN }}
+          curl -L -O https://github.com/AikidoSec/zen-internals/releases/download/v${AIKIDO_LIBZEN_VERSION}/${AIKIDO_LIBZEN}
 
       - name: Verify Aikido Zen Internals Lib SHA256
         run: |
-          EXPECTED_SHA256=$(curl -s https://api.github.com/repos/AikidoSec/zen-internals/releases/tags/v${{ env.AIKIDO_LIBZEN_VERSION }} | jq -r '.assets[] | select(.name == "${{ env.AIKIDO_LIBZEN }}") | .digest' | sed 's/sha256://')
-          ACTUAL_SHA256=$(sha256sum ${{ env.AIKIDO_LIBZEN }} | awk '{print $1}')
+          EXPECTED_SHA256=$(curl -s "https://api.github.com/repos/AikidoSec/zen-internals/releases/tags/v${AIKIDO_LIBZEN_VERSION}" | jq -r --arg name "${AIKIDO_LIBZEN}" '.assets[] | select(.name == $name) | .digest' | sed 's/sha256://')
+          ACTUAL_SHA256=$(sha256sum "${AIKIDO_LIBZEN}" | awk '{print $1}')
           echo "Expected SHA256: $EXPECTED_SHA256"
           echo "Actual SHA256:   $ACTUAL_SHA256"
           if [ "$EXPECTED_SHA256" != "$ACTUAL_SHA256" ]; then
@@ -255,9 +269,9 @@ jobs:
 
       - name: Prepare rpm package
         run: |
-          mv aikido-agent-${{ env.ARCH }}/aikido-agent package/rpm/opt/aikido/aikido-agent
-          mv aikido-request-processor-${{ env.ARCH }}/aikido-request-processor.so package/rpm/opt/aikido/aikido-request-processor.so
-          mv ${{ env.AIKIDO_LIBZEN }} package/rpm/opt/aikido/${{ env.AIKIDO_LIBZEN }}
+          mv aikido-agent-${ARCH}/aikido-agent package/rpm/opt/aikido/aikido-agent
+          mv aikido-request-processor-${ARCH}/aikido-request-processor.so package/rpm/opt/aikido/aikido-request-processor.so
+          mv ${AIKIDO_LIBZEN} package/rpm/opt/aikido/${AIKIDO_LIBZEN}
           # Copy NTS extensions
           for dir in aikido-extension-php-*-nts-*/; do
             if [ -d "$dir" ]; then
@@ -272,35 +286,35 @@ jobs:
           done
           echo "Extensions in package:"
           ls -la package/rpm/opt/aikido/aikido-extension-php-*.so || true
-          mv package/rpm/opt/aikido package/rpm/opt/aikido-${{ env.AIKIDO_VERSION }}
-          chmod 777 package/rpm/opt/aikido-${{ env.AIKIDO_VERSION }}/*
+          mv package/rpm/opt/aikido package/rpm/opt/aikido-${AIKIDO_VERSION}
+          chmod 777 package/rpm/opt/aikido-${AIKIDO_VERSION}/*
           rpmdev-setuptree
-          mkdir -p ~/rpmbuild/SOURCES/aikido-php-firewall-${{ env.AIKIDO_VERSION }}
-          cp -rf package/rpm/opt ~/rpmbuild/SOURCES/aikido-php-firewall-${{ env.AIKIDO_VERSION }}/
+          mkdir -p ~/rpmbuild/SOURCES/aikido-php-firewall-${AIKIDO_VERSION}
+          cp -rf package/rpm/opt ~/rpmbuild/SOURCES/aikido-php-firewall-${AIKIDO_VERSION}/
           cp -f package/rpm/aikido.spec ~/rpmbuild/SPECS/
 
       - name: Setup RPM for prod
         run: |
-          echo "AIKIDO_ARTIFACT=aikido-php-firewall-$AIKIDO_VERSION-1.${{ env.ARCH }}.rpm" >> $GITHUB_ENV
-          echo "AIKIDO_ARTIFACT_RELEASE=aikido-php-firewall.${{ env.ARCH }}.rpm" >> $GITHUB_ENV
-          sed -i "s/aikido.so/aikido-${{ env.AIKIDO_VERSION }}.so/" ~/rpmbuild/SOURCES/aikido-php-firewall-${{ env.AIKIDO_VERSION }}/opt/aikido-${{ env.AIKIDO_VERSION }}/aikido.ini
+          echo "AIKIDO_ARTIFACT=aikido-php-firewall-$AIKIDO_VERSION-1.${ARCH}.rpm" >> $GITHUB_ENV
+          echo "AIKIDO_ARTIFACT_RELEASE=aikido-php-firewall.${ARCH}.rpm" >> $GITHUB_ENV
+          sed -i "s/aikido.so/aikido-${AIKIDO_VERSION}.so/" ~/rpmbuild/SOURCES/aikido-php-firewall-${AIKIDO_VERSION}/opt/aikido-${AIKIDO_VERSION}/aikido.ini
 
       - name: Build rpm package
         run: |
           cat /usr/lib/rpm/macros | grep level
           cd ~/rpmbuild/SOURCES
-          tar czvf ~/rpmbuild/SOURCES/aikido-php-firewall-${{ env.AIKIDO_VERSION }}.tar.gz *
-          rm -rf ~/rpmbuild/SOURCES/aikido-php-firewall-${{ env.AIKIDO_VERSION }}
+          tar czvf ~/rpmbuild/SOURCES/aikido-php-firewall-${AIKIDO_VERSION}.tar.gz *
+          rm -rf ~/rpmbuild/SOURCES/aikido-php-firewall-${AIKIDO_VERSION}
           rpmbuild --define "_binary_payload w9.gzdio" --define "_source_payload w9.gzdio" -ba ~/rpmbuild/SPECS/aikido.spec
-          ls -l ~/rpmbuild/RPMS/${{ env.ARCH }}/
-          mv ~/rpmbuild/RPMS/${{ env.ARCH }}/${{ env.AIKIDO_ARTIFACT }} ~/rpmbuild/RPMS/${{ env.ARCH }}/${{ env.AIKIDO_ARTIFACT_RELEASE }}
+          ls -l ~/rpmbuild/RPMS/${ARCH}/
+          mv ~/rpmbuild/RPMS/${ARCH}/${AIKIDO_ARTIFACT} ~/rpmbuild/RPMS/${ARCH}/${AIKIDO_ARTIFACT_RELEASE}
 
       - name: Check rpm dependencies
         run: |
-          yum deplist ~/rpmbuild/RPMS/${{ env.ARCH }}/${{ env.AIKIDO_ARTIFACT_RELEASE }} | grep -E "GLIBC_2.32|GLIBC_2.34|GLIBCXX_3.4.26|GLIBCXX_3.4.29" && exit 1 || exit 0
+          yum deplist ~/rpmbuild/RPMS/${ARCH}/${AIKIDO_ARTIFACT_RELEASE} | grep -E "GLIBC_2.32|GLIBC_2.34|GLIBCXX_3.4.26|GLIBCXX_3.4.29" && exit 1 || exit 0
 
       - name: Archive rpm package
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: ${{ env.AIKIDO_ARTIFACT_RELEASE }}
           if-no-files-found: error
@@ -319,23 +333,25 @@ jobs:
     needs: [ build_rpm ]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
 
       - name: Get Arch
         run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
 
       - name: Get deb arch
         run: |
-          if [ "${{ env.ARCH }}" = "x86_64" ]; then
+          if [ "${ARCH}" = "x86_64" ]; then
             echo "DEB_ARCH=amd64" >> $GITHUB_ENV
           elif [ "$ARCH" = "aarch64" ]; then
             echo "DEB_ARCH=arm64" >> $GITHUB_ENV
           else
-            echo "DEB_ARCH=${{ env.ARCH }}" >> $GITHUB_ENV
+            echo "DEB_ARCH=${ARCH}" >> $GITHUB_ENV
           fi
 
       - name: Download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           pattern: |
             aikido-php-firewall.${{ env.ARCH }}.rpm
@@ -354,22 +370,22 @@ jobs:
           AIKIDO_VERSION=$(grep '#define PHP_AIKIDO_VERSION' lib/php-extension/include/php_aikido.h | awk -F'"' '{print $2}')
           echo $AIKIDO_VERSION
           echo "AIKIDO_VERSION=$AIKIDO_VERSION" >> $GITHUB_ENV
-          echo "AIKIDO_RPM=aikido-php-firewall.${{ env.ARCH }}.rpm" >> $GITHUB_ENV
-          echo "AIKIDO_ARTIFACT=aikido-php-firewall.${{ env.ARCH }}.deb" >> $GITHUB_ENV
+          echo "AIKIDO_RPM=aikido-php-firewall.${ARCH}.rpm" >> $GITHUB_ENV
+          echo "AIKIDO_ARTIFACT=aikido-php-firewall.${ARCH}.deb" >> $GITHUB_ENV
 
       - name: Build deb
         run: |
-          alien --to-deb --scripts --keep-version ${{ env.AIKIDO_RPM }}/${{ env.AIKIDO_RPM }}
-          mv aikido-php-firewall_${{ env.AIKIDO_VERSION }}-1_${{ env.DEB_ARCH }}.deb temp-${{ env.AIKIDO_ARTIFACT }}
+          alien --to-deb --scripts --keep-version ${AIKIDO_RPM}/${AIKIDO_RPM}
+          mv aikido-php-firewall_${AIKIDO_VERSION}-1_${DEB_ARCH}.deb temp-${AIKIDO_ARTIFACT}
 
           # Package contents into deb with gzip compression (because default zstd compression is not supported by older versions of dpkg)
           mkdir deb-temp
-          dpkg-deb -R temp-${{ env.AIKIDO_ARTIFACT }} deb-temp/
-          dpkg-deb -Zgzip -b deb-temp ${{ env.AIKIDO_ARTIFACT }}
+          dpkg-deb -R temp-${AIKIDO_ARTIFACT} deb-temp/
+          dpkg-deb -Zgzip -b deb-temp ${AIKIDO_ARTIFACT}
           rm -rf deb-temp
 
       - name: Archive deb package
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: ${{ env.AIKIDO_ARTIFACT }}
           if-no-files-found: error
@@ -379,6 +395,7 @@ jobs:
   build_alpine_libs:
     name: Build Alpine Go libs ${{ matrix.package_arch }}
     runs-on: ${{ matrix.runner }}
+    permissions: { contents: read, packages: read }
     strategy:
       fail-fast: false
       matrix:
@@ -395,7 +412,7 @@ jobs:
           persist-credentials: false
 
       - name: Log in to GHCR
-        uses: docker/login-action@v3
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -699,7 +716,7 @@ jobs:
           path: package-input
 
       - name: Log in to GHCR
-        uses: docker/login-action@v3
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -806,7 +823,7 @@ jobs:
           path: package-input
 
       - name: Log in to GHCR
-        uses: docker/login-action@v3
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -868,6 +885,7 @@ jobs:
   test_php_centos:
     name: CentOS NTS php-${{ matrix.php_version }} ${{ matrix.server }} ${{ matrix.arch == '' && 'x86_64' || 'arm' }}
     runs-on: ubuntu-24.04${{ matrix.arch }}
+    permissions: { contents: read, packages: read }
     container:
       image: ghcr.io/aikidosec/firewall-php-test-centos-nts:${{ matrix.php_version }}-v3
       options: --privileged
@@ -881,7 +899,9 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
 
       - name: Setup
         run: |
@@ -952,17 +972,17 @@ jobs:
           AIKIDO_VERSION=$(grep '#define PHP_AIKIDO_VERSION' lib/php-extension/include/php_aikido.h | awk -F'"' '{print $2}')
           echo $AIKIDO_VERSION
           echo "AIKIDO_VERSION=$AIKIDO_VERSION" >> $GITHUB_ENV
-          echo "AIKIDO_RPM=aikido-php-firewall.${{ env.ARCH }}.rpm" >> $GITHUB_ENV
+          echo "AIKIDO_RPM=aikido-php-firewall.${ARCH}.rpm" >> $GITHUB_ENV
 
       - name: Download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           pattern: |
             ${{ env.AIKIDO_RPM }}
 
       - name: Install RPM
         run: |
-          rpm -Uvh --oldpackage ${{ env.AIKIDO_RPM }}/${{ env.AIKIDO_RPM }}
+          rpm -Uvh --oldpackage ${AIKIDO_RPM}/${AIKIDO_RPM}
 
       - name: Run CLI tests
         run: |
@@ -980,6 +1000,7 @@ jobs:
   test_php_ubuntu:
     name: Ubuntu NTS php-${{ matrix.php_version }} ${{ matrix.server }} ${{ matrix.arch == '' && 'x86_64' || 'arm' }}
     runs-on: ubuntu-24.04${{ matrix.arch }}
+    permissions: { contents: read, packages: read }
     container:
       image: ghcr.io/aikidosec/firewall-php-test-ubuntu-nts:${{ matrix.php_version }}-v3
       options: --privileged
@@ -992,7 +1013,9 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
 
       - name: Get Arch
         run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
@@ -1002,10 +1025,10 @@ jobs:
           AIKIDO_VERSION=$(grep '#define PHP_AIKIDO_VERSION' lib/php-extension/include/php_aikido.h | awk -F'"' '{print $2}')
           echo $AIKIDO_VERSION
           echo "AIKIDO_VERSION=$AIKIDO_VERSION" >> $GITHUB_ENV
-          echo "AIKIDO_DEB=aikido-php-firewall.${{ env.ARCH }}.deb" >> $GITHUB_ENV
+          echo "AIKIDO_DEB=aikido-php-firewall.${ARCH}.deb" >> $GITHUB_ENV
 
       - name: Download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           pattern: |
             ${{ env.AIKIDO_DEB }}
@@ -1045,7 +1068,7 @@ jobs:
 
       - name: Install DEB
         run: |
-          dpkg -i -E ${{ env.AIKIDO_DEB }}/${{ env.AIKIDO_DEB }}
+          dpkg -i -E ${AIKIDO_DEB}/${AIKIDO_DEB}
 
       - name: Run CLI tests
         run: |
@@ -1064,6 +1087,7 @@ jobs:
   test_php_ubuntu_zts:
     name: Ubuntu ZTS php-${{ matrix.php_version }} ${{ matrix.server }} ${{ matrix.arch == '' && 'x86_64' || 'arm' }}
     runs-on: ubuntu-24.04${{ matrix.arch }}
+    permissions: { contents: read, packages: read }
     container:
       image: ghcr.io/aikidosec/firewall-php-test-ubuntu-zts:${{ matrix.php_version }}-v3
       options: --privileged
@@ -1076,7 +1100,9 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
 
       - name: Get Arch
         run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
@@ -1086,7 +1112,7 @@ jobs:
           AIKIDO_VERSION=$(grep '#define PHP_AIKIDO_VERSION' lib/php-extension/include/php_aikido.h | awk -F'"' '{print $2}')
           echo $AIKIDO_VERSION
           echo "AIKIDO_VERSION=$AIKIDO_VERSION" >> $GITHUB_ENV
-          echo "AIKIDO_DEB=aikido-php-firewall.${{ env.ARCH }}.deb" >> $GITHUB_ENV
+          echo "AIKIDO_DEB=aikido-php-firewall.${ARCH}.deb" >> $GITHUB_ENV
 
       - name: Verify ZTS is enabled
         run: |
@@ -1094,7 +1120,7 @@ jobs:
           php -v
 
       - name: Download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           pattern: |
             ${{ env.AIKIDO_DEB }}
@@ -1133,7 +1159,7 @@ jobs:
 
       - name: Install DEB
         run: |
-          dpkg -i -E ${{ env.AIKIDO_DEB }}/${{ env.AIKIDO_DEB }}
+          dpkg -i -E ${AIKIDO_DEB}/${AIKIDO_DEB}
 
       - name: Run CLI tests
         run: |
@@ -1151,6 +1177,7 @@ jobs:
   test_php_centos_zts:
     name: CentOS ZTS php-${{ matrix.php_version }} ${{ matrix.server }} ${{ matrix.arch == '' && 'x86_64' || 'arm' }}
     runs-on: ubuntu-24.04${{ matrix.arch }}
+    permissions: { contents: read, packages: read }
     container:
       image: ghcr.io/aikidosec/firewall-php-test-centos-zts:${{ matrix.php_version }}-v3
       options: --privileged
@@ -1164,7 +1191,9 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
 
       - name: Setup
         run: |
@@ -1238,17 +1267,17 @@ jobs:
           AIKIDO_VERSION=$(grep '#define PHP_AIKIDO_VERSION' lib/php-extension/include/php_aikido.h | awk -F'"' '{print $2}')
           echo $AIKIDO_VERSION
           echo "AIKIDO_VERSION=$AIKIDO_VERSION" >> $GITHUB_ENV
-          echo "AIKIDO_RPM=aikido-php-firewall.${{ env.ARCH }}.rpm" >> $GITHUB_ENV
+          echo "AIKIDO_RPM=aikido-php-firewall.${ARCH}.rpm" >> $GITHUB_ENV
 
       - name: Download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           pattern: |
             ${{ env.AIKIDO_RPM }}
 
       - name: Install RPM
         run: |
-          rpm -Uvh --oldpackage ${{ env.AIKIDO_RPM }}/${{ env.AIKIDO_RPM }}
+          rpm -Uvh --oldpackage ${AIKIDO_RPM}/${AIKIDO_RPM}
 
       - name: Run CLI tests
         run: |
@@ -1266,6 +1295,7 @@ jobs:
   test_php_frankenphp:
     name: CentOS FrankenPHP php-${{ matrix.php_version }} ${{ matrix.server }} ${{ matrix.arch == '' && 'x86_64' || 'arm' }}
     runs-on: ubuntu-24.04${{ matrix.arch }}
+    permissions: { contents: read, packages: read }
     container:
       image: ghcr.io/aikidosec/firewall-php-test-centos-zts:${{ matrix.php_version }}-v3
       options: --privileged
@@ -1278,7 +1308,9 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
 
       - name: Setup
         run: |
@@ -1322,17 +1354,17 @@ jobs:
           AIKIDO_VERSION=$(grep '#define PHP_AIKIDO_VERSION' lib/php-extension/include/php_aikido.h | awk -F'"' '{print $2}')
           echo $AIKIDO_VERSION
           echo "AIKIDO_VERSION=$AIKIDO_VERSION" >> $GITHUB_ENV
-          echo "AIKIDO_RPM=aikido-php-firewall.${{ env.ARCH }}.rpm" >> $GITHUB_ENV
+          echo "AIKIDO_RPM=aikido-php-firewall.${ARCH}.rpm" >> $GITHUB_ENV
 
       - name: Download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           pattern: |
             ${{ env.AIKIDO_RPM }}
 
       - name: Install RPM
         run: |
-          rpm -Uvh --oldpackage ${{ env.AIKIDO_RPM }}/${{ env.AIKIDO_RPM }}
+          rpm -Uvh --oldpackage ${AIKIDO_RPM}/${AIKIDO_RPM}
 
       - name: Run ${{ matrix.server }} server tests
         run: |
@@ -1342,6 +1374,7 @@ jobs:
   test_php_frankenphp_ubuntu:
     name: Ubuntu FrankenPHP php-${{ matrix.php_version }} ${{ matrix.server }} ${{ matrix.arch == '' && 'x86_64' || 'arm' }}
     runs-on: ubuntu-24.04${{ matrix.arch }}
+    permissions: { contents: read, packages: read }
     container:
       image: ghcr.io/aikidosec/firewall-php-test-ubuntu-zts:${{ matrix.php_version }}-v3
       options: --privileged
@@ -1354,7 +1387,9 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
 
       - name: Get Arch
         run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
@@ -1364,7 +1399,7 @@ jobs:
           AIKIDO_VERSION=$(grep '#define PHP_AIKIDO_VERSION' lib/php-extension/include/php_aikido.h | awk -F'"' '{print $2}')
           echo $AIKIDO_VERSION
           echo "AIKIDO_VERSION=$AIKIDO_VERSION" >> $GITHUB_ENV
-          echo "AIKIDO_DEB=aikido-php-firewall.${{ env.ARCH }}.deb" >> $GITHUB_ENV
+          echo "AIKIDO_DEB=aikido-php-firewall.${ARCH}.deb" >> $GITHUB_ENV
 
       - name: Verify ZTS is enabled
         run: |
@@ -1392,14 +1427,14 @@ jobs:
           fi
 
       - name: Download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           pattern: |
             ${{ env.AIKIDO_DEB }}
 
       - name: Install DEB
         run: |
-          dpkg -i -E ${{ env.AIKIDO_DEB }}/${{ env.AIKIDO_DEB }}
+          dpkg -i -E ${AIKIDO_DEB}/${AIKIDO_DEB}
 
       - name: Run ${{ matrix.server }} server tests
         run: |
@@ -1413,17 +1448,18 @@ jobs:
     steps:
 
       - name: Checkout zen-demo-php
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           repository: Aikido-demo-apps/zen-demo-php
           path: zen-demo-php
           submodules: recursive
+          persist-credentials: false
 
       - name: Get Arch
         run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
 
       - name: Download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: aikido-php-firewall.${{ env.ARCH }}.deb
           path: ./zen-demo-php
@@ -1433,7 +1469,7 @@ jobs:
           echo "#!/usr/bin/env bash" > ./zen-demo-php/.fly/scripts/aikido.sh
           echo "dpkg -i -E \"/var/www/html/aikido-php-firewall.\$(uname -i).deb\"" >> ./zen-demo-php/.fly/scripts/aikido.sh
       - name: Run Firewall QA Tests
-        uses: AikidoSec/firewall-tester-action@releases/v1
+        uses: AikidoSec/firewall-tester-action@d6ce69ab0d6b52cac12d01be9b25603de492bfc5 # releases/v1
         with:
           dockerfile_path: ./zen-demo-php/Dockerfile.qa-control-apache-mod-php
           extra_args: '--env-file=./zen-demo-php/.env.example -e APP_KEY=base64:W2v6u6VR4lURkxuMT9xZ6pdhXSt5rxsmWTbd1HGqlIM='
@@ -1448,17 +1484,18 @@ jobs:
     steps:
 
       - name: Checkout zen-demo-php
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           repository: Aikido-demo-apps/zen-demo-php
           path: zen-demo-php
           submodules: recursive
+          persist-credentials: false
 
       - name: Get Arch
         run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
 
       - name: Download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: aikido-php-firewall.${{ env.ARCH }}.deb
           path: ./zen-demo-php
@@ -1468,7 +1505,7 @@ jobs:
           echo "#!/usr/bin/env bash" > ./zen-demo-php/.fly/scripts/aikido.sh
           echo "dpkg -i -E \"/var/www/html/aikido-php-firewall.\$(uname -i).deb\"" >> ./zen-demo-php/.fly/scripts/aikido.sh
       - name: Run Firewall QA Tests
-        uses: AikidoSec/firewall-tester-action@releases/v1
+        uses: AikidoSec/firewall-tester-action@d6ce69ab0d6b52cac12d01be9b25603de492bfc5 # releases/v1
         with:
           dockerfile_path: ./zen-demo-php/Dockerfile.qa-control-apache-php-fpm
           extra_args: '--env-file=./zen-demo-php/.env.example -e APP_KEY=base64:W2v6u6VR4lURkxuMT9xZ6pdhXSt5rxsmWTbd1HGqlIM='
@@ -1483,17 +1520,18 @@ jobs:
     steps:
 
       - name: Checkout zen-demo-php
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           repository: Aikido-demo-apps/zen-demo-php
           path: zen-demo-php
           submodules: recursive
+          persist-credentials: false
 
       - name: Get Arch
         run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
 
       - name: Download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: aikido-php-firewall.${{ env.ARCH }}.deb
           path: ./zen-demo-php
@@ -1503,7 +1541,7 @@ jobs:
           echo "#!/usr/bin/env bash" > ./zen-demo-php/.fly/scripts/aikido.sh
           echo "dpkg -i -E \"/var/www/html/aikido-php-firewall.\$(uname -i).deb\"" >> ./zen-demo-php/.fly/scripts/aikido.sh
       - name: Run Firewall QA Tests
-        uses: AikidoSec/firewall-tester-action@releases/v1
+        uses: AikidoSec/firewall-tester-action@d6ce69ab0d6b52cac12d01be9b25603de492bfc5 # releases/v1
         with:
           dockerfile_path: ./zen-demo-php/Dockerfile.qa-control-nginx-php-fpm
           extra_args: '--env-file=./zen-demo-php/.env.example -e APP_KEY=base64:W2v6u6VR4lURkxuMT9xZ6pdhXSt5rxsmWTbd1HGqlIM='
@@ -1519,17 +1557,18 @@ jobs:
     steps:
 
       - name: Checkout zen-demo-php
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           repository: Aikido-demo-apps/zen-demo-php
           path: zen-demo-php
           submodules: recursive
+          persist-credentials: false
 
       - name: Get Arch
         run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
 
       - name: Download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: aikido-php-firewall.${{ env.ARCH }}.deb
           path: ./zen-demo-php
@@ -1539,7 +1578,7 @@ jobs:
           echo "dpkg -i -E \"/var/www/html/aikido-php-firewall.\$(uname -i).deb\"" > ./zen-demo-php/.fly/scripts/aikido.sh
         
       - name: Run Firewall QA Tests
-        uses: AikidoSec/firewall-tester-action@v1.0.3
+        uses: AikidoSec/firewall-tester-action@110351350ab370dfda2ab2df100aa777286abb6f # v1.0.3
         with:
           dockerfile_path: ./zen-demo-php/Dockerfile
           extra_args: '--env-file=./zen-demo-php/.env.example -e APP_KEY=base64:W2v6u6VR4lURkxuMT9xZ6pdhXSt5rxsmWTbd1HGqlIM='

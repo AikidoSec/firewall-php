@@ -5,13 +5,18 @@ on:
     tags:
       - "v*.*.*"
 
+permissions:
+  contents: read
+
 jobs:
   validate_version:
     name: Validate release version
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      with:
+        persist-credentials: false
 
     - name: Ensure tag matches source versions
       run: |
@@ -36,7 +41,7 @@ jobs:
   build:
     needs: validate_version
     permissions: { actions: read, contents: read, packages: read }
-    uses: ./.github/workflows/build.yml
+    uses: $/.github/workflows/build.yml
   release:
     runs-on: open-source-releaser
     needs: build
@@ -48,10 +53,12 @@ jobs:
         echo "AIKIDO_VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
    
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      with:
+        persist-credentials: false
     
     - name: Download artifacts
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
       with:
         pattern: |
           aikido-php-firewall*
