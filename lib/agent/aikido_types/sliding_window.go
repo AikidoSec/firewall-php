@@ -1,5 +1,7 @@
 package aikido_types
 
+import "time"
+
 type SuspiciousRequest struct {
 	Method string `json:"method"`
 	Url    string `json:"url"`
@@ -68,6 +70,24 @@ func (sw *SlidingWindow) AddSample(method, url string, maxSamplesPerIP int) {
 // IsEmpty returns true if the total count is zero.
 func (sw *SlidingWindow) IsEmpty() bool {
 	return sw.Total == 0
+}
+
+// RetryAfter returns the seconds until enough buckets expire to admit a request.
+func (sw *SlidingWindow) RetryAfter(windowSize, maxRequests int, nextReset, now time.Time) int64 {
+	remaining := sw.Total
+	if remaining < maxRequests {
+		return 0
+	}
+	for i := 0; i < sw.Queue.Length(); i++ {
+		remaining -= sw.Queue.Get(i)
+		if remaining < maxRequests {
+			// A queue that has not filled the window needs extra rotations first.
+			rotations := windowSize - sw.Queue.Length() + i
+			delay := nextReset.Add(time.Duration(rotations) * time.Minute).Sub(now)
+			return max(1, int64((delay+time.Second-1)/time.Second))
+		}
+	}
+	return 0
 }
 
 // AdvanceSlidingWindowMap advances all sliding windows in the map and removes entries where Total is 0.

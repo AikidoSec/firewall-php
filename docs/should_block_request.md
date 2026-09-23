@@ -4,6 +4,8 @@ In order to enable the user blocking and rate limiting features, the protected a
 We provide middleware examples that can be used in different scenarious.
 Make sure to add this middleware as early as possible in the request handling process, but after the authentication middleware, so that the user information is available.
 
+`$decision->retry_after` is the number of seconds to wait before retrying, or `null` when the request is not rate limited. You can include this value in the `Retry-After` header of your 429 response.
+
 ## No framework
 
 ```php
@@ -15,7 +17,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
-use Laminas\Diactoros\Response; // Or use any other PSR-7 implementation
+use Laminas\Diactoros\Response\JsonResponse as Response; // Or use any other PSR-7 implementation
 
 class AikidoMiddleware implements MiddlewareInterface
 {
@@ -78,7 +80,7 @@ class AikidoMiddleware implements MiddlewareInterface
             }
             return new Response([
                 'message' => $message,
-            ], 429);
+            ], 429, ['Retry-After' => (string) $decision->retry_after]);
         }
 
         // Aikido decided to block but decision type is not implemented
@@ -145,14 +147,15 @@ class AikidoMiddleware
                 }
             }
             else if ($decision->type == "ratelimited") {
+                $headers = ['Retry-After' => (string) $decision->retry_after];
                 if ($decision->trigger == "user") {
-                    return response('Your user exceeded the rate limit for this endpoint!', 429);
+                    return response('Your user exceeded the rate limit for this endpoint!', 429, $headers);
                 }
                 else if ($decision->trigger == "ip") {
-                    return response("Your IP ({$decision->ip}) exceeded the rate limit for this endpoint!", 429);
+                    return response("Your IP ({$decision->ip}) exceeded the rate limit for this endpoint!", 429, $headers);
                 }
                 else if ($decision->trigger == "group") {
-                    return response("Your group exceeded the rate limit for this endpoint!", 429);
+                    return response("Your group exceeded the rate limit for this endpoint!", 429, $headers);
                 }
             }
         }
@@ -268,7 +271,8 @@ class AikidoEventSubscriber implements EventSubscriberInterface
 
                 $event->setResponse(new JsonResponse(
                     ['message' => $message],
-                    429
+                    429,
+                    ['Retry-After' => (string) $decision->retry_after]
                 ));
                 return;
             }

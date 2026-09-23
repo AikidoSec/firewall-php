@@ -32,6 +32,7 @@ ACTION_STATUS Action::executeStore(json &event) {
     type = event["type"];
     trigger = event["trigger"];
     description = event["description"];
+    retryAfter = event.value("retry_after", zend_long{0});
     if (trigger == "ip") {
         ip = event["ip"];
     }
@@ -102,6 +103,7 @@ void Action::Reset() {
     description = "";
     ip = "";
     userAgent = "";
+    retryAfter = 0;
 }
 
 bool Action::Exit() {
@@ -134,4 +136,8 @@ char *Action::Ip() {
 
 char *Action::UserAgent() {
     return (char *)userAgent.c_str();
+}
+
+zend_long Action::RetryAfter() {
+    return retryAfter;
 }
