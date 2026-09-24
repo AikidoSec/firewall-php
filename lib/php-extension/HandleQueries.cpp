@@ -54,6 +54,32 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_pdo_exec) {
     eventCacheStack.Top().sqlDialect = GetSqlDialectFromPdo(pdo_object);
 }
 
+// zval_get_string() warns on arrays and throws on objects; null/resources have
+// no value worth comparing to a tenant ID, so only scalars are handled here.
+static bool BoundValueToString(zval* val, std::string& out) {
+    if (!val) {
+        return false;
+    }
+    ZVAL_DEREF(val);
+    switch (Z_TYPE_P(val)) {
+        case IS_STRING:
+        case IS_LONG:
+        case IS_DOUBLE:
+        case IS_TRUE:
+        case IS_FALSE:
+            break;
+        default:
+            return false;
+    }
+    zend_string* str = zval_get_string(val);
+    if (!str) {
+        return false;
+    }
+    out.assign(ZSTR_VAL(str), ZSTR_LEN(str));
+    zend_string_release(str);
+    return true;
+}
+
 AIKIDO_HANDLER_FUNCTION(handle_pre_pdostatement_execute) {
     scopedTimer.SetSink(sink, "sql_op");
 
@@ -63,7 +89,7 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_pdostatement_execute) {
     }
 
     pdo_stmt_t *stmt = Z_PDO_STMT_P(pdo_statement_object);
-    if (!stmt->dbh) { // object is not initialized 
+    if (!stmt->dbh) { // object is not initialized
         return;
     }
 
@@ -71,15 +97,71 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_pdostatement_execute) {
         return;
     }
 
+    zval* params = nullptr;
+    ZEND_PARSE_PARAMETERS_START(0, 1)
+        Z_PARAM_OPTIONAL
+        Z_PARAM_ARRAY_EX(params, 1, 0)
+    ZEND_PARSE_PARAMETERS_END();
+
     eventId = EVENT_PRE_SQL_QUERY_EXECUTED;
     auto& eventCacheStack = AIKIDO_GLOBAL(eventCacheStack);
     eventCacheStack.Top().moduleName = "PDOStatement";
-    
+
 #if PHP_VERSION_ID >= 80100
     eventCacheStack.Top().sqlQuery = std::string(ZSTR_VAL(stmt->query_string), ZSTR_LEN(stmt->query_string));
 #else
     eventCacheStack.Top().sqlQuery = std::string(stmt->query_string, stmt->query_stringlen);
 #endif
+
+    // Positional keys are 0-based, matching PDO's paramno and zen-internals' placeholder_number.
+    json paramsJson = json::object();
+    bool collectedParams = false;
+
+    if (params) {
+        // execute($params) replaces any previously bound values, so params is the
+        // only source to read here; stmt->bound_params is stale until next execute().
+        zend_string* key;
+        zend_ulong index;
+        zval* val;
+        ZEND_HASH_FOREACH_KEY_VAL(Z_ARRVAL_P(params), index, key, val) {
+            std::string valueString;
+            if (!BoundValueToString(val, valueString)) {
+                continue;
+            }
+            if (key) {
+                paramsJson[std::string(ZSTR_VAL(key), ZSTR_LEN(key))] = valueString;
+            } else {
+                paramsJson[std::to_string(index)] = valueString;
+            }
+        } ZEND_HASH_FOREACH_END();
+        collectedParams = true;
+    } else if (stmt->bound_params) {
+        // No array passed: fall back to values from earlier bindValue()/bindParam() calls.
+        zend_string* key;
+        zend_ulong index;
+        zval* entry;
+        ZEND_HASH_FOREACH_KEY_VAL(stmt->bound_params, index, key, entry) {
+            auto* boundParam = static_cast<struct pdo_bound_param_data*>(Z_PTR_P(entry));
+            if (!boundParam) {
+                continue;
+            }
+            std::string valueString;
+            if (!BoundValueToString(&boundParam->parameter, valueString)) {
+                continue;
+            }
+            if (key) {
+                paramsJson[std::string(ZSTR_VAL(key), ZSTR_LEN(key))] = valueString;
+            } else {
+                paramsJson[std::to_string(index)] = valueString;
+            }
+        } ZEND_HASH_FOREACH_END();
+        collectedParams = true;
+    }
+
+    if (collectedParams) {
+        // Replace invalid UTF-8 (e.g. blobs) instead of throwing and losing detection for this query.
+        eventCacheStack.Top().sqlParams = paramsJson.dump(-1, ' ', false, json::error_handler_t::replace);
+    }
 
 #if PHP_VERSION_ID >= 80500
     if (!stmt->database_object_handle) {
@@ -177,10 +259,13 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_pg_query_params) {
     ZEND_PARSE_PARAMETERS_END();
 
     zend_string *query = nullptr;
+    zval *params = nullptr;
     if (ZEND_NUM_ARGS() == 2 && firstArg && Z_TYPE_P(firstArg) == IS_STRING) {
         query = Z_STR_P(firstArg);
+        params = secondArg;
     } else if (ZEND_NUM_ARGS() == 3 && secondArg && Z_TYPE_P(secondArg) == IS_STRING) {
         query = Z_STR_P(secondArg);
+        params = paramsArg;
     }
 
     if (!query) {
@@ -192,6 +277,20 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_pg_query_params) {
     eventCacheStack.Top().moduleName = "pgsql";
     eventCacheStack.Top().sqlQuery = ZSTR_VAL(query);
     eventCacheStack.Top().sqlDialect = "postgres";
+
+    if (params && Z_TYPE_P(params) == IS_ARRAY) {
+        json paramsJson = json::object();
+        zend_ulong position = 1;
+        zval* value;
+        ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(params), value) {
+            std::string valueString;
+            if (BoundValueToString(value, valueString)) {
+                paramsJson[std::to_string(position)] = valueString;
+            }
+            position++;
+        } ZEND_HASH_FOREACH_END();
+        eventCacheStack.Top().sqlParams = paramsJson.dump(-1, ' ', false, json::error_handler_t::replace);
+    }
 }
 
 AIKIDO_HANDLER_FUNCTION(handle_pre_pg_prepare) {

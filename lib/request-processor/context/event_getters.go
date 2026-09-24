@@ -44,12 +44,29 @@ func GetSqlDialect(instance *instance.RequestProcessorInstance) string {
 	return GetContext(instance).Callback(instance, C.SQL_DIALECT)
 }
 
+func GetSqlParams(instance *instance.RequestProcessorInstance) string {
+	return GetContext(instance).Callback(instance, C.SQL_PARAMS)
+}
+
 func GetModule(instance *instance.RequestProcessorInstance) string {
 	return GetContext(instance).Callback(instance, C.MODULE)
 }
 
 func GetStackTrace(instance *instance.RequestProcessorInstance) string {
 	return GetContext(instance).Callback(instance, C.STACK_TRACE)
+}
+
+// Not cached: enable_idor_protection() can be called after earlier queries already ran.
+func GetIdorConfigJson(instance *instance.RequestProcessorInstance) string {
+	return GetContext(instance).Callback(instance, C.CONTEXT_IDOR_CONFIG)
+}
+
+func GetTenantId(instance *instance.RequestProcessorInstance) string {
+	return GetContext(instance).Callback(instance, C.CONTEXT_TENANT_ID)
+}
+
+func GetIdorIgnored(instance *instance.RequestProcessorInstance) bool {
+	return GetContext(instance).Callback(instance, C.CONTEXT_IDOR_IGNORED) == "1"
 }
 
 func GetParamMatcher(instance *instance.RequestProcessorInstance) (string, string) {

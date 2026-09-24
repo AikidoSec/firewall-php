@@ -1,7 +1,49 @@
 #include "Includes.h"
 
+static void* GetCurrentFiberContext() {
+#if PHP_VERSION_ID >= 80100
+    return EG(current_fiber_context);
+#else
+    return nullptr;
+#endif
+}
+
 void RequestCache::Reset() {
     *this = RequestCache();
+}
+
+void RequestCache::EnterIdorIgnoredScope() {
+    if (void* fiberContext = GetCurrentFiberContext()) {
+        idorIgnoredDepthByFiber[fiberContext]++;
+        return;
+    }
+    idorIgnoredDepth++;
+}
+
+void RequestCache::LeaveIdorIgnoredScope() {
+    if (void* fiberContext = GetCurrentFiberContext()) {
+        auto it = idorIgnoredDepthByFiber.find(fiberContext);
+        if (it == idorIgnoredDepthByFiber.end()) {
+            return;
+        }
+        if (it->second <= 1) {
+            idorIgnoredDepthByFiber.erase(it);
+        } else {
+            it->second--;
+        }
+        return;
+    }
+    if (idorIgnoredDepth > 0) {
+        idorIgnoredDepth--;
+    }
+}
+
+bool RequestCache::IsIdorIgnored() const {
+    if (void* fiberContext = GetCurrentFiberContext()) {
+        auto it = idorIgnoredDepthByFiber.find(fiberContext);
+        return it != idorIgnoredDepthByFiber.end() && it->second > 0;
+    }
+    return idorIgnoredDepth > 0;
 }
 
 void EventCache::Reset() {
