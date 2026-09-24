@@ -6,7 +6,10 @@ std::string get_resource_or_original_from_php_filter(const std::string& filename
     }
 
     std::string phpResourceString = "/resource=";
-    size_t pos = filenameStr.rfind(phpResourceString);
+        // PHP's php://filter wrapper uses strstr() to find the FIRST occurrence of
+    // "/resource=". Match that behaviour to avoid a detection bypass where a second
+    // "/resource=<benign>" is appended.
+    size_t pos = filenameStr.find(phpResourceString);
     if (pos != std::string::npos) {
         return filenameStr.substr(pos + phpResourceString.length());
     }

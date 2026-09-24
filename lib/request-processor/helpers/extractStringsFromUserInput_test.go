@@ -395,8 +395,17 @@ func TestExtractResourceOrOriginal(t *testing.T) {
 		}
 	})
 	t.Run("php://filter/resource=php://filter/resource=../../../../file", func(t *testing.T) {
-		if ExtractResourceOrOriginal("php://filter/resource=php://filter/resource=../../../../file") != "../../../../file" {
-			t.Error("expected ../../../../file")
+		// PHP uses strstr() (first "/resource="), so it opens
+		// "php://filter/resource=../../../../file".
+		if ExtractResourceOrOriginal("php://filter/resource=php://filter/resource=../../../../file") != "php://filter/resource=../../../../file" {
+			t.Error("expected php://filter/resource=../../../../file")
+		}
+	})
+	t.Run("SSRF bypass: double /resource= must return the first (internal) resource", func(t *testing.T) {
+		payload := "php://filter/read=convert.base64-encode/resource=http://127.0.0.1:9001/secret-BYPASS?x=/resource=http://example.com/"
+		expected := "http://127.0.0.1:9001/secret-BYPASS?x=/resource=http://example.com/"
+		if got := ExtractResourceOrOriginal(payload); got != expected {
+			t.Errorf("expected %q (what PHP opens), got %q", expected, got)
 		}
 	})
 	t.Run("file.txt", func(t *testing.T) {
