@@ -15,13 +15,13 @@ import (
 // 50 ms is the lowest tested timeout that kept rate limiting working under heavy CPU load; shorter values can let requests through.
 const rateLimitingStatusTimeout = 50 * time.Millisecond
 
-func GetAction(actionHandling, actionType, trigger, description, data string, responseCode int, retryAfter int64) string {
+func GetAction(actionHandling, actionType, trigger, description, data string, responseCode int, retryAfter int64, message string) string {
 	actionMap := map[string]interface{}{
 		"action":        actionHandling,
 		"type":          actionType,
 		"trigger":       trigger,
 		"description":   html.EscapeString(description),
-		"message":       fmt.Sprintf("Your %s (%s) is blocked due to: %s!", trigger, data, description),
+		"message":       message,
 		trigger:         data,
 		"response_code": responseCode,
 	}
@@ -50,7 +50,8 @@ func OnGetBlockingStatus(instance *instance.RequestProcessorInstance) string {
 	userId := context.GetUserId(instance)
 	if utils.IsUserBlocked(server, userId) {
 		log.Infof(instance, "User \"%s\" is blocked!", userId)
-		return GetAction("store", "blocked", "user", "user blocked from config", userId, 403, 0)
+		return GetAction("store", "blocked", "user", "user blocked from config", userId, 403, 0,
+			fmt.Sprintf("Your user (%s) is blocked due to: user blocked from config!", userId))
 	}
 
 	autoBlockingStatus := OnGetAutoBlockingStatus(instance)
@@ -74,7 +75,8 @@ func OnGetBlockingStatus(instance *instance.RequestProcessorInstance) string {
 		if rateLimitingStatus != nil && rateLimitingStatus.Block {
 			context.ContextSetIsEndpointRateLimited(instance)
 			log.Infof(instance, "Request made from IP \"%s\" is ratelimited by \"%s\"!", ip, rateLimitingStatus.Trigger)
-			return GetAction("store", "ratelimited", rateLimitingStatus.Trigger, "configured rate limit exceeded by current ip", ip, 429, rateLimitingStatus.RetryAfter)
+			return GetAction("store", "ratelimited", rateLimitingStatus.Trigger, "configured rate limit exceeded by current ip", ip, 429, rateLimitingStatus.RetryAfter,
+				fmt.Sprintf("Your %s (%s) is blocked due to: configured rate limit exceeded by current ip!", rateLimitingStatus.Trigger, ip))
 		}
 	}
 
@@ -101,7 +103,8 @@ func OnGetAutoBlockingStatus(instance *instance.RequestProcessorInstance) string
 	endpointIpAllowedStatus := context.GetEndpointIpAllowed(instance)
 	if endpointIpAllowedStatus != utils.NoConfig && endpointIpAllowedStatus == utils.NotFound {
 		log.Infof(instance, "IP \"%s\" is not allowed to access this endpoint!", ip)
-		return GetAction("exit", "blocked", "ip", "not allowed by config to access this endpoint", ip, 403, 0)
+		return GetAction("exit", "blocked", "ip", "not allowed by config to access this endpoint", ip, 403, 0,
+			fmt.Sprintf("Your ip (%s) is blocked due to: not allowed by config to access this endpoint!", ip))
 	}
 
 	if context.IsIpBypassed(instance) {
@@ -111,7 +114,8 @@ func OnGetAutoBlockingStatus(instance *instance.RequestProcessorInstance) string
 
 	if ipAllowed, _ := utils.IsIpAllowed(instance, server, ip); !ipAllowed {
 		log.Infof(instance, "IP \"%s\" is not found in allow lists!", ip)
-		return GetAction("exit", "blocked", "ip", "not in allow lists", ip, 403, 0)
+		return GetAction("exit", "blocked", "ip", "not in allow lists", ip, 403, 0,
+			fmt.Sprintf("Your IP address is not allowed. (Your IP: %s)", ip))
 	}
 
 	if ipMonitored, ipMonitoredMatches := utils.IsIpMonitored(instance, server, ip); ipMonitored {
@@ -122,7 +126,8 @@ func OnGetAutoBlockingStatus(instance *instance.RequestProcessorInstance) string
 	if ipBlocked, ipBlockedMatches := utils.IsIpBlocked(instance, server, ip); ipBlocked {
 		log.Infof(instance, "IP \"%s\" found in blocked lists: %v!", ip, ipBlockedMatches)
 		go grpc.OnMonitoredIpMatch(server, instance.GetCurrentToken(), ipBlockedMatches)
-		return GetAction("exit", "blocked", "ip", ipBlockedMatches[0].Description, ip, 403, 0)
+		return GetAction("exit", "blocked", "ip", ipBlockedMatches[0].Description, ip, 403, 0,
+			fmt.Sprintf("Your ip (%s) is blocked due to: %s!", ip, ipBlockedMatches[0].Description))
 	}
 
 	if userAgentMonitored, userAgentMonitoredDescriptions := utils.IsUserAgentMonitored(server, userAgent); userAgentMonitored {
@@ -138,7 +143,8 @@ func OnGetAutoBlockingStatus(instance *instance.RequestProcessorInstance) string
 		if len(userAgentBlockedDescriptions) > 0 {
 			description = userAgentBlockedDescriptions[0]
 		}
-		return GetAction("exit", "blocked", "user-agent", description, userAgent, 403, 0)
+		return GetAction("exit", "blocked", "user-agent", description, userAgent, 403, 0,
+			fmt.Sprintf("Your user-agent (%s) is blocked due to: %s!", userAgent, description))
 	}
 
 	return ""
@@ -174,15 +180,18 @@ func OnGetWhitelistedStatus(instance *instance.RequestProcessorInstance) string 
 
 	// If the IP is in the list of allowed IPs, whitelist the request
 	if context.GetEndpointIpAllowed(instance) == utils.Found {
-		return GetAction("whitelisted", "endpoint-allowlist", "ip", "IP is configured in the route's allowlist", ip, 0, 0)
+		return GetAction("whitelisted", "endpoint-allowlist", "ip", "IP is configured in the route's allowlist", ip, 0, 0,
+			fmt.Sprintf("Your ip (%s) is blocked due to: IP is configured in the route's allowlist!", ip))
 	}
 
 	if context.IsIpBypassed(instance) {
-		return GetAction("whitelisted", "bypassed", "ip", "IP is configured in the firewall bypass list", ip, 0, 0)
+		return GetAction("whitelisted", "bypassed", "ip", "IP is configured in the firewall bypass list", ip, 0, 0,
+			fmt.Sprintf("Your ip (%s) is blocked due to: IP is configured in the firewall bypass list!", ip))
 	}
 
 	if ipAllowed, ipAllowedMatches := utils.IsIpAllowed(instance, server, ip); ipAllowed && len(ipAllowedMatches) > 0 {
-		return GetAction("whitelisted", "allowlist", "ip", "IP is part of allowlist: "+ipAllowedMatches[0].Description, ip, 0, 0)
+		return GetAction("whitelisted", "allowlist", "ip", "IP is part of allowlist: "+ipAllowedMatches[0].Description, ip, 0, 0,
+			fmt.Sprintf("Your ip (%s) is blocked due to: IP is part of allowlist: %s!", ip, ipAllowedMatches[0].Description))
 	}
 
 	return ""

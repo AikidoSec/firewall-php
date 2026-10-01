@@ -14,7 +14,7 @@ def run_test():
     response = php_server_get("/test", headers={"X-Forwarded-For": "2.20.116.1"})
     assert_response_code_is(response, 403)
     assert_response_header_contains(response, "Content-Type", "text")
-    assert_response_body_contains(response, "Your ip (2.20.116.1) is blocked due to: not in allow lists!")
+    assert_response_body_contains(response, "Your IP address is not allowed. (Your IP: 2.20.116.1)")
 
     response = php_server_get("/test", headers={"X-Forwarded-For": "2.17.116.2"})
     assert_response_code_is(response, 200)
@@ -30,7 +30,7 @@ def run_test():
     response = php_server_get("/test", headers={"X-Forwarded-For": "2.20.116.1"})
     assert_response_code_is(response, 403)
     assert_response_header_contains(response, "Content-Type", "text")
-    assert_response_body_contains(response, "Your ip (2.20.116.1) is blocked due to: not in allow lists!")
+    assert_response_body_contains(response, "Your IP address is not allowed. (Your IP: 2.20.116.1)")
 
     response = php_server_get("/test", headers={"X-Forwarded-For": "2.17.116.2"})
     assert_response_code_is(response, 200)
