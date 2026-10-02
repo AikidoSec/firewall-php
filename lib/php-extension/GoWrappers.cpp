@@ -79,17 +79,13 @@ CallbackResult GoContextCallback(int callbackId) {
                 ctx = "USER_AGENT";
                 ret = server.GetVar("HTTP_USER_AGENT");
                 break;
-            case CONTEXT_USER_ID:
-                ctx = "USER_ID";
-                ret = requestCache.userId;
-                break;
-            case CONTEXT_USER_NAME:
-                ctx = "USER_NAME";
-                ret = requestCache.userName;
-                break;
             case CONTEXT_RATE_LIMIT_GROUP:
                 ctx = "RATE_LIMIT_GROUP";
                 ret = requestCache.rateLimitGroup;
+                break;
+            case CUSTOM_EVENT_NAME:
+                ctx = "CUSTOM_EVENT_NAME";
+                ret = GetEventCacheField(&EventCache::customEventName);
                 break;
             case FUNCTION_NAME:
                 ctx = "FUNCTION_NAME";
@@ -161,7 +157,9 @@ CallbackResult GoContextCallback(int callbackId) {
         return CallbackResult{nullptr, 0};
     }
 
-    if (ret.length() > 10000) {
+    if (callbackId == CUSTOM_EVENT_NAME) {
+        AIKIDO_LOG_DEBUG("Callback %s -> (redacted)\n", ctx.c_str());
+    } else if (ret.length() > 10000) {
         AIKIDO_LOG_DEBUG("Callback %s -> (Result too large to print)\n", ctx.c_str());
     } else {
         AIKIDO_LOG_DEBUG("Callback %s -> %s\n", ctx.c_str(), ret.c_str());

@@ -21,7 +21,7 @@ type HandlerFunction func(*instance.RequestProcessorInstance) string
 var eventHandlers = map[int]HandlerFunction{
 	C.EVENT_PRE_REQUEST:              OnPreRequest,
 	C.EVENT_POST_REQUEST:             OnPostRequest,
-	C.EVENT_SET_USER:                 OnUserEvent,
+	C.EVENT_TRACK:                    OnTrackEvent,
 	C.EVENT_SET_RATE_LIMIT_GROUP:     OnRateLimitGroupEvent,
 	C.EVENT_REGISTER_PARAM_MATCHER:   OnRegisterParamMatcherEvent,
 	C.EVENT_GET_AUTO_BLOCKING_STATUS: OnGetAutoBlockingStatus,
@@ -133,6 +133,23 @@ func RequestProcessorContextInit(instancePtr unsafe.Pointer, contextCallback C.C
 
 	instance.SetContextCallback(unsafe.Pointer(contextCallback))
 	return context.Init(instancePtr, GoContextCallback)
+}
+
+//export RequestProcessorSetUser
+func RequestProcessorSetUser(instancePtr unsafe.Pointer, id string, username string) (ok bool) {
+	instance := instance.GetInstance(instancePtr)
+	defer func() {
+		if r := recover(); r != nil {
+			log.Warn(instance, "Recovered from panic:", r)
+			ok = false
+		}
+	}()
+
+	if instance == nil {
+		return false
+	}
+
+	return OnUserEvent(instance, id, username)
 }
 
 /*
