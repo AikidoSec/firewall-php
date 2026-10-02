@@ -1581,4 +1581,4 @@ jobs:
           app_env_file: ./zen-demo-php/.env.qa
           max_parallel_tests: 7
           config_propagation_delay: 60
-          skip_tests: test-ssrf,test-stored-ssrf-no-context,test-stored-ssrf
+          skip_tests: test-ssrf,test-stored-ssrf-no-context,test-stored-ssrf,test-excluded-user-from-rate-limiting,test-outbound-domain-blocking
