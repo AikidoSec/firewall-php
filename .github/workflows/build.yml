@@ -1469,13 +1469,11 @@ jobs:
           echo "#!/usr/bin/env bash" > ./zen-demo-php/.fly/scripts/aikido.sh
           echo "dpkg -i -E \"/var/www/html/aikido-php-firewall.\$(uname -i).deb\"" >> ./zen-demo-php/.fly/scripts/aikido.sh
       - name: Run Firewall QA Tests
-        uses: AikidoSec/firewall-tester-action@d6ce69ab0d6b52cac12d01be9b25603de492bfc5 # releases/v1
+        uses: AikidoSec/firewall-tester-action@3d448c6929e168148cf74c3d998d1dd5950d40ee # v1.1.1
         with:
           dockerfile_path: ./zen-demo-php/Dockerfile.qa-control-apache-mod-php
-          extra_args: '--env-file=./zen-demo-php/.env.example -e APP_KEY=base64:W2v6u6VR4lURkxuMT9xZ6pdhXSt5rxsmWTbd1HGqlIM='
-          sleep_before_test: 20
-          max_parallel_tests: 7
-          test_type: control
+          app_env_file: ./zen-demo-php/.env.qa
+          test_suite: php-control
 
   test_php_qa_action_controlling_tests_apache_php_fpm:
     name: QA apache-php-fpm
@@ -1505,13 +1503,11 @@ jobs:
           echo "#!/usr/bin/env bash" > ./zen-demo-php/.fly/scripts/aikido.sh
           echo "dpkg -i -E \"/var/www/html/aikido-php-firewall.\$(uname -i).deb\"" >> ./zen-demo-php/.fly/scripts/aikido.sh
       - name: Run Firewall QA Tests
-        uses: AikidoSec/firewall-tester-action@d6ce69ab0d6b52cac12d01be9b25603de492bfc5 # releases/v1
+        uses: AikidoSec/firewall-tester-action@3d448c6929e168148cf74c3d998d1dd5950d40ee # v1.1.1
         with:
           dockerfile_path: ./zen-demo-php/Dockerfile.qa-control-apache-php-fpm
-          extra_args: '--env-file=./zen-demo-php/.env.example -e APP_KEY=base64:W2v6u6VR4lURkxuMT9xZ6pdhXSt5rxsmWTbd1HGqlIM='
-          sleep_before_test: 20
-          max_parallel_tests: 7
-          test_type: control
+          app_env_file: ./zen-demo-php/.env.qa
+          test_suite: php-control
 
   test_php_qa_action_controlling_tests_nginx_php_fpm:
     name: QA nginx-php-fpm
@@ -1541,13 +1537,11 @@ jobs:
           echo "#!/usr/bin/env bash" > ./zen-demo-php/.fly/scripts/aikido.sh
           echo "dpkg -i -E \"/var/www/html/aikido-php-firewall.\$(uname -i).deb\"" >> ./zen-demo-php/.fly/scripts/aikido.sh
       - name: Run Firewall QA Tests
-        uses: AikidoSec/firewall-tester-action@d6ce69ab0d6b52cac12d01be9b25603de492bfc5 # releases/v1
+        uses: AikidoSec/firewall-tester-action@3d448c6929e168148cf74c3d998d1dd5950d40ee # v1.1.1
         with:
           dockerfile_path: ./zen-demo-php/Dockerfile.qa-control-nginx-php-fpm
-          extra_args: '--env-file=./zen-demo-php/.env.example -e APP_KEY=base64:W2v6u6VR4lURkxuMT9xZ6pdhXSt5rxsmWTbd1HGqlIM='
-          sleep_before_test: 20
-          max_parallel_tests: 7
-          test_type: control
+          app_env_file: ./zen-demo-php/.env.qa
+          test_suite: php-control
 
   test_php_qa_action:
     permissions: { contents: read }
@@ -1578,12 +1572,9 @@ jobs:
           echo "dpkg -i -E \"/var/www/html/aikido-php-firewall.\$(uname -i).deb\"" > ./zen-demo-php/.fly/scripts/aikido.sh
         
       - name: Run Firewall QA Tests
-        uses: AikidoSec/firewall-tester-action@110351350ab370dfda2ab2df100aa777286abb6f # v1.0.3
+        uses: AikidoSec/firewall-tester-action@3d448c6929e168148cf74c3d998d1dd5950d40ee # v1.1.1
         with:
           dockerfile_path: ./zen-demo-php/Dockerfile
-          extra_args: '--env-file=./zen-demo-php/.env.example -e APP_KEY=base64:W2v6u6VR4lURkxuMT9xZ6pdhXSt5rxsmWTbd1HGqlIM='
-          sleep_before_test: 30
-          max_parallel_tests: 7
-          config_update_delay: 120
-          test_timeout: 900
-          skip_tests: test_ssrf,test_stored_ssrf_no_context,test_stored_ssrf
+          app_env_file: ./zen-demo-php/.env.qa
+          config_propagation_delay: 60
+          skip_tests: test-ssrf,test-stored-ssrf-no-context,test-stored-ssrf,test-excluded-user-from-rate-limiting,test-outbound-domain-blocking
