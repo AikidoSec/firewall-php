@@ -77,7 +77,12 @@ bool RequestProcessor::Init() {
 }
 
 std::string RequestProcessor::GetInitData(const std::string& userProvidedToken) {
-    LoadEnvironment();
+    // Only reload environment when no explicit token is provided.
+    // When set_token() provides a token, we must not overwrite AIKIDO_GLOBAL(token)
+    // with the environment value, as this would break the reload gate on the next request.
+    if (userProvidedToken.empty()) {
+        LoadEnvironment();
+    }
 
     auto& globalToken = AIKIDO_GLOBAL(token);
     if (!userProvidedToken.empty()) {
@@ -304,7 +309,11 @@ void RequestProcessorInstance::LoadConfigFromEnvironment() {
 }
 
 void RequestProcessorInstance::LoadConfigWithTokenFromPHPSetToken(const std::string& tokenFromMiddleware) {
-    LoadConfig(AIKIDO_GLOBAL(token), tokenFromMiddleware);
+    std::string previousToken = AIKIDO_GLOBAL(token);
+    // Update PHP-side token immediately to synchronize with Go state for the next request's reload gate.
+    // This prevents cross-site policy reuse when the next request loads its environment token.
+    AIKIDO_GLOBAL(token) = tokenFromMiddleware;
+    LoadConfig(previousToken, tokenFromMiddleware);
 }
 
 void RequestProcessorInstance::RequestShutdown() {
