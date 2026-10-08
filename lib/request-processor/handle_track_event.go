@@ -39,6 +39,6 @@ func OnTrackEvent(instance *instance.RequestProcessorInstance) string {
 		}
 	}
 
-	go grpc.OnCustomEvent(server, event)
+	go grpc.OnCustomEvent(event)
 	return ""
 }

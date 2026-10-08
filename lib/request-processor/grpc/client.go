@@ -229,8 +229,8 @@ func OnUserEvent(server *ServerData, token string, id string, username string, i
 	log.Debugf(nil, "User event sent via socket (%v %v %v)", id, username, ip)
 }
 
-func OnCustomEvent(server *ServerData, event *protos.CustomEvent) {
-	if client == nil || server == nil {
+func OnCustomEvent(event *protos.CustomEvent) {
+	if client == nil {
 		return
 	}
 
