@@ -6,13 +6,7 @@ import (
 	"main/ipc/protos"
 	"main/log"
 	"main/utils"
-	"sync/atomic"
 )
-
-// Shared by all servers, so a slow cloud cannot pile up goroutines and sockets in the agent.
-var customEventSlots = make(chan struct{}, constants.MaxConcurrentCustomEventRequests)
-
-var lastCustomEventDropWarningAt atomic.Int64
 
 func GetCustomEvent(server *ServerData, request *protos.CustomEvent) CustomEvent {
 	event := CustomEvent{
@@ -39,27 +33,26 @@ func GetCustomEvent(server *ServerData, request *protos.CustomEvent) CustomEvent
 	return event
 }
 
-func ScheduleCustomEvent(server *ServerData, event CustomEvent) {
-	select {
-	case customEventSlots <- struct{}{}:
-	default:
+func ScheduleCustomEvent(server *ServerData, request *protos.CustomEvent) {
+	if server.CustomEventsInFlight.Add(1) > constants.MaxConcurrentCustomEventRequests {
+		server.CustomEventsInFlight.Add(-1)
 		warnCustomEventDropped(server)
 		return
 	}
 
 	go func() {
-		defer func() { <-customEventSlots }()
-		sendCustomEvent(server, event)
+		defer server.CustomEventsInFlight.Add(-1)
+		sendCustomEvent(server, GetCustomEvent(server, request))
 	}()
 }
 
 func warnCustomEventDropped(server *ServerData) {
 	now := utils.GetTime()
-	last := lastCustomEventDropWarningAt.Load()
-	if now-last < constants.CustomEventDropWarningIntervalInMs || !lastCustomEventDropWarningAt.CompareAndSwap(last, now) {
+	last := server.LastCustomEventDropWarningAt.Load()
+	if now-last < constants.CustomEventDropWarningIntervalInMs || !server.LastCustomEventDropWarningAt.CompareAndSwap(last, now) {
 		return
 	}
-	log.Warnf(server.Logger, "Dropped custom event because %d custom events are already being sent. Playbooks might not trigger.", constants.MaxConcurrentCustomEventRequests)
+	log.Warnf(server.Logger, "Dropped custom event because %d custom events are already being processed for this server. Playbooks might not trigger.", constants.MaxConcurrentCustomEventRequests)
 }
 
 func sendCustomEvent(server *ServerData, event CustomEvent) {
