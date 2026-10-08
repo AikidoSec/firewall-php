@@ -147,10 +147,10 @@ std::string GetDotEnvVariable(const std::string& env_key) {
 
 /*
     Load env variables from the following sources (priority order):
-    - System environment variables
     - FrankenPHP environment variables ($_SERVER - request-specific, thread-safe)
     - PHP environment variables 
     - .env file variables
+    - System environment variables
     
     Order is critical: In multithreaded environments (FrankenPHP worker/classic, ZTS),
     getenv() returns cached process-level values that may belong to a different request.
@@ -160,10 +160,10 @@ std::string GetDotEnvVariable(const std::string& env_key) {
 using EnvGetterFn = std::string(*)(const std::string&);
 
 const std::vector<EnvGetterFn> completeEnvGetters = {
-    &GetSystemEnvVariable,
     &GetFrankenEnvVariable,
     &GetPhpEnvVariable,
-    &GetDotEnvVariable
+    &GetDotEnvVariable,
+    &GetSystemEnvVariable
 };
 
 const std::vector<EnvGetterFn> systemEnvGetters = {
