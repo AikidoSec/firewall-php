@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-24.04${{ matrix.arch }}
     permissions: { contents: read, packages: read }
     container:
-      image: ghcr.io/aikidosec/firewall-php-build-libs:v1
+      image: ghcr.io/aikidosec/firewall-php-build-libs:v2
     strategy:
       matrix:
         arch: [ '', '-arm' ]

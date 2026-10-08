@@ -1,24 +1,66 @@
-# Dockerfile
-FROM ubuntu:20.04
+# syntax=docker/dockerfile:1.7
+
+FROM ubuntu:20.04@sha256:8feb4d8ca5354def3d8fce243717141ce31e2c428701f6682bd2fafe15388214
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Base tools & dependencies for building Go c-shared libs and running protoc
+# Pin Go and protoc versions with checksums to prevent supply-chain attacks.
+# Go 1.26.8 checksums verified from https://go.dev/dl/
+ARG GO_VERSION=1.26.8
+ARG GO_AMD64_SHA256=d0f743b33e8d8945e6b1f432edd15785c70507121d6e2a723b21285eddf8b57b
+ARG GO_ARM64_SHA256=211ffced9dcb9633a55eac6364816ec0ddd951389a740e88fa8b3337971bdda0
+# Protoc 27.3 pinned version (GitHub releases don't provide checksums; version pinning provides supply-chain protection)
+ARG PROTOC_VERSION=27.3
+
+# Install base dependencies
 RUN apt-get update && \
-    apt-get install -y software-properties-common && \
-    add-apt-repository ppa:longsleep/golang-backports && \
-    apt-get update && \
-    apt-get install -y golang-go protobuf-compiler protobuf-compiler-grpc && \
+    apt-get install -y --no-install-recommends \
+        ca-certificates \
+        curl \
+        unzip && \
     rm -rf /var/lib/apt/lists/*
 
-# Go env 
-ENV GOPATH=/go
-ENV GOBIN=/go/bin
-ENV PATH=$GOBIN:/usr/local/go/bin:/usr/lib/go/bin:$PATH
+# Install Go with checksum verification
+RUN ARCH="$(dpkg --print-architecture)" && \
+    case "${ARCH}" in \
+      amd64) GO_SHA256="${GO_AMD64_SHA256}" ;; \
+      arm64) GO_SHA256="${GO_ARM64_SHA256}" ;; \
+      *) echo "Unsupported architecture: ${ARCH}" >&2; exit 1 ;; \
+    esac && \
+    GO_ARCHIVE="go${GO_VERSION}.linux-${ARCH}.tar.gz" && \
+    curl --fail --location --retry 3 \
+      --output "/tmp/${GO_ARCHIVE}" \
+      "https://go.dev/dl/${GO_ARCHIVE}" && \
+    echo "${GO_SHA256}  /tmp/${GO_ARCHIVE}" | sha256sum -c - && \
+    tar -C /usr/local -xzf "/tmp/${GO_ARCHIVE}" && \
+    rm "/tmp/${GO_ARCHIVE}"
 
-# Install protoc Go plugins
-RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@latest && \
-    go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+# Install protoc with version pinning (protobuf releases don't include checksums)
+RUN ARCH="$(dpkg --print-architecture)" && \
+    case "${ARCH}" in \
+      amd64) PROTOC_ARCH="x86_64" ;; \
+      arm64) PROTOC_ARCH="aarch_64" ;; \
+      *) echo "Unsupported architecture: ${ARCH}" >&2; exit 1 ;; \
+    esac && \
+    PROTOC_ZIP="protoc-${PROTOC_VERSION}-linux-${PROTOC_ARCH}.zip" && \
+    curl --fail --location --retry 3 \
+      --output "/tmp/${PROTOC_ZIP}" \
+      "https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/${PROTOC_ZIP}" && \
+    unzip -q "/tmp/${PROTOC_ZIP}" -d /usr/local && \
+    rm "/tmp/${PROTOC_ZIP}" && \
+    protoc --version
+
+# Go environment
+ENV GOPATH=/go \
+    GOBIN=/go/bin \
+    GOTOOLCHAIN=local \
+    PATH=/go/bin:/usr/local/go/bin:$PATH
+
+RUN go version
+
+# Install pinned protoc Go plugins (versions match go.mod and Alpine Dockerfile)
+RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.12 && \
+    go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.5.1
 
 WORKDIR /workspace
 

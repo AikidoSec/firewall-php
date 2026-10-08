@@ -12,7 +12,7 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME_LIBS: aikidosec/firewall-php-build-libs
-  VERSION: v1
+  VERSION: v2
 
 jobs:
   build-amd64:
