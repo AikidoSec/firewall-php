@@ -32,8 +32,15 @@ jobs:
       - name: Extract FrankenPHP from its Alpine image
         if: matrix.abi == 'zts' && matrix.php_version >= '8.2'
         run: |
-          docker pull --platform linux/amd64 dunglas/frankenphp:php${{ matrix.php_version }}-alpine
-          docker create --platform linux/amd64 --name temp-frankenphp dunglas/frankenphp:php${{ matrix.php_version }}-alpine
+          PHP_VERSION="${{ matrix.php_version }}"
+          case "${PHP_VERSION}" in
+            8.2) FRANKENPHP_DIGEST="@sha256:05659731f7dd3e98c61319a282c32635775e7243d782a889755f4ee1de4a1481" ;;
+            8.3) FRANKENPHP_DIGEST="@sha256:8f53caf350868911d4bbee653fcc3789ffe91209b40423d88b66376295dc6672" ;;
+            8.4) FRANKENPHP_DIGEST="@sha256:f6feb2b3a5e23f03d8459ac625e2b349af1023a013e0e43943346cd2ad2feeb6" ;;
+            8.5) FRANKENPHP_DIGEST="@sha256:b64048cc72ee412fd7247f45d70011c385850c0bfd0b467cd26cdccc99e158ca" ;;
+          esac
+          docker pull --platform linux/amd64 "dunglas/frankenphp:php${PHP_VERSION}-alpine${FRANKENPHP_DIGEST}"
+          docker create --platform linux/amd64 --name temp-frankenphp "dunglas/frankenphp:php${PHP_VERSION}-alpine${FRANKENPHP_DIGEST}"
           docker cp temp-frankenphp:/usr/local/bin/frankenphp frankenphp-binary/frankenphp
           docker cp -L temp-frankenphp:/usr/local/lib/libwatcher-c.so.0 frankenphp-binary/libwatcher-c.so.0
           docker rm temp-frankenphp
@@ -72,8 +79,15 @@ jobs:
       - name: Extract FrankenPHP from its Alpine image
         if: matrix.abi == 'zts' && matrix.php_version >= '8.2'
         run: |
-          docker pull --platform linux/arm64 dunglas/frankenphp:php${{ matrix.php_version }}-alpine
-          docker create --platform linux/arm64 --name temp-frankenphp dunglas/frankenphp:php${{ matrix.php_version }}-alpine
+          PHP_VERSION="${{ matrix.php_version }}"
+          case "${PHP_VERSION}" in
+            8.2) FRANKENPHP_DIGEST="@sha256:05659731f7dd3e98c61319a282c32635775e7243d782a889755f4ee1de4a1481" ;;
+            8.3) FRANKENPHP_DIGEST="@sha256:8f53caf350868911d4bbee653fcc3789ffe91209b40423d88b66376295dc6672" ;;
+            8.4) FRANKENPHP_DIGEST="@sha256:f6feb2b3a5e23f03d8459ac625e2b349af1023a013e0e43943346cd2ad2feeb6" ;;
+            8.5) FRANKENPHP_DIGEST="@sha256:b64048cc72ee412fd7247f45d70011c385850c0bfd0b467cd26cdccc99e158ca" ;;
+          esac
+          docker pull --platform linux/arm64 "dunglas/frankenphp:php${PHP_VERSION}-alpine${FRANKENPHP_DIGEST}"
+          docker create --platform linux/arm64 --name temp-frankenphp "dunglas/frankenphp:php${PHP_VERSION}-alpine${FRANKENPHP_DIGEST}"
           docker cp temp-frankenphp:/usr/local/bin/frankenphp frankenphp-binary/frankenphp
           docker cp -L temp-frankenphp:/usr/local/lib/libwatcher-c.so.0 frankenphp-binary/libwatcher-c.so.0
           docker rm temp-frankenphp

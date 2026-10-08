@@ -39,8 +39,14 @@ jobs:
         if: matrix.php_version >= '8.2'
         run: |
           PHP_VERSION="${{ matrix.php_version }}"
-          docker pull --platform linux/amd64 dunglas/frankenphp:php${PHP_VERSION}-bookworm
-          docker create --platform linux/amd64 --name temp-frankenphp dunglas/frankenphp:php${PHP_VERSION}-bookworm
+          case "${PHP_VERSION}" in
+            8.2) FRANKENPHP_DIGEST="@sha256:a7dcbd468da97f170c96a7f4bfa0772a0b24c26cd5f5a2395e61e6384cd06097" ;;
+            8.3) FRANKENPHP_DIGEST="@sha256:29de56a9972347243a4921bbdf7bf203ee36eacb5ec442ea42df27e93fc749e6" ;;
+            8.4) FRANKENPHP_DIGEST="@sha256:19627346d7f4cd778c9feec8a905a6e1373fb6bc3f6932637e6f4cec01af8ee6" ;;
+            8.5) FRANKENPHP_DIGEST="@sha256:667ddd39a3ed826cd4b5fb8dcbb3af480533931a9f0a53977c2d8557d81f7d99" ;;
+          esac
+          docker pull --platform linux/amd64 "dunglas/frankenphp:php${PHP_VERSION}-bookworm${FRANKENPHP_DIGEST}"
+          docker create --platform linux/amd64 --name temp-frankenphp "dunglas/frankenphp:php${PHP_VERSION}-bookworm${FRANKENPHP_DIGEST}"
           docker cp temp-frankenphp:/usr/local/bin/frankenphp frankenphp-binary/frankenphp
           mkdir -p frankenphp-binary/lib
           docker cp temp-frankenphp:/usr/local/lib/libphp.so frankenphp-binary/lib/libphp.so
@@ -88,8 +94,14 @@ jobs:
         if: matrix.php_version >= '8.2'
         run: |
           PHP_VERSION="${{ matrix.php_version }}"
-          docker pull --platform linux/arm64 dunglas/frankenphp:php${PHP_VERSION}-bookworm
-          docker create --platform linux/arm64 --name temp-frankenphp dunglas/frankenphp:php${PHP_VERSION}-bookworm
+          case "${PHP_VERSION}" in
+            8.2) FRANKENPHP_DIGEST="@sha256:a7dcbd468da97f170c96a7f4bfa0772a0b24c26cd5f5a2395e61e6384cd06097" ;;
+            8.3) FRANKENPHP_DIGEST="@sha256:29de56a9972347243a4921bbdf7bf203ee36eacb5ec442ea42df27e93fc749e6" ;;
+            8.4) FRANKENPHP_DIGEST="@sha256:19627346d7f4cd778c9feec8a905a6e1373fb6bc3f6932637e6f4cec01af8ee6" ;;
+            8.5) FRANKENPHP_DIGEST="@sha256:667ddd39a3ed826cd4b5fb8dcbb3af480533931a9f0a53977c2d8557d81f7d99" ;;
+          esac
+          docker pull --platform linux/arm64 "dunglas/frankenphp:php${PHP_VERSION}-bookworm${FRANKENPHP_DIGEST}"
+          docker create --platform linux/arm64 --name temp-frankenphp "dunglas/frankenphp:php${PHP_VERSION}-bookworm${FRANKENPHP_DIGEST}"
           docker cp temp-frankenphp:/usr/local/bin/frankenphp frankenphp-binary/frankenphp
 
       - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2

@@ -198,7 +198,7 @@ jobs:
     name: Build rpm ${{ matrix.arch == '' && 'x86_64' || 'arm' }}
     runs-on: ubuntu-24.04${{ matrix.arch }}
     container:
-      image: quay.io/centos/centos:stream9
+      image: quay.io/centos/centos:stream9@sha256:33346f5fe280763eb78e85f968ad52bc2b2013369de85403f67e802db98ed243
     strategy:
       matrix:
         arch: ['', '-arm']
@@ -325,7 +325,7 @@ jobs:
     name: Build deb ${{ matrix.arch == '' && 'x86_64' || 'arm' }}
     runs-on: ubuntu-24.04${{ matrix.arch }}
     container:
-      image: ubuntu:22.04
+      image: ubuntu:22.04@sha256:5ec03bb3441e8b0bf3b4f9cd4629a1ae763010dc3035bb8da3ae6cf026486401
     strategy:
       matrix:
         arch: [ '', '-arm' ]
@@ -487,10 +487,30 @@ jobs:
         run: |
           if [ "${{ matrix.zts }}" = "1" ]; then
             echo "EXTENSION_ABI=zts" >> "$GITHUB_ENV"
-            echo "PHP_IMAGE=php:${{ matrix.php_version }}-zts-alpine" >> "$GITHUB_ENV"
+            case "${{ matrix.php_version }}" in
+              7.2) echo "PHP_IMAGE=php:7.2-zts-alpine@sha256:d5b3d07417f2396f7c869309437653c708403183861b75ecacd9690f95ad0f91" >> "$GITHUB_ENV" ;;
+              7.3) echo "PHP_IMAGE=php:7.3-zts-alpine@sha256:fda754de31c5f620343d9e633c3f7a1089cccdaee18e42acb631fd73420acfe3" >> "$GITHUB_ENV" ;;
+              7.4) echo "PHP_IMAGE=php:7.4-zts-alpine@sha256:f23bcd56615fcbf84909a89f93a4a1b7e49dd14d817a4deaf2ba12f2a84ce214" >> "$GITHUB_ENV" ;;
+              8.0) echo "PHP_IMAGE=php:8.0-zts-alpine@sha256:b4d2689d0f15eedbbadd34ad68ea182d41f9692d20ec75e87e571dd1e56535a4" >> "$GITHUB_ENV" ;;
+              8.1) echo "PHP_IMAGE=php:8.1-zts-alpine@sha256:f36160602456091e5a8f656a2f5c8e68435c36284856fa4116a46e00f38dc04b" >> "$GITHUB_ENV" ;;
+              8.2) echo "PHP_IMAGE=php:8.2-zts-alpine@sha256:0d7c08a1699e0c356a87a038473567b2eac41e0088d13619f46aa0a3a8213eef" >> "$GITHUB_ENV" ;;
+              8.3) echo "PHP_IMAGE=php:8.3-zts-alpine@sha256:51b48f507d20611feedf88bb901ea8b26d98718d82a2bd5cf8cb472f302f54d4" >> "$GITHUB_ENV" ;;
+              8.4) echo "PHP_IMAGE=php:8.4-zts-alpine@sha256:85e0f7b274a5b0cbdd6889332458352e801c6840f32d5bab8063b419c9581282" >> "$GITHUB_ENV" ;;
+              8.5) echo "PHP_IMAGE=php:8.5-zts-alpine@sha256:1c45229fd82d57ae54104a0930fb58c635bbfe81dc156971eeaf7993bc59db32" >> "$GITHUB_ENV" ;;
+            esac
           else
             echo "EXTENSION_ABI=nts" >> "$GITHUB_ENV"
-            echo "PHP_IMAGE=php:${{ matrix.php_version }}-fpm-alpine" >> "$GITHUB_ENV"
+            case "${{ matrix.php_version }}" in
+              7.2) echo "PHP_IMAGE=php:7.2-fpm-alpine@sha256:2e2d92415f3fc552e9a62548d1235f852c864fcdc94bcf2905805d92baefc87f" >> "$GITHUB_ENV" ;;
+              7.3) echo "PHP_IMAGE=php:7.3-fpm-alpine@sha256:8c7e287a66004e94ec15a54a528a7ac7df556a8c81f17d8be910e8809685d741" >> "$GITHUB_ENV" ;;
+              7.4) echo "PHP_IMAGE=php:7.4-fpm-alpine@sha256:0aeb129a60daff2874c5c70fcd9d88cdf3015b4fb4cc7c3f1a32a21e84631036" >> "$GITHUB_ENV" ;;
+              8.0) echo "PHP_IMAGE=php:8.0-fpm-alpine@sha256:bbf76d84a693fae1e0d2a259db70c9c47f41bd5a6ec3d339ba397939e7875dd8" >> "$GITHUB_ENV" ;;
+              8.1) echo "PHP_IMAGE=php:8.1-fpm-alpine@sha256:a84e0422af72d9a60a8f73756b622bcd37c5a8f85609e43e0a6e16c0a1a7820e" >> "$GITHUB_ENV" ;;
+              8.2) echo "PHP_IMAGE=php:8.2-fpm-alpine@sha256:67d419a46a0f68727fa387817eabb448db7ffc48ac8b6146adaa2009974324f4" >> "$GITHUB_ENV" ;;
+              8.3) echo "PHP_IMAGE=php:8.3-fpm-alpine@sha256:454b11c8907e32878ce92e87b13c14e1bbe6e1b10f4f96d4a19c9b62ec675d41" >> "$GITHUB_ENV" ;;
+              8.4) echo "PHP_IMAGE=php:8.4-fpm-alpine@sha256:78cd8de9970a9cd6ff4d98860a94eb5bf37dd2d5776b4785562dbfad01c29d5a" >> "$GITHUB_ENV" ;;
+              8.5) echo "PHP_IMAGE=php:8.5-fpm-alpine@sha256:fa01fb1645cd0fc566a5f146b099adace33b906571f972f71f2182a7c12d1cd7" >> "$GITHUB_ENV" ;;
+            esac
           fi
 
       - name: Build and load extension
@@ -652,13 +672,20 @@ jobs:
       # integrates with the native package layout of each supported Alpine line.
       - name: Verify APK install, CLI/CGI load, and removal
         run: |
+          case "${{ matrix.alpine_version }}" in
+            3.20) ALPINE_DIGEST="@sha256:d9e853e87e55526f6b2917df91a2115c36dd7c696a35be12163d44e6e2a4b6bc" ;;
+            3.21) ALPINE_DIGEST="@sha256:ce64758a109eb420d874a118f87920e625e12d3634e03b4a5573fd9f6e5d3507" ;;
+            3.22) ALPINE_DIGEST="@sha256:5291449c3df73caf6ed85e649dec1b9e818b39a5d8c871e97afc13e9cd5e8fa8" ;;
+            3.23) ALPINE_DIGEST="@sha256:85fe1e81d6758c208f3e1eed4338a1997e19d4be002d4dd32d3100c9a8c010a0" ;;
+            3.24) ALPINE_DIGEST="@sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6" ;;
+          esac
           docker run --rm --privileged \
             -e AIKIDO_LOG_LEVEL=ERROR \
             -e AIKIDO_VERSION \
             -e APK_NAME \
             -e PHP_SUFFIX \
             -v "${PWD}:/work:ro" \
-            "alpine:${{ matrix.alpine_version }}" sh -ec '
+            "alpine:${{ matrix.alpine_version }}${ALPINE_DIGEST}" sh -ec '
               apk add --no-cache \
                 "php${PHP_SUFFIX}" \
                 "php${PHP_SUFFIX}-cgi"
