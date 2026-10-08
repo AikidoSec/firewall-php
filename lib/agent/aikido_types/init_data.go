@@ -4,6 +4,7 @@ import (
 	"main/constants"
 	"main/log"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -230,6 +231,9 @@ type ServerData struct {
 
 	// Attack detected events timestamps vector mutex used to sync access across the go routines
 	AttackDetectedEventsSentAtMutex sync.Mutex
+
+	CustomEventsInFlight         atomic.Int32
+	LastCustomEventDropWarningAt atomic.Int64
 }
 
 const (

@@ -111,6 +111,16 @@ func (s *GrpcServer) OnUser(ctx context.Context, req *protos.User) (*protos.Empt
 	return &protos.Empty{}, nil
 }
 
+func (s *GrpcServer) OnCustomEvent(ctx context.Context, req *protos.CustomEvent) (*protos.Empty, error) {
+	server := globals.GetServer(ServerKey{Token: req.GetToken(), ServerPID: req.GetServerPid()})
+	if server == nil {
+		return &protos.Empty{}, nil
+	}
+
+	cloud.ScheduleCustomEvent(server, req)
+	return &protos.Empty{}, nil
+}
+
 func (s *GrpcServer) OnAttackDetected(ctx context.Context, req *protos.AttackDetected) (*protos.Empty, error) {
 	server := globals.GetServer(ServerKey{Token: req.GetToken(), ServerPID: req.GetServerPid()})
 	if server == nil {

@@ -27,6 +27,8 @@ const (
 	MaxRateLimitingIntervalInMs         = 3600000 // 1 hour
 	MaxAttackDetectedEventsPerInterval  = 100
 	AttackDetectedEventsIntervalInMs    = 60 * 60 * 1000 // 1 hour
+	MaxConcurrentCustomEventRequests    = 100            // the agent drops new custom events while this many requests are open
+	CustomEventDropWarningIntervalInMs  = 60 * 1000
 	MinStatsCollectedForRelevantMetrics = 1000
 	MinServerInactivityForCleanup       = 2 * 60 * 1000 // 2 minutes - time interval for checking if registered servers are inactive (they are not running anymore), so the Agent can cleanup their memory
 	MaxSlidingWindowEntries             = 100000        // max number of entries in the sliding window

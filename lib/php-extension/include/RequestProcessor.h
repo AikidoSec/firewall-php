@@ -8,6 +8,7 @@ typedef void (*DestroyInstanceFn)(uint64_t threadId);
 typedef GoUint8 (*RequestProcessorInitFn)(GoString platformName, GoInt32 serverPID);
 typedef GoUint8 (*RequestProcessorContextInitFn)(void* instancePtr, ContextCallback);
 typedef GoUint8 (*RequestProcessorConfigUpdateFn)(void* instancePtr, GoString initJson);
+typedef GoUint8 (*RequestProcessorSetUserFn)(void* instancePtr, GoString id, GoString username);
 typedef char* (*RequestProcessorOnEventFn)(void* instancePtr, GoInt eventId);
 typedef int (*RequestProcessorGetBlockingModeFn)(void* instancePtr);
 typedef void (*RequestProcessorReportStats)(void* instancePtr, GoString, GoString, GoInt32, GoInt32, GoInt32, GoInt32, GoInt32, GoSlice);
@@ -29,6 +30,7 @@ class RequestProcessor {
     DestroyInstanceFn destroyInstanceFn = nullptr;
     RequestProcessorContextInitFn requestProcessorContextInitFn = nullptr;
     RequestProcessorConfigUpdateFn requestProcessorConfigUpdateFn = nullptr;
+    RequestProcessorSetUserFn requestProcessorSetUserFn = nullptr;
     RequestProcessorOnEventFn requestProcessorOnEventFn = nullptr;
     RequestProcessorGetBlockingModeFn requestProcessorGetBlockingModeFn = nullptr;
     RequestProcessorReportStats requestProcessorReportStatsFn = nullptr;
@@ -59,6 +61,7 @@ class RequestProcessorInstance {
 
     bool RequestInit();
     bool SendEvent(EVENT_ID eventId, std::string& output);
+    bool SetUser(const std::string& id, const std::string& username);
     bool IsBlockingEnabled();
     bool ReportStats();
     void LoadConfig(const std::string& previousToken, const std::string& currentToken);
