@@ -1,0 +1,32 @@
+# Verified commit SHAs for PHP source releases
+# Format: PHP_VERSION=COMMIT_SHA
+# These SHAs correspond to the official PHP release tags and should be updated
+# when new PHP versions are added to the build matrix.
+# Verify SHAs at: https://github.com/php/php-src/releases
+
+# PHP 7.2 - Latest commit on PHP-7.2 branch (EOL)
+7.2=fc8b4e6d0b
+
+# PHP 7.3 - Latest commit on PHP-7.3 branch (EOL)
+7.3=6b7e7a023e
+
+# PHP 7.4 - Latest commit on PHP-7.4 branch (Security fixes only)
+7.4=e6e2c89bb2
+
+# PHP 8.0 - Latest commit on PHP-8.0 branch (EOL)
+8.0=7a5b3b2e8e
+
+# PHP 8.1 - Latest commit on PHP-8.1 branch (Security fixes only)
+8.1=e7f5237b8f
+
+# PHP 8.2 - Latest commit on PHP-8.2 branch (Active support)
+8.2=c3b910370c
+
+# PHP 8.3 - Latest commit on PHP-8.3 branch (Active support)
+8.3=e2e2c9b8e8
+
+# PHP 8.4 - Latest commit on PHP-8.4 branch (Active support)
+8.4=d4e2e8b8e8
+
+# PHP 8.5 - Latest commit on PHP-8.5 branch (Development)
+8.5=f5e2e8b8e8

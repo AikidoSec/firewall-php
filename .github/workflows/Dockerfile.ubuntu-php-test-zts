@@ -40,6 +40,52 @@ WORKDIR /usr/src
 RUN git clone --depth 1 --branch "${PHP_SRC_REF}" https://github.com/php/php-src.git
 WORKDIR /usr/src/php-src
 
+# Verify the resolved commit SHA against independently reviewed values
+# This prevents building from a compromised or moved upstream ref
+# To obtain the current SHA: git ls-remote https://github.com/php/php-src.git refs/heads/PHP-X.Y
+RUN RESOLVED_COMMIT=$(git rev-parse HEAD) && \
+    echo "========================================" && \
+    echo "PHP SOURCE COMMIT VERIFICATION" && \
+    echo "Requested ref: ${PHP_SRC_REF}" && \
+    echo "Resolved commit: ${RESOLVED_COMMIT}" && \
+    echo "========================================" && \
+    case "${PHP_VERSION}" in \
+      7.2) EXPECTED_SHA="NEEDS_REVIEW" ;; \
+      7.3) EXPECTED_SHA="NEEDS_REVIEW" ;; \
+      7.4) EXPECTED_SHA="NEEDS_REVIEW" ;; \
+      8.0) EXPECTED_SHA="NEEDS_REVIEW" ;; \
+      8.1) EXPECTED_SHA="NEEDS_REVIEW" ;; \
+      8.2) EXPECTED_SHA="NEEDS_REVIEW" ;; \
+      8.3) EXPECTED_SHA="NEEDS_REVIEW" ;; \
+      8.4) EXPECTED_SHA="NEEDS_REVIEW" ;; \
+      8.5) EXPECTED_SHA="NEEDS_REVIEW" ;; \
+      *) \
+        echo "ERROR: PHP version ${PHP_VERSION} is not configured for verification" >&2 && \
+        exit 1 ;; \
+    esac && \
+    if [ "${EXPECTED_SHA}" = "NEEDS_REVIEW" ]; then \
+      echo "ERROR: Commit SHA verification is required but not configured for PHP ${PHP_VERSION}" >&2 && \
+      echo "Current resolved commit: ${RESOLVED_COMMIT}" >&2 && \
+      echo "" >&2 && \
+      echo "To fix this:" >&2 && \
+      echo "1. Verify this commit is legitimate at: https://github.com/php/php-src/commit/${RESOLVED_COMMIT}" >&2 && \
+      echo "2. Update the EXPECTED_SHA for version ${PHP_VERSION} in this Dockerfile" >&2 && \
+      echo "3. Obtain current SHA with: git ls-remote https://github.com/php/php-src.git refs/heads/${PHP_SRC_REF}" >&2 && \
+      exit 1; \
+    fi && \
+    if [ "${RESOLVED_COMMIT}" != "${EXPECTED_SHA}" ]; then \
+      echo "ERROR: Commit verification FAILED for PHP ${PHP_VERSION}" >&2 && \
+      echo "Expected SHA: ${EXPECTED_SHA}" >&2 && \
+      echo "Resolved SHA: ${RESOLVED_COMMIT}" >&2 && \
+      echo "" >&2 && \
+      echo "This indicates the upstream ref has been moved or compromised." >&2 && \
+      echo "Review the new commit at: https://github.com/php/php-src/commit/${RESOLVED_COMMIT}" >&2 && \
+      echo "If legitimate, update the EXPECTED_SHA in this Dockerfile." >&2 && \
+      exit 1; \
+    fi && \
+    echo "✓ Commit verification PASSED: ${RESOLVED_COMMIT}" && \
+    echo "========================================"
+
 RUN sed -i 's/\[\([0-9]\+\.[0-9]\+\.[0-9]\+\)-dev\]/[\1]/' configure.ac
 RUN ./buildconf --force
 
