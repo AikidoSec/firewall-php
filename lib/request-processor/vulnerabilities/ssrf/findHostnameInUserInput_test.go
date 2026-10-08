@@ -44,6 +44,10 @@ func TestFindHostnameInUserInput(t *testing.T) {
 		{"https://example.com", "google.com", 443, false},
 		{"http://wikipedia.com", "wikipedia.com", 80, true},
 		{"http://aikido.dev:9090/", "aikido.dev", 9090, true},
+		// Test IDN with explicit port - prevents SSRF bypass
+		{"http://xn--mnchen-3ya.de:8080", "münchen.de", 8080, true},
+		{"https://xn--mnchen-3ya.de:8080", "münchen.de", 8080, true},
+		{"http://xn--mnchen-3ya.de:8080", "münchen.de", 0, true},
 	}
 
 	for _, test := range tests {
