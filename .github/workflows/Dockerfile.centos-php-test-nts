@@ -21,7 +21,9 @@ RUN yum install -y yum-utils && \
 RUN yum install -y xz tar gcc gcc-c++ make
 
 ENV RE2C_VERSION=3.1
+ENV RE2C_SHA256=087c44de0400fb15caafde09fd72edc7381e688a35ef505ee65e0e3d2fac688b
 RUN curl -fsSL -o /tmp/re2c.tar.xz https://github.com/skvadrik/re2c/releases/download/${RE2C_VERSION}/re2c-${RE2C_VERSION}.tar.xz \
+    && echo "${RE2C_SHA256}  /tmp/re2c.tar.xz" | sha256sum -c - \
     && mkdir -p /tmp/re2c-src \
     && tar -xJf /tmp/re2c.tar.xz -C /tmp/re2c-src --strip-components=1 \
     && cd /tmp/re2c-src \
