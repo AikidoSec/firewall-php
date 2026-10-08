@@ -19,7 +19,7 @@ if [ -n "$OLD_VERSION" ]; then
 	rm -f "/etc/frankenphp/php.d/zz-aikido-${OLD_VERSION}.ini"
 fi
 
-install -d -m 0777 "/var/log/aikido-${VERSION}" "/run/aikido-${VERSION}"
+install -d -m 1777 "/var/log/aikido-${VERSION}" "/run/aikido-${VERSION}"
 
 PHP_BINS=""
 if command -v php >/dev/null 2>&1; then
