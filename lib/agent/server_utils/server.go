@@ -1,6 +1,7 @@
 package server_utils
 
 import (
+	"fmt"
 	. "main/aikido_types"
 	attack_wave_detection "main/attack-wave-detection"
 	"main/cloud"
@@ -40,7 +41,10 @@ func Register(serverKey ServerKey, requestProcessorPID int32, req *protos.Config
 	log.Infof(log.MainLogger, "Client (request processor PID: %d) connected. Registering server \"AIK_RUNTIME_***%s\" (server PID: %d)...", requestProcessorPID, utils.AnonymizeToken(serverKey.Token), serverKey.ServerPID)
 
 	storeConfig(server, req)
-	server.Logger = log.CreateLogger(utils.AnonymizeToken(serverKey.Token), server.AikidoConfig.LogLevel, server.AikidoConfig.DiskLogs)
+	// One token can register several servers (one per PHP server PID), so the
+	// server PID keeps their log file names apart.
+	logTag := fmt.Sprintf("%s-%d", utils.AnonymizeToken(serverKey.Token), serverKey.ServerPID)
+	server.Logger = log.CreateLogger(logTag, server.AikidoConfig.LogLevel, server.AikidoConfig.DiskLogs)
 
 	log.InfofMainAndServer(server.Logger, "Server \"AIK_RUNTIME_***%s\" (server PID: %d) registered successfully!", utils.AnonymizeToken(serverKey.Token), serverKey.ServerPID)
 
