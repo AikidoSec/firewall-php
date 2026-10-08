@@ -18,6 +18,7 @@ import (
 - direct SSRF attacks (hostname that resolves directly to a local IP address - does not go through redirects)
 - direct IMDS SSRF attacks (hostname is an IMDS IP)
 - blocked outbound domains (based on cloud configuration)
+- redirect-based SSRF via domain allowlisting (prevents requests to non-allowlisted domains)
 
 All these checks first verify if the hostname was provided via user input.
 Protects both curl and fopen wrapper functions (file_get_contents, etc...).
@@ -42,7 +43,15 @@ func OnPreOutgoingRequest(instance *instance.RequestProcessorInstance) string {
 		return ""
 	}
 
-	res := ssrf.CheckContextForSSRF(instance, hostname, port, operation)
+	// Check domain allowlist for stream wrappers to prevent SSRF via redirects
+	// Stream wrappers (file_get_contents, fopen, file) cannot provide effective URL after redirects,
+	// so we require explicit domain allowlisting when the URL is user-controlled
+	res := ssrf.CheckDomainAllowlistForStreamWrappers(instance, hostname, port, operation)
+	if res != nil {
+		return attack.ReportAttackDetected(res, instance)
+	}
+
+	res = ssrf.CheckContextForSSRF(instance, hostname, port, operation)
 	if res != nil {
 		return attack.ReportAttackDetected(res, instance)
 	}
