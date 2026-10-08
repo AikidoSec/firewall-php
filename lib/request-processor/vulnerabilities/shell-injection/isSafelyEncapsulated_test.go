@@ -164,4 +164,36 @@ func TestIsSafelyEncapsulated(t *testing.T) {
 		}
 	})
 
+	t.Run("escaped single quote outside quotes should not start a region", func(t *testing.T) {
+		// In `echo \';id''`, the \' is escaped and literal, so ;id is NOT in a safe region
+		if got := isSafelyEncapsulated(`echo \';id''`, ";id"); got != false {
+			t.Errorf("isSafelyEncapsulated with escaped single quote = %v; want false", got)
+		}
+		// The semicolon should be detected as dangerous
+		if got := isSafelyEncapsulated(`echo \';id''`, ";"); got != false {
+			t.Errorf("isSafelyEncapsulated with semicolon after escaped quote = %v; want false", got)
+		}
+	})
+
+	t.Run("escaped double quote outside quotes should not start a region", func(t *testing.T) {
+		// In `echo \";id;" foo "`, the \" is escaped and literal, so ;id; is NOT in a safe region
+		if got := isSafelyEncapsulated(`echo \";id;" foo "`, ";id;"); got != false {
+			t.Errorf("isSafelyEncapsulated with escaped double quote = %v; want false", got)
+		}
+		// The semicolons should be detected as dangerous
+		if got := isSafelyEncapsulated(`echo \";id;" foo "`, ";"); got != false {
+			t.Errorf("isSafelyEncapsulated with semicolon after escaped double quote = %v; want false", got)
+		}
+	})
+
+	t.Run("escaped quotes should be treated as literal characters", func(t *testing.T) {
+		// Backslash before quote outside any quoted region escapes the quote
+		if got := isSafelyEncapsulated(`echo \'hello`, "hello"); got != false {
+			t.Errorf("isSafelyEncapsulated with escaped single quote and unquoted content = %v; want false", got)
+		}
+		if got := isSafelyEncapsulated(`echo \"hello`, "hello"); got != false {
+			t.Errorf("isSafelyEncapsulated with escaped double quote and unquoted content = %v; want false", got)
+		}
+	})
+
 }

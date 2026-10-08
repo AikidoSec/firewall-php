@@ -162,4 +162,26 @@ func TestDetectShellInjection(t *testing.T) {
 		isShellInjection(t, "echo test\frm -rf /", "rm")
 		isShellInjection(t, "rm\fls", "rm")
 	})
+
+	t.Run("escaped single quote outside quotes should not create safe region", func(t *testing.T) {
+		// In `echo \';id''`, the \' is escaped and literal to the shell
+		// The semicolon and id command should be detected as shell injection
+		isShellInjection(t, `echo \';id''`, ";id")
+		isShellInjection(t, `echo \';id''`, ";")
+		// The 'id' command after semicolon should also be detected
+		isShellInjection(t, `echo \';id''`, "id")
+	})
+
+	t.Run("escaped double quote outside quotes should not create safe region", func(t *testing.T) {
+		// In `echo \";id;" foo "`, the \" is escaped and literal to the shell
+		// The semicolons should be detected as shell injection
+		isShellInjection(t, `echo \";id;" foo "`, ";id;")
+		isShellInjection(t, `echo \";id;" foo "`, ";")
+	})
+
+	t.Run("escaped quotes with dangerous commands", func(t *testing.T) {
+		// Escaped quotes should not protect dangerous commands
+		isShellInjection(t, `echo \';rm -rf /''`, "rm")
+		isShellInjection(t, `echo \";whoami"`, "whoami")
+	})
 }

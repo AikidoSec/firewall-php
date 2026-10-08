@@ -15,12 +15,18 @@ type quoteRegion struct {
 // parseQuoteRegions walks the command and returns all properly closed
 // single-quote and double-quote regions. Inside double quotes, backslash
 // escapes are respected (per POSIX/bash rules); single quotes have no
-// escape mechanism.
+// escape mechanism. Outside quotes, backslash escapes the next character.
 func parseQuoteRegions(command string) []quoteRegion {
 	var regions []quoteRegion
 	i := 0
 	for i < len(command) {
 		ch := command[i]
+		// Check if this character is escaped by a backslash outside quotes
+		if ch == '\\' && i+1 < len(command) {
+			// Skip the backslash and the escaped character
+			i += 2
+			continue
+		}
 		if ch == '\'' || ch == '"' {
 			start := i
 			i++
