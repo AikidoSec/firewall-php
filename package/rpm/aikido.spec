@@ -31,7 +31,7 @@ if [ -n "$pids" ]; then
 fi
 
 mkdir -p /var/log/aikido-%{version}
-chmod 777 /var/log/aikido-%{version}
+chmod 1777 /var/log/aikido-%{version}
 
 # Find all PHP versions installed
 PHP_VERSIONS=()
@@ -174,7 +174,7 @@ if [ ${#PHP_VERSIONS[@]} -eq 0 ] && [ -z "$FRANKENPHP_PHP_VERSION" ]; then
 fi
 
 mkdir -p /run/aikido-%{version}
-chmod 777 /run/aikido-%{version}
+chmod 1777 /run/aikido-%{version}
 
 echo "Installation process for Aikido v%{version} completed."
 

@@ -5,6 +5,7 @@ import (
 	"log"
 	"main/constants"
 	"os"
+	"strings"
 	"sync/atomic"
 	"time"
 )
@@ -26,6 +27,10 @@ var MainLogger *AikidoLogger = nil
 
 type AikidoFormatter struct{}
 
+// Log messages contain caller-controlled strings (domains, routes, users, ...),
+// so CR/LF are escaped to stop them from forging extra log lines.
+var newlineEscaper = strings.NewReplacer("\r", `\r`, "\n", `\n`)
+
 func (f *AikidoFormatter) Format(level int32, message string) string {
 	var levelStr string
 	switch level {
@@ -41,10 +46,11 @@ func (f *AikidoFormatter) Format(level int32, message string) string {
 		return "invalid log level"
 	}
 
+	message = strings.TrimRight(message, "\r\n")
 	if len(message) > 1024 {
 		message = message[:1024] + "... [truncated]"
 	}
-	logMessage := fmt.Sprintf("[AIKIDO][%s][%s] %s\n", levelStr, time.Now().Format("15:04:05"), message)
+	logMessage := fmt.Sprintf("[AIKIDO][%s][%s] %s\n", levelStr, time.Now().Format("15:04:05"), newlineEscaper.Replace(message))
 	return logMessage
 }
 
@@ -145,7 +151,7 @@ func CreateLogger(tag string, logLevel string, diskLogs bool) *AikidoLogger {
 	logFilePath := fmt.Sprintf("/var/log/aikido-%s/aikido-agent-%s-%d-%s.log", constants.Version, timeStr, os.Getpid(), tag)
 
 	var err error
-	currentLogger.logFile, err = os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY, 0666)
+	currentLogger.logFile, err = openLogFile(logFilePath)
 	if err != nil {
 		currentLogger.logFile = nil
 		return currentLogger
@@ -153,6 +159,13 @@ func CreateLogger(tag string, logLevel string, diskLogs bool) *AikidoLogger {
 
 	currentLogger.logger.SetOutput(currentLogger.logFile)
 	return currentLogger
+}
+
+// The log directory is world-writable and the log file name is predictable, so
+// another local user can plant a file or symlink under that name. O_EXCL refuses
+// anything that already exists (even a dangling symlink) instead of following it.
+func openLogFile(path string) (*os.File, error) {
+	return os.OpenFile(path, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0644)
 }
 
 func DestroyLogger(currentLogger *AikidoLogger) {
