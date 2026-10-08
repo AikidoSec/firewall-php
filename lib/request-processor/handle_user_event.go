@@ -12,12 +12,12 @@ func OnUserEvent(instance *instance.RequestProcessorInstance, id string, usernam
 		return false
 	}
 
-	id = context.GetUserId(instance)
-	username = context.GetUserName(instance)
+	userID := context.GetUserId(instance)
+	userName := context.GetUserName(instance)
 	ip := context.GetIp(instance)
 	log.Infof(instance, "Got user event!")
 
-	if id == "" || ip == "" {
+	if userID == "" || ip == "" {
 		return true
 	}
 
@@ -26,6 +26,6 @@ func OnUserEvent(instance *instance.RequestProcessorInstance, id string, usernam
 		return true
 	}
 
-	go grpc.OnUserEvent(server, instance.GetCurrentToken(), id, username, ip)
+	go grpc.OnUserEvent(server, instance.GetCurrentToken(), userID, userName, ip)
 	return true
 }
