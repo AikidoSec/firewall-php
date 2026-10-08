@@ -12,6 +12,20 @@ on:
 permissions:
   contents: read
 
+# Firewall-controlled SHA256 digests for zen-internals libraries
+# These values are pinned in the firewall repository to prevent supply-chain attacks
+# When upgrading zen-internals version, download each library and update these digests:
+#   curl -L -O https://github.com/AikidoSec/zen-internals/releases/download/v<VERSION>/<FILE>
+#   sha256sum <FILE>
+env:
+  ZEN_INTERNALS_VERSION: "0.1.64"
+  # glibc (RPM/DEB) digests - update these with actual values from zen-internals v0.1.64
+  ZEN_SHA256_X86_64_GLIBC: "PLACEHOLDER_UPDATE_WITH_ACTUAL_SHA256_FOR_X86_64_GLIBC"
+  ZEN_SHA256_AARCH64_GLIBC: "PLACEHOLDER_UPDATE_WITH_ACTUAL_SHA256_FOR_AARCH64_GLIBC"
+  # musl (Alpine) digests - update these with actual values from zen-internals v0.1.64
+  ZEN_SHA256_X86_64_MUSL: "PLACEHOLDER_UPDATE_WITH_ACTUAL_SHA256_FOR_X86_64_MUSL"
+  ZEN_SHA256_AARCH64_MUSL: "PLACEHOLDER_UPDATE_WITH_ACTUAL_SHA256_FOR_AARCH64_MUSL"
+
 jobs:
   build_libs:
     name: Build Go libs ${{ matrix.arch == '' && 'x86_64' || 'arm' }}
@@ -38,7 +52,6 @@ jobs:
         AIKIDO_VERSION=$(grep '#define PHP_AIKIDO_VERSION' lib/php-extension/include/php_aikido.h | awk -F'"' '{print $2}')
         echo $AIKIDO_VERSION
         echo "AIKIDO_VERSION=$AIKIDO_VERSION" >> $GITHUB_ENV
-        echo "AIKIDO_INTERNALS_REPO=https://api.github.com/repos/AikidoSec/zen-internals" >> $GITHUB_ENV
 
     - name: Build Aikido Agent
       run: |
@@ -214,7 +227,6 @@ jobs:
         run: |
           yum -y install epel-release
           yum -y install rpmdevtools
-          yum -y install jq
 
       - name: Get Arch
         run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
@@ -225,7 +237,16 @@ jobs:
           echo $AIKIDO_VERSION
           echo "AIKIDO_VERSION=$AIKIDO_VERSION" >> $GITHUB_ENV
           echo "AIKIDO_LIBZEN=libzen_internals_${ARCH}-unknown-linux-gnu.so" >> $GITHUB_ENV
-          echo "AIKIDO_LIBZEN_VERSION=0.1.64" >> $GITHUB_ENV
+          echo "AIKIDO_LIBZEN_VERSION=${{ env.ZEN_INTERNALS_VERSION }}" >> $GITHUB_ENV
+          # Select the appropriate firewall-controlled SHA256 digest based on architecture
+          if [ "${ARCH}" = "x86_64" ]; then
+            echo "AIKIDO_LIBZEN_SHA256=${{ env.ZEN_SHA256_X86_64_GLIBC }}" >> $GITHUB_ENV
+          elif [ "${ARCH}" = "aarch64" ]; then
+            echo "AIKIDO_LIBZEN_SHA256=${{ env.ZEN_SHA256_AARCH64_GLIBC }}" >> $GITHUB_ENV
+          else
+            echo "Unsupported architecture: ${ARCH}"
+            exit 1
+          fi
 
       - name: Download artifacts (NTS)
         uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4
@@ -257,12 +278,27 @@ jobs:
 
       - name: Verify Aikido Zen Internals Lib SHA256
         run: |
-          EXPECTED_SHA256=$(curl -s "https://api.github.com/repos/AikidoSec/zen-internals/releases/tags/v${AIKIDO_LIBZEN_VERSION}" | jq -r --arg name "${AIKIDO_LIBZEN}" '.assets[] | select(.name == $name) | .digest' | sed 's/sha256://')
+          if [[ "$AIKIDO_LIBZEN_SHA256" == PLACEHOLDER_* ]]; then
+            echo "ERROR: SHA256 digest has not been updated from placeholder value."
+            echo "This is a security control to prevent supply-chain attacks."
+            echo "The digest must be hardcoded in the workflow file, not fetched from the release."
+            echo ""
+            echo "To fix, update the workflow-level env vars (ZEN_SHA256_*) with actual values:"
+            echo "  1. Download: curl -L -O https://github.com/AikidoSec/zen-internals/releases/download/v${AIKIDO_LIBZEN_VERSION}/${AIKIDO_LIBZEN}"
+            echo "  2. Compute:  sha256sum ${AIKIDO_LIBZEN}"
+            echo "  3. Update the corresponding ZEN_SHA256_* variable at the top of .github/workflows/build.yml"
+            exit 1
+          fi
           ACTUAL_SHA256=$(sha256sum "${AIKIDO_LIBZEN}" | awk '{print $1}')
-          echo "Expected SHA256: $EXPECTED_SHA256"
+          echo "Expected SHA256: $AIKIDO_LIBZEN_SHA256"
           echo "Actual SHA256:   $ACTUAL_SHA256"
-          if [ "$EXPECTED_SHA256" != "$ACTUAL_SHA256" ]; then
-            echo "SHA256 mismatch! Downloaded file may be corrupted or tampered with."
+          if [ "$AIKIDO_LIBZEN_SHA256" != "$ACTUAL_SHA256" ]; then
+            echo "ERROR: SHA256 mismatch!"
+            echo "The downloaded file does not match the firewall-controlled digest."
+            echo "This could indicate:"
+            echo "  - The upstream release has been modified (supply-chain attack)"
+            echo "  - Network corruption during download"
+            echo "  - The workflow digest needs to be updated for a new zen-internals version"
             exit 1
           fi
           echo "SHA256 verification passed!"
@@ -558,7 +594,20 @@ jobs:
           AIKIDO_VERSION=$(grep '#define PHP_AIKIDO_VERSION' lib/php-extension/include/php_aikido.h | awk -F'"' '{print $2}')
           echo "$AIKIDO_VERSION"
           echo "AIKIDO_VERSION=$AIKIDO_VERSION" >> "$GITHUB_ENV"
-          echo "AIKIDO_LIBZEN_VERSION=0.1.64" >> "$GITHUB_ENV"
+          echo "AIKIDO_LIBZEN_VERSION=${{ env.ZEN_INTERNALS_VERSION }}" >> "$GITHUB_ENV"
+          # Select the appropriate firewall-controlled SHA256 digest based on architecture
+          case "${{ matrix.package_arch }}" in
+            x86_64)
+              echo "AIKIDO_LIBZEN_SHA256=${{ env.ZEN_SHA256_X86_64_MUSL }}" >> "$GITHUB_ENV"
+              ;;
+            aarch64)
+              echo "AIKIDO_LIBZEN_SHA256=${{ env.ZEN_SHA256_AARCH64_MUSL }}" >> "$GITHUB_ENV"
+              ;;
+            *)
+              echo "Unsupported architecture: ${{ matrix.package_arch }}"
+              exit 1
+              ;;
+          esac
 
       - name: Download musl Go libraries
         uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4
@@ -576,16 +625,33 @@ jobs:
       - name: Download and verify musl Zen Internals
         run: |
           ZEN_FILE="libzen_internals_${{ matrix.package_arch }}-unknown-linux-musl.so"
-          EXPECTED_SHA256=$(curl --fail --silent --show-error \
-            "https://api.github.com/repos/AikidoSec/zen-internals/releases/tags/v${AIKIDO_LIBZEN_VERSION}" \
-            | jq -r --arg name "${ZEN_FILE}" \
-              '.assets[] | select(.name == $name) | .digest' \
-            | sed 's/sha256://')
-          test -n "${EXPECTED_SHA256}" && test "${EXPECTED_SHA256}" != "null"
           curl --fail --location --retry 3 \
             --output package-input/libzen-internals.so \
             "https://github.com/AikidoSec/zen-internals/releases/download/v${AIKIDO_LIBZEN_VERSION}/${ZEN_FILE}"
-          echo "${EXPECTED_SHA256}  package-input/libzen-internals.so" | sha256sum -c -
+          if [[ "$AIKIDO_LIBZEN_SHA256" == PLACEHOLDER_* ]]; then
+            echo "ERROR: SHA256 digest has not been updated from placeholder value."
+            echo "This is a security control to prevent supply-chain attacks."
+            echo "The digest must be hardcoded in the workflow file, not fetched from the release."
+            echo ""
+            echo "To fix, update the workflow-level env vars (ZEN_SHA256_*) with actual values:"
+            echo "  1. Download: curl -L -O https://github.com/AikidoSec/zen-internals/releases/download/v${AIKIDO_LIBZEN_VERSION}/${ZEN_FILE}"
+            echo "  2. Compute:  sha256sum ${ZEN_FILE}"
+            echo "  3. Update the corresponding ZEN_SHA256_* variable at the top of .github/workflows/build.yml"
+            exit 1
+          fi
+          ACTUAL_SHA256=$(sha256sum package-input/libzen-internals.so | awk '{print $1}')
+          echo "Expected SHA256: ${AIKIDO_LIBZEN_SHA256}"
+          echo "Actual SHA256:   ${ACTUAL_SHA256}"
+          if [ "${AIKIDO_LIBZEN_SHA256}" != "${ACTUAL_SHA256}" ]; then
+            echo "ERROR: SHA256 mismatch!"
+            echo "The downloaded file does not match the firewall-controlled digest."
+            echo "This could indicate:"
+            echo "  - The upstream release has been modified (supply-chain attack)"
+            echo "  - Network corruption during download"
+            echo "  - The workflow digest needs to be updated for a new zen-internals version"
+            exit 1
+          fi
+          echo "SHA256 verification passed!"
 
       - name: Build APK
         run: |
