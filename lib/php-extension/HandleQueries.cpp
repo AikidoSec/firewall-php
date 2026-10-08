@@ -134,6 +134,42 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_mysqli_query){
     eventCacheStack.Top().sqlDialect = "mysql";
 }
 
+AIKIDO_HANDLER_FUNCTION(handle_pre_mysqli_execute_query){
+	zval*     mysqliLinkObject = nullptr;
+	char*	  query = nullptr;
+	size_t 	  queryLength;
+    zval*     params = nullptr;
+
+    zend_class_entry* mysqliLinkClassEntry = helper_load_mysqli_link_class_entry();
+    if (!mysqliLinkClassEntry) {
+        AIKIDO_LOG_WARN("handle_pre_mysqli_execute_query: did not find mysqli link class!\n");
+        return;
+    }
+
+	if (zend_parse_method_parameters(ZEND_NUM_ARGS(), getThis(), "Os|a!", &mysqliLinkObject, mysqliLinkClassEntry, &query, &queryLength, &params) == FAILURE) {
+		AIKIDO_LOG_WARN("handle_pre_mysqli_execute_query: failed to parse parameters!\n");
+        return;
+	}
+
+	if (!queryLength) {
+        AIKIDO_LOG_WARN("handle_pre_mysqli_execute_query: query length is 0!\n");
+		return;
+	}
+
+    if (!mysqliLinkObject) {
+        AIKIDO_LOG_WARN("handle_pre_mysqli_execute_query: mysqli link object is null!\n");
+        return;
+    }
+
+    scopedTimer.SetSink(sink, "sql_op");
+
+    eventId = EVENT_PRE_SQL_QUERY_EXECUTED;
+    auto& eventCacheStack = AIKIDO_GLOBAL(eventCacheStack);
+    eventCacheStack.Top().moduleName = "mysqli";
+    eventCacheStack.Top().sqlQuery = std::string(query, queryLength);
+    eventCacheStack.Top().sqlDialect = "mysql";
+}
+
 AIKIDO_HANDLER_FUNCTION(handle_pre_pg_query) {
     scopedTimer.SetSink(sink, "sql_op");
 

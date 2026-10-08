@@ -48,7 +48,7 @@ unordered_map<std::string, PHP_HANDLERS> HOOKED_FUNCTIONS = {
 
     /* Queries - mysqli */
     AIKIDO_REGISTER_FUNCTION_HANDLER_EX(mysqli_query, handle_pre_mysqli_query),
-    AIKIDO_REGISTER_FUNCTION_HANDLER_EX(mysqli_execute_query, handle_pre_mysqli_query),
+    AIKIDO_REGISTER_FUNCTION_HANDLER_EX(mysqli_execute_query, handle_pre_mysqli_execute_query),
     AIKIDO_REGISTER_FUNCTION_HANDLER_EX(mysqli_multi_query, handle_pre_mysqli_query),
     AIKIDO_REGISTER_FUNCTION_HANDLER_EX(mysqli_real_query, handle_pre_mysqli_query),
 
@@ -70,7 +70,7 @@ unordered_map<AIKIDO_METHOD_KEY, PHP_HANDLERS, AIKIDO_METHOD_KEY_HASH> HOOKED_ME
 
     /* Queries - mysqli */
     AIKIDO_REGISTER_METHOD_HANDLER_EX(mysqli, query, handle_pre_mysqli_query),
-    AIKIDO_REGISTER_METHOD_HANDLER_EX(mysqli, execute_query, handle_pre_mysqli_query),
+    AIKIDO_REGISTER_METHOD_HANDLER_EX(mysqli, execute_query, handle_pre_mysqli_execute_query),
     AIKIDO_REGISTER_METHOD_HANDLER_EX(mysqli, multi_query, handle_pre_mysqli_query),
     AIKIDO_REGISTER_METHOD_HANDLER_EX(mysqli, real_query, handle_pre_mysqli_query),
     
