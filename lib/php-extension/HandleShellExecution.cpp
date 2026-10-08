@@ -40,5 +40,25 @@ AIKIDO_HANDLER_FUNCTION(handle_shell_execution_with_array) {
             return;
         }
         helper_handle_pre_shell_execution(ZSTR_VAL(cmdStr), eventId);
+    } else if (Z_TYPE_P(cmdVal) == IS_ARRAY) {
+        // Handle array-form commands (e.g., ['/bin/sh', '-c', $input])
+        // Convert array elements to a space-separated string for shell injection analysis
+        std::string cmdString;
+        zval *element;
+        bool first = true;
+        
+        ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(cmdVal), element) {
+            if (Z_TYPE_P(element) == IS_STRING) {
+                if (!first) {
+                    cmdString += " ";
+                }
+                cmdString += std::string(Z_STRVAL_P(element), Z_STRLEN_P(element));
+                first = false;
+            }
+        } ZEND_HASH_FOREACH_END();
+        
+        if (!cmdString.empty()) {
+            helper_handle_pre_shell_execution(cmdString, eventId);
+        }
     }
 }
