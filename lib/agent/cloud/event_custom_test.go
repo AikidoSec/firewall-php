@@ -3,6 +3,7 @@ package cloud
 import (
 	. "main/aikido_types"
 	"main/constants"
+	"main/ipc/protos"
 	"main/log"
 	"net/http"
 	"net/http/httptest"
@@ -14,8 +15,13 @@ import (
 
 func TestScheduleCustomEventDropsEventsWhileCloudIsSlow(t *testing.T) {
 	var received atomic.Int32
+	otherServerReceived := make(chan struct{}, 1)
 	release := make(chan struct{})
-	cloudServer := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) {
+	cloudServer := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		if request.Header.Get("Authorization") == "AIK_OTHER" {
+			otherServerReceived <- struct{}{}
+			return
+		}
 		received.Add(1)
 		<-release
 		writer.WriteHeader(http.StatusOK)
@@ -36,7 +42,7 @@ func TestScheduleCustomEventDropsEventsWhileCloudIsSlow(t *testing.T) {
 	scheduled := make(chan struct{})
 	go func() {
 		for i := 0; i < constants.MaxConcurrentCustomEventRequests+1; i++ {
-			ScheduleCustomEvent(server, CustomEvent{Type: "custom", Name: "user.login_failed"})
+			ScheduleCustomEvent(server, &protos.CustomEvent{Name: "user.login_failed"})
 		}
 		close(scheduled)
 	}()
@@ -49,19 +55,34 @@ func TestScheduleCustomEventDropsEventsWhileCloudIsSlow(t *testing.T) {
 	if !waitFor(5*time.Second, func() bool { return received.Load() == constants.MaxConcurrentCustomEventRequests }) {
 		t.Fatalf("expected %d requests to reach the cloud, got %d", constants.MaxConcurrentCustomEventRequests, received.Load())
 	}
+	otherServer := &ServerData{
+		Logger: log.CreateLogger("other", "ERROR", false),
+		AikidoConfig: AikidoConfigData{
+			Token:    "AIK_OTHER",
+			Endpoint: cloudServer.URL,
+		},
+	}
+	ScheduleCustomEvent(otherServer, &protos.CustomEvent{Name: "user.login_failed"})
+	select {
+	case <-otherServerReceived:
+	case <-time.After(time.Second):
+		t.Fatal("one server at capacity must not drop another server's events")
+	}
 	releaseCloud()
-	if !waitFor(5*time.Second, func() bool { return len(customEventSlots) == 0 }) {
+	if !waitFor(5*time.Second, func() bool {
+		return server.CustomEventsInFlight.Load() == 0 && otherServer.CustomEventsInFlight.Load() == 0
+	}) {
 		t.Fatal("expected all custom event slots to be released")
 	}
 	if received.Load() != constants.MaxConcurrentCustomEventRequests {
 		t.Fatalf("expected the event over the limit to be dropped, got %d requests", received.Load())
 	}
 
-	ScheduleCustomEvent(server, CustomEvent{Type: "custom", Name: "user.login_failed"})
+	ScheduleCustomEvent(server, &protos.CustomEvent{Name: "user.login_failed"})
 	if !waitFor(5*time.Second, func() bool { return received.Load() == constants.MaxConcurrentCustomEventRequests+1 }) {
 		t.Fatal("expected a released slot to accept a new custom event")
 	}
-	if !waitFor(5*time.Second, func() bool { return len(customEventSlots) == 0 }) {
+	if !waitFor(5*time.Second, func() bool { return server.CustomEventsInFlight.Load() == 0 }) {
 		t.Fatal("expected all custom event slots to be released")
 	}
 }

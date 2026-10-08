@@ -117,8 +117,7 @@ func (s *GrpcServer) OnCustomEvent(ctx context.Context, req *protos.CustomEvent)
 		return &protos.Empty{}, nil
 	}
 
-	event := cloud.GetCustomEvent(server, req)
-	cloud.ScheduleCustomEvent(server, event)
+	cloud.ScheduleCustomEvent(server, req)
 	return &protos.Empty{}, nil
 }
 
