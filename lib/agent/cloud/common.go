@@ -1,12 +1,14 @@
 package cloud
 
 import (
+	"cmp"
 	"encoding/json"
 	. "main/aikido_types"
 	"main/constants"
 	"main/globals"
 	"main/log"
 	"main/utils"
+	"net/http"
 	"regexp"
 	"runtime"
 	"strings"
@@ -32,6 +34,15 @@ func GetAgentInfo(server *ServerData) AgentInfo {
 		NodeEnv:  "",
 		Library:  "firewall-php",
 	}
+}
+
+func setAgentHeaders(req *http.Request, server *ServerData) {
+	req.Header.Set("X-Agent-Platform", "php")
+	req.Header.Set("X-Agent-Library", "firewall-php")
+	req.Header.Set("X-Agent-Version", constants.Version)
+	req.Header.Set("X-Agent-Hostname", cmp.Or(globals.Machine.HostName, "unknown"))
+	req.Header.Set("X-Agent-IP-Address", cmp.Or(globals.Machine.IPAddress, "unknown"))
+	req.Header.Set("X-Agent-Session-Id", server.SessionID)
 }
 
 func ResetHeartbeatTicker(server *ServerData) {

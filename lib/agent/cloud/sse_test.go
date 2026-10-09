@@ -5,6 +5,7 @@ import (
 	"fmt"
 	. "main/aikido_types"
 	"main/constants"
+	"main/globals"
 	"main/log"
 	"net/http"
 	"net/http/httptest"
@@ -36,6 +37,7 @@ type mockCloud struct {
 	streamDisconnects atomic.Int32
 	configRequests    atomic.Int32
 	streamHeaders     atomic.Value
+	configHeaders     atomic.Value
 }
 
 func newMockCloud() *mockCloud {
@@ -78,6 +80,7 @@ func newMockCloud() *mockCloud {
 
 	mux.HandleFunc("/api/runtime/config", func(w http.ResponseWriter, r *http.Request) {
 		cloud.configRequests.Add(1)
+		cloud.configHeaders.Store(r.Header.Clone())
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprintf(w, `{"success":true,"serviceId":1,"configUpdatedAt":%d,"heartbeatIntervalInMS":600000,
 			"endpoints":[],"blockedUserIds":[],"allowedIPAddresses":[],"receivedAnyStats":true,"block":true}`,
@@ -120,6 +123,17 @@ func getConfigUpdatedAt(server *ServerData) int64 {
 	return server.CloudConfig.ConfigUpdatedAt
 }
 
+func assertAgentHeaders(t *testing.T, server *ServerData, headers http.Header) {
+	t.Helper()
+	assert.Equal(t, "php", headers.Get("X-Agent-Platform"))
+	assert.Equal(t, "firewall-php", headers.Get("X-Agent-Library"))
+	assert.Equal(t, constants.Version, headers.Get("X-Agent-Version"))
+	assert.Equal(t, "test-host", headers.Get("X-Agent-Hostname"))
+	assert.Equal(t, "unknown", headers.Get("X-Agent-IP-Address"))
+	assert.NotEmpty(t, server.SessionID)
+	assert.Equal(t, server.SessionID, headers.Get("X-Agent-Session-Id"))
+}
+
 func waitFor(timeout time.Duration, condition func() bool) bool {
 	deadline := time.Now().Add(timeout)
 	for time.Now().Before(deadline) {
@@ -133,6 +147,10 @@ func waitFor(timeout time.Duration, condition func() bool) bool {
 
 func TestConfigStreamRoutine(t *testing.T) {
 	t.Run("it applies a config pushed over the stream", func(t *testing.T) {
+		originalMachine := globals.Machine
+		globals.Machine = MachineData{HostName: "test-host"}
+		defer func() { globals.Machine = originalMachine }()
+
 		cloud := newMockCloud()
 		server := newTestServerData(cloud, "AIK_RUNTIME_TEST_TOKEN", true)
 
@@ -152,8 +170,7 @@ func TestConfigStreamRoutine(t *testing.T) {
 		assert.Equal(t, "text/event-stream", streamHeaders.Get("Accept"))
 		assert.Equal(t, "no-cache", streamHeaders.Get("Cache-Control"))
 		assert.Equal(t, "identity", streamHeaders.Get("Accept-Encoding"))
-		assert.Equal(t, "php", streamHeaders.Get("X-Agent-Platform"))
-		assert.Equal(t, constants.Version, streamHeaders.Get("X-Agent-Version"))
+		assertAgentHeaders(t, server, streamHeaders)
 
 		cloud.publishConfig(t, 1000)
 
@@ -161,6 +178,7 @@ func TestConfigStreamRoutine(t *testing.T) {
 			return getConfigUpdatedAt(server) == 1000
 		}), "expected the pushed config to be applied")
 		assert.Equal(t, int32(1), cloud.configRequests.Load())
+		assertAgentHeaders(t, server, cloud.configHeaders.Load().(http.Header))
 
 		// A second event for a config we already have must not trigger another fetch
 		cloud.publishConfig(t, 1000)

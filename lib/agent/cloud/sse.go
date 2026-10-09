@@ -70,8 +70,7 @@ func connectToConfigStream(ctx context.Context, server *ServerData, readTimeout 
 	req.Header.Set("Accept", "text/event-stream")
 	req.Header.Set("Cache-Control", "no-cache")
 	req.Header.Set("Accept-Encoding", "identity")
-	req.Header.Set("X-Agent-Platform", "php")
-	req.Header.Set("X-Agent-Version", constants.Version)
+	setAgentHeaders(req, server)
 
 	log.Debugf(server.Logger, "[%s] Connecting to config stream %s", utils.AnonymizeToken(token), streamEndpoint)
 
