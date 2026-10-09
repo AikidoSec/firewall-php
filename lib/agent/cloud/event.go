@@ -57,6 +57,7 @@ func sendCloudRequest(server *ServerData, endpoint string, route string, method 
 	req.Header.Set("Authorization", token)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept-Encoding", "gzip")
+	setAgentHeaders(req, server)
 	// Bounded, so a cloud that accepts the connection but never answers cannot block the calling routine forever
 	client := &http.Client{Timeout: constants.CloudRequestTimeoutInMs * time.Millisecond}
 	resp, err := client.Do(req)

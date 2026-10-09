@@ -154,6 +154,9 @@ type ServerData struct {
 	// Logger for the server
 	Logger *log.AikidoLogger
 
+	// Each app gets its own session ID, and a PHP restart (new main PID) gets a new one
+	SessionID string
+
 	// Aikido config that contains info about endpoint, log_level, token, ...
 	AikidoConfig AikidoConfigData
 
@@ -244,6 +247,7 @@ const (
 
 func NewServerData() *ServerData {
 	return &ServerData{
+		SessionID:               newSessionID(),
 		Hostnames:               make(map[string]map[uint32]uint64),
 		HostnamesQueue:          NewQueue[string](MaxNumberOfStoredHostnames),
 		Routes:                  make(map[string]map[string]*Route),
