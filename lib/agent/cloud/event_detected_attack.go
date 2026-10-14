@@ -39,6 +39,17 @@ func GetRequestInfo(protoRequest *protos.Request) RequestInfo {
 	}
 }
 
+func GetRequestUser(server *ServerData, userId string) *RequestUser {
+	if userId == "" {
+		return nil
+	}
+	user := &RequestUser{ID: userId}
+	if known := utils.GetUserById(server, userId); known != nil {
+		user.Name = known.Name
+	}
+	return user
+}
+
 func GetAttackDetails(server *ServerData, protoAttack *protos.Attack) AttackDetails {
 	return AttackDetails{
 		Kind:      protoAttack.Kind,
@@ -50,7 +61,7 @@ func GetAttackDetails(server *ServerData, protoAttack *protos.Attack) AttackDeta
 		Stack:     protoAttack.Stack,
 		Payload:   protoAttack.Payload,
 		Metadata:  GetMetadata(protoAttack.Metadata),
-		User:      utils.GetUserById(server, protoAttack.UserId),
+		User:      GetRequestUser(server, protoAttack.UserId),
 	}
 }
 

@@ -24,7 +24,7 @@ func GetCustomEvent(server *ServerData, request *protos.CustomEvent) CustomEvent
 	}
 
 	if request.GetUser() != nil {
-		event.User = &CustomEventUser{
+		event.User = &RequestUser{
 			ID:   request.GetUser().GetId(),
 			Name: request.GetUser().GetName(),
 		}
