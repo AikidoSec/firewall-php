@@ -12,6 +12,9 @@ if (isset($data['url'])) {
         $ch = curl_init($data['url']);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+        // Preserve the URL for policy checks without contacting external domains.
+        curl_setopt($ch, CURLOPT_CONNECT_TO, ["::127.0.0.1:1"]);
+        curl_setopt($ch, CURLOPT_PROXY, "");
         $result = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
