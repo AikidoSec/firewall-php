@@ -17,5 +17,5 @@ RUN tar -C /usr/local -xzf go1.26.8.linux-amd64.tar.gz
 ENV PATH="/usr/local/go/bin:${PATH}"
 ENV GOPATH="${HOME}/go"
 ENV PATH="${PATH}:${GOPATH}/bin"
-RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
-RUN go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.12
+RUN go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.6.2
