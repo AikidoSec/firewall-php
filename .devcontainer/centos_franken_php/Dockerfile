@@ -22,8 +22,8 @@ RUN yum install -y libcurl-devel
 RUN curl -O https://dl.google.com/go/go1.26.8.linux-amd64.tar.gz
 RUN tar -C /usr/local -xzf go1.26.8.linux-amd64.tar.gz
 ENV PATH="/usr/local/go/bin:${PATH}"
-RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
-RUN go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.12
+RUN go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.6.2
 ENV PROTOC_ZIP=protoc-28.3-linux-x86_64.zip
 RUN curl -OL https://github.com/protocolbuffers/protobuf/releases/download/v28.3/$PROTOC_ZIP
 RUN unzip -o $PROTOC_ZIP -d /usr/local bin/protoc

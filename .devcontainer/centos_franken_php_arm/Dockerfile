@@ -19,8 +19,8 @@ RUN sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-* \
 RUN curl -O https://dl.google.com/go/go1.26.8.linux-arm64.tar.gz \
     && tar -C /usr/local -xzf go1.26.8.linux-arm64.tar.gz
 ENV PATH="/usr/local/go/bin:${PATH}"
-RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@latest \
-    && go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.12 \
+    && go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.6.2
 ENV PROTOC_ZIP=protoc-30.2-linux-aarch_64.zip
 RUN curl -OL https://github.com/protocolbuffers/protobuf/releases/download/v30.2/$PROTOC_ZIP \
     && unzip -o $PROTOC_ZIP -d /usr/local bin/protoc \

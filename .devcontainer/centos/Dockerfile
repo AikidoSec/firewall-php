@@ -26,8 +26,8 @@ RUN curl -O https://dl.google.com/go/go1.26.8.linux-amd64.tar.gz && \
      echo "d0f743b33e8d8945e6b1f432edd15785c70507121d6e2a723b21285eddf8b57b go1.26.8.linux-amd64.tar.gz" | sha256sum -c
 RUN tar -C /usr/local -xzf go1.26.8.linux-amd64.tar.gz
 ENV PATH="/usr/local/go/bin:${PATH}"
-RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
-RUN go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.12
+RUN go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.6.2
 ENV PROTOC_ZIP=protoc-28.3-linux-x86_64.zip
 RUN curl -OL https://github.com/protocolbuffers/protobuf/releases/download/v28.3/$PROTOC_ZIP && \
      echo "0ad949f04a6a174da83cdcbdb36dee0a4925272a5b6d83f79a6bf9852076d53f $PROTOC_ZIP" | sha256sum -c
