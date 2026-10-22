@@ -195,9 +195,37 @@ bool Server::IsHttps() {
     return GetVar("HTTPS") != "" ? true : false;
 }
 
+// While a finally block runs because of an exception, the exception is not in EG(exception),
+// but stored in the fast_call variable of that finally block.
+static bool IsExceptionUnwindingThroughFinally() {
+    for (zend_execute_data* ex = EG(current_execute_data); ex; ex = ex->prev_execute_data) {
+        if (!ex->func || !ZEND_USER_CODE(ex->func->type) || !ex->opline) {
+            continue;
+        }
+        const zend_op_array* opArray = &ex->func->op_array;
+        uint32_t opNum = ex->opline - opArray->opcodes;
+        for (int i = 0; i < opArray->last_try_catch; i++) {
+            const zend_try_catch_element* tryCatch = &opArray->try_catch_array[i];
+            if (!tryCatch->finally_op || opNum < tryCatch->finally_op || opNum >= tryCatch->finally_end) {
+                continue;
+            }
+            zval* fastCall = ZEND_CALL_VAR(ex, opArray->opcodes[tryCatch->finally_end].op1.var);
+            if (Z_OBJ_P(fastCall)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 // Runs at request shutdown, possibly right after an out-of-memory bailout, so it must not use the Zend allocator.
 std::string Server::GetPhpFatalErrorKind() {
     if (!(PG(last_error_type) & (E_ERROR | E_CORE_ERROR | E_COMPILE_ERROR | E_PARSE | E_USER_ERROR))) {
+        // In FrankenPHP worker mode, worker_rshutdown() runs from a finally block, before FrankenPHP
+        // turns the uncaught exception into a fatal error.
+        if (AIKIDO_GLOBAL(isFrankenPhpWorkerMode) && IsExceptionUnwindingThroughFinally()) {
+            return "fatal_error";
+        }
         return "";
     }
 
