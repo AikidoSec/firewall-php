@@ -76,6 +76,14 @@ bool RequestProcessor::Init() {
     return true;
 }
 
+static std::string GetRuntimePhpVersion() {
+    zval* version = zend_get_constant_str(ZEND_STRL("PHP_VERSION"));
+    if (version && Z_TYPE_P(version) == IS_STRING) {
+        return Z_STRVAL_P(version);
+    }
+    return "";
+}
+
 std::string RequestProcessor::GetInitData(const std::string& userProvidedToken) {
     LoadEnvironment();
 
@@ -91,7 +99,7 @@ std::string RequestProcessor::GetInitData(const std::string& userProvidedToken) 
     json initData = {
         {"token", globalToken},
         {"platform_name", AIKIDO_GLOBAL(sapi_name)},
-        {"platform_version", PHP_VERSION},
+        {"platform_version", GetRuntimePhpVersion()},
         {"endpoint", AIKIDO_GLOBAL(endpoint)},
         {"config_endpoint", AIKIDO_GLOBAL(config_endpoint)},
         {"log_level", AIKIDO_GLOBAL(log_level_str)},
