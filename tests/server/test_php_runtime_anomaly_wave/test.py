@@ -22,10 +22,11 @@ def php_survives_out_of_memory():
     if mock_server_get_platform_name() == "cli-server":
         return False
     try:
-        requests.get(f"http://localhost:{get_php_port()}/?oom=1", headers={"X-Forwarded-For": "5.8.19.49"}, timeout=30)
-        return True
+        response = requests.get(f"http://localhost:{get_php_port()}/?oom=1", headers={"X-Forwarded-For": "5.8.19.49"}, timeout=30)
     except requests.exceptions.ConnectionError:
         return False
+    # a reverse proxy answers with a gateway error when the PHP worker was terminated
+    return response.status_code not in (502, 503, 504)
 
 
 def post_upload_progress(ip):

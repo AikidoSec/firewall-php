@@ -150,6 +150,10 @@ CallbackResult GoContextCallback(int callbackId) {
             case CONTEXT_PHP_FATAL_ERROR_KIND:
                 ctx = "PHP_FATAL_ERROR_KIND";
                 ret = server.GetPhpFatalErrorKind();
+                // An uncaught exception thrown by Zen to block an attack is already reported as an attack
+                if (ret == "fatal_error" && requestCache.threwBlockingException) {
+                    ret = "";
+                }
                 break;
             case CONTEXT_HAS_UPLOAD_PROGRESS_FIELD:
                 ctx = "HAS_UPLOAD_PROGRESS_FIELD";
