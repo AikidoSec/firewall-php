@@ -162,7 +162,7 @@ func TestAttackWaveThrottling(t *testing.T) {
 		server.AttackWave.IpQueues[ip] = sw
 
 		// Should return false (throttled) because last event was only 30 seconds ago (< 60s MinBetween)
-		assert.False(t, updateAttackWaveCountsAndDetect(server, true, ip, "", "", "", ""))
+		assert.False(t, updateAttackWaveCountsAndDetect(server, &server.AttackWave, &server.AttackWaveMutex, true, ip, "", "", "", "", "", ""))
 	})
 
 	t.Run("returns true and populates LastSent map when IP reaches threshold for first time", func(t *testing.T) {
@@ -192,12 +192,92 @@ func TestAttackWaveThrottling(t *testing.T) {
 		assert.False(t, exists, "IP should not be in LastSent map before threshold is reached")
 
 		// Should return true (event sent) because this is the first time reaching threshold
-		assert.True(t, updateAttackWaveCountsAndDetect(server, true, ip, "", "", "", ""))
+		assert.True(t, updateAttackWaveCountsAndDetect(server, &server.AttackWave, &server.AttackWaveMutex, true, ip, "", "", "", "", "", ""))
 
 		// Verify LastSent map was populated
 		assert.True(t, server.AttackWave.LastSent[ip] > 0, "LastSent should be set after event is sent")
 
 		// Verify the attack wave stats counter was incremented, so it gets reported in the heartbeat stats
 		assert.Equal(t, 1, server.StatsData.AttackWaves)
+	})
+}
+
+func TestGetRuntimeAnomalySampleReason(t *testing.T) {
+	assert.Equal(t, "", getRuntimeAnomalySampleReason("", false))
+	assert.Equal(t, "memory_exhausted", getRuntimeAnomalySampleReason("memory_exhausted", false))
+	assert.Equal(t, "execution_timeout", getRuntimeAnomalySampleReason("execution_timeout", true))
+	assert.Equal(t, "fatal_error", getRuntimeAnomalySampleReason("fatal_error", false))
+	assert.Equal(t, "session_upload_progress", getRuntimeAnomalySampleReason("", true))
+}
+
+func newRuntimeAnomalyTestServer(threshold int) *ServerData {
+	return &ServerData{
+		Logger: log.CreateLogger("test", "ERROR", false),
+		AttackWave: AttackWaveState{
+			Threshold:       threshold,
+			WindowSize:      1,
+			MinBetween:      60000,
+			IpQueues:        make(map[string]*SlidingWindow),
+			LastSent:        make(map[string]int64),
+			MaxSamplesPerIP: 15,
+		},
+		RuntimeAnomalyWave: AttackWaveState{
+			Threshold:       threshold,
+			WindowSize:      1,
+			MinBetween:      60000,
+			IpQueues:        make(map[string]*SlidingWindow),
+			LastSent:        make(map[string]int64),
+			MaxSamplesPerIP: 15,
+		},
+	}
+}
+
+func TestRuntimeAnomalyWave(t *testing.T) {
+	detect := func(server *ServerData, ip, url, reason string) bool {
+		return updateAttackWaveCountsAndDetect(server, &server.RuntimeAnomalyWave, &server.RuntimeAnomalyWaveMutex, reason != "", ip, "", "", "POST", url, reason, runtimeAnomaliesEventReason)
+	}
+
+	t.Run("ignores requests without a runtime anomaly", func(t *testing.T) {
+		server := newRuntimeAnomalyTestServer(1)
+
+		assert.False(t, detect(server, "1.2.3.4", "/upload", ""))
+		assert.Empty(t, server.RuntimeAnomalyWave.IpQueues)
+	})
+
+	t.Run("detects at the threshold and records the reason of each sample", func(t *testing.T) {
+		server := newRuntimeAnomalyTestServer(3)
+		ip := "1.2.3.4"
+
+		assert.False(t, detect(server, ip, "/upload", "memory_exhausted"))
+		assert.False(t, detect(server, ip, "/upload", "session_upload_progress"))
+		assert.True(t, detect(server, ip, "/import", "execution_timeout"))
+
+		samples := server.RuntimeAnomalyWave.IpQueues[ip].Samples
+		assert.Equal(t, []SuspiciousRequest{
+			{Method: "POST", Url: "/upload", Reason: "memory_exhausted"},
+			{Method: "POST", Url: "/upload", Reason: "session_upload_progress"},
+			{Method: "POST", Url: "/import", Reason: "execution_timeout"},
+		}, samples)
+		assert.True(t, server.RuntimeAnomalyWave.LastSent[ip] > 0)
+		assert.Equal(t, 1, server.StatsData.AttackWaves)
+	})
+
+	t.Run("does not affect web scanner attack wave state", func(t *testing.T) {
+		server := newRuntimeAnomalyTestServer(1)
+		ip := "1.2.3.4"
+
+		assert.True(t, detect(server, ip, "/upload", "fatal_error"))
+		assert.Empty(t, server.AttackWave.IpQueues)
+		assert.Empty(t, server.AttackWave.LastSent)
+	})
+
+	t.Run("is throttled per IP after an event was sent", func(t *testing.T) {
+		server := newRuntimeAnomalyTestServer(1)
+		ip := "1.2.3.4"
+
+		assert.True(t, detect(server, ip, "/upload", "memory_exhausted"))
+		assert.False(t, detect(server, ip, "/upload", "memory_exhausted"))
+		assert.True(t, detect(server, "5.6.7.8", "/upload", "memory_exhausted"))
+		assert.Equal(t, 2, server.StatsData.AttackWaves)
 	})
 }

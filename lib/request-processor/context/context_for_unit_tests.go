@@ -40,6 +40,10 @@ func UnitTestsCallback(instance *instance.RequestProcessorInstance, context_id i
 		return TestContext["cookies"]
 	case C.CONTEXT_BODY:
 		return TestContext["body"]
+	case C.CONTEXT_PHP_FATAL_ERROR_KIND:
+		return TestContext["phpFatalErrorKind"]
+	case C.CONTEXT_HAS_UPLOAD_PROGRESS_FIELD:
+		return TestContext["hasUploadProgressField"]
 	}
 	return ""
 }

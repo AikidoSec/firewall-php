@@ -147,6 +147,14 @@ CallbackResult GoContextCallback(int callbackId) {
                 ctx = "PARAM_MATCHER_REGEX";
                 ret = GetEventCacheField(&EventCache::paramMatcherRegex);
                 break;
+            case CONTEXT_PHP_FATAL_ERROR_KIND:
+                ctx = "PHP_FATAL_ERROR_KIND";
+                ret = server.GetPhpFatalErrorKind();
+                break;
+            case CONTEXT_HAS_UPLOAD_PROGRESS_FIELD:
+                ctx = "HAS_UPLOAD_PROGRESS_FIELD";
+                ret = server.HasUploadProgressField() ? "1" : "";
+                break;
         }
     } catch (std::exception& e) {
         AIKIDO_LOG_DEBUG("Exception in GoContextCallback: %s\n", e.what());

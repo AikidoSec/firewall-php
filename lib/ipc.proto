@@ -78,6 +78,8 @@ message RequestMetadataShutdown {
   bool rateLimited = 13;
   bool isWebScanner = 14;
   bool shouldDiscoverRoute = 15;
+  string phpFatalErrorKind = 16;
+  bool hasUploadProgressField = 17;
 }
 
 message MiddlewareInstalledInfo {

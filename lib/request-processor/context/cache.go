@@ -297,6 +297,23 @@ func ContextSetIsEndpointRateLimited(instance *instance.RequestProcessorInstance
 	c.IsEndpointRateLimited = true
 }
 
+func ContextSetPhpFatalErrorKind(instance *instance.RequestProcessorInstance) {
+	c := GetContext(instance)
+	ContextSetString(instance, C.CONTEXT_PHP_FATAL_ERROR_KIND, &c.PhpFatalErrorKind)
+}
+
+func ContextSetHasUploadProgressField(instance *instance.RequestProcessorInstance) {
+	c := GetContext(instance)
+	if c.HasUploadProgressField != nil {
+		return
+	}
+	if c.Callback == nil {
+		return
+	}
+	hasUploadProgressField := c.Callback(instance, C.CONTEXT_HAS_UPLOAD_PROGRESS_FIELD) == "1"
+	c.HasUploadProgressField = &hasUploadProgressField
+}
+
 func ContextSetPathTraversalCandidates(instance *instance.RequestProcessorInstance) {
 	c := GetContext(instance)
 	if c.PathTraversalCandidates == nil {

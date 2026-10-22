@@ -31,5 +31,9 @@ class Server {
 
     bool IsHttps();
 
+    std::string GetPhpFatalErrorKind();
+
+    bool HasUploadProgressField();
+
     ~Server() = default;
 };

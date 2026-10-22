@@ -194,3 +194,49 @@ std::string Server::GetHeaders() {
 bool Server::IsHttps() {
     return GetVar("HTTPS") != "" ? true : false;
 }
+
+// Runs at request shutdown, possibly right after an out-of-memory bailout, so it must not use the Zend allocator.
+std::string Server::GetPhpFatalErrorKind() {
+    if (!(PG(last_error_type) & (E_ERROR | E_CORE_ERROR | E_COMPILE_ERROR | E_PARSE | E_USER_ERROR))) {
+        return "";
+    }
+
+#if PHP_VERSION_ID >= 80000
+    if (!PG(last_error_message)) {
+        return "";
+    }
+    const char* message = ZSTR_VAL(PG(last_error_message));
+#else
+    const char* message = PG(last_error_message);
+    if (!message) {
+        return "";
+    }
+#endif
+
+    if (StartsWith(message, "Allowed memory size of")) {
+        return "memory_exhausted";
+    }
+    if (StartsWith(message, "Maximum execution time of")) {
+        return "execution_timeout";
+    }
+    return "fatal_error";
+}
+
+bool Server::HasUploadProgressField() {
+    if (strncasecmp(GetVar("CONTENT_TYPE").c_str(), "multipart/form-data", strlen("multipart/form-data"))) {
+        return false;
+    }
+
+    const char* iniName = "session.upload_progress.name";
+    const char* fieldName = zend_ini_string((char*)iniName, strlen(iniName), 0);
+    if (!fieldName || !*fieldName) {
+        fieldName = "PHP_SESSION_UPLOAD_PROGRESS";
+    }
+
+    zval* post_array = zend_hash_str_find(&EG(symbol_table), "_POST", sizeof("_POST") - 1);
+    if (!post_array || Z_TYPE_P(post_array) != IS_ARRAY) {
+        return false;
+    }
+
+    return zend_hash_str_find(Z_ARRVAL_P(post_array), fieldName, strlen(fieldName)) != nullptr;
+}

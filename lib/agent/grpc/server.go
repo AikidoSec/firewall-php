@@ -80,7 +80,10 @@ func (s *GrpcServer) OnRequestShutdown(ctx context.Context, req *protos.RequestM
 		go storeTotalStats(server, req.GetRateLimited())
 		go storeRoute(server, req.GetMethod(), req.GetRouteParsed(), req.GetApiSpec(), req.GetRateLimited())
 	}
-	go updateAttackWaveCountsAndDetect(server, req.GetIsWebScanner(), req.GetIp(), req.GetUser(), req.GetUserAgent(), req.GetMethod(), req.GetUrl())
+	go updateAttackWaveCountsAndDetect(server, &server.AttackWave, &server.AttackWaveMutex, req.GetIsWebScanner(), req.GetIp(), req.GetUser(), req.GetUserAgent(), req.GetMethod(), req.GetUrl(), "", "")
+
+	runtimeAnomalyReason := getRuntimeAnomalySampleReason(req.GetPhpFatalErrorKind(), req.GetHasUploadProgressField())
+	go updateAttackWaveCountsAndDetect(server, &server.RuntimeAnomalyWave, &server.RuntimeAnomalyWaveMutex, runtimeAnomalyReason != "", req.GetIp(), req.GetUser(), req.GetUserAgent(), req.GetMethod(), req.GetUrl(), runtimeAnomalyReason, runtimeAnomaliesEventReason)
 
 	return &protos.Empty{}, nil
 }
