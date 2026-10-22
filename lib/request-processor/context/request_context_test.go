@@ -53,3 +53,27 @@ func TestTryTrackCustomEventLimitsEventsPerRequest(t *testing.T) {
 		t.Fatal("expected a new request to have a fresh event allowance")
 	}
 }
+
+func TestRuntimeAnomalySignals(t *testing.T) {
+	requestInstance := LoadForUnitTests(map[string]string{
+		"phpFatalErrorKind":      "memory_exhausted",
+		"hasUploadProgressField": "1",
+	})
+	defer UnloadForUnitTests()
+
+	if kind := GetPhpFatalErrorKind(requestInstance); kind != "memory_exhausted" {
+		t.Fatalf("expected memory_exhausted, got %q", kind)
+	}
+	if !HasUploadProgressField(requestInstance) {
+		t.Fatal("expected the upload progress field to be detected")
+	}
+
+	TestContext = map[string]string{}
+	Clear(requestInstance)
+	if kind := GetPhpFatalErrorKind(requestInstance); kind != "" {
+		t.Fatalf("expected no fatal error kind, got %q", kind)
+	}
+	if HasUploadProgressField(requestInstance) {
+		t.Fatal("expected no upload progress field")
+	}
+}

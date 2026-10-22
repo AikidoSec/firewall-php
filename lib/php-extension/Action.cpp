@@ -10,6 +10,7 @@ ACTION_STATUS Action::executeThrow(json &event) {
     // This works for both standard and frankenphp.
     CallPhpFunctionWithOneParam("http_response_code", _code);
     zend_throw_exception(GetFirewallDefaultExceptionCe(), _message.c_str(), _code);
+    AIKIDO_GLOBAL(requestCache).threwBlockingException = true;
 
     return BLOCK;
 }

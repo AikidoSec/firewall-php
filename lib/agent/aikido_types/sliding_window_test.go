@@ -1,6 +1,7 @@
 package aikido_types
 
 import (
+	"encoding/json"
 	"testing"
 	"time"
 
@@ -306,6 +307,30 @@ func TestSlidingWindowIntegration(t *testing.T) {
 		assert.Equal(t, 2, windowMap["endpoint1"].Total)
 		assert.Equal(t, 1, windowMap["endpoint2"].Total)
 		assert.NotContains(t, windowMap, "endpoint3")
+	})
+}
+
+func TestAddSampleWithReason(t *testing.T) {
+	t.Run("stores the reason and keeps samples unique by method, URL and reason", func(t *testing.T) {
+		sw := NewSlidingWindow()
+		sw.AddSampleWithReason("POST", "/upload", "memory_exhausted", 15)
+		sw.AddSampleWithReason("POST", "/upload", "memory_exhausted", 15) // duplicate
+		sw.AddSampleWithReason("POST", "/upload", "session_upload_progress", 15)
+
+		assert.Equal(t, []SuspiciousRequest{
+			{Method: "POST", Url: "/upload", Reason: "memory_exhausted"},
+			{Method: "POST", Url: "/upload", Reason: "session_upload_progress"},
+		}, sw.Samples)
+	})
+
+	t.Run("omits an empty reason from JSON, so web scanner samples are unchanged", func(t *testing.T) {
+		sw := NewSlidingWindow()
+		sw.AddSample("GET", "/.env", 15)
+		sw.AddSampleWithReason("POST", "/upload", "fatal_error", 15)
+
+		data, err := json.Marshal(sw.Samples)
+		assert.NoError(t, err)
+		assert.JSONEq(t, `[{"method":"GET","url":"/.env"},{"method":"POST","url":"/upload","reason":"fatal_error"}]`, string(data))
 	})
 }
 

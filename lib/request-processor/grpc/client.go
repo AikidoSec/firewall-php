@@ -160,8 +160,10 @@ func OnRequestShutdown(params RequestShutdownParams) {
 		RateLimitGroup:      params.RateLimitGroup,
 		ApiSpec:             params.APISpec,
 		RateLimited:         params.RateLimited,
-		IsWebScanner:        params.IsWebScanner,
-		ShouldDiscoverRoute: params.ShouldDiscoverRoute,
+		IsWebScanner:           params.IsWebScanner,
+		ShouldDiscoverRoute:    params.ShouldDiscoverRoute,
+		PhpFatalErrorKind:      params.PhpFatalErrorKind,
+		HasUploadProgressField: params.HasUploadProgressField,
 	})
 	if err != nil {
 		log.Warnf(nil, "Could not send request metadata %v %v %v: %v", params.Method, params.Route, params.StatusCode, err)

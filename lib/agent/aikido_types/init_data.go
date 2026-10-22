@@ -207,6 +207,11 @@ type ServerData struct {
 	AttackWave      AttackWaveState
 	AttackWaveMutex sync.Mutex
 
+	// Per-IP detection of PHP fatal, out-of-memory and timeout errors, and session upload progress
+	// abuse, which are signals of attempts to exploit CVE-2026-109618 / CVE-2026-109619
+	RuntimeAnomalyWave      AttackWaveState
+	RuntimeAnomalyWaveMutex sync.Mutex
+
 	// Users map, which holds the current users and their data
 	Users      map[string]User
 	UsersQueue Queue[string]
@@ -264,6 +269,14 @@ func NewServerData() *ServerData {
 		},
 		AttackWave: AttackWaveState{
 			Threshold:       15,             // Default: 15 requests
+			WindowSize:      1,              // Default: 1 minute
+			MinBetween:      20 * 60 * 1000, // Default: 20 minutes
+			IpQueues:        make(map[string]*SlidingWindow),
+			LastSent:        make(map[string]int64),
+			MaxSamplesPerIP: 15,
+		},
+		RuntimeAnomalyWave: AttackWaveState{
+			Threshold:       10,             // Default: 10 requests
 			WindowSize:      1,              // Default: 1 minute
 			MinBetween:      20 * 60 * 1000, // Default: 20 minutes
 			IpQueues:        make(map[string]*SlidingWindow),

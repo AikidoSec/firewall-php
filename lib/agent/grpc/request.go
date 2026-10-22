@@ -11,6 +11,7 @@ import (
 	"main/utils"
 	"slices"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -185,59 +186,85 @@ func incrementSlidingWindowEntry(m map[string]*SlidingWindow, key string) *Slidi
 	return entry
 }
 
-// updateAttackWaveCountsAndDetect implements the attack wave detection logic:
-//  1. Validates the request is from a web scanner and has a valid IP address
+const runtimeAnomaliesEventReason = "php_runtime_anomalies"
+
+// getRuntimeAnomalySampleReason returns why a request counts towards the runtime anomaly wave,
+// or "" if it doesn't count.
+func getRuntimeAnomalySampleReason(phpFatalErrorKind string, hasUploadProgressField bool) string {
+	if phpFatalErrorKind != "" {
+		return phpFatalErrorKind
+	}
+	if hasUploadProgressField {
+		return "session_upload_progress"
+	}
+	return ""
+}
+
+// updateAttackWaveCountsAndDetect implements the attack wave detection logic for the given state:
+//  1. Validates the request is suspicious (triggered) and has a valid IP address
 //  2. Increments the sliding window counter for this IP and collects request samples
 //  3. Applies throttling: if an event was recently sent for this IP (within minBetween window),
 //     returns early without checking threshold or sending another event
 //  4. Checks if the total count within the sliding window exceeds the threshold
 //  5. If threshold exceeded: records the event time on the queue, logs the detection, and sends event with samples to cloud
-func updateAttackWaveCountsAndDetect(server *ServerData, isWebScanner bool, ip string, userId string, userAgent string, method string, url string) bool {
-	if !isWebScanner || ip == "" {
+//
+// sampleReason is stored on each sample, and eventReason is reported as the "reason" metadata of the event.
+// Both are omitted when empty, which keeps the web scanner attack wave event unchanged.
+func updateAttackWaveCountsAndDetect(server *ServerData, state *AttackWaveState, mutex *sync.Mutex, triggered bool, ip string, userId string, userAgent string, method string, url string, sampleReason string, eventReason string) bool {
+	if !triggered || ip == "" {
 		return false
 	}
 
 	now := utils.GetTime()
 
-	server.AttackWaveMutex.Lock()
-	defer server.AttackWaveMutex.Unlock()
+	mutex.Lock()
+	defer mutex.Unlock()
 
 	// increment for this request
-	queue := incrementSlidingWindowEntry(server.AttackWave.IpQueues, ip)
+	queue := incrementSlidingWindowEntry(state.IpQueues, ip)
 
 	// apply throttling: skip if an event for this IP was recently sent (within MinBetween window)
-	if lastSentTime, exists := server.AttackWave.LastSent[ip]; exists && now-lastSentTime < server.AttackWave.MinBetween {
+	if lastSentTime, exists := state.LastSent[ip]; exists && now-lastSentTime < state.MinBetween {
 		return false
 	}
 
 	// Add this request as a sample
 	if queue != nil {
-		queue.AddSample(method, url, server.AttackWave.MaxSamplesPerIP)
+		queue.AddSampleWithReason(method, url, sampleReason, state.MaxSamplesPerIP)
 	}
 
 	// check threshold within window
-	if queue == nil || queue.Total < server.AttackWave.Threshold {
+	if queue == nil || queue.Total < state.Threshold {
 		return false // threshold not reached
 	}
 
 	// threshold reached -> record event and send to cloud
-	server.AttackWave.LastSent[ip] = now
+	state.LastSent[ip] = now
 	if server.Logger != nil {
-		log.Infof(server.Logger, "Attack wave detected from IP: %s", ip)
+		if eventReason != "" {
+			log.Infof(server.Logger, "Attack wave (%s) detected from IP: %s", eventReason, ip)
+		} else {
+			log.Infof(server.Logger, "Attack wave detected from IP: %s", ip)
+		}
 	}
 
 	storeAttackWaveStats(server)
+
+	metadata := []*protos.Metadata{{
+		Key:   "samples",
+		Value: utils.JsonMarshal(queue.Samples),
+	}}
+	if eventReason != "" {
+		metadata = append(metadata, &protos.Metadata{Key: "reason", Value: eventReason})
+	}
 
 	// report event to cloud
 	cloud.SendAttackDetectedEvent(server, &protos.AttackDetected{
 		Token:   server.AikidoConfig.Token,
 		Request: &protos.Request{IpAddress: ip, UserAgent: userAgent},
 		Attack: &protos.Attack{
-			Metadata: []*protos.Metadata{{
-				Key:   "samples",
-				Value: utils.JsonMarshal(queue.Samples),
-			}},
-			UserId: userId,
+			Metadata: metadata,
+			UserId:   userId,
 		},
 	}, "detected_attack_wave")
 	return true

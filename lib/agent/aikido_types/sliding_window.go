@@ -5,6 +5,7 @@ import "time"
 type SuspiciousRequest struct {
 	Method string `json:"method"`
 	Url    string `json:"url"`
+	Reason string `json:"reason,omitempty"`
 }
 
 // SlidingWindow represents a time-based sliding window counter.
@@ -51,9 +52,15 @@ func (sw *SlidingWindow) Increment() {
 // AddSample adds a sample request to the sliding window for attack wave detection.
 // It maintains a maximum of MaxSamplesPerIP unique samples (based on method and URL).
 func (sw *SlidingWindow) AddSample(method, url string, maxSamplesPerIP int) {
+	sw.AddSampleWithReason(method, url, "", maxSamplesPerIP)
+}
+
+// AddSampleWithReason is like AddSample, but also records why the request was suspicious.
+// Samples are unique by method, URL and reason.
+func (sw *SlidingWindow) AddSampleWithReason(method, url, reason string, maxSamplesPerIP int) {
 	// Check if this sample already exists
 	for _, sample := range sw.Samples {
-		if sample.Method == method && sample.Url == url {
+		if sample.Method == method && sample.Url == url && sample.Reason == reason {
 			return // Already exists, skip
 		}
 	}
@@ -63,6 +70,7 @@ func (sw *SlidingWindow) AddSample(method, url string, maxSamplesPerIP int) {
 		sw.Samples = append(sw.Samples, SuspiciousRequest{
 			Method: method,
 			Url:    url,
+			Reason: reason,
 		})
 	}
 }
