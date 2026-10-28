@@ -7,6 +7,7 @@ class RequestCache {
     std::string rateLimitGroup;
     std::string outgoingRequestUrl;
     std::string outgoingRequestRedirectUrl;
+    bool threwBlockingException = false;
 
     RequestCache() = default;
 
