@@ -144,7 +144,7 @@ func OnGetAutoBlockingStatus(instance *instance.RequestProcessorInstance) string
 			description = userAgentBlockedDescriptions[0]
 		}
 		return GetAction("exit", "blocked", "user-agent", description, userAgent, 403, 0,
-			fmt.Sprintf("Your user-agent (%s) is blocked due to: %s!", userAgent, description))
+			"You are not allowed to access this resource because you have been identified as a bot.")
 	}
 
 	return ""
