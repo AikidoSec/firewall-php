@@ -1467,7 +1467,7 @@ jobs:
       - name: Overwrite aikido.sh install script
         run: |
           echo "#!/usr/bin/env bash" > ./zen-demo-php/.fly/scripts/aikido.sh
-          echo "dpkg -i -E \"/var/www/html/aikido-php-firewall.\$(uname -i).deb\"" >> ./zen-demo-php/.fly/scripts/aikido.sh
+          echo "dpkg -i -E \"/var/www/html/aikido-php-firewall.${ARCH}.deb\"" >> ./zen-demo-php/.fly/scripts/aikido.sh
       - name: Run Firewall QA Tests
         uses: AikidoSec/firewall-tester-action@3d448c6929e168148cf74c3d998d1dd5950d40ee # v1.1.1
         with:
@@ -1501,7 +1501,7 @@ jobs:
       - name: Overwrite aikido.sh install script
         run: |
           echo "#!/usr/bin/env bash" > ./zen-demo-php/.fly/scripts/aikido.sh
-          echo "dpkg -i -E \"/var/www/html/aikido-php-firewall.\$(uname -i).deb\"" >> ./zen-demo-php/.fly/scripts/aikido.sh
+          echo "dpkg -i -E \"/var/www/html/aikido-php-firewall.${ARCH}.deb\"" >> ./zen-demo-php/.fly/scripts/aikido.sh
       - name: Run Firewall QA Tests
         uses: AikidoSec/firewall-tester-action@3d448c6929e168148cf74c3d998d1dd5950d40ee # v1.1.1
         with:
@@ -1535,7 +1535,7 @@ jobs:
       - name: Overwrite aikido.sh install script
         run: |
           echo "#!/usr/bin/env bash" > ./zen-demo-php/.fly/scripts/aikido.sh
-          echo "dpkg -i -E \"/var/www/html/aikido-php-firewall.\$(uname -i).deb\"" >> ./zen-demo-php/.fly/scripts/aikido.sh
+          echo "dpkg -i -E \"/var/www/html/aikido-php-firewall.${ARCH}.deb\"" >> ./zen-demo-php/.fly/scripts/aikido.sh
       - name: Run Firewall QA Tests
         uses: AikidoSec/firewall-tester-action@3d448c6929e168148cf74c3d998d1dd5950d40ee # v1.1.1
         with:
@@ -1569,7 +1569,7 @@ jobs:
 
       - name: Overwrite aikido.sh install script
         run: |
-          echo "dpkg -i -E \"/var/www/html/aikido-php-firewall.\$(uname -i).deb\"" > ./zen-demo-php/.fly/scripts/aikido.sh
+          echo "dpkg -i -E \"/var/www/html/aikido-php-firewall.${ARCH}.deb\"" > ./zen-demo-php/.fly/scripts/aikido.sh
         
       - name: Run Firewall QA Tests
         uses: AikidoSec/firewall-tester-action@3d448c6929e168148cf74c3d998d1dd5950d40ee # v1.1.1
