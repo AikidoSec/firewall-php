@@ -90,10 +90,10 @@ void LoadDotEnvFile() {
                 value.erase(value.find_last_not_of("\r") + 1);
 
                 // Trim whitespace from key and value
-                key.erase(0, key.find_first_not_of(" "));
-                key.erase(key.find_last_not_of(" ") + 1);
-                value.erase(0, value.find_first_not_of(" "));
-                value.erase(value.find_last_not_of(" ") + 1);
+                key.erase(0, key.find_first_not_of(" \t"));
+                key.erase(key.find_last_not_of(" \t") + 1);
+                value.erase(0, value.find_first_not_of(" \t"));
+                value.erase(value.find_last_not_of(" \t") + 1);
 
                 // Remove quotes and comments if present
                 if (value.length() >= 2 &&
@@ -102,7 +102,10 @@ void LoadDotEnvFile() {
                         if (value.front() == '"' && value[end] == '\\') {
                             ++end;
                         } else if (value[end] == value.front()) {
-                            value = value.substr(1, end - 1);
+                            size_t suffix = value.find_first_not_of(" \t", end + 1);
+                            if (suffix == std::string::npos || value[suffix] == '#') {
+                                value = value.substr(1, end - 1);
+                            }
                             break;
                         }
                     }
