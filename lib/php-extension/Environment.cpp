@@ -91,7 +91,6 @@ void LoadDotEnvFile() {
 
                 value.erase(0, value.find_first_not_of(" \t"));
                 size_t commentStart = value.find('#');
-                // Only .env files can have comments; remove them here and let ParseEnvValue process both .env and process environment values later.
                 if (value.length() >= 2 && (value.front() == '"' || value.front() == '\'')) {
                     commentStart = std::string::npos;
                     for (size_t end = 1; end < value.length(); ++end) {
@@ -189,6 +188,7 @@ std::string ParseEnvValue(std::string value) {
     value.erase(0, value.find_first_not_of(" \t\r\n"));
     value.erase(value.find_last_not_of(" \t\r\n") + 1);
 
+    // Match Laravel's env() handling of surrounding quotes.
     if (value.length() >= 2 &&
         (value.front() == '"' || value.front() == '\'') &&
         value.back() == value.front()) {
