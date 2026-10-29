@@ -95,11 +95,20 @@ void LoadDotEnvFile() {
                 value.erase(0, value.find_first_not_of(" "));
                 value.erase(value.find_last_not_of(" ") + 1);
 
-                // Remove quotes if present
+                // Remove quotes and comments if present
                 if (value.length() >= 2 &&
-                    ((value.front() == '"' && value.back() == '"') ||
-                     (value.front() == '\'' && value.back() == '\''))) {
-                    value = value.substr(1, value.length() - 2);
+                    (value.front() == '"' || value.front() == '\'')) {
+                    for (size_t end = 1; end < value.length(); ++end) {
+                        if (value.front() == '"' && value[end] == '\\') {
+                            ++end;
+                        } else if (value[end] == value.front()) {
+                            value = value.substr(1, end - 1);
+                            break;
+                        }
+                    }
+                } else {
+                    value = value.substr(0, value.find('#'));
+                    value.erase(value.find_last_not_of(" \t") + 1);
                 }
                 AIKIDO_GLOBAL(dotEnvCache)[docRoot][key] = value;
             }
