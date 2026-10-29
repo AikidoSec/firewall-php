@@ -66,6 +66,14 @@ void LoadDotEnvFile() {
 
     std::string line;
     while (std::getline(envFile, line)) {
+        line.erase(0, line.find_first_not_of(" \t"));
+
+        // Remove 'export' for compatibility with Laravel's .env parser.
+        if (line.substr(0, line.find_first_of(" \t")) == "export") {
+            line.erase(0, 6);
+            line.erase(0, line.find_first_not_of(" \t"));
+        }
+
         // Skip empty lines and comments
         if (line.empty() || line[0] == '#') {
             continue;
