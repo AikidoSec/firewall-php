@@ -78,6 +78,9 @@ void LoadDotEnvFile() {
                 std::string key = line.substr(0, pos);
                 std::string value = line.substr(pos + 1);
 
+                // Remove '\r' to handle Windows-style CRLF line endings.
+                value.erase(value.find_last_not_of("\r") + 1);
+
                 // Trim whitespace from key and value
                 key.erase(0, key.find_first_not_of(" "));
                 key.erase(key.find_last_not_of(" ") + 1);
