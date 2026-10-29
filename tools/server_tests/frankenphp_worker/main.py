@@ -1,4 +1,5 @@
 import os
+import json
 import subprocess
 import time
 
@@ -104,7 +105,7 @@ def frankenphp_worker_create_script(test_dir, test_name):
 def frankenphp_worker_create_site_block(test_data, worker_script_path):
     env_vars = f"        env DOCUMENT_ROOT \"{test_data['test_dir']}\"\n"
     for key, value in test_data["env"].items():
-        env_vars += f"        env {key} \"{value}\"\n"
+        env_vars += f"        env {key} {json.dumps(value)}\n"
     
     return site_block_template.format(
         port=test_data["server_port"],

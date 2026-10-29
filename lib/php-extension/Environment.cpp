@@ -21,14 +21,14 @@ std::string GetPhpEnvVariable(const std::string& env_key) {
     return env_value_str;
 }
 
-std::string GetSystemEnvVariable(const std::string& env_key) {
+std::string GetProcessEnvVariable(const std::string& env_key) {
     const char* env_value = getenv(env_key.c_str());
     if (!env_value) return "";
     
     if (env_key == "AIKIDO_TOKEN") {
-        AIKIDO_LOG_DEBUG("sys_env[%s] = %s\n", env_key.c_str(), AnonymizeToken(env_value).c_str());
+        AIKIDO_LOG_DEBUG("process_env[%s] = %s\n", env_key.c_str(), AnonymizeToken(env_value).c_str());
     } else {
-        AIKIDO_LOG_DEBUG("sys_env[%s] = %s\n", env_key.c_str(), env_value);
+        AIKIDO_LOG_DEBUG("process_env[%s] = %s\n", env_key.c_str(), env_value);
     }
     return env_value;
 }
@@ -86,33 +86,24 @@ void LoadDotEnvFile() {
                 std::string key = line.substr(0, pos);
                 std::string value = line.substr(pos + 1);
 
-                // Remove '\r' to handle Windows-style CRLF line endings.
-                value.erase(value.find_last_not_of("\r") + 1);
-
-                // Trim whitespace from key and value
                 key.erase(0, key.find_first_not_of(" \t"));
                 key.erase(key.find_last_not_of(" \t") + 1);
-                value.erase(0, value.find_first_not_of(" \t"));
-                value.erase(value.find_last_not_of(" \t") + 1);
 
-                // Remove quotes and comments if present
-                if (value.length() >= 2 &&
-                    (value.front() == '"' || value.front() == '\'')) {
+                value.erase(0, value.find_first_not_of(" \t"));
+                size_t commentStart = value.find('#');
+                // Only .env files can have comments; remove them here and let ParseEnvValue process both .env and process environment values later.
+                if (value.length() >= 2 && (value.front() == '"' || value.front() == '\'')) {
+                    commentStart = std::string::npos;
                     for (size_t end = 1; end < value.length(); ++end) {
                         if (value.front() == '"' && value[end] == '\\') {
                             ++end;
                         } else if (value[end] == value.front()) {
-                            size_t suffix = value.find_first_not_of(" \t", end + 1);
-                            if (suffix == std::string::npos || value[suffix] == '#') {
-                                value = value.substr(1, end - 1);
-                            }
+                            commentStart = value.find('#', end + 1);
                             break;
                         }
                     }
-                } else {
-                    value = value.substr(0, value.find('#'));
-                    value.erase(value.find_last_not_of(" \t") + 1);
                 }
+                value = value.substr(0, commentStart);
                 AIKIDO_GLOBAL(dotEnvCache)[docRoot][key] = value;
             }
         }
@@ -170,7 +161,7 @@ std::string GetDotEnvVariable(const std::string& env_key) {
 
 /*
     Load env variables from the following sources (priority order):
-    - System environment variables
+    - Process environment variables
     - FrankenPHP environment variables ($_SERVER - request-specific, thread-safe)
     - PHP environment variables 
     - .env file variables
@@ -183,21 +174,34 @@ std::string GetDotEnvVariable(const std::string& env_key) {
 using EnvGetterFn = std::string(*)(const std::string&);
 
 const std::vector<EnvGetterFn> completeEnvGetters = {
-    &GetSystemEnvVariable,
+    &GetProcessEnvVariable,
     &GetFrankenEnvVariable,
     &GetPhpEnvVariable,
     &GetDotEnvVariable
 };
 
-const std::vector<EnvGetterFn> systemEnvGetters = {
-    &GetSystemEnvVariable,
+const std::vector<EnvGetterFn> processEnvGetters = {
+    &GetProcessEnvVariable,
 };
+
+std::string ParseEnvValue(std::string value) {
+    // Remove '\r' to handle Windows-style CRLF line endings.
+    value.erase(0, value.find_first_not_of(" \t\r\n"));
+    value.erase(value.find_last_not_of(" \t\r\n") + 1);
+
+    if (value.length() >= 2 &&
+        (value.front() == '"' || value.front() == '\'') &&
+        value.back() == value.front()) {
+        value = value.substr(1, value.length() - 2);
+    }
+    return value;
+}
 
 std::string GetEnvVariable(const std::vector<EnvGetterFn>& envGetters, const std::string& env_key) {
     for (EnvGetterFn envGetter : envGetters) {
         std::string env_value = envGetter(env_key);
         if (!env_value.empty()) {
-            return env_value;
+            return ParseEnvValue(env_value);
         }
     }
     return "";
@@ -285,6 +289,6 @@ void LoadEnvironment() {
     LoadEnvironmentFromGetters(completeEnvGetters);
 }
 
-void LoadSystemEnvironment() {
-    LoadEnvironmentFromGetters(systemEnvGetters);
+void LoadProcessEnvironment() {
+    LoadEnvironmentFromGetters(processEnvGetters);
 }
