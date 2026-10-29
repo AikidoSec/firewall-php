@@ -1,1 +1,2 @@
 package/apk/* text eol=lf
+tests/server/test_env_crlf/.env text eol=crlf

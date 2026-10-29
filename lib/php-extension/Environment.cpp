@@ -82,7 +82,8 @@ void LoadDotEnvFile() {
                 key.erase(0, key.find_first_not_of(" "));
                 key.erase(key.find_last_not_of(" ") + 1);
                 value.erase(0, value.find_first_not_of(" "));
-                value.erase(value.find_last_not_of(" ") + 1);
+                // Remove '\r' to handle Windows-style CRLF line endings.
+                value.erase(value.find_last_not_of(" \r") + 1);
 
                 // Remove quotes if present
                 if (value.length() >= 2 &&
