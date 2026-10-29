@@ -66,6 +66,14 @@ void LoadDotEnvFile() {
 
     std::string line;
     while (std::getline(envFile, line)) {
+        line.erase(0, line.find_first_not_of(" \t"));
+
+        // Remove 'export' for compatibility with Laravel's .env parser.
+        if (line.substr(0, line.find_first_of(" \t")) == "export") {
+            line.erase(0, 6);
+            line.erase(0, line.find_first_not_of(" \t"));
+        }
+
         // Skip empty lines and comments
         if (line.empty() || line[0] == '#') {
             continue;
@@ -82,16 +90,28 @@ void LoadDotEnvFile() {
                 value.erase(value.find_last_not_of("\r") + 1);
 
                 // Trim whitespace from key and value
-                key.erase(0, key.find_first_not_of(" "));
-                key.erase(key.find_last_not_of(" ") + 1);
-                value.erase(0, value.find_first_not_of(" "));
-                value.erase(value.find_last_not_of(" ") + 1);
+                key.erase(0, key.find_first_not_of(" \t"));
+                key.erase(key.find_last_not_of(" \t") + 1);
+                value.erase(0, value.find_first_not_of(" \t"));
+                value.erase(value.find_last_not_of(" \t") + 1);
 
-                // Remove quotes if present
+                // Remove quotes and comments if present
                 if (value.length() >= 2 &&
-                    ((value.front() == '"' && value.back() == '"') ||
-                     (value.front() == '\'' && value.back() == '\''))) {
-                    value = value.substr(1, value.length() - 2);
+                    (value.front() == '"' || value.front() == '\'')) {
+                    for (size_t end = 1; end < value.length(); ++end) {
+                        if (value.front() == '"' && value[end] == '\\') {
+                            ++end;
+                        } else if (value[end] == value.front()) {
+                            size_t suffix = value.find_first_not_of(" \t", end + 1);
+                            if (suffix == std::string::npos || value[suffix] == '#') {
+                                value = value.substr(1, end - 1);
+                            }
+                            break;
+                        }
+                    }
+                } else {
+                    value = value.substr(0, value.find('#'));
+                    value.erase(value.find_last_not_of(" \t") + 1);
                 }
                 AIKIDO_GLOBAL(dotEnvCache)[docRoot][key] = value;
             }
