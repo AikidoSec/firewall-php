@@ -4,7 +4,7 @@
 ZEND_DECLARE_MODULE_GLOBALS(aikido)
 
 PHP_MINIT_FUNCTION(aikido) {
-    LoadSystemEnvironment();
+    LoadProcessEnvironment();
 
     AIKIDO_GLOBAL(logger).Init();
 

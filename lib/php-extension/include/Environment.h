@@ -2,7 +2,7 @@
 
 void LoadEnvironment();
 
-void LoadSystemEnvironment();
+void LoadProcessEnvironment();
 
 void LoadDotEnvFile();
 

@@ -1,4 +1,5 @@
 import os
+import json
 import subprocess
 import time
 import urllib.request
@@ -30,7 +31,7 @@ def create_folder(folder_path):
 def frankenphp_create_site_block(test_data):
     env_vars = ""
     for key, value in test_data["env"].items():
-        env_vars += f"        env {key} \"{value}\"\n"
+        env_vars += f"        env {key} {json.dumps(value)}\n"
     
     return site_block_template.format(
         port=test_data["server_port"],
