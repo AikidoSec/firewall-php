@@ -228,25 +228,25 @@ jobs:
           echo "AIKIDO_LIBZEN_VERSION=0.1.64" >> $GITHUB_ENV
 
       - name: Download artifacts (NTS)
-        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4
+        uses: actions/download-artifact@87c55149d96e628cc2ef7e6fc2aab372015aec85 # v4.1.3
         with:
           pattern: |
             aikido-extension-php-*-nts-${{ env.ARCH }}
 
       - name: Download artifacts (ZTS)
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        uses: actions/download-artifact@87c55149d96e628cc2ef7e6fc2aab372015aec85 # v4.1.3
         with:
           pattern: |
             aikido-extension-php-*-zts-${{ env.ARCH }}
 
       - name: Download artifacts
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        uses: actions/download-artifact@87c55149d96e628cc2ef7e6fc2aab372015aec85 # v4.1.3
         with:
           pattern: |
             aikido-agent-${{ env.ARCH }}
 
       - name: Download artifacts
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        uses: actions/download-artifact@87c55149d96e628cc2ef7e6fc2aab372015aec85 # v4.1.3
         with:
           pattern: |
             aikido-request-processor-${{ env.ARCH }}
@@ -351,7 +351,7 @@ jobs:
           fi
 
       - name: Download artifacts
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        uses: actions/download-artifact@87c55149d96e628cc2ef7e6fc2aab372015aec85 # v4.1.3
         with:
           pattern: |
             aikido-php-firewall.${{ env.ARCH }}.rpm
@@ -561,13 +561,13 @@ jobs:
           echo "AIKIDO_LIBZEN_VERSION=0.1.64" >> "$GITHUB_ENV"
 
       - name: Download musl Go libraries
-        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4
+        uses: actions/download-artifact@87c55149d96e628cc2ef7e6fc2aab372015aec85 # v4.1.3
         with:
           name: aikido-alpine-libs-${{ matrix.package_arch }}
           path: package-input
 
       - name: Download PHP extensions
-        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4
+        uses: actions/download-artifact@87c55149d96e628cc2ef7e6fc2aab372015aec85 # v4.1.3
         with:
           pattern: aikido-alpine-extension-*-${{ matrix.package_arch }}
           merge-multiple: true
@@ -643,7 +643,7 @@ jobs:
           } >> "$GITHUB_ENV"
 
       - name: Download APK
-        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4
+        uses: actions/download-artifact@87c55149d96e628cc2ef7e6fc2aab372015aec85 # v4.1.3
         with:
           name: aikido-php-firewall.${{ matrix.package_arch }}.apk
           path: package-input
@@ -710,7 +710,7 @@ jobs:
           echo "AIKIDO_VERSION=${AIKIDO_VERSION}" >> "$GITHUB_ENV"
 
       - name: Download APK
-        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4
+        uses: actions/download-artifact@87c55149d96e628cc2ef7e6fc2aab372015aec85 # v4.1.3
         with:
           name: ${{ env.APK_NAME }}
           path: package-input
@@ -817,7 +817,7 @@ jobs:
           echo "AIKIDO_VERSION=${AIKIDO_VERSION}" >> "$GITHUB_ENV"
 
       - name: Download APK
-        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4
+        uses: actions/download-artifact@87c55149d96e628cc2ef7e6fc2aab372015aec85 # v4.1.3
         with:
           name: ${{ env.APK_NAME }}
           path: package-input
@@ -975,7 +975,7 @@ jobs:
           echo "AIKIDO_RPM=aikido-php-firewall.${ARCH}.rpm" >> $GITHUB_ENV
 
       - name: Download artifacts
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        uses: actions/download-artifact@87c55149d96e628cc2ef7e6fc2aab372015aec85 # v4.1.3
         with:
           pattern: |
             ${{ env.AIKIDO_RPM }}
@@ -1028,7 +1028,7 @@ jobs:
           echo "AIKIDO_DEB=aikido-php-firewall.${ARCH}.deb" >> $GITHUB_ENV
 
       - name: Download artifacts
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        uses: actions/download-artifact@87c55149d96e628cc2ef7e6fc2aab372015aec85 # v4.1.3
         with:
           pattern: |
             ${{ env.AIKIDO_DEB }}
@@ -1120,7 +1120,7 @@ jobs:
           php -v
 
       - name: Download artifacts
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        uses: actions/download-artifact@87c55149d96e628cc2ef7e6fc2aab372015aec85 # v4.1.3
         with:
           pattern: |
             ${{ env.AIKIDO_DEB }}
@@ -1270,7 +1270,7 @@ jobs:
           echo "AIKIDO_RPM=aikido-php-firewall.${ARCH}.rpm" >> $GITHUB_ENV
 
       - name: Download artifacts
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        uses: actions/download-artifact@87c55149d96e628cc2ef7e6fc2aab372015aec85 # v4.1.3
         with:
           pattern: |
             ${{ env.AIKIDO_RPM }}
@@ -1357,7 +1357,7 @@ jobs:
           echo "AIKIDO_RPM=aikido-php-firewall.${ARCH}.rpm" >> $GITHUB_ENV
 
       - name: Download artifacts
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        uses: actions/download-artifact@87c55149d96e628cc2ef7e6fc2aab372015aec85 # v4.1.3
         with:
           pattern: |
             ${{ env.AIKIDO_RPM }}
@@ -1427,7 +1427,7 @@ jobs:
           fi
 
       - name: Download artifacts
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        uses: actions/download-artifact@87c55149d96e628cc2ef7e6fc2aab372015aec85 # v4.1.3
         with:
           pattern: |
             ${{ env.AIKIDO_DEB }}
@@ -1459,7 +1459,7 @@ jobs:
         run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
 
       - name: Download artifacts
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        uses: actions/download-artifact@87c55149d96e628cc2ef7e6fc2aab372015aec85 # v4.1.3
         with:
           name: aikido-php-firewall.${{ env.ARCH }}.deb
           path: ./zen-demo-php
@@ -1493,7 +1493,7 @@ jobs:
         run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
 
       - name: Download artifacts
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        uses: actions/download-artifact@87c55149d96e628cc2ef7e6fc2aab372015aec85 # v4.1.3
         with:
           name: aikido-php-firewall.${{ env.ARCH }}.deb
           path: ./zen-demo-php
@@ -1527,7 +1527,7 @@ jobs:
         run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
 
       - name: Download artifacts
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        uses: actions/download-artifact@87c55149d96e628cc2ef7e6fc2aab372015aec85 # v4.1.3
         with:
           name: aikido-php-firewall.${{ env.ARCH }}.deb
           path: ./zen-demo-php
@@ -1562,7 +1562,7 @@ jobs:
         run: echo "ARCH=$(uname -m)" >> $GITHUB_ENV
 
       - name: Download artifacts
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        uses: actions/download-artifact@87c55149d96e628cc2ef7e6fc2aab372015aec85 # v4.1.3
         with:
           name: aikido-php-firewall.${{ env.ARCH }}.deb
           path: ./zen-demo-php
