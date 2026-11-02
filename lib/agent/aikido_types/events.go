@@ -39,19 +39,12 @@ type AttacksDetected struct {
 	Blocked int `json:"blocked"`
 }
 
-type CompressedTiming struct {
-	AverageInMS  float64            `json:"averageInMS"`
-	Percentiles  map[string]float64 `json:"percentiles"`
-	CompressedAt int64              `json:"compressedAt"`
-}
-
 type MonitoredSinkStats struct {
-	Kind                  string             `json:"kind"`
-	AttacksDetected       AttacksDetected    `json:"attacksDetected"`
-	InterceptorThrewError int                `json:"interceptorThrewError"`
-	WithoutContext        int                `json:"withoutContext"`
-	Total                 int                `json:"total"`
-	CompressedTimings     []CompressedTiming `json:"compressedTimings"`
+	Kind                  string          `json:"kind"`
+	AttacksDetected       AttacksDetected `json:"attacksDetected"`
+	InterceptorThrewError int             `json:"interceptorThrewError"`
+	WithoutContext        int             `json:"withoutContext"`
+	Total                 int             `json:"total"`
 }
 
 type MonitoredListsBreakdown struct {

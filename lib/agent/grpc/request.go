@@ -83,15 +83,6 @@ func storeSinkStats(server *ServerData, protoSinkStats *protos.MonitoredSinkStat
 	monitoredSinkTimings.InterceptorThrewError += int(protoSinkStats.GetInterceptorThrewError())
 	monitoredSinkTimings.WithoutContext += int(protoSinkStats.GetWithoutContext())
 	monitoredSinkTimings.Total += int(protoSinkStats.GetTotal())
-	monitoredSinkTimings.Timings = append(monitoredSinkTimings.Timings, protoSinkStats.GetTimings()...)
-	if len(monitoredSinkTimings.Timings) >= constants.MinStatsCollectedForRelevantMetrics {
-		monitoredSinkTimings.CompressedTimings = append(monitoredSinkTimings.CompressedTimings, CompressedTiming{
-			AverageInMS:  utils.ComputeAverage(monitoredSinkTimings.Timings),
-			Percentiles:  utils.ComputePercentiles(monitoredSinkTimings.Timings),
-			CompressedAt: utils.GetTime(),
-		})
-		monitoredSinkTimings.Timings = []int64{}
-	}
 
 	server.StatsData.MonitoredSinkTimings[sink] = monitoredSinkTimings
 }

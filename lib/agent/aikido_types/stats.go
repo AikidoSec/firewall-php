@@ -12,8 +12,6 @@ type MonitoredSinkTimings struct {
 	InterceptorThrewError int
 	WithoutContext        int
 	Total                 int
-	Timings               []int64
-	CompressedTimings     []CompressedTiming
 }
 
 type StatsDataType struct {
