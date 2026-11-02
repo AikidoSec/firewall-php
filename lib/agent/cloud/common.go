@@ -208,8 +208,13 @@ func StoreCloudConfig(server *ServerData, configReponse []byte) bool {
 		log.Debugf(server.Logger, "ConfigUpdatedAt is the same!")
 		return true
 	}
+	// Keep the previous version so polling retries failed list downloads.
+	previousConfig := server.CloudConfig
 	server.CloudConfig = tempCloudConfig
-	UpdateListsConfig(server)
+	if !UpdateListsConfig(server) {
+		server.CloudConfig = previousConfig
+		return false
+	}
 	ApplyCloudConfig(server)
 	return true
 }
