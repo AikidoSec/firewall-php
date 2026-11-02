@@ -829,7 +829,7 @@ func TestMappedIpMatchesConfiguredEntries(t *testing.T) {
 			}
 			server := globals.NewServerData()
 			server.CloudConfig.BlockedIps = map[string]IpList{"test": *list}
-			for _, ip := range []string{"::ffff:1.2.3.4", "::ffff:102:304"} {
+			for _, ip := range []string{"1.2.3.4", "::ffff:1.2.3.4", "::ffff:102:304"} {
 				result, _ := IsIpBlocked(nil, server, ip)
 				if !result {
 					t.Errorf("expected %s to match %s", ip, entry)
