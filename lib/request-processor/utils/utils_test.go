@@ -820,6 +820,28 @@ func TestIsIpBlockedByIp(t *testing.T) {
 	}
 }
 
+func TestMappedIpMatchesConfiguredEntries(t *testing.T) {
+	for _, entry := range []string{"1.2.3.4", "1.2.0.0/16", "::ffff:1.2.3.4", "::ffff:1.2.0.0/112", "::/0"} {
+		t.Run(entry, func(t *testing.T) {
+			list, err := BuildIpList("test", []string{entry})
+			if err != nil {
+				t.Fatal(err)
+			}
+			server := globals.NewServerData()
+			server.CloudConfig.BlockedIps = map[string]IpList{"test": *list}
+			for _, ip := range []string{"::ffff:1.2.3.4", "::ffff:102:304"} {
+				result, _ := IsIpBlocked(nil, server, ip)
+				if !result {
+					t.Errorf("expected %s to match %s", ip, entry)
+				}
+				if result := IsIpInSet(nil, &list.IpSet, ip); result != Found {
+					t.Errorf("expected IsIpInSet to match %s against %s, got %d", ip, entry, result)
+				}
+			}
+		})
+	}
+}
+
 func TestIsIpNotBlockedByPrefix(t *testing.T) {
 	server := globals.NewServerData()
 	server.CloudConfig.BlockedIps = map[string]IpList{}
