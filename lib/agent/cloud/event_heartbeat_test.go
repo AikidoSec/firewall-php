@@ -1,13 +1,43 @@
 package cloud
 
 import (
+	"encoding/json"
 	. "main/aikido_types"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestGetStatsAndClear(t *testing.T) {
+	t.Run("reports operation counters without compressed timings and clears them", func(t *testing.T) {
+		server := NewServerData()
+		server.StatsData.MonitoredSinkTimings["PDO::query"] = MonitoredSinkTimings{
+			Kind:                  "sql_op",
+			AttacksDetected:       AttacksDetected{Total: 2, Blocked: 1},
+			InterceptorThrewError: 1,
+			WithoutContext:        3,
+			Total:                 10,
+		}
+
+		stats := GetStatsAndClear(server)
+
+		assert.Equal(t, map[string]MonitoredSinkStats{
+			"PDO::query": {
+				Kind:                  "sql_op",
+				AttacksDetected:       AttacksDetected{Total: 2, Blocked: 1},
+				InterceptorThrewError: 1,
+				WithoutContext:        3,
+				Total:                 10,
+			},
+		}, stats.Operations)
+		payload, err := json.Marshal(Heartbeat{Stats: stats})
+		require.NoError(t, err)
+		assert.NotContains(t, string(payload), `"compressedTimings"`)
+		assert.Empty(t, server.StatsData.MonitoredSinkTimings)
+		assert.Empty(t, GetStatsAndClear(server).Operations)
+	})
+
 	t.Run("reports accumulated counters and clears them for the next interval", func(t *testing.T) {
 		server := NewServerData()
 		server.StatsData.Requests = 30
