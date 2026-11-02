@@ -795,10 +795,13 @@ func TestIsIpBlockedByPrefix(t *testing.T) {
 	server.CloudConfig.BlockedIps = map[string]IpList{}
 	IpList, _ := BuildIpList("test", []string{"1.2.0.0/16"})
 	server.CloudConfig.BlockedIps["test"] = *IpList
-	ip := "1.2.3.4"
-	result, _ := IsIpBlocked(nil, server, ip)
-	if result != true {
-		t.Errorf("expected true, got %v", result)
+	for _, ip := range []string{"1.2.3.4", "::ffff:1.2.3.4", "::ffff:102:304"} {
+		t.Run(ip, func(t *testing.T) {
+			result, _ := IsIpBlocked(nil, server, ip)
+			if result != true {
+				t.Errorf("expected true, got %v", result)
+			}
+		})
 	}
 }
 
@@ -807,10 +810,13 @@ func TestIsIpBlockedByIp(t *testing.T) {
 	server.CloudConfig.BlockedIps = map[string]IpList{}
 	IpList, _ := BuildIpList("test", []string{"1.2.3.4"})
 	server.CloudConfig.BlockedIps["test"] = *IpList
-	ip := "1.2.3.4"
-	result, _ := IsIpBlocked(nil, server, ip)
-	if result != true {
-		t.Errorf("expected true, got %v", result)
+	for _, ip := range []string{"1.2.3.4", "::ffff:1.2.3.4", "::ffff:102:304"} {
+		t.Run(ip, func(t *testing.T) {
+			result, _ := IsIpBlocked(nil, server, ip)
+			if result != true {
+				t.Errorf("expected true, got %v", result)
+			}
+		})
 	}
 }
 
@@ -819,10 +825,13 @@ func TestIsIpNotBlockedByPrefix(t *testing.T) {
 	server.CloudConfig.BlockedIps = map[string]IpList{}
 	IpList, _ := BuildIpList("test", []string{"1.2.0.0/16"})
 	server.CloudConfig.BlockedIps["test"] = *IpList
-	ip := "2.3.4.5"
-	result, _ := IsIpBlocked(nil, server, ip)
-	if result != false {
-		t.Errorf("expected false, got %v", result)
+	for _, ip := range []string{"2.3.4.5", "::ffff:2.3.4.5"} {
+		t.Run(ip, func(t *testing.T) {
+			result, _ := IsIpBlocked(nil, server, ip)
+			if result != false {
+				t.Errorf("expected false, got %v", result)
+			}
+		})
 	}
 }
 
@@ -831,10 +840,13 @@ func TestIsIpNotBlockedByIp(t *testing.T) {
 	server.CloudConfig.BlockedIps = map[string]IpList{}
 	IpList, _ := BuildIpList("test", []string{"1.2.3.4"})
 	server.CloudConfig.BlockedIps["test"] = *IpList
-	ip := "2.3.4.5"
-	result, _ := IsIpBlocked(nil, server, ip)
-	if result != false {
-		t.Errorf("expected false, got %v", result)
+	for _, ip := range []string{"2.3.4.5", "::ffff:2.3.4.5"} {
+		t.Run(ip, func(t *testing.T) {
+			result, _ := IsIpBlocked(nil, server, ip)
+			if result != false {
+				t.Errorf("expected false, got %v", result)
+			}
+		})
 	}
 }
 func TestIsIpv6BlockedByPrefix(t *testing.T) {
