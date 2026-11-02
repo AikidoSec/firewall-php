@@ -197,6 +197,24 @@ func isLocalhost(ip string) bool {
 	return parsedIP.IsLoopback()
 }
 
+// Requests and configured lists can represent the same IP address differently.
+// Match IPv4, IPv4-mapped IPv6 and native IPv6 forms.
+func ipSetContains(ipSet *netipx.IPSet, ipAddress netip.Addr) bool {
+	if ipSet == nil {
+		return false
+	}
+
+	ipAddress = ipAddress.Unmap()
+	if ipSet.Contains(ipAddress) {
+		return true
+	}
+
+	if ipAddress.Is4() {
+		return ipSet.Contains(netip.AddrFrom16(ipAddress.As16()))
+	}
+	return false
+}
+
 func IsIpInSet(instance *instance.RequestProcessorInstance, ipSet *netipx.IPSet, ip string) int {
 	if ipSet == nil || ipSet.Equal(&netipx.IPSet{}) {
 		// No IPs configured in the list -> return default value
@@ -209,11 +227,7 @@ func IsIpInSet(instance *instance.RequestProcessorInstance, ipSet *netipx.IPSet,
 		return NoConfig
 	}
 
-	// Unmap IPv4-mapped IPv6 addresses (e.g., ::ffff:203.0.113.50 -> 203.0.113.50)
-	// This ensures IPv4-mapped addresses match IPv4 CIDR ranges
-	unmappedIpAddress := ipAddress.Unmap()
-
-	if ipSet.Contains(ipAddress) || ipSet.Contains(unmappedIpAddress) {
+	if ipSetContains(ipSet, ipAddress) {
 		return Found
 	}
 
@@ -341,11 +355,9 @@ func IsIpInList(instance *instance.RequestProcessorInstance, ipList map[string]I
 	if err != nil {
 		return NoConfig, []IpListMatch{}
 	}
-	unmappedIpAddress := ipAddress.Unmap()
-
 	matches := []IpListMatch{}
 	for listKey, list := range ipList {
-		if list.IpSet.Contains(ipAddress) || list.IpSet.Contains(unmappedIpAddress) {
+		if ipSetContains(&list.IpSet, ipAddress) {
 			matches = append(matches, IpListMatch{Key: listKey, Description: list.Description})
 		}
 	}
