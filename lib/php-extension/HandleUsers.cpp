@@ -22,8 +22,6 @@ ZEND_FUNCTION(set_user) {
         RETURN_BOOL(false);
     }
 
-    ScopedTimer scopedTimer("set_user", "aikido_op");
-
     char* id = nullptr;
     size_t idLength = 0;
     char* name = nullptr;

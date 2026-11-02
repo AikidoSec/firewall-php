@@ -1,7 +1,6 @@
 #include "Includes.h"
 
 ZEND_FUNCTION(register_param_matcher) {
-    ScopedTimer scopedTimer("register_param_matcher", "aikido_op");
     ScopedEventContext scopedContext; // Push context for eventCacheStack
 
     if (IsAikidoDisabledOrBypassed()) {

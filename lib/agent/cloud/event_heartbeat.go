@@ -68,9 +68,8 @@ func GetMonitoredSinkStatsAndClear(server *ServerData) map[string]MonitoredSinkS
 			WithoutContext:        stats.WithoutContext,
 			Total:                 stats.Total,
 		}
-
-		delete(server.StatsData.MonitoredSinkTimings, sink)
 	}
+	clear(server.StatsData.MonitoredSinkTimings)
 	return monitoredSinkStats
 }
 

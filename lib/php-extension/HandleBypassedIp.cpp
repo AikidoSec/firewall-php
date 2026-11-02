@@ -4,8 +4,6 @@ void InitIpBypassCheck() {
     // Reset state for new request
     AIKIDO_GLOBAL(isIpBypassed) = false;
 
-    ScopedTimer scopedTimer("check_ip_bypass", "aikido_op");
-
     try {
         std::string output;
         AIKIDO_GLOBAL(requestProcessorInstance).SendEvent(EVENT_GET_IS_IP_BYPASSED, output);

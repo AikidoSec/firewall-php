@@ -17,8 +17,6 @@ ZEND_FUNCTION(track) {
         RETURN_BOOL(false);
     }
 
-    ScopedTimer scopedTimer("track", "aikido_op");
-
     try {
         ScopedEventContext scopedContext;
         AIKIDO_GLOBAL(eventCacheStack).Top().customEventName = std::string(eventName, eventNameLength);
