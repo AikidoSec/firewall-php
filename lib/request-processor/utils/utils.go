@@ -211,11 +211,9 @@ func IsIpInSet(instance *instance.RequestProcessorInstance, ipSet *netipx.IPSet,
 
 	// Unmap IPv4-mapped IPv6 addresses (e.g., ::ffff:203.0.113.50 -> 203.0.113.50)
 	// This ensures IPv4-mapped addresses match IPv4 CIDR ranges
-	if ipAddress.Is4In6() {
-		ipAddress = ipAddress.Unmap()
-	}
+	unmappedIpAddress := ipAddress.Unmap()
 
-	if ipSet.Contains(ipAddress) {
+	if ipSet.Contains(ipAddress) || ipSet.Contains(unmappedIpAddress) {
 		return Found
 	}
 
@@ -343,10 +341,11 @@ func IsIpInList(instance *instance.RequestProcessorInstance, ipList map[string]I
 	if err != nil {
 		return NoConfig, []IpListMatch{}
 	}
+	unmappedIpAddress := ipAddress.Unmap()
 
 	matches := []IpListMatch{}
 	for listKey, list := range ipList {
-		if list.IpSet.Contains(ipAddress) {
+		if list.IpSet.Contains(ipAddress) || list.IpSet.Contains(unmappedIpAddress) {
 			matches = append(matches, IpListMatch{Key: listKey, Description: list.Description})
 		}
 	}
