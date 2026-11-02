@@ -56,8 +56,6 @@ PHP_MSHUTDOWN_FUNCTION(aikido) {
 }
 
 static void aikido_do_request_init() {
-    ScopedTimer scopedTimer("request_init", "request_op");
-
     AIKIDO_LOG_DEBUG("RINIT started!\n");
 
     AIKIDO_GLOBAL(phpLifecycle).RequestInit();
@@ -66,8 +64,6 @@ static void aikido_do_request_init() {
 }
 
 static void aikido_do_request_shutdown() {
-    ScopedTimer scopedTimer("request_shutdown", "request_op");
-
     AIKIDO_LOG_DEBUG("RSHUTDOWN started!\n");
 
     if (AIKIDO_GLOBAL(disable) == true) {
@@ -171,8 +167,6 @@ PHP_GINIT_FUNCTION(aikido) {
     aikido_globals->trust_proxy = false;
     aikido_globals->localhost_allowed_by_default = false;
     aikido_globals->report_stats_interval_to_agent = 0;
-    aikido_globals->currentRequestStart = std::chrono::high_resolution_clock::time_point{};
-    aikido_globals->totalOverheadForCurrentRequest = 0;
     aikido_globals->checkedAutoBlock = false;
     aikido_globals->checkedShouldBlockRequest = false;
     aikido_globals->checkedWhitelistRequest = false;

@@ -8,8 +8,6 @@ bool CheckBlocking(EVENT_ID eventId, bool& checkedBlocking) {
         return true;
     }
 
-    ScopedTimer scopedTimer("check_blocking", "aikido_op");
-
     try {
         auto& requestProcessorInstance = AIKIDO_GLOBAL(requestProcessorInstance);
         auto& action = AIKIDO_GLOBAL(action);
@@ -28,8 +26,6 @@ bool CheckWhitelist(EVENT_ID eventId, bool& checkedWhitelist) {
     if (checkedWhitelist) {
         return true;
     }
-
-    ScopedTimer scopedTimer("check_whitelist", "aikido_op");
 
     try {
         auto& requestProcessorInstance = AIKIDO_GLOBAL(requestProcessorInstance);

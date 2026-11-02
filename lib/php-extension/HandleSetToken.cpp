@@ -1,8 +1,6 @@
 #include "Includes.h"
 
 ZEND_FUNCTION(set_token) {
-    ScopedTimer scopedTimer("set_token", "aikido_op");
-
     if (IsAikidoDisabledOrBypassed()) {
         RETURN_BOOL(false);
     }
