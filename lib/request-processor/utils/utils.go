@@ -197,18 +197,18 @@ func isLocalhost(ip string) bool {
 	return parsedIP.IsLoopback()
 }
 
+// Requests and configured lists can represent the same IP address differently.
+// Match IPv4, IPv4-mapped IPv6 and native IPv6 forms.
 func ipSetContains(ipSet *netipx.IPSet, ipAddress netip.Addr) bool {
 	if ipSet == nil {
 		return false
 	}
 
-	// After Unmap, the address is IPv4 or unchanged native IPv6.
 	ipAddress = ipAddress.Unmap()
 	if ipSet.Contains(ipAddress) {
 		return true
 	}
 
-	// If the IPv4 lookup missed, convert to IPv4-mapped IPv6 and try again.
 	if ipAddress.Is4() {
 		return ipSet.Contains(netip.AddrFrom16(ipAddress.As16()))
 	}
