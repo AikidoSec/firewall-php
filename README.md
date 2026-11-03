@@ -94,7 +94,7 @@ The APK is distributed as a standalone package, so its signing key is not instal
 
 ### Upgrading Zen
 
-To upgrade Zen, stop your PHP service, install the new package, then start the service again.
+After installing a Zen update, restart your PHP service to load the new version. The installer does not restart PHP automatically.
 
 ### Troubleshooting
 
