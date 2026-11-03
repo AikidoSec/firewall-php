@@ -92,6 +92,10 @@ The APK is distributed as a standalone package, so its signing key is not instal
 - Another way of doing that, is adding the `AIKIDO_TOKEN` variable in your `.env` file.
 - If you are unable to set any of the above, there's an alternative way of doing that from PHP, by following the ["Token setup from PHP code"](./docs/token-setup-php.md).
 
+### Upgrading Zen
+
+After installing a Zen update, restart your PHP service to load the new version. The installer does not restart PHP automatically.
+
 ### Troubleshooting
 
 [Read our troubleshooting documentation.](./docs/troubleshooting.md)
