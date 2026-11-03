@@ -94,17 +94,7 @@ The APK is distributed as a standalone package, so its signing key is not instal
 
 ### Upgrading Zen
 
-PHP must be restarted to load a new Zen version. The installer does not restart PHP automatically, and processes that are already running keep using the old extension.
-
-To upgrade on an existing server:
-
-1. Stop the service running PHP (PHP-FPM, Apache with mod_php, or FrankenPHP).
-2. Install the new Zen package using the commands above.
-3. Start the PHP service again.
-
-Stopping PHP before upgrading prevents it from serving requests while the old Zen files are being replaced.
-
-For containers, update the Zen version, rebuild the image, and deploy new containers.
+To upgrade Zen, stop your PHP service, install the new package, then start the service again. For containers, rebuild and redeploy with the new Zen version.
 
 ### Troubleshooting
 
