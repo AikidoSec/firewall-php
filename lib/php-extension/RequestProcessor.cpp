@@ -29,7 +29,7 @@ bool RequestProcessor::Init() {
     this->libHandle = dlopen(requestProcessorLibPath.c_str(), RTLD_LAZY);
     if (!this->libHandle) {
         const char* err = dlerror();
-        AIKIDO_LOG_ERROR("Error loading the Aikido Request Processor library from %s: %s!\n", requestProcessorLibPath.c_str(), err);
+        AIKIDO_LOG_ERROR("Error loading the Aikido Request Processor library from %s: %s! If Zen was upgraded, restart your PHP service.\n", requestProcessorLibPath.c_str(), err);
         this->initFailed = true;
         return false;
     }
