@@ -3,8 +3,10 @@ package cloud
 import (
 	. "main/aikido_types"
 	"main/constants"
+	"main/log"
 	"main/utils"
 	"sync/atomic"
+	"time"
 )
 
 func GetHostnamesAndClear(server *ServerData) []Hostname {
@@ -140,6 +142,18 @@ func GetStatsAndClear(server *ServerData) Stats {
 
 func GetMiddlewareInstalled(server *ServerData) bool {
 	return atomic.LoadUint32(&server.MiddlewareInstalled) == 1
+}
+
+func ResetHeartbeatTicker(server *ServerData) {
+	if !server.CloudConfig.ReceivedAnyStats {
+		log.Info(server.Logger, "Resetting HeartbeatTicker to 1m!")
+		server.PollingData.HeartbeatTicker.Reset(1 * time.Minute)
+	} else {
+		if server.CloudConfig.HeartbeatIntervalInMS >= constants.MinHeartbeatIntervalInMS {
+			log.Infof(server.Logger, "Resetting HeartbeatTicker to %dms!", server.CloudConfig.HeartbeatIntervalInMS)
+			server.PollingData.HeartbeatTicker.Reset(time.Duration(server.CloudConfig.HeartbeatIntervalInMS) * time.Millisecond)
+		}
+	}
 }
 
 func SendHeartbeatEvent(server *ServerData) {
