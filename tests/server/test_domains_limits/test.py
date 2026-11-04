@@ -18,7 +18,9 @@ def run_test():
         response = php_server_get(f"/?domain={domain}")
         assert_response_code_is(response, 200)
     
-    mock_server_wait_for_new_events(310)
+    # Accept a heartbeat that arrived before polling started.
+    assert wait_until(lambda: len(mock_server_get_events()) >= 2, 70) is not None, \
+        "Timed out waiting for the hostname heartbeat"
     
     events = mock_server_get_events()
     assert_events_length_is(events, 2)
