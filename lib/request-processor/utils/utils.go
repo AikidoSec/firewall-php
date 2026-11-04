@@ -5,9 +5,7 @@ import (
 	"fmt"
 	"main/helpers"
 	"main/instance"
-	"main/log"
 	"net"
-	"net/netip"
 	"net/url"
 	"regexp"
 	"runtime"
@@ -197,43 +195,6 @@ func isLocalhost(ip string) bool {
 	return parsedIP.IsLoopback()
 }
 
-// Requests and configured lists can represent the same IP address differently.
-// Match IPv4, IPv4-mapped IPv6 and native IPv6 forms.
-func ipSetContains(ipSet *netipx.IPSet, ipAddress netip.Addr) bool {
-	if ipSet == nil {
-		return false
-	}
-
-	ipAddress = ipAddress.Unmap()
-	if ipSet.Contains(ipAddress) {
-		return true
-	}
-
-	if ipAddress.Is4() {
-		return ipSet.Contains(netip.AddrFrom16(ipAddress.As16()))
-	}
-	return false
-}
-
-func IsIpInSet(instance *instance.RequestProcessorInstance, ipSet *netipx.IPSet, ip string) int {
-	if ipSet == nil || ipSet.Equal(&netipx.IPSet{}) {
-		// No IPs configured in the list -> return default value
-		return NoConfig
-	}
-
-	ipAddress, err := netip.ParseAddr(ip)
-	if err != nil {
-		log.Infof(instance, "Invalid ip address: %s\n", ip)
-		return NoConfig
-	}
-
-	if ipSetContains(ipSet, ipAddress) {
-		return Found
-	}
-
-	return NotFound
-}
-
 func IsIpAllowedOnEndpoint(instance *instance.RequestProcessorInstance, server *ServerData, allowedIps *netipx.IPSet, ip string) int {
 	if server == nil {
 		return NoConfig
@@ -339,34 +300,6 @@ func IsUserBlocked(server *ServerData, userID string) bool {
 	server.CloudConfigMutex.Lock()
 	defer server.CloudConfigMutex.Unlock()
 	return KeyExists(server.CloudConfig.BlockedUserIds, userID)
-}
-
-type IpListMatch struct {
-	Key         string
-	Description string
-}
-
-func IsIpInList(instance *instance.RequestProcessorInstance, ipList map[string]IpList, ip string) (int, []IpListMatch) {
-	if len(ipList) == 0 {
-		return NoConfig, []IpListMatch{}
-	}
-
-	ipAddress, err := netip.ParseAddr(ip)
-	if err != nil {
-		return NoConfig, []IpListMatch{}
-	}
-	matches := []IpListMatch{}
-	for listKey, list := range ipList {
-		if ipSetContains(&list.IpSet, ipAddress) {
-			matches = append(matches, IpListMatch{Key: listKey, Description: list.Description})
-		}
-	}
-
-	if len(matches) == 0 {
-		return NotFound, matches
-	}
-
-	return Found, matches
 }
 
 func IsIpAllowed(instance *instance.RequestProcessorInstance, server *ServerData, ip string) (bool, []IpListMatch) {
