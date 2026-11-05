@@ -68,12 +68,15 @@ type CloudConfigData struct {
 	BlockNewOutgoingRequests bool             `json:"blockNewOutgoingRequests"`
 	OutboundDomains          []OutboundDomain `json:"domains"`
 	EnabledFeatures          []string         `json:"enabledFeatures"`
-	BlockedIpsList           map[string]IpBlocklist
-	AllowedIpsList           map[string]IpBlocklist
-	BlockedUserAgents        string
-	MonitoredIpsList         map[string]IpBlocklist
-	MonitoredUserAgents      string
-	UserAgentDetails         map[string]string
+}
+
+type CloudListsData struct {
+	BlockedIpsList      map[string]IpBlocklist
+	AllowedIpsList      map[string]IpBlocklist
+	BlockedUserAgents   string
+	MonitoredIpsList    map[string]IpBlocklist
+	MonitoredUserAgents string
+	UserAgentDetails    map[string]string
 }
 
 type IpsData struct {
@@ -162,6 +165,8 @@ type ServerData struct {
 
 	// Cloud config that is obtain as a result from sending events to cloud or pulling the config when it changes
 	CloudConfig CloudConfigData
+
+	CloudLists CloudListsData
 
 	// Config mutex used to sync access to configuration data across the multiple go routines that we run in parallel
 	CloudConfigMutex sync.Mutex
