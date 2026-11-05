@@ -88,16 +88,16 @@ func UpdateListsConfig(server *ServerData) bool {
 		return false
 	}
 
-	server.CloudConfig.BlockedIpsList = UpdateIpsLists(tempListsConfig.BlockedIpAddresses)
-	server.CloudConfig.MonitoredIpsList = UpdateIpsLists(tempListsConfig.MonitoredIpAddresses)
-	server.CloudConfig.AllowedIpsList = UpdateIpsLists(tempListsConfig.AllowedIpAddresses)
+	server.CloudLists.BlockedIpsList = UpdateIpsLists(tempListsConfig.BlockedIpAddresses)
+	server.CloudLists.MonitoredIpsList = UpdateIpsLists(tempListsConfig.MonitoredIpAddresses)
+	server.CloudLists.AllowedIpsList = UpdateIpsLists(tempListsConfig.AllowedIpAddresses)
 
-	server.CloudConfig.BlockedUserAgents = tempListsConfig.BlockedUserAgents
-	server.CloudConfig.MonitoredUserAgents = tempListsConfig.MonitoredUserAgents
+	server.CloudLists.BlockedUserAgents = tempListsConfig.BlockedUserAgents
+	server.CloudLists.MonitoredUserAgents = tempListsConfig.MonitoredUserAgents
 
-	server.CloudConfig.UserAgentDetails = make(map[string]string)
+	server.CloudLists.UserAgentDetails = make(map[string]string)
 	for _, userAgentDetail := range tempListsConfig.UserAgentDetails {
-		server.CloudConfig.UserAgentDetails[userAgentDetail.Key] = userAgentDetail.Pattern
+		server.CloudLists.UserAgentDetails[userAgentDetail.Key] = userAgentDetail.Pattern
 	}
 
 	/* Force garbage collection to ensure that the IP blocklists temporary memory is released ASAP */
