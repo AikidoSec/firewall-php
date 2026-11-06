@@ -237,4 +237,21 @@ func TestDetectPathTraversal(t *testing.T) {
 			}
 		}
 	})
+
+	t.Run("case-insensitive path containment detects traversal on case-insensitive filesystems", func(t *testing.T) {
+		testCases := []struct {
+			inputPath string
+			userPath  string
+			expected  bool
+		}{
+			{"/etc/passwd", "/ETC/passwd", true},
+			{"/etc/passwd", "/ETC/PASSWD", true},
+			{"/home/user/file.txt", "/HOME/USER/file.txt", true},
+		}
+		for _, tc := range testCases {
+			if detectPathTraversal(tc.inputPath, tc.userPath, true) != tc.expected {
+				t.Errorf("expected %v for input %q and user path %q", tc.expected, tc.inputPath, tc.userPath)
+			}
+		}
+	})
 }
