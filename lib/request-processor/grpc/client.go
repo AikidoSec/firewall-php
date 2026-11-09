@@ -17,18 +17,24 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
+const maxMessageSize = 100 * 1024 * 1024
+
 var conn *grpc.ClientConn
 var client protos.AikidoClient
 
-func Init() {
-	var err error
-	conn, err = grpc.Dial(
-		"unix://"+globals.SocketPath,
+func dialAgent(target string) (*grpc.ClientConn, error) {
+	return grpc.Dial(
+		target,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithDefaultCallOptions(
-			grpc.MaxCallRecvMsgSize(10*1024*1024),  // 10MB max receive message size
-			grpc.MaxCallSendMsgSize(10*1024*1024)), // 10MB max receive message size
+			grpc.MaxCallRecvMsgSize(maxMessageSize),
+			grpc.MaxCallSendMsgSize(maxMessageSize)),
 	)
+}
+
+func Init() {
+	var err error
+	conn, err = dialAgent("unix://" + globals.SocketPath)
 
 	if err != nil {
 		panic(fmt.Sprintf("did not connect: %v", err))
