@@ -178,14 +178,21 @@ func (s *GrpcServer) OnMonitoredUserAgentMatch(ctx context.Context, req *protos.
 	return &protos.Empty{}, nil
 }
 
+const maxMessageSize = 100 * 1024 * 1024
+
 var grpcServer *grpc.Server
 
-func StartServer(lis net.Listener) {
-	grpcServer = grpc.NewServer(
-		grpc.MaxRecvMsgSize(10*1024*1024), // 10MB max receive message size
-		grpc.MaxSendMsgSize(10*1024*1024), // 10MB max send message size
+func newServer() *grpc.Server {
+	server := grpc.NewServer(
+		grpc.MaxRecvMsgSize(maxMessageSize),
+		grpc.MaxSendMsgSize(maxMessageSize),
 	)
-	protos.RegisterAikidoServer(grpcServer, &GrpcServer{})
+	protos.RegisterAikidoServer(server, &GrpcServer{})
+	return server
+}
+
+func StartServer(lis net.Listener) {
+	grpcServer = newServer()
 
 	log.Infof(log.MainLogger, "gRPC server is running on Unix socket %s", constants.SocketPath)
 	if err := grpcServer.Serve(lis); err != nil {
