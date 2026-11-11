@@ -83,6 +83,10 @@ CallbackResult GoContextCallback(int callbackId) {
                 ctx = "RATE_LIMIT_GROUP";
                 ret = requestCache.rateLimitGroup;
                 break;
+            case AI_CALL_STATS:
+                ctx = "AI_CALL_STATS";
+                ret = GetAICaptureStats();
+                break;
             case CUSTOM_EVENT_NAME:
                 ctx = "CUSTOM_EVENT_NAME";
                 ret = GetEventCacheField(&EventCache::customEventName);

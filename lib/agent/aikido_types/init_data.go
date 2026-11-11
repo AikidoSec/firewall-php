@@ -154,6 +154,8 @@ type ServerKey struct {
 }
 
 type ServerData struct {
+	AI      map[AIKey]AIStats
+	AIMutex sync.Mutex
 	// Logger for the server
 	Logger *log.AikidoLogger
 

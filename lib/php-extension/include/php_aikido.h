@@ -14,6 +14,8 @@
 #include "Action.h"
 #include "Cache.h"
 #include "PhpLifecycle.h"
+#include "AICapture.h"
+#include "CurlCapture.h"
 #include "Stats.h"
 
 extern zend_module_entry aikido_module_entry;
@@ -32,6 +34,7 @@ bool blocking;
 bool disable;
 bool disk_logs; // When enabled, all configured log levels are written to disk. Otherwise, warnings and errors are written to stderr.
 bool collect_api_schema;
+bool ai_network_capture;
 // When enabled, the Agent listens for cloud config updates over a Server-Sent Events stream, on top of polling.
 bool sse;
 bool trust_proxy;
@@ -80,6 +83,8 @@ std::string client_ip_header;
       contexts.
 */
 RequestCache requestCache;
+AICapture aiCapture;
+CurlCapture curlCapture;
 EventCacheStack eventCacheStack;
 EventCache eventCache;
 Agent agent;

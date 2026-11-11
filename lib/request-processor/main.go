@@ -29,6 +29,7 @@ var eventHandlers = map[int]HandlerFunction{
 	C.EVENT_GET_WHITELISTED_STATUS:   OnGetWhitelistedStatus,
 	C.EVENT_GET_IS_IP_BYPASSED:       OnGetIsIpBypassed,
 	C.EVENT_PRE_OUTGOING_REQUEST:     OnPreOutgoingRequest,
+	C.EVENT_AI_CALL:                  OnAICall,
 	C.EVENT_POST_OUTGOING_REQUEST:    OnPostOutgoingRequest,
 	C.EVENT_PRE_SHELL_EXECUTED:       OnPreShellExecuted,
 	C.EVENT_PRE_PATH_ACCESSED:        OnPrePathAccessed,

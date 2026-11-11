@@ -9,6 +9,18 @@ import (
 	"time"
 )
 
+func GetAIUsageAndClear(server *ServerData) []AIStats {
+	server.AIMutex.Lock()
+	defer server.AIMutex.Unlock()
+
+	calls := make([]AIStats, 0, len(server.AI))
+	for _, call := range server.AI {
+		calls = append(calls, call)
+	}
+	clear(server.AI)
+	return calls
+}
+
 func GetHostnamesAndClear(server *ServerData) []Hostname {
 	server.HostnamesMutex.Lock()
 	defer server.HostnamesMutex.Unlock()
@@ -166,6 +178,7 @@ func SendHeartbeatEvent(server *ServerData) {
 		Routes:              GetRoutesAndClear(server),
 		Users:               GetUsersAndClear(server),
 		Packages:            GetPackages(server),
+		AI:                  GetAIUsageAndClear(server),
 		MiddlewareInstalled: GetMiddlewareInstalled(server),
 	}
 

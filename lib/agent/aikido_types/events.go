@@ -94,6 +94,7 @@ type Started struct {
 }
 
 type Heartbeat struct {
+	AI                  []AIStats  `json:"ai"`
 	Type                string     `json:"type"`
 	Stats               Stats      `json:"stats"`
 	Packages            []Package  `json:"packages"`

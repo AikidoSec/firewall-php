@@ -58,6 +58,7 @@ using json = nlohmann::json;
 #include "HandleRegisterParamMatcher.h"
 #include "HandleWorkerLifecycle.h"
 #include "HandleUrls.h"
+#include "HandleCurl.h"
 #include "HandleShellExecution.h"
 #include "HandleShouldBlockRequest.h"
 #include "HandleSetRateLimitGroup.h"

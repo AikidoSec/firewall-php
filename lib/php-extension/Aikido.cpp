@@ -18,6 +18,7 @@ PHP_MINIT_FUNCTION(aikido) {
         return SUCCESS;
     }
 
+    RegisterCurlObservers();
     AIKIDO_GLOBAL(phpLifecycle).HookAll();
 
     AIKIDO_GLOBAL(phpLifecycle).ModuleInit();
@@ -163,6 +164,7 @@ PHP_GINIT_FUNCTION(aikido) {
     aikido_globals->disable = false;
     aikido_globals->disk_logs = false;
     aikido_globals->collect_api_schema = false;
+    aikido_globals->ai_network_capture = false;
     aikido_globals->sse = false;
     aikido_globals->trust_proxy = false;
     aikido_globals->localhost_allowed_by_default = false;
@@ -187,6 +189,8 @@ PHP_GINIT_FUNCTION(aikido) {
     new (&aikido_globals->requestProcessorInstance) RequestProcessorInstance();
     new (&aikido_globals->action) Action();
     new (&aikido_globals->requestCache) RequestCache();
+    new (&aikido_globals->aiCapture) AICapture();
+    new (&aikido_globals->curlCapture) CurlCapture();
     new (&aikido_globals->eventCacheStack) EventCacheStack();
     new (&aikido_globals->eventCache) EventCache();
     new (&aikido_globals->phpLifecycle) PhpLifecycle();
@@ -207,6 +211,8 @@ PHP_GSHUTDOWN_FUNCTION(aikido) {
     aikido_globals->agent.~Agent();
     aikido_globals->eventCache.~EventCache();
     aikido_globals->eventCacheStack.~EventCacheStack();
+    aikido_globals->curlCapture.~CurlCapture();
+    aikido_globals->aiCapture.~AICapture();
     aikido_globals->requestCache.~RequestCache();
     aikido_globals->client_ip_header.~string();
     aikido_globals->config_endpoint.~string();
