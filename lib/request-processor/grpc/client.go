@@ -144,6 +144,18 @@ func GetRateLimitingStatus(instance *instance.RequestProcessorInstance, server *
 }
 
 /* Send request metadata (route, method & status code) to Aikido Agent via gRPC */
+func OnAIUsage(token string, calls []*protos.AIUsage) {
+	if client == nil {
+		return
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	_, err := client.OnAIUsage(ctx, &protos.AIUsageBatch{Token: token, ServerPid: globals.EnvironmentConfig.ServerPID, Calls: calls})
+	if err != nil {
+		log.Warnf(nil, "Could not send AI usage: %v", err)
+	}
+}
+
 func OnRequestShutdown(params RequestShutdownParams) {
 	if client == nil {
 		return

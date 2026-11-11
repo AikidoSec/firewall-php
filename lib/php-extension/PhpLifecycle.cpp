@@ -45,6 +45,8 @@ void PhpLifecycle::RequestInit() {
 
     AIKIDO_GLOBAL(action).Reset();
     AIKIDO_GLOBAL(requestCache).Reset();
+    AIKIDO_GLOBAL(curlCapture).Reset();
+    AIKIDO_GLOBAL(aiCapture).stats.clear();
     
     AIKIDO_GLOBAL(requestProcessorInstance).RequestInit();
     AIKIDO_GLOBAL(checkedAutoBlock) = false;
@@ -59,6 +61,8 @@ void PhpLifecycle::RequestShutdown() {
         return;
     }
     AIKIDO_GLOBAL(requestProcessorInstance).RequestShutdown();
+    AIKIDO_GLOBAL(curlCapture).Reset();
+    AIKIDO_GLOBAL(aiCapture).stats.clear();
 }
 
 void PhpLifecycle::ModuleShutdown() {

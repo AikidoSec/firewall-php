@@ -1,0 +1,16 @@
+#pragma once
+
+void RegisterCurlObservers();
+
+AIKIDO_HANDLER_FUNCTION(handle_pre_curl_ai_capture);
+AIKIDO_HANDLER_FUNCTION(handle_post_curl_ai_capture);
+AIKIDO_HANDLER_FUNCTION(handle_pre_curl_multi_add_handle);
+AIKIDO_HANDLER_FUNCTION(handle_post_curl_multi_add_handle);
+AIKIDO_HANDLER_FUNCTION(handle_post_curl_multi_info_read);
+AIKIDO_HANDLER_FUNCTION(handle_post_curl_setopt);
+AIKIDO_HANDLER_FUNCTION(handle_post_curl_setopt_array);
+AIKIDO_HANDLER_FUNCTION(handle_post_curl_copy_handle);
+AIKIDO_HANDLER_FUNCTION(handle_pre_curl_reset);
+AIKIDO_HANDLER_FUNCTION(handle_pre_curl_close);
+AIKIDO_HANDLER_FUNCTION(handle_post_curl_multi_remove_handle);
+AIKIDO_HANDLER_FUNCTION(handle_curl_capture_noop);

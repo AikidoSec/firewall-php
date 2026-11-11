@@ -2,6 +2,7 @@
 
 AIKIDO_HANDLER_FUNCTION(handle_pre_curl_exec) {
     scopedTimer.SetSink(sink, "outgoing_http_op");
+    handle_pre_curl_ai_capture(INTERNAL_FUNCTION_PARAM_PASSTHRU, eventId, sink, scopedTimer);
 
     zval *curlHandle = NULL;
 
@@ -43,6 +44,7 @@ AIKIDO_HANDLER_FUNCTION(handle_pre_curl_exec) {
 }
 
 AIKIDO_HANDLER_FUNCTION(handle_post_curl_exec) {
+    handle_post_curl_ai_capture(INTERNAL_FUNCTION_PARAM_PASSTHRU, eventId, sink, scopedTimer);
     zval *curlHandle = NULL;
 
 // Curl handles changed between PHP 7 & PHP 8 - so we need different extraction
