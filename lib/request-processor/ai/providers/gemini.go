@@ -16,7 +16,7 @@ type geminiResponse struct {
 	} `json:"usageMetadata"`
 }
 
-func ParseGemini(body []byte, model string) *protos.AIUsage {
+func ParseGemini(body []byte, fallbackModel string) *protos.AIUsage {
 	var response *geminiResponse
 	if json.Unmarshal(body, &response) != nil || response == nil || response.Usage == nil {
 		return nil
@@ -25,8 +25,9 @@ func ParseGemini(body []byte, model string) *protos.AIUsage {
 	if !validTokenCounts(rawUsage.Input, rawUsage.ToolInput, rawUsage.Output, rawUsage.Thoughts, rawUsage.CacheRead) {
 		return nil
 	}
-	if response.Model != "" {
-		model = response.Model
+	model := response.Model
+	if model == "" {
+		model = fallbackModel
 	}
 	return &protos.AIUsage{
 		Model:     model,
