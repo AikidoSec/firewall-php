@@ -100,6 +100,7 @@ type Heartbeat struct {
 	Hostnames           []Hostname `json:"hostnames"`
 	Routes              []Route    `json:"routes"`
 	Users               []User     `json:"users"`
+	AI                  []AIStats  `json:"ai"`
 	Agent               AgentInfo  `json:"agent"`
 	Time                int64      `json:"time"`
 	MiddlewareInstalled bool       `json:"middlewareInstalled"`

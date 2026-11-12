@@ -60,6 +60,18 @@ func GetUsersAndClear(server *ServerData) []User {
 	return users
 }
 
+func GetAIUsageAndClear(server *ServerData) []AIStats {
+	server.AIMutex.Lock()
+	defer server.AIMutex.Unlock()
+
+	calls := make([]AIStats, 0, len(server.AI))
+	for _, call := range server.AI {
+		calls = append(calls, call)
+	}
+	clear(server.AI)
+	return calls
+}
+
 func GetMonitoredSinkStatsAndClear(server *ServerData) map[string]MonitoredSinkStats {
 	monitoredSinkStats := make(map[string]MonitoredSinkStats)
 	for sink, stats := range server.StatsData.MonitoredSinkTimings {
@@ -166,6 +178,7 @@ func SendHeartbeatEvent(server *ServerData) {
 		Routes:              GetRoutesAndClear(server),
 		Users:               GetUsersAndClear(server),
 		Packages:            GetPackages(server),
+		AI:                  GetAIUsageAndClear(server),
 		MiddlewareInstalled: GetMiddlewareInstalled(server),
 	}
 

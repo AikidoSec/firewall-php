@@ -249,6 +249,20 @@ func OnCustomEvent(event *protos.CustomEvent) {
 	}
 }
 
+func OnAIUsage(usage *protos.AIUsage) {
+	if client == nil || usage == nil {
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	_, err := client.OnAIUsage(ctx, usage)
+	if err != nil {
+		log.Debugf(nil, "Could not send AI usage: %v", err)
+	}
+}
+
 func OnAttackDetected(instance *instance.RequestProcessorInstance, attackDetected *protos.AttackDetected) {
 	if client == nil {
 		return
