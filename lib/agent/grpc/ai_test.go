@@ -49,6 +49,7 @@ func TestAIUsageRPCIsolatesTokensAndServerProcesses(t *testing.T) {
 		_, err := client.OnAIUsage(ctx, &protos.AIUsage{
 			Token: key.Token, ServerPid: key.ServerPID,
 			Provider: "https://gateway.test", Model: "gpt", Input: int64(i + 1),
+			CacheRead: int64(i + 2), CacheWrite: int64(i + 3),
 		})
 		require.NoError(t, err)
 	}
@@ -64,5 +65,7 @@ func TestAIUsageRPCIsolatesTokensAndServerProcesses(t *testing.T) {
 		require.Len(t, stats, 1)
 		require.Equal(t, int64(1), stats[0].Calls)
 		require.Equal(t, int64(i+1), stats[0].Tokens.Input)
+		require.Equal(t, int64(i+2), stats[0].Tokens.CacheRead)
+		require.Equal(t, int64(i+3), stats[0].Tokens.CacheWrite)
 	}
 }

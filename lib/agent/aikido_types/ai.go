@@ -3,9 +3,11 @@ package aikido_types
 import "main/ipc/protos"
 
 type AITokens struct {
-	Input  int64 `json:"input"`
-	Output int64 `json:"output"`
-	Total  int64 `json:"total"`
+	Input      int64 `json:"input"`
+	Output     int64 `json:"output"`
+	Total      int64 `json:"total"`
+	CacheRead  int64 `json:"cacheRead"`
+	CacheWrite int64 `json:"cacheWrite"`
 }
 
 type AIStats struct {
@@ -36,5 +38,7 @@ func (server *ServerData) StoreAIUsage(call *protos.AIUsage) {
 	stats.Tokens.Input += call.Input
 	stats.Tokens.Output += call.Output
 	stats.Tokens.Total += call.Input + call.Output
+	stats.Tokens.CacheRead += call.CacheRead
+	stats.Tokens.CacheWrite += call.CacheWrite
 	server.AI[key] = stats
 }

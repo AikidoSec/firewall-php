@@ -28,6 +28,8 @@ message AIUsage {
   string model = 4;
   int64 input = 5;
   int64 output = 6;
+  int64 cacheRead = 7;
+  int64 cacheWrite = 8;
 }
 
 message Empty {}

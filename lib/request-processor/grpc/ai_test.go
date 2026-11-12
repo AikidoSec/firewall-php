@@ -42,8 +42,8 @@ func TestAIUsageReportingOverRPC(t *testing.T) {
 	t.Cleanup(func() { _ = connection.Close() })
 	client = protos.NewAikidoClient(connection)
 	usages := []*protos.AIUsage{
-		{Token: "first", ServerPid: 77, Provider: "https://gateway.test", Model: "gpt", Input: 10, Output: 5},
-		{Token: "second", ServerPid: 77, Provider: "https://gateway.test", Model: "claude", Input: 20},
+		{Token: "first", ServerPid: 77, Provider: "https://gateway.test", Model: "gpt", Input: 10, Output: 5, CacheRead: 3, CacheWrite: 2},
+		{Token: "second", ServerPid: 77, Provider: "https://gateway.test", Model: "claude", Input: 20, CacheRead: 5, CacheWrite: 4},
 		{Token: "first", ServerPid: 78, Provider: "https://other.test", Model: "gpt", Input: 7},
 	}
 	for _, usage := range usages {
