@@ -57,7 +57,7 @@ func ParseBedrockInvoke(body []byte, model string) *protos.AIUsage {
 
 func bedrockModel(model, responseModel string) string {
 	model, _ = url.PathUnescape(model)
-	if strings.HasPrefix(model, "arn:") {
+	if strings.HasPrefix(model, "arn:") && responseModel != "" {
 		return responseModel
 	}
 	return model

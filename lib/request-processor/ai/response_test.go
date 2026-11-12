@@ -28,6 +28,8 @@ func TestParseResponse(t *testing.T) {
 		{"Bedrock Invoke cached input", "/model/anthropic.claude/invoke", `{"usage":{"input_tokens":10,"output_tokens":5,"cache_read_input_tokens":3,"cache_creation_input_tokens":2}}`, &protos.AIUsage{Model: "anthropic.claude", Input: 15, Output: 5, CacheRead: 3, CacheWrite: 2}},
 		{"Bedrock encoded model", "/model/anthropic%2Eclaude/invoke", `{"usage":{"input_tokens":10}}`, &protos.AIUsage{Model: "anthropic.claude", Input: 10}},
 		{"Bedrock ARN model", "/model/arn%3Aaws%3Abedrock%3Aregion%3Aaccount%3Amodel%2Fname/invoke", `{"model":"claude","usage":{"input_tokens":10}}`, &protos.AIUsage{Model: "claude", Input: 10}},
+		{"Bedrock Converse ARN without response model", "/model/arn%3Aaws%3Abedrock%3Aus-east-1%3A123456789012%3Ainference-profile%2Fmy-profile/converse", `{"usage":{"inputTokens":10,"outputTokens":5}}`, &protos.AIUsage{Model: "arn:aws:bedrock:us-east-1:123456789012:inference-profile/my-profile", Input: 10, Output: 5}},
+		{"Bedrock Invoke ARN without response model", "/model/arn%3Aaws%3Abedrock%3Aus-east-1%3A123456789012%3Ainference-profile%2Fmy-profile/invoke", `{"usage":{"input_tokens":10,"output_tokens":5}}`, &protos.AIUsage{Model: "arn:aws:bedrock:us-east-1:123456789012:inference-profile/my-profile", Input: 10, Output: 5}},
 		{"nesting characters in text", "/v1/responses", `{"model":"gpt","usage":{},"text":"[[[\"\\}}"}`, &protos.AIUsage{Model: "gpt"}},
 	}
 	for _, tt := range tests {
