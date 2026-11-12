@@ -51,6 +51,14 @@ func (s *GrpcServer) OnPackages(ctx context.Context, req *protos.Packages) (*pro
 	return &protos.Empty{}, nil
 }
 
+func (s *GrpcServer) OnAIUsage(ctx context.Context, req *protos.AIUsage) (*protos.Empty, error) {
+	server := globals.GetServer(ServerKey{Token: req.GetToken(), ServerPID: req.GetServerPid()})
+	if server != nil {
+		server.StoreAIUsage(req)
+	}
+	return &protos.Empty{}, nil
+}
+
 func (s *GrpcServer) OnDomain(ctx context.Context, req *protos.Domain) (*protos.Empty, error) {
 	server := globals.GetServer(ServerKey{Token: req.GetToken(), ServerPID: req.GetServerPid()})
 	if server == nil {

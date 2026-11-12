@@ -184,6 +184,9 @@ type ServerData struct {
 	// Hostnames mutex used to sync access to hostnames data across the go routines
 	HostnamesMutex sync.Mutex
 
+	AI      map[AIKey]AIStats
+	AIMutex sync.Mutex
+
 	// List of routes and their methods and count of calls collect from the requests
 	// [method][route] = hits
 	Routes      map[string]map[string]*Route
@@ -248,6 +251,7 @@ const (
 	MaxNumberOfStoredHostnames = 2000
 	MaxNumberOfStoredUsers     = 2000
 	MaxNumberOfStoredRoutes    = 5000
+	MaxNumberOfStoredAIStats   = 1000
 )
 
 func NewServerData() *ServerData {
