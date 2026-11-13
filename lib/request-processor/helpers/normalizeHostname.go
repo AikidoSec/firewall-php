@@ -24,12 +24,15 @@ func NormalizeHostname(hostname string) string {
 	// Convert to lowercase first - idna.ToUnicode requires lowercase "xn--" prefix
 	lowercased := strings.ToLower(decoded)
 
+	// Strip trailing dot — DNS resolvers may return FQDNs like "metadata.google.internal."
+	noDot := strings.TrimSuffix(lowercased, ".")
+
 	// Convert Punycode (xn--...) to Unicode form for consistent comparison
 	// e.g., "xn--mnchen-3ya.de" -> "münchen.de"
-	unicodeHostname, err := idna.ToUnicode(lowercased)
+	unicodeHostname, err := idna.ToUnicode(noDot)
 	if err != nil {
 		// If conversion fails, use the lowercased hostname as-is
-		unicodeHostname = lowercased
+		unicodeHostname = noDot
 	}
 
 	return unicodeHostname
