@@ -34,9 +34,6 @@ func ParseOpenAIChat(body []byte) *protos.AIUsage {
 		return nil
 	}
 	rawUsage := response.Usage
-	if !validTokenCounts(rawUsage.Input, rawUsage.Output, rawUsage.Details.CacheRead, rawUsage.Details.CacheWrite) {
-		return nil
-	}
 	return &protos.AIUsage{
 		Model:      response.Model,
 		Input:      rawUsage.Input,
@@ -52,9 +49,6 @@ func ParseOpenAIResponses(body []byte) *protos.AIUsage {
 		return nil
 	}
 	rawUsage := response.Usage
-	if !validTokenCounts(rawUsage.Input, rawUsage.Output, rawUsage.Details.CacheRead, rawUsage.Details.CacheWrite) {
-		return nil
-	}
 	return &protos.AIUsage{
 		Model:      response.Model,
 		Input:      rawUsage.Input,

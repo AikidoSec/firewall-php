@@ -22,9 +22,6 @@ func ParseGemini(body []byte, model string) *protos.AIUsage {
 		return nil
 	}
 	rawUsage := response.Usage
-	if !validTokenCounts(rawUsage.Input, rawUsage.ToolInput, rawUsage.Output, rawUsage.Thoughts, rawUsage.CacheRead) {
-		return nil
-	}
 	finalModel := model
 	if response.Model != "" {
 		finalModel = response.Model

@@ -35,6 +35,9 @@ func ParseResponse(rawURL, body string) *protos.AIUsage {
 	if usage == nil || usage.Model == "" || len(usage.Model) > 256 {
 		return nil
 	}
+	if usage.Input < 0 || usage.Output < 0 || usage.CacheRead < 0 || usage.CacheWrite < 0 {
+		return nil
+	}
 	// URL-derived models must not retain the caller's URL buffer.
 	usage.Model = strings.Clone(usage.Model)
 	usage.Provider = endpoint.origin

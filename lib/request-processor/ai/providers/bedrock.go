@@ -23,9 +23,6 @@ func ParseBedrockConverse(body []byte, model string) *protos.AIUsage {
 		return nil
 	}
 	rawUsage := response.Usage
-	if !validTokenCounts(rawUsage.Input, rawUsage.Output, rawUsage.CacheRead, rawUsage.CacheWrite) {
-		return nil
-	}
 	// Bedrock's inputTokens excludes cache reads and writes.
 	return &protos.AIUsage{
 		Model:      bedrockModel(model, response.Model),
@@ -43,9 +40,6 @@ func ParseBedrockInvoke(body []byte, model string) *protos.AIUsage {
 	}
 	rawUsage := response.Usage
 	input, output := response.inputOutputTokens()
-	if !validTokenCounts(input, output, rawUsage.CacheRead, rawUsage.CacheWrite) {
-		return nil
-	}
 	return &protos.AIUsage{
 		Model:      bedrockModel(model, response.Model),
 		Input:      input + rawUsage.CacheRead + rawUsage.CacheWrite,

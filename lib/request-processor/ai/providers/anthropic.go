@@ -22,9 +22,6 @@ func ParseAnthropic(body []byte) *protos.AIUsage {
 	}
 	rawUsage := response.Usage
 	input, output := response.inputOutputTokens()
-	if !validTokenCounts(input, output, rawUsage.CacheRead, rawUsage.CacheWrite) {
-		return nil
-	}
 	// Anthropic's input_tokens excludes cache reads and writes.
 	return &protos.AIUsage{
 		Model:      response.Model,
