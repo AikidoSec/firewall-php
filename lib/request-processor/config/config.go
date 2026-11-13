@@ -45,7 +45,7 @@ func ReloadAikidoConfig(instance *instance.RequestProcessorInstance, conf *Aikid
 		return true
 	}
 
-	globals.GetOrCreateServer(conf.Token, *conf)
+	globals.GetOrCreateServer(conf.Token, *conf, utils.ParseTrustProxy(conf.TrustProxy))
 	if !UpdateToken(instance, conf.Token) {
 		return true
 	}

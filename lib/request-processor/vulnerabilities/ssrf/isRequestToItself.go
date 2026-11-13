@@ -20,7 +20,7 @@ func IsRequestToItself(instance *instance.RequestProcessorInstance, outboundHost
 
 	// Check if trust proxy is enabled
 	// If not enabled, we don't consider requests to itself as safe
-	if server != nil && !server.AikidoConfig.TrustProxy {
+	if server != nil && !server.TrustProxyConfig.IsTrusted(context.GetRemoteAddress(instance)) {
 		return false
 	}
 

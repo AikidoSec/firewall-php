@@ -216,11 +216,11 @@ func IsIpBypassed(instance *instance.RequestProcessorInstance, server *ServerDat
 	return IsIpInSet(instance, server.CloudConfig.BypassedIps, ip) == Found
 }
 
-func getClientIpFromHeader(value string) string {
-	if strings.TrimSpace(value) == "" {
-		return ""
-	}
+func getClientIpFromHeader(value string, config TrustProxyConfig) string {
+	return selectClientIP(parseIPsFromHeader(value), config)
+}
 
+func parseIPsFromHeader(value string) []string {
 	parts := strings.Split(value, ",")
 	for i := range parts {
 		ip := strings.TrimSpace(parts[i])
@@ -238,11 +238,15 @@ func getClientIpFromHeader(value string) string {
 			continue
 		}
 
-		// IPv6 with port: "[2001:db8::1]:443" -> "2001:db8::1"
-		// IPv4 with port: "203.0.113.5:1234" -> "203.0.113.5"
-		if host, _, err := net.SplitHostPort(ip); err == nil {
-			ip = host
-			parts[i] = ip
+		if strings.HasPrefix(ip, "[") {
+			if closingBracket := strings.Index(ip, "]:"); closingBracket > 0 {
+				parts[i] = ip[1:closingBracket]
+				continue
+			}
+		}
+
+		if strings.Count(ip, ":") == 1 {
+			parts[i] = strings.SplitN(ip, ":", 2)[0]
 			continue
 		}
 
@@ -250,14 +254,23 @@ func getClientIpFromHeader(value string) string {
 		parts[i] = ip
 	}
 
-	// Pick the first valid, non-private IP
-	for _, cand := range parts {
-		if !isIP(cand) {
+	return parts
+}
+
+func selectClientIP(ips []string, config TrustProxyConfig) string {
+	startIndex := len(ips) - 1
+	if config.Count > 0 {
+		startIndex = len(ips) - config.Count
+	}
+	for i := startIndex; i >= 0; i-- {
+		ip := ips[i]
+		if !isIP(ip) || helpers.IsPrivateIP(ip) {
 			continue
 		}
-		if !helpers.IsPrivateIP(cand) {
-			return cand
+		if config.Contains(ip) {
+			continue
 		}
+		return ip
 	}
 	return ""
 }
@@ -266,8 +279,8 @@ func GetIpFromRequest(server *ServerData, remoteAddress string, clientIpHeader s
 	if server == nil {
 		return ""
 	}
-	if clientIpHeader != "" && server.AikidoConfig.TrustProxy {
-		ip := getClientIpFromHeader(clientIpHeader)
+	if clientIpHeader != "" && server.TrustProxyConfig.IsTrusted(remoteAddress) {
+		ip := getClientIpFromHeader(clientIpHeader, server.TrustProxyConfig)
 		if isIP(ip) {
 			return ip
 		}

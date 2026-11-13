@@ -792,29 +792,29 @@ func TestIsUserAgentBlocked(t *testing.T) {
 func TestGetIpFromRequest(t *testing.T) {
 	//no headers and no remote address
 	server := globals.NewServerData()
-	server.AikidoConfig.TrustProxy = false
+	server.TrustProxyConfig = ParseTrustProxy("false")
 	if got := GetIpFromRequest(server, "", ""); got != "" {
 		t.Errorf("expected empty, got %q", got)
 	}
 
-	server.AikidoConfig.TrustProxy = true
+	server.TrustProxyConfig = ParseTrustProxy("true")
 	if got := GetIpFromRequest(server, "", ""); got != "" {
 		t.Errorf("expected empty, got %q", got)
 	}
 
 	//no headers and remote address
-	server.AikidoConfig.TrustProxy = false
+	server.TrustProxyConfig = ParseTrustProxy("false")
 	if got := GetIpFromRequest(server, "1.2.3.4", ""); got != "1.2.3.4" {
 		t.Errorf("expected 1.2.3.4, got %q", got)
 	}
 
-	server.AikidoConfig.TrustProxy = true
+	server.TrustProxyConfig = ParseTrustProxy("true")
 	if got := GetIpFromRequest(server, "1.2.3.4", ""); got != "1.2.3.4" {
 		t.Errorf("expected 1.2.3.4, got %q", got)
 	}
 
 	// x-forwarded-for without trust proxy
-	server.AikidoConfig.TrustProxy = false
+	server.TrustProxyConfig = ParseTrustProxy("false")
 	if got := GetIpFromRequest(server, "1.2.3.4", "9.9.9.9"); got != "1.2.3.4" {
 		t.Errorf("expected 1.2.3.4, got %q", got)
 	}
@@ -824,13 +824,13 @@ func TestGetIpFromRequest(t *testing.T) {
 	}
 
 	// x-forwarded-for with trust proxy and "x-forwarded-for" is not an IP
-	server.AikidoConfig.TrustProxy = true
+	server.TrustProxyConfig = ParseTrustProxy("true")
 	if got := GetIpFromRequest(server, "1.2.3.4", "invalid"); got != "1.2.3.4" {
 		t.Errorf("expected 1.2.3.4, got %q", got)
 	}
 
 	// x-forwarded-for with trust proxy and IP contains port
-	server.AikidoConfig.TrustProxy = true
+	server.TrustProxyConfig = ParseTrustProxy("true")
 	if got := GetIpFromRequest(server, "1.2.3.4", "9.9.9.9:8080"); got != "9.9.9.9" {
 		t.Errorf("expected 9.9.9.9, got %q", got)
 	}
@@ -846,7 +846,7 @@ func TestGetIpFromRequest(t *testing.T) {
 	}
 
 	// with trailing comma
-	server.AikidoConfig.TrustProxy = true
+	server.TrustProxyConfig = ParseTrustProxy("true")
 	if got := GetIpFromRequest(server, "1.2.3.4", "9.9.9.9,"); got != "9.9.9.9" {
 		t.Errorf("expected 9.9.9.9, got %q", got)
 	}
@@ -861,7 +861,7 @@ func TestGetIpFromRequest(t *testing.T) {
 	}
 
 	// x-forwarded-for with trust proxy and "x-forwarded-for" is a private IP
-	server.AikidoConfig.TrustProxy = true
+	server.TrustProxyConfig = ParseTrustProxy("true")
 	if got := GetIpFromRequest(server, "1.2.3.4", "127.0.0.1"); got != "1.2.3.4" {
 		t.Errorf("expected 1.2.3.4, got %q", got)
 	}
@@ -870,7 +870,7 @@ func TestGetIpFromRequest(t *testing.T) {
 	}
 
 	// x-forwarded-for with trust proxy and "x-forwarded-for" contains private IP
-	server.AikidoConfig.TrustProxy = true
+	server.TrustProxyConfig = ParseTrustProxy("true")
 	if got := GetIpFromRequest(server, "1.2.3.4", "127.0.0.1, 9.9.9.9"); got != "9.9.9.9" {
 		t.Errorf("expected 9.9.9.9, got %q", got)
 	}
@@ -879,7 +879,7 @@ func TestGetIpFromRequest(t *testing.T) {
 	}
 
 	// x-forwarded-for with trust proxy and "x-forwarded-for" is public IP
-	server.AikidoConfig.TrustProxy = true
+	server.TrustProxyConfig = ParseTrustProxy("true")
 	if got := GetIpFromRequest(server, "1.2.3.4", "9.9.9.9"); got != "9.9.9.9" {
 		t.Errorf("expected 9.9.9.9, got %q", got)
 	}
@@ -888,7 +888,7 @@ func TestGetIpFromRequest(t *testing.T) {
 	}
 
 	// x-forwarded-for with trust proxy and "x-forwarded-for" contains private IP at the end
-	server.AikidoConfig.TrustProxy = true
+	server.TrustProxyConfig = ParseTrustProxy("true")
 	if got := GetIpFromRequest(server, "1.2.3.4", "9.9.9.9, 127.0.0.1"); got != "9.9.9.9" {
 		t.Errorf("expected 9.9.9.9, got %q", got)
 	}
@@ -897,16 +897,16 @@ func TestGetIpFromRequest(t *testing.T) {
 	}
 
 	// x-forwarded-for with trust proxy and multiple IPs
-	server.AikidoConfig.TrustProxy = true
-	if got := GetIpFromRequest(server, "1.2.3.4", "9.9.9.9, 8.8.8.8, 7.7.7.7"); got != "9.9.9.9" {
-		t.Errorf("expected 9.9.9.9, got %q", got)
+	server.TrustProxyConfig = ParseTrustProxy("true")
+	if got := GetIpFromRequest(server, "1.2.3.4", "9.9.9.9, 8.8.8.8, 7.7.7.7"); got != "7.7.7.7" {
+		t.Errorf("expected 7.7.7.7, got %q", got)
 	}
-	if got := GetIpFromRequest(server, "df89:84af:85e0:c55f:960c:341a:2cc6:734d", "a3ad:8f95:d2a8:454b:cf19:be6e:73c6:f880, 3b07:2fba:0270:2149:5fc1:2049:5f04:2131, 791d:967e:428a:90b9:8f6f:4fcc:5d88:015d"); got != "a3ad:8f95:d2a8:454b:cf19:be6e:73c6:f880" {
-		t.Errorf("expected a3ad:8f95:d2a8:454b:cf19:be6e:73c6:f880, got %q", got)
+	if got := GetIpFromRequest(server, "df89:84af:85e0:c55f:960c:341a:2cc6:734d", "a3ad:8f95:d2a8:454b:cf19:be6e:73c6:f880, 3b07:2fba:0270:2149:5fc1:2049:5f04:2131, 791d:967e:428a:90b9:8f6f:4fcc:5d88:015d"); got != "791d:967e:428a:90b9:8f6f:4fcc:5d88:015d" {
+		t.Errorf("expected 791d:967e:428a:90b9:8f6f:4fcc:5d88:015d, got %q", got)
 	}
 
 	// x-forwarded-for with trust proxy and many IPs
-	server.AikidoConfig.TrustProxy = true
+	server.TrustProxyConfig = ParseTrustProxy("true")
 	if got := GetIpFromRequest(server, "1.2.3.4", "127.0.0.1, 192.168.0.1, 192.168.0.2, 9.9.9.9"); got != "9.9.9.9" {
 		t.Errorf("expected 9.9.9.9, got %q", got)
 	}
@@ -914,6 +914,43 @@ func TestGetIpFromRequest(t *testing.T) {
 		t.Errorf("expected 9.9.9.9, got %q", got)
 	}
 
+	tests := []struct {
+		name, config, remoteAddress, header, expected string
+	}{
+		{"default ignores spoofed left entry", "", "10.0.0.1", "1.1.1.1, 8.8.8.8, 10.0.0.2", "8.8.8.8"},
+		{"truthy alias", "YES", "10.0.0.1", "1.1.1.1, 8.8.8.8", "8.8.8.8"},
+		{"disabled", "false", "10.0.0.1", "8.8.8.8", "10.0.0.1"},
+		{"zero disables trust", "0", "10.0.0.1", "8.8.8.8", "10.0.0.1"},
+		{"unknown disables trust", "invalid", "10.0.0.1", "8.8.8.8", "10.0.0.1"},
+		{"CIDR skips public proxies", "10.0.0.0/8, 9.9.9.0/24", "10.0.0.1", "1.1.1.1, 8.8.8.8, 9.9.9.9", "8.8.8.8"},
+		{"CIDR rejects direct request", "10.0.0.0/8", "7.7.7.7", "8.8.8.8", "7.7.7.7"},
+		{"CIDR needs remote address", "10.0.0.0/8", "", "8.8.8.8", ""},
+		{"invalid ranges fail closed", "invalid/24, 999.999.999.999", "7.7.7.7", "8.8.8.8", "7.7.7.7"},
+		{"single IP and invalid range", "invalid, 9.9.9.9", "9.9.9.9", "8.8.8.8, 9.9.9.9", "8.8.8.8"},
+		{"mapped remote matches IPv4 range", "9.9.9.0/24", "::ffff:9.9.9.9", "8.8.8.8, ::ffff:9.9.9.9", "8.8.8.8"},
+		{"IPv4 does not match mapped-only range", "::ffff:9.9.9.0/120", "9.9.9.9", "8.8.8.8, 9.9.9.9", "9.9.9.9"},
+		{"mapped address matches mapped range", "::ffff:9.9.9.0/120", "::ffff:9.9.9.9", "8.8.8.8, ::ffff:9.9.9.9", "8.8.8.8"},
+		{"IPv6 proxy range", "2606:4700::/32", "2606:4700::1", "2001:4860::1, 2606:4700::2", "2001:4860::1"},
+		{"all entries trusted", "9.9.9.0/24", "9.9.9.1", "9.9.9.2, 9.9.9.3", "9.9.9.1"},
+		{"one hop is rightmost", "1", "10.0.0.1", "1.1.1.1, 8.8.8.8, 9.9.9.9", "9.9.9.9"},
+		{"two hops", "2", "10.0.0.1", "1.1.1.1, 8.8.8.8, 9.9.9.9", "8.8.8.8"},
+		{"count skips private entries after indexing", "2", "10.0.0.1", "8.8.8.8, 10.0.0.2, 9.9.9.9", "8.8.8.8"},
+		{"count skips invalid entries after indexing", "2", "10.0.0.1", "8.8.8.8, invalid, 9.9.9.9", "8.8.8.8"},
+		{"count includes empty entries", "2", "10.0.0.1", "8.8.8.8, 9.9.9.9,", "9.9.9.9"},
+		{"count exceeds header length", "4", "10.0.0.1", "8.8.8.8, 9.9.9.9", "10.0.0.1"},
+		{"oversized count still trusts without selecting header", "999999999999999999999999", "", "8.8.8.8", ""},
+		{"count has no public candidate", "2", "10.0.0.1", "10.0.0.2, 9.9.9.9", "10.0.0.1"},
+		{"IPv4 port normalized like Node", "true", "10.0.0.1", "8.8.8.8:not-a-port", "8.8.8.8"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			server := globals.NewServerData()
+			server.TrustProxyConfig = ParseTrustProxy(tt.config)
+			if got := GetIpFromRequest(server, tt.remoteAddress, tt.header); got != tt.expected {
+				t.Errorf("expected %q, got %q", tt.expected, got)
+			}
+		})
+	}
 }
 
 func TestParseRouteParams(t *testing.T) {

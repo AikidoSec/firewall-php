@@ -164,7 +164,6 @@ PHP_GINIT_FUNCTION(aikido) {
     aikido_globals->disk_logs = false;
     aikido_globals->collect_api_schema = false;
     aikido_globals->sse = false;
-    aikido_globals->trust_proxy = false;
     aikido_globals->localhost_allowed_by_default = false;
     aikido_globals->report_stats_interval_to_agent = 0;
     aikido_globals->checkedAutoBlock = false;
@@ -181,6 +180,7 @@ PHP_GINIT_FUNCTION(aikido) {
     new (&aikido_globals->endpoint) std::string();
     new (&aikido_globals->config_endpoint) std::string();
     new (&aikido_globals->client_ip_header) std::string();
+    new (&aikido_globals->trust_proxy) std::string();
     new (&aikido_globals->logger) Log();
     new (&aikido_globals->agent) Agent();
     new (&aikido_globals->server) Server();
@@ -208,6 +208,7 @@ PHP_GSHUTDOWN_FUNCTION(aikido) {
     aikido_globals->eventCache.~EventCache();
     aikido_globals->eventCacheStack.~EventCacheStack();
     aikido_globals->requestCache.~RequestCache();
+    aikido_globals->trust_proxy.~string();
     aikido_globals->client_ip_header.~string();
     aikido_globals->config_endpoint.~string();
     aikido_globals->endpoint.~string();

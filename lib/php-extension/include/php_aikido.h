@@ -34,7 +34,6 @@ bool disk_logs; // When enabled, all configured log levels are written to disk. 
 bool collect_api_schema;
 // When enabled, the Agent listens for cloud config updates over a Server-Sent Events stream, on top of polling.
 bool sse;
-bool trust_proxy;
 bool localhost_allowed_by_default;
 bool uses_symfony_http_foundation; // If true, method override is supported using X-HTTP-METHOD-OVERRIDE or _method query param
 unsigned int report_stats_interval_to_agent; // Report once every X requests the collected stats to Agent
@@ -65,6 +64,7 @@ std::string token;
 std::string endpoint;
 std::string config_endpoint;
 std::string client_ip_header;
+std::string trust_proxy;
 /*
     Cache objects used by the PHP extension to share state with the Go request processor.
 

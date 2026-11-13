@@ -24,6 +24,7 @@ type RequestContextData struct {
 	RouteParsed                   *string
 	URL                           *string
 	StatusCode                    *int
+	RemoteAddress                 *string
 	IP                            *string
 	RateLimitGroup                *string
 	EndpointConfig                **EndpointData
@@ -125,6 +126,15 @@ func GetMethod(instance *instance.RequestProcessorInstance) string {
 func GetRoute(instance *instance.RequestProcessorInstance) string {
 	ctx := GetContext(instance)
 	return GetFromCache(instance, ContextSetRoute, &ctx.Route)
+}
+
+func GetRemoteAddress(instance *instance.RequestProcessorInstance) string {
+	ctx := GetContext(instance)
+	if ctx == nil || ctx.Callback == nil {
+		return ""
+	}
+	ContextSetString(instance, C.CONTEXT_REMOTE_ADDRESS, &ctx.RemoteAddress)
+	return *ctx.RemoteAddress
 }
 
 func GetIp(instance *instance.RequestProcessorInstance) string {

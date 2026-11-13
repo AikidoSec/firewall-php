@@ -20,7 +20,7 @@ type AikidoConfigData struct {
 	Token                     string            `json:"token"`                        // default: ''
 	LogLevel                  string            `json:"log_level"`                    // default: 'WARN'
 	Blocking                  bool              `json:"blocking"`                     // default: false
-	TrustProxy                bool              `json:"trust_proxy"`                  // default: true
+	TrustProxy                string            `json:"trust_proxy"`                  // default: 'true'
 	LocalhostAllowedByDefault bool              `json:"localhost_allowed_by_default"` // default: true
 	CollectApiSchema          bool              `json:"collect_api_schema"`           // default: true
 	Sse                       bool              `json:"sse"`                          // default: false
