@@ -7,6 +7,7 @@ import (
 
 type ServerData struct {
 	AikidoConfig        AikidoConfigData
+	TrustProxyConfig    TrustProxyConfig
 	CloudConfig         CloudConfigData
 	CloudConfigMutex    sync.Mutex
 	MiddlewareInstalled bool

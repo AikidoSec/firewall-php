@@ -134,7 +134,7 @@ func ContextSetIp(instance *instance.RequestProcessorInstance) {
 	if c.Callback == nil {
 		return
 	}
-	remoteAddress := c.Callback(instance, C.CONTEXT_REMOTE_ADDRESS)
+	remoteAddress := GetRemoteAddress(instance)
 	clientIpHeader := c.Callback(instance, C.CONTEXT_HEADER_CLIENT_IP)
 
 	server := c.instance.GetCurrentServer()

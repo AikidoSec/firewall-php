@@ -64,7 +64,7 @@ func GetServers() []*ServerData {
 	return servers
 }
 
-func GetOrCreateServer(token string, aikidoConfig AikidoConfigData) *ServerData {
+func GetOrCreateServer(token string, aikidoConfig AikidoConfigData, trustProxyConfig TrustProxyConfig) *ServerData {
 	ServersMutex.Lock()
 	defer ServersMutex.Unlock()
 
@@ -74,6 +74,7 @@ func GetOrCreateServer(token string, aikidoConfig AikidoConfigData) *ServerData 
 
 	server := NewServerData()
 	server.AikidoConfig = aikidoConfig
+	server.TrustProxyConfig = trustProxyConfig
 	Servers[token] = server
 	return server
 }
