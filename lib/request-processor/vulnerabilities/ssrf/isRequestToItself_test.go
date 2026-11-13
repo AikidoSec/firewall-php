@@ -4,15 +4,14 @@ import (
 	. "main/aikido_types"
 	"main/context"
 	"main/instance"
+	"main/utils"
 	"testing"
 )
 
 func setupTestContext(serverURL string, trustProxy bool) (*instance.RequestProcessorInstance, func()) {
 	// Setup a mock server with trust proxy setting
 	testServer := &ServerData{
-		AikidoConfig: AikidoConfigData{
-			TrustProxy: trustProxy,
-		},
+		TrustProxyConfig: TrustProxyConfig{Enabled: trustProxy},
 	}
 
 	// Use the proper test context loader - it returns the mock instance with threadID set
@@ -26,6 +25,29 @@ func setupTestContext(serverURL string, trustProxy bool) (*instance.RequestProce
 	// Return instance and cleanup function
 	return testInst, func() {
 		context.UnloadForUnitTests()
+	}
+}
+
+func TestIsRequestToItself_TrustedProxyRanges(t *testing.T) {
+	tests := []struct {
+		name, config, remoteAddress string
+		expected                    bool
+	}{
+		{"trusted proxy", "10.0.0.0/8", "10.0.0.1", true},
+		{"untrusted direct request", "10.0.0.0/8", "8.8.8.8", false},
+		{"missing remote address", "10.0.0.0/8", "", false},
+		{"hop count", "2", "10.0.0.1", true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			instance, cleanup := setupTestContext("https://aikido.dev", true)
+			defer cleanup()
+			instance.GetCurrentServer().TrustProxyConfig = utils.ParseTrustProxy(tt.config)
+			context.TestContext["remoteAddress"] = tt.remoteAddress
+			if got := IsRequestToItself(instance, "aikido.dev", 443); got != tt.expected {
+				t.Errorf("expected %v, got %v", tt.expected, got)
+			}
+		})
 	}
 }
 

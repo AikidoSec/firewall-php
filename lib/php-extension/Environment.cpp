@@ -274,7 +274,7 @@ void LoadEnvironmentFromGetters(const std::vector<EnvGetterFn>& envGetters) {
     AIKIDO_GLOBAL(collect_api_schema) = GetEnvBool(envGetters,"AIKIDO_FEATURE_COLLECT_API_SCHEMA", true);
     AIKIDO_GLOBAL(sse) = GetEnvBool(envGetters, "AIKIDO_FEATURE_SSE", false);
     AIKIDO_GLOBAL(localhost_allowed_by_default) = GetEnvBool(envGetters, "AIKIDO_LOCALHOST_ALLOWED_BY_DEFAULT", true);
-    AIKIDO_GLOBAL(trust_proxy) = GetEnvBool(envGetters, "AIKIDO_TRUST_PROXY", true);
+    AIKIDO_GLOBAL(trust_proxy) = GetEnvString(envGetters, "AIKIDO_TRUST_PROXY", "true");
     AIKIDO_GLOBAL(client_ip_header) = GetEnvString(envGetters, "AIKIDO_CLIENT_IP_HEADER", "x-forwarded-for");
     AIKIDO_GLOBAL(disk_logs) = GetEnvBool(envGetters, "AIKIDO_DISK_LOGS", false);
     AIKIDO_GLOBAL(sapi_name) = sapi_module.name;
