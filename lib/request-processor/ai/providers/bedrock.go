@@ -17,36 +17,34 @@ type bedrockConverseResponse struct {
 	} `json:"usage"`
 }
 
-func ParseBedrockConverse(body []byte, model string) *protos.AIUsage {
+func ParseBedrockConverse(body []byte, usage *protos.AIUsage) bool {
 	var response *bedrockConverseResponse
 	if json.Unmarshal(body, &response) != nil || response == nil || response.Usage == nil {
-		return nil
+		return false
 	}
 	rawUsage := response.Usage
 	// Bedrock's inputTokens excludes cache reads and writes.
-	return &protos.AIUsage{
-		Model:      bedrockModel(model, response.Model),
-		Input:      rawUsage.Input + rawUsage.CacheRead + rawUsage.CacheWrite,
-		Output:     rawUsage.Output,
-		CacheRead:  rawUsage.CacheRead,
-		CacheWrite: rawUsage.CacheWrite,
-	}
+	usage.Model = bedrockModel(usage.Model, response.Model)
+	usage.Input = rawUsage.Input + rawUsage.CacheRead + rawUsage.CacheWrite
+	usage.Output = rawUsage.Output
+	usage.CacheRead = rawUsage.CacheRead
+	usage.CacheWrite = rawUsage.CacheWrite
+	return true
 }
 
-func ParseBedrockInvoke(body []byte, model string) *protos.AIUsage {
+func ParseBedrockInvoke(body []byte, usage *protos.AIUsage) bool {
 	response := decodeAnthropic(body)
 	if response == nil || (response.Usage.Input == nil && response.Usage.Output == nil) {
-		return nil
+		return false
 	}
 	rawUsage := response.Usage
 	input, output := response.inputOutputTokens()
-	return &protos.AIUsage{
-		Model:      bedrockModel(model, response.Model),
-		Input:      input + rawUsage.CacheRead + rawUsage.CacheWrite,
-		Output:     output,
-		CacheRead:  rawUsage.CacheRead,
-		CacheWrite: rawUsage.CacheWrite,
-	}
+	usage.Model = bedrockModel(usage.Model, response.Model)
+	usage.Input = input + rawUsage.CacheRead + rawUsage.CacheWrite
+	usage.Output = output
+	usage.CacheRead = rawUsage.CacheRead
+	usage.CacheWrite = rawUsage.CacheWrite
+	return true
 }
 
 func bedrockModel(model, responseModel string) string {

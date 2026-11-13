@@ -3,43 +3,34 @@ package ai
 import (
 	"main/ai/providers"
 	"main/ipc/protos"
-	"strings"
 )
 
 const maxBodyBytes = 2 * 1024 * 1024
 
-func SupportsURL(rawURL string) bool {
-	return matchEndpoint(rawURL).kind != unknownEndpoint
-}
-
-func ParseResponse(rawURL, body string) *protos.AIUsage {
-	if len(body) > maxBodyBytes {
+func ParseResponse(kind ResponseKind, usage *protos.AIUsage, body string) *protos.AIUsage {
+	if usage == nil || len(body) > maxBodyBytes {
 		return nil
 	}
-	endpoint := matchEndpoint(rawURL)
-	var usage *protos.AIUsage
-	switch endpoint.kind {
+	var parsed bool
+	switch kind {
 	case openAIChat:
-		usage = providers.ParseOpenAIChat([]byte(body))
+		parsed = providers.ParseOpenAIChat([]byte(body), usage)
 	case openAIResponses:
-		usage = providers.ParseOpenAIResponses([]byte(body))
+		parsed = providers.ParseOpenAIResponses([]byte(body), usage)
 	case anthropic:
-		usage = providers.ParseAnthropic([]byte(body))
+		parsed = providers.ParseAnthropic([]byte(body), usage)
 	case gemini:
-		usage = providers.ParseGemini([]byte(body), endpoint.model)
+		parsed = providers.ParseGemini([]byte(body), usage)
 	case bedrockConverse:
-		usage = providers.ParseBedrockConverse([]byte(body), endpoint.model)
+		parsed = providers.ParseBedrockConverse([]byte(body), usage)
 	case bedrockInvoke:
-		usage = providers.ParseBedrockInvoke([]byte(body), endpoint.model)
+		parsed = providers.ParseBedrockInvoke([]byte(body), usage)
 	}
-	if usage == nil || usage.Model == "" || len(usage.Model) > 256 {
+	if !parsed || usage.Model == "" || len(usage.Model) > 256 {
 		return nil
 	}
 	if usage.Input < 0 || usage.Output < 0 || usage.CacheRead < 0 || usage.CacheWrite < 0 {
 		return nil
 	}
-	// URL-derived models must not retain the caller's URL buffer.
-	usage.Model = strings.Clone(usage.Model)
-	usage.Provider = endpoint.origin
 	return usage
 }

@@ -16,20 +16,17 @@ type geminiResponse struct {
 	} `json:"usageMetadata"`
 }
 
-func ParseGemini(body []byte, model string) *protos.AIUsage {
+func ParseGemini(body []byte, usage *protos.AIUsage) bool {
 	var response *geminiResponse
 	if json.Unmarshal(body, &response) != nil || response == nil || response.Usage == nil {
-		return nil
+		return false
 	}
 	rawUsage := response.Usage
-	finalModel := model
 	if response.Model != "" {
-		finalModel = response.Model
+		usage.Model = response.Model
 	}
-	return &protos.AIUsage{
-		Model:     finalModel,
-		Input:     rawUsage.Input + rawUsage.ToolInput,
-		Output:    rawUsage.Output + rawUsage.Thoughts,
-		CacheRead: rawUsage.CacheRead,
-	}
+	usage.Input = rawUsage.Input + rawUsage.ToolInput
+	usage.Output = rawUsage.Output + rawUsage.Thoughts
+	usage.CacheRead = rawUsage.CacheRead
+	return true
 }

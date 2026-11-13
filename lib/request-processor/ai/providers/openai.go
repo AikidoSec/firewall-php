@@ -28,32 +28,30 @@ type openAIResponse struct {
 	} `json:"usage"`
 }
 
-func ParseOpenAIChat(body []byte) *protos.AIUsage {
+func ParseOpenAIChat(body []byte, usage *protos.AIUsage) bool {
 	var response *openAIChatResponse
 	if json.Unmarshal(body, &response) != nil || response == nil || response.Usage == nil {
-		return nil
+		return false
 	}
 	rawUsage := response.Usage
-	return &protos.AIUsage{
-		Model:      response.Model,
-		Input:      rawUsage.Input,
-		Output:     rawUsage.Output,
-		CacheRead:  rawUsage.Details.CacheRead,
-		CacheWrite: rawUsage.Details.CacheWrite,
-	}
+	usage.Model = response.Model
+	usage.Input = rawUsage.Input
+	usage.Output = rawUsage.Output
+	usage.CacheRead = rawUsage.Details.CacheRead
+	usage.CacheWrite = rawUsage.Details.CacheWrite
+	return true
 }
 
-func ParseOpenAIResponses(body []byte) *protos.AIUsage {
+func ParseOpenAIResponses(body []byte, usage *protos.AIUsage) bool {
 	var response *openAIResponse
 	if json.Unmarshal(body, &response) != nil || response == nil || response.Usage == nil {
-		return nil
+		return false
 	}
 	rawUsage := response.Usage
-	return &protos.AIUsage{
-		Model:      response.Model,
-		Input:      rawUsage.Input,
-		Output:     rawUsage.Output,
-		CacheRead:  rawUsage.Details.CacheRead,
-		CacheWrite: rawUsage.Details.CacheWrite,
-	}
+	usage.Model = response.Model
+	usage.Input = rawUsage.Input
+	usage.Output = rawUsage.Output
+	usage.CacheRead = rawUsage.Details.CacheRead
+	usage.CacheWrite = rawUsage.Details.CacheWrite
+	return true
 }

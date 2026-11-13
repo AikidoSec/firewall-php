@@ -15,21 +15,20 @@ type anthropicResponse struct {
 	} `json:"usage"`
 }
 
-func ParseAnthropic(body []byte) *protos.AIUsage {
+func ParseAnthropic(body []byte, usage *protos.AIUsage) bool {
 	response := decodeAnthropic(body)
 	if response == nil {
-		return nil
+		return false
 	}
 	rawUsage := response.Usage
 	input, output := response.inputOutputTokens()
 	// Anthropic's input_tokens excludes cache reads and writes.
-	return &protos.AIUsage{
-		Model:      response.Model,
-		Input:      input + rawUsage.CacheRead + rawUsage.CacheWrite,
-		Output:     output,
-		CacheRead:  rawUsage.CacheRead,
-		CacheWrite: rawUsage.CacheWrite,
-	}
+	usage.Model = response.Model
+	usage.Input = input + rawUsage.CacheRead + rawUsage.CacheWrite
+	usage.Output = output
+	usage.CacheRead = rawUsage.CacheRead
+	usage.CacheWrite = rawUsage.CacheWrite
+	return true
 }
 
 func decodeAnthropic(body []byte) *anthropicResponse {
