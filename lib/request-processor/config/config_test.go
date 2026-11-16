@@ -23,6 +23,33 @@ func TestInitUsesServerPIDFromExtension(t *testing.T) {
 	}
 }
 
+func TestReloadParsesTrustProxyConfig(t *testing.T) {
+	previousLogLevel := globals.CurrentLogLevel
+	previousServers := globals.Servers
+	globals.Servers = make(map[string]*aikido_types.ServerData)
+	t.Cleanup(func() {
+		globals.CurrentLogLevel = previousLogLevel
+		globals.Servers = previousServers
+	})
+
+	processor := instance.NewRequestProcessorInstance(1)
+	processor.SetCurrentToken("proxy-site")
+	conf := aikido_types.AikidoConfigData{}
+	if !ReloadAikidoConfig(processor, &conf, `{"token":"proxy-site","trust_proxy":"10.0.0.0/8","log_level":"WARN"}`) {
+		t.Fatal("config reload failed")
+	}
+	server := globals.GetServer("proxy-site")
+	if server == nil {
+		t.Fatal("server was not created")
+	}
+	if !server.TrustProxyConfig.IsTrusted("10.0.0.1") {
+		t.Fatal("configured proxy was not trusted")
+	}
+	if server.TrustProxyConfig.IsTrusted("8.8.8.8") {
+		t.Fatal("unconfigured address was trusted")
+	}
+}
+
 func TestReloadClearsTokenlessSiteAndRestoresCachedServer(t *testing.T) {
 	previousServers := globals.Servers
 	globals.Servers = make(map[string]*aikido_types.ServerData)
