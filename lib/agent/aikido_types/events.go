@@ -127,7 +127,7 @@ type AttackDetails struct {
 	Stack     string            `json:"stack"`
 	Payload   string            `json:"payload"`
 	Metadata  map[string]string `json:"metadata"`
-	User      *User             `json:"user"`
+	User      *RequestUser      `json:"user"`
 }
 
 type DetectedAttack struct {
@@ -146,7 +146,7 @@ type CustomEventRequest struct {
 	Route     string `json:"route,omitempty"`
 }
 
-type CustomEventUser struct {
+type RequestUser struct {
 	ID   string `json:"id"`
 	Name string `json:"name,omitempty"`
 }
@@ -156,6 +156,6 @@ type CustomEvent struct {
 	Name    string             `json:"name"`
 	Request CustomEventRequest `json:"request"`
 	Agent   AgentInfo          `json:"agent"`
-	User    *CustomEventUser   `json:"user,omitempty"`
+	User    *RequestUser       `json:"user,omitempty"`
 	Time    int64              `json:"time"`
 }
