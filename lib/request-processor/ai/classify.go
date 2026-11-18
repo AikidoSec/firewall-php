@@ -78,5 +78,7 @@ func modelInPath(path, prefix, suffix string) string {
 	if strings.Contains(model, "/") {
 		return ""
 	}
+	// Decode after extracting the segment because Bedrock ARNs can contain encoded slashes.
+	model, _ = url.PathUnescape(model)
 	return strings.Clone(model)
 }

@@ -29,6 +29,9 @@ func TestParseResponse(t *testing.T) {
 		{"Vertex Anthropic", "/publishers/anthropic/models/claude:rawPredict", `{"model":"claude","usage":{"input_tokens":10,"output_tokens":5,"cache_read_input_tokens":3,"cache_creation_input_tokens":2}}`, anthropic, &protos.AIUsage{Model: "claude", Input: 15, Output: 5, CacheRead: 3, CacheWrite: 2}},
 		{"Gemini", "/v1beta/models/gemini:generateContent", `{"modelVersion":"gemini-2","usageMetadata":{"promptTokenCount":8,"toolUsePromptTokenCount":2,"candidatesTokenCount":3,"thoughtsTokenCount":2,"cachedContentTokenCount":4}}`, gemini, &protos.AIUsage{Model: "gemini-2", Input: 10, Output: 5, CacheRead: 4}},
 		{"Gemini model fallback", "/models/gemini:generateContent", `{"usageMetadata":{"promptTokenCount":10}}`, gemini, &protos.AIUsage{Model: "gemini", Input: 10}},
+		{"Gemini encoded model fallback", "/models/gemini%2D2%2E5:generateContent", `{"usageMetadata":{"promptTokenCount":10}}`, gemini, &protos.AIUsage{Model: "gemini-2.5", Input: 10}},
+		{"Gemini encoded model with response version", "/models/gemini%2D2%2E5:generateContent", `{"modelVersion":"gemini-2.5-001","usageMetadata":{"promptTokenCount":10}}`, gemini, &protos.AIUsage{Model: "gemini-2.5-001", Input: 10}},
+		{"Vertex encoded model fallback", "/v1/projects/p/locations/global/publishers/google/models/gemma%2D4%2D26b%2Da4b%2Dit%2Dmaas:generateContent", `{"usageMetadata":{"promptTokenCount":48,"candidatesTokenCount":39,"totalTokenCount":87}}`, gemini, &protos.AIUsage{Model: "gemma-4-26b-a4b-it-maas", Input: 48, Output: 39}},
 		{"Gemini interactions", "/v1beta/interactions", `{"id":"interaction-1","status":"completed","model":"gemini-2.5-flash","usage":{"total_input_tokens":8,"total_tool_use_tokens":2,"total_output_tokens":3,"total_thought_tokens":2,"total_cached_tokens":4,"total_tokens":15}}`, geminiInteraction, &protos.AIUsage{Model: "gemini-2.5-flash", Input: 10, Output: 5, CacheRead: 4}},
 		{"Gemini interactions proxy", "/proxy/v1/interactions?key=secret", `{"model":"gemini-2.5-flash","usage":{"total_input_tokens":10,"total_output_tokens":5}}`, geminiInteraction, &protos.AIUsage{Model: "gemini-2.5-flash", Input: 10, Output: 5}},
 		{"Gemini interactions empty usage", "/v1/interactions", `{"model":"gemini-2.5-flash","usage":{}}`, geminiInteraction, &protos.AIUsage{Model: "gemini-2.5-flash"}},
@@ -134,6 +137,7 @@ func TestClassifyURLOwnsDerivedStrings(t *testing.T) {
 		{"/model/claude/converse", `{"usage":{"inputTokens":1}}`},
 		{"/model/claude/invoke", `{"usage":{"input_tokens":1}}`},
 		{"/models/claude:generateContent", `{"usageMetadata":{"promptTokenCount":1}}`},
+		{"/models/%63laude:generateContent", `{"usageMetadata":{"promptTokenCount":1}}`},
 	} {
 		t.Run(tt.path, func(t *testing.T) {
 			buffer := []byte("https://gateway.test" + tt.path)
