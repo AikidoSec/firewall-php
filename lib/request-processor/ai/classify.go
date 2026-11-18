@@ -78,7 +78,7 @@ func modelInPath(path, prefix, suffix string) string {
 	if strings.Contains(model, "/") {
 		return ""
 	}
-	// Decode after extracting the segment because Bedrock ARNs can contain encoded slashes.
+	// Gemini and Bedrock model names can be URL-encoded.
 	model, _ = url.PathUnescape(model)
 	return strings.Clone(model)
 }
