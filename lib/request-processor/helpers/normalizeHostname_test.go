@@ -14,6 +14,11 @@ func TestNormalizeHostname(t *testing.T) {
 			expected: "example.com",
 		},
 		{
+			name:     "Hostname with trailing dot",
+			input:    "example.com.",
+			expected: "example.com",
+		},
+		{
 			name:     "Uppercase to lowercase",
 			input:    "EXAMPLE.COM",
 			expected: "example.com",

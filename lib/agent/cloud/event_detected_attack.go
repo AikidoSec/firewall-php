@@ -79,10 +79,15 @@ func ShouldSendAttackDetectedEvent(server *ServerData) bool {
 	return true
 }
 
-func SendAttackDetectedEvent(server *ServerData, req *protos.AttackDetected, attackType string) {
+func ScheduleAttackDetectedEvent(server *ServerData, req *protos.AttackDetected, attackType string) {
 	if !ShouldSendAttackDetectedEvent(server) {
 		return
 	}
+
+	go sendAttackDetectedEvent(server, req, attackType)
+}
+
+func sendAttackDetectedEvent(server *ServerData, req *protos.AttackDetected, attackType string) {
 	detectedAttackEvent := DetectedAttack{
 		Type:    attackType,
 		Agent:   GetAgentInfo(server),

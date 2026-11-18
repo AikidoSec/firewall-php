@@ -220,7 +220,7 @@ func updateAttackWaveCountsAndDetect(server *ServerData, isWebScanner bool, ip s
 	storeAttackWaveStats(server)
 
 	// report event to cloud
-	cloud.SendAttackDetectedEvent(server, &protos.AttackDetected{
+	cloud.ScheduleAttackDetectedEvent(server, &protos.AttackDetected{
 		Token:   server.AikidoConfig.Token,
 		Request: &protos.Request{IpAddress: ip, UserAgent: userAgent},
 		Attack: &protos.Attack{

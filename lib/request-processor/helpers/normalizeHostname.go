@@ -32,5 +32,5 @@ func NormalizeHostname(hostname string) string {
 		unicodeHostname = lowercased
 	}
 
-	return unicodeHostname
+	return strings.TrimSuffix(unicodeHostname, ".")
 }
