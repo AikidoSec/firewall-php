@@ -5,6 +5,6 @@
     "endpoints": [],
     "blockedUserIds": [],
     "allowedIPAddresses": [],
-    "receivedAnyStats": true,
+    "receivedAnyStats": false,
     "block": false
 }
