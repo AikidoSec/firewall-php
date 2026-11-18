@@ -40,7 +40,7 @@ func TestParseResponse(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.want.Provider = "gateway.test"
+			tt.want.Provider = "https://gateway.test"
 			kind, usage := ClassifyURL("https://user:password@GATEWAY.test:443" + tt.path)
 			require.NotNil(t, usage)
 			require.Equal(t, tt.kind, kind)
@@ -104,15 +104,16 @@ func TestUnsupportedURLs(t *testing.T) {
 	}
 }
 
-func TestProviderHostname(t *testing.T) {
-	for rawURL, hostname := range map[string]string{
-		"HTTP://Example.test:80": "example.test",
-		"http://[::1]:8080":      "::1",
+func TestProviderOrigin(t *testing.T) {
+	for rawURL, origin := range map[string]string{
+		"HTTP://Example.test:80":    "http://example.test",
+		"http://[::1]:8080":         "http://[::1]:8080",
+		"https://Example.test:8443": "https://example.test:8443",
 	} {
 		t.Run(rawURL, func(t *testing.T) {
 			call := parseResponseForURL(rawURL+"/v1/responses?key=secret#fragment", `{"model":"gpt","usage":{}}`)
 			require.NotNil(t, call)
-			require.Equal(t, hostname, call.Provider)
+			require.Equal(t, origin, call.Provider)
 		})
 	}
 }
@@ -132,7 +133,7 @@ func TestClassifyURLOwnsDerivedStrings(t *testing.T) {
 			call := ParseResponse(kind, usage, tt.body)
 			require.NotNil(t, call)
 			require.Equal(t, "claude", call.Model)
-			require.Equal(t, "gateway.test", call.Provider)
+			require.Equal(t, "https://gateway.test", call.Provider)
 		})
 	}
 }

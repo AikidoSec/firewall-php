@@ -1,7 +1,6 @@
 package ai
 
 import (
-	"main/helpers"
 	"main/ipc/protos"
 	"net/url"
 	"strings"
@@ -21,7 +20,7 @@ const (
 
 func ClassifyURL(rawURL string) (ResponseKind, *protos.AIUsage) {
 	u, err := url.Parse(rawURL)
-	if err != nil || (u.Scheme != "http" && u.Scheme != "https") {
+	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Hostname() == "" {
 		return unknownResponse, nil
 	}
 
@@ -48,13 +47,18 @@ func ClassifyURL(rawURL string) (ResponseKind, *protos.AIUsage) {
 		return unknownResponse, nil
 	}
 
-	provider := helpers.NormalizeHostname(u.Hostname())
-	if provider == "" {
-		return unknownResponse, nil
+	host := strings.ToLower(u.Host)
+	if u.Scheme == "http" {
+		host = strings.TrimSuffix(host, ":80")
+	} else {
+		host = strings.TrimSuffix(host, ":443")
 	}
+	origin := url.URL{Scheme: u.Scheme, Host: host}
+	provider := origin.String()
+
 	return kind, &protos.AIUsage{
-		Provider: strings.Clone(provider),
-		Model:    strings.Clone(model),
+		Provider: provider,
+		Model:    model,
 	}
 }
 
@@ -71,5 +75,5 @@ func modelInPath(path, prefix, suffix string) string {
 	if strings.Contains(model, "/") {
 		return ""
 	}
-	return model
+	return strings.Clone(model)
 }
