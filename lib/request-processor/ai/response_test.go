@@ -29,6 +29,9 @@ func TestParseResponse(t *testing.T) {
 		{"Vertex Anthropic", "/publishers/anthropic/models/claude:rawPredict", `{"model":"claude","usage":{"input_tokens":10,"output_tokens":5,"cache_read_input_tokens":3,"cache_creation_input_tokens":2}}`, anthropic, &protos.AIUsage{Model: "claude", Input: 15, Output: 5, CacheRead: 3, CacheWrite: 2}},
 		{"Gemini", "/v1beta/models/gemini:generateContent", `{"modelVersion":"gemini-2","usageMetadata":{"promptTokenCount":8,"toolUsePromptTokenCount":2,"candidatesTokenCount":3,"thoughtsTokenCount":2,"cachedContentTokenCount":4}}`, gemini, &protos.AIUsage{Model: "gemini-2", Input: 10, Output: 5, CacheRead: 4}},
 		{"Gemini model fallback", "/models/gemini:generateContent", `{"usageMetadata":{"promptTokenCount":10}}`, gemini, &protos.AIUsage{Model: "gemini", Input: 10}},
+		{"Gemini interactions", "/v1beta/interactions", `{"id":"interaction-1","status":"completed","model":"gemini-2.5-flash","usage":{"total_input_tokens":8,"total_tool_use_tokens":2,"total_output_tokens":3,"total_thought_tokens":2,"total_cached_tokens":4,"total_tokens":15}}`, geminiInteraction, &protos.AIUsage{Model: "gemini-2.5-flash", Input: 10, Output: 5, CacheRead: 4}},
+		{"Gemini interactions proxy", "/proxy/v1/interactions?key=secret", `{"model":"gemini-2.5-flash","usage":{"total_input_tokens":10,"total_output_tokens":5}}`, geminiInteraction, &protos.AIUsage{Model: "gemini-2.5-flash", Input: 10, Output: 5}},
+		{"Gemini interactions empty usage", "/v1/interactions", `{"model":"gemini-2.5-flash","usage":{}}`, geminiInteraction, &protos.AIUsage{Model: "gemini-2.5-flash"}},
 		{"Bedrock Converse", "/model/anthropic.claude/converse", `{"usage":{"inputTokens":10,"outputTokens":5,"cacheReadInputTokens":3,"cacheWriteInputTokens":2}}`, bedrockConverse, &protos.AIUsage{Model: "anthropic.claude", Input: 15, Output: 5, CacheRead: 3, CacheWrite: 2}},
 		{"Bedrock Invoke", "/model/anthropic.claude/invoke", `{"usage":{"input_tokens":10,"output_tokens":5}}`, bedrockInvoke, &protos.AIUsage{Model: "anthropic.claude", Input: 10, Output: 5}},
 		{"Bedrock Invoke cached input", "/model/anthropic.claude/invoke", `{"usage":{"input_tokens":10,"output_tokens":5,"cache_read_input_tokens":3,"cache_creation_input_tokens":2}}`, bedrockInvoke, &protos.AIUsage{Model: "anthropic.claude", Input: 15, Output: 5, CacheRead: 3, CacheWrite: 2}},
@@ -82,6 +85,12 @@ func TestParseResponseRejectsMalformedUsage(t *testing.T) {
 		{"Bedrock null", "/model/claude/converse", `null`},
 		{"Gemini null", "/models/gemini:generateContent", `null`},
 		{"Gemini missing usage", "/models/gemini:generateContent", `{}`},
+		{"Gemini interactions missing model", "/v1beta/interactions", `{"usage":{"total_input_tokens":10}}`},
+		{"Gemini interactions missing usage", "/v1beta/interactions", `{"model":"gemini-2.5-flash"}`},
+		{"Gemini interactions null usage", "/v1beta/interactions", `{"model":"gemini-2.5-flash","usage":null}`},
+		{"Gemini interactions malformed input", "/v1beta/interactions", `{"model":"gemini-2.5-flash","usage":{"total_input_tokens":"10"}}`},
+		{"Gemini interactions malformed cache", "/v1beta/interactions", `{"model":"gemini-2.5-flash","usage":{"total_cached_tokens":true}}`},
+		{"Gemini interactions null", "/v1beta/interactions", `null`},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			require.Nil(t, parseResponseForURL("https://gateway.test"+tt.path, tt.body))
@@ -95,6 +104,8 @@ func TestUnsupportedURLs(t *testing.T) {
 		"https://gateway.test/%zz/responses", "https://gateway.test/publishers/other/models/claude:rawPredict",
 		"https://gateway.test/models/foo/bar:generateContent", "https://gateway.test/model/foo/bar/converse",
 		"https://gateway.test/v1/responses/", "https://gateway.test/other?next=/v1/responses",
+		"https://gateway.test/v1beta/interactions/123", "https://gateway.test/v1beta/interactions/123/cancel",
+		"https://gateway.test/v1beta/interactions/",
 	} {
 		t.Run(rawURL, func(t *testing.T) {
 			kind, usage := ClassifyURL(rawURL)

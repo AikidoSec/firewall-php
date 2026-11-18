@@ -16,6 +16,7 @@ const (
 	gemini
 	bedrockConverse
 	bedrockInvoke
+	geminiInteraction
 )
 
 func ClassifyURL(rawURL string) (ResponseKind, *protos.AIUsage) {
@@ -34,6 +35,8 @@ func ClassifyURL(rawURL string) (ResponseKind, *protos.AIUsage) {
 	} else if strings.HasSuffix(path, "/v1/messages") ||
 		modelInPath(path, "/publishers/anthropic/models/", ":rawPredict") != "" {
 		kind = anthropic
+	} else if strings.HasSuffix(path, "/interactions") {
+		kind = geminiInteraction
 	} else if pathModel := modelInPath(path, "/models/", ":generateContent"); pathModel != "" && !strings.Contains(pathModel, ":") {
 		kind = gemini
 		model = pathModel

@@ -16,6 +16,17 @@ type geminiResponse struct {
 	} `json:"usageMetadata"`
 }
 
+type geminiInteractionResponse struct {
+	Model string `json:"model"`
+	Usage *struct {
+		Input     int64 `json:"total_input_tokens"`
+		ToolInput int64 `json:"total_tool_use_tokens"`
+		Output    int64 `json:"total_output_tokens"`
+		Thoughts  int64 `json:"total_thought_tokens"`
+		CacheRead int64 `json:"total_cached_tokens"`
+	} `json:"usage"`
+}
+
 func ParseGemini(body []byte, usage *protos.AIUsage) bool {
 	var response *geminiResponse
 	if json.Unmarshal(body, &response) != nil || response == nil || response.Usage == nil {
@@ -25,6 +36,19 @@ func ParseGemini(body []byte, usage *protos.AIUsage) bool {
 	if response.Model != "" {
 		usage.Model = response.Model
 	}
+	usage.Input = rawUsage.Input + rawUsage.ToolInput
+	usage.Output = rawUsage.Output + rawUsage.Thoughts
+	usage.CacheRead = rawUsage.CacheRead
+	return true
+}
+
+func ParseGeminiInteraction(body []byte, usage *protos.AIUsage) bool {
+	var response *geminiInteractionResponse
+	if json.Unmarshal(body, &response) != nil || response == nil || response.Usage == nil {
+		return false
+	}
+	rawUsage := response.Usage
+	usage.Model = response.Model
 	usage.Input = rawUsage.Input + rawUsage.ToolInput
 	usage.Output = rawUsage.Output + rawUsage.Thoughts
 	usage.CacheRead = rawUsage.CacheRead

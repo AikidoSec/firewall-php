@@ -21,6 +21,8 @@ func ParseResponse(kind ResponseKind, usage *protos.AIUsage, body string) *proto
 		parsed = providers.ParseAnthropic([]byte(body), usage)
 	case gemini:
 		parsed = providers.ParseGemini([]byte(body), usage)
+	case geminiInteraction:
+		parsed = providers.ParseGeminiInteraction([]byte(body), usage)
 	case bedrockConverse:
 		parsed = providers.ParseBedrockConverse([]byte(body), usage)
 	case bedrockInvoke:
