@@ -192,6 +192,8 @@ func TestBuildRouteFromURL(t *testing.T) {
 		{"/posts/2023-05-01/", "/posts/:date"},
 		{"/posts/2023-05-01/comments/2023-05-01", "/posts/:date/comments/:date"},
 		{"/posts/01-05-2023", "/posts/:date"},
+		{"/posts/2023-05-01-article", "/posts/2023-05-01-article"},
+		{"/posts/article-01-05-2023", "/posts/article-01-05-2023"},
 		{"/posts/3,000", "/posts/3,000"},
 		{"/v1/posts/3", "/v1/posts/:number"},
 		{"/posts/d9428888-122b-11e1-b85c-61cd3cbb3210", "/posts/:uuid"},
