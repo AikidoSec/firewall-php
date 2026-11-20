@@ -14,7 +14,7 @@ var (
 	ULID                    = regexp.MustCompile(`(?i)^[0-9A-HJKMNP-TV-Z]{26}$`)
 	OBJECT_ID               = regexp.MustCompile(`^[0-9a-fA-F]{24}$`)
 	NUMBER                  = regexp.MustCompile(`^\d+$`)
-	DATE                    = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}|\d{2}-\d{2}-\d{4}$`)
+	DATE                    = regexp.MustCompile(`^(?:\d{4}-\d{2}-\d{2}|\d{2}-\d{2}-\d{4})$`)
 	EMAIL                   = regexp.MustCompile(`^[a-zA-Z0-9.!#$%&'*+/=?^_` + "`" + `{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$`)
 	HASH                    = regexp.MustCompile(`^(?:[a-fA-F0-9]{32}|[a-fA-F0-9]{40}|[a-fA-F0-9]{64}|[a-fA-F0-9]{128})$`)
 	HASH_LENGTHS            = []int{32, 40, 64, 128}
