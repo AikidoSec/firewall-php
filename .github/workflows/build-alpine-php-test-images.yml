@@ -20,7 +20,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php_version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4', '8.5']
+        php_version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4', '8.5', '8.6']
         abi: [nts, zts]
     permissions: { contents: read, packages: write }
     steps:
@@ -30,7 +30,7 @@ jobs:
       - name: Prepare FrankenPHP binary directory
         run: mkdir -p frankenphp-binary
       - name: Extract FrankenPHP from its Alpine image
-        if: matrix.abi == 'zts' && matrix.php_version >= '8.2'
+        if: matrix.abi == 'zts' && matrix.php_version >= '8.2' && matrix.php_version <= '8.5'
         run: |
           docker pull --platform linux/amd64 dunglas/frankenphp:php${{ matrix.php_version }}-alpine
           docker create --platform linux/amd64 --name temp-frankenphp dunglas/frankenphp:php${{ matrix.php_version }}-alpine
@@ -60,7 +60,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php_version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4', '8.5']
+        php_version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4', '8.5', '8.6']
         abi: [nts, zts]
     permissions: { contents: read, packages: write }
     steps:
@@ -70,7 +70,7 @@ jobs:
       - name: Prepare FrankenPHP binary directory
         run: mkdir -p frankenphp-binary
       - name: Extract FrankenPHP from its Alpine image
-        if: matrix.abi == 'zts' && matrix.php_version >= '8.2'
+        if: matrix.abi == 'zts' && matrix.php_version >= '8.2' && matrix.php_version <= '8.5'
         run: |
           docker pull --platform linux/arm64 dunglas/frankenphp:php${{ matrix.php_version }}-alpine
           docker create --platform linux/arm64 --name temp-frankenphp dunglas/frankenphp:php${{ matrix.php_version }}-alpine
@@ -101,7 +101,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php_version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4', '8.5']
+        php_version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4', '8.5', '8.6']
         abi: [nts, zts]
     permissions: { contents: read, packages: write }
     steps:

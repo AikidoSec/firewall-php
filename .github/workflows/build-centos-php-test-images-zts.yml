@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-24.04
     strategy:
       matrix:
-        php_version: ['7.4', '8.0', '8.1', '8.2', '8.3', '8.4', '8.5']
+        php_version: ['7.4', '8.0', '8.1', '8.2', '8.3', '8.4', '8.5', '8.6']
       fail-fast: false
     permissions: { contents: read, packages: write }
     steps:
@@ -37,7 +37,7 @@ jobs:
         run: mkdir -p frankenphp-binary
 
       - name: Extract FrankenPHP binary from Docker image
-        if: matrix.php_version >= '8.2'
+        if: matrix.php_version >= '8.2' && matrix.php_version <= '8.5'
         run: |
           PHP_VERSION="${{ matrix.php_version }}"
           docker pull --platform linux/amd64 dunglas/frankenphp:php${PHP_VERSION}-bookworm
@@ -71,7 +71,7 @@ jobs:
     runs-on: ubuntu-24.04-arm
     strategy:
       matrix:
-        php_version: ['7.4', '8.0', '8.1', '8.2', '8.3', '8.4', '8.5']
+        php_version: ['7.4', '8.0', '8.1', '8.2', '8.3', '8.4', '8.5', '8.6']
       fail-fast: false
     permissions: { contents: read, packages: write }
     steps:
@@ -88,7 +88,7 @@ jobs:
         run: mkdir -p frankenphp-binary
 
       - name: Extract FrankenPHP binary from Docker image
-        if: matrix.php_version >= '8.2'
+        if: matrix.php_version >= '8.2' && matrix.php_version <= '8.5'
         run: |
           PHP_VERSION="${{ matrix.php_version }}"
           docker pull --platform linux/arm64 dunglas/frankenphp:php${PHP_VERSION}-bookworm
@@ -114,7 +114,7 @@ jobs:
     needs: [build-amd64, build-arm64]
     strategy:
       matrix:
-        php_version: ['7.4', '8.0', '8.1', '8.2', '8.3', '8.4', '8.5']
+        php_version: ['7.4', '8.0', '8.1', '8.2', '8.3', '8.4', '8.5', '8.6']
       fail-fast: false
     permissions: { contents: read, packages: write }
     steps:
