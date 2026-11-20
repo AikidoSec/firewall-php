@@ -18,6 +18,7 @@ type geminiResponse struct {
 
 type geminiInteractionResponse struct {
 	Model string `json:"model"`
+	Agent string `json:"agent"`
 	Usage *struct {
 		Input     int64 `json:"total_input_tokens"`
 		ToolInput int64 `json:"total_tool_use_tokens"`
@@ -49,6 +50,9 @@ func ParseGeminiInteraction(body []byte, usage *protos.AIUsage) bool {
 	}
 	rawUsage := response.Usage
 	usage.Model = response.Model
+	if usage.Model == "" {
+		usage.Model = response.Agent
+	}
 	usage.Input = rawUsage.Input + rawUsage.ToolInput
 	usage.Output = rawUsage.Output + rawUsage.Thoughts
 	usage.CacheRead = rawUsage.CacheRead
