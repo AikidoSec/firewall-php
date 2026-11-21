@@ -30,7 +30,7 @@ jobs:
       - name: Prepare FrankenPHP binary directory
         run: mkdir -p frankenphp-binary
       - name: Extract FrankenPHP from its Alpine image
-        if: matrix.abi == 'zts' && matrix.php_version >= '8.2' && matrix.php_version <= '8.5'
+        if: matrix.abi == 'zts' && matrix.php_version >= '8.2'
         run: |
           docker pull --platform linux/amd64 dunglas/frankenphp:php${{ matrix.php_version }}-alpine
           docker create --platform linux/amd64 --name temp-frankenphp dunglas/frankenphp:php${{ matrix.php_version }}-alpine
@@ -70,7 +70,7 @@ jobs:
       - name: Prepare FrankenPHP binary directory
         run: mkdir -p frankenphp-binary
       - name: Extract FrankenPHP from its Alpine image
-        if: matrix.abi == 'zts' && matrix.php_version >= '8.2' && matrix.php_version <= '8.5'
+        if: matrix.abi == 'zts' && matrix.php_version >= '8.2'
         run: |
           docker pull --platform linux/arm64 dunglas/frankenphp:php${{ matrix.php_version }}-alpine
           docker create --platform linux/arm64 --name temp-frankenphp dunglas/frankenphp:php${{ matrix.php_version }}-alpine

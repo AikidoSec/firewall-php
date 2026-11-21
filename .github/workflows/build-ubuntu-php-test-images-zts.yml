@@ -36,7 +36,7 @@ jobs:
         run: mkdir -p frankenphp-binary
 
       - name: Extract FrankenPHP binary from Docker image
-        if: matrix.php_version >= '8.2' && matrix.php_version <= '8.5'
+        if: matrix.php_version >= '8.2'
         run: |
           PHP_VERSION="${{ matrix.php_version }}"
           docker pull --platform linux/amd64 dunglas/frankenphp:php${PHP_VERSION}-bookworm
@@ -85,7 +85,7 @@ jobs:
         run: mkdir -p frankenphp-binary
 
       - name: Extract FrankenPHP binary from Docker image
-        if: matrix.php_version >= '8.2' && matrix.php_version <= '8.5'
+        if: matrix.php_version >= '8.2'
         run: |
           PHP_VERSION="${{ matrix.php_version }}"
           docker pull --platform linux/arm64 dunglas/frankenphp:php${PHP_VERSION}-bookworm
