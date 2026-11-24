@@ -1,6 +1,9 @@
 --TEST--
 Test SSRF with CURLOPT_WRITEFUNCTION callback (process response body chunks)
 
+--CONFLICTS--
+tcp-port-4000
+
 --ENV--
 AIKIDO_BLOCK=1
 AIKIDO_DEBUG=1

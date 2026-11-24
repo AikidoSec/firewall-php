@@ -16,8 +16,7 @@ Content-Type: application/json
 $db = pg_connect("host=127.0.0.1 port=5432 dbname=zen_test user=postgres password=postgres");
 if (!$db) { die("connect failed\n"); }
 
-pg_query($db, "DROP TABLE IF EXISTS users");
-pg_query($db, "CREATE TABLE users (id serial primary key, name text, secret text)");
+pg_query($db, "CREATE TEMPORARY TABLE users (id serial primary key, name text, secret text)");
 pg_query($db, "INSERT INTO users (name, secret) VALUES ('alice', 's3cr3t')");
 
 $data = json_decode(file_get_contents('php://input'), true);
