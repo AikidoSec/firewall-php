@@ -3,6 +3,7 @@ Test SSRF with CURLOPT_PROGRESSFUNCTION callback (monitor transfer progress)
 
 --CONFLICTS--
 tcp-port-4000
+
 --ENV--
 AIKIDO_BLOCK=1
 AIKIDO_DEBUG=1
