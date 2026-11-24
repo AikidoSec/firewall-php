@@ -92,7 +92,7 @@ jobs:
     container: ghcr.io/aikidosec/firewall-php-build-extension-${{ matrix.abi }}:${{ matrix.php_version }}-v2
     strategy:
       matrix:
-        php_version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4', '8.5']
+        php_version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4', '8.5', '8.6']
         abi: [nts, zts]
         arch: [x86_64, aarch64]
         include: *arch_runners
@@ -416,7 +416,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php_version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4', '8.5']
+        php_version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4', '8.5', '8.6']
         abi: [nts, zts]
         arch: [x86_64, aarch64]
         include: *arch_runners
@@ -616,7 +616,7 @@ jobs:
       fail-fast: false
       matrix:
         abi: [nts, zts]
-        php_version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4', '8.5']
+        php_version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4', '8.5', '8.6']
         server: [nginx-php-fpm, apache-mod-php, php-built-in]
         arch: [x86_64, aarch64]
         include: *arch_runners
@@ -726,7 +726,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php_version: ['8.2', '8.3', '8.4', '8.5']
+        php_version: ['8.2', '8.3', '8.4', '8.5', '8.6']
         server: [frankenphp-worker, frankenphp-classic]
         arch: [x86_64, aarch64]
         include: *arch_runners
@@ -821,7 +821,7 @@ jobs:
     needs: [ build_rpm ]
     strategy:
       matrix:
-        php_version: ['7.4', '8.0', '8.1', '8.2', '8.3', '8.4', '8.5']
+        php_version: ['7.4', '8.0', '8.1', '8.2', '8.3', '8.4', '8.5', '8.6']
         server: ['nginx-php-fpm', 'apache-mod-php', 'php-built-in']
         arch: [x86_64, aarch64]
         include: *arch_runners
@@ -936,7 +936,7 @@ jobs:
       matrix:
         arch: [x86_64, aarch64]
         include: *arch_runners
-        php_version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4', '8.5']
+        php_version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4', '8.5', '8.6']
         server: ['nginx-php-fpm', 'apache-mod-php', 'php-built-in']
       fail-fast: false
     steps:
@@ -1021,7 +1021,7 @@ jobs:
       matrix:
         arch: [x86_64, aarch64]
         include: *arch_runners
-        php_version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4', '8.5']
+        php_version: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3', '8.4', '8.5', '8.6']
         server: ['nginx-php-fpm', 'php-built-in']
       fail-fast: false
     steps:
@@ -1107,7 +1107,7 @@ jobs:
     needs: [ build_rpm ]
     strategy:
       matrix:
-        php_version: ['7.4', '8.0', '8.1', '8.2', '8.3', '8.4', '8.5']
+        php_version: ['7.4', '8.0', '8.1', '8.2', '8.3', '8.4', '8.5', '8.6']
         server: ['nginx-php-fpm', 'php-built-in']
         arch: [x86_64, aarch64]
         include: *arch_runners
@@ -1223,7 +1223,7 @@ jobs:
     needs: [ build_rpm ]
     strategy:
       matrix:
-        php_version: ['8.2', '8.3', '8.4', '8.5']
+        php_version: ['8.2', '8.3', '8.4', '8.5', '8.6']
         server: ['frankenphp-worker', 'frankenphp-classic']
         arch: [x86_64, aarch64]
         include: *arch_runners
@@ -1300,7 +1300,7 @@ jobs:
     needs: [ build_deb ]
     strategy:
       matrix:
-        php_version: ['8.2', '8.3', '8.4', '8.5']
+        php_version: ['8.2', '8.3', '8.4', '8.5', '8.6']
         server: ['frankenphp-worker', 'frankenphp-classic']
         arch: [x86_64, aarch64]
         include: *arch_runners

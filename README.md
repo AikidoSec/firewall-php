@@ -30,7 +30,7 @@ Zen for PHP comes as a single package that needs to be installed on the system t
 
 Prerequisites:
 * Ensure you have sudo privileges on your system.
-* Check that you have a supported PHP version installed (PHP version >= 7.2 and tested up to 8.5). See the [support matrix](./docs/support-matrix.md) for platform and runtime details.
+* Check that you have a supported PHP version installed (PHP version >= 7.2 and tested up to 8.6). See the [support matrix](./docs/support-matrix.md) for platform and runtime details.
 * Make sure to use the appropriate commands for your system or cloud provider.
 
 ### Manual install
@@ -106,7 +106,7 @@ After installing a Zen update, restart your PHP service to load the new version.
 ## Supported libraries and frameworks
 
 ### PHP versions
-Zen for PHP supports the following PHP versions: 7.2, 7.3, 7.4, 8.0, 8.1, 8.2, 8.3, 8.4, 8.5.
+Zen for PHP supports the following PHP versions: 7.2, 7.3, 7.4, 8.0, 8.1, 8.2, 8.3, 8.4, 8.5, 8.6.
 
 ### Web frameworks
 

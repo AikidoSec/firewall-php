@@ -98,7 +98,7 @@ if [ -n "$FRANKENPHP_BIN" ]; then
 fi
 
 if [ "$FOUND_PHP" -ne 1 ]; then
-	echo "No supported PHP installation was configured. Install PHP 7.2-8.5 before this package." >&2
+	echo "No supported PHP installation was configured. Install PHP 7.2-8.6 before this package." >&2
 	exit 1
 fi
 
