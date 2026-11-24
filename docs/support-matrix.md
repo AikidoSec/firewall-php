@@ -1,6 +1,6 @@
 # Support matrix
 
-Zen for PHP supports PHP 7.2 through PHP 8.5 on x86_64 and aarch64 systems.
+Zen for PHP supports PHP 7.2 through PHP 8.6 on x86_64 and aarch64 systems.
 
 ## Platforms
 
@@ -15,9 +15,9 @@ Zen for PHP supports PHP 7.2 through PHP 8.5 on x86_64 and aarch64 systems.
 
 | Runtime | PHP versions | ABI |
 | --- | --- | --- |
-| PHP CLI and built-in server | 7.2-8.5 | NTS and ZTS |
-| PHP-FPM | 7.2-8.5 | NTS and ZTS |
-| Apache mod_php | 7.2-8.5 | NTS |
-| FrankenPHP classic and worker | 8.2-8.5 | ZTS |
+| PHP CLI and built-in server | 7.2-8.6 | NTS and ZTS |
+| PHP-FPM | 7.2-8.6 | NTS and ZTS |
+| Apache mod_php | 7.2-8.6 | NTS |
+| FrankenPHP classic and worker | 8.2-8.6 | ZTS |
 
 The package automatically selects the extension matching the installed PHP version and ABI. If you change PHP versions after installing Zen, reinstall the package as described in [Switching PHP versions](./troubleshooting.md#switching-php-versions).
