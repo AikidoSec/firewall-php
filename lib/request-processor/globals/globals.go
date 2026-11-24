@@ -79,6 +79,6 @@ func GetOrCreateServer(token string, aikidoConfig AikidoConfigData) *ServerData 
 }
 
 const (
-	Version    = "1.5.35"
+	Version    = "1.5.36"
 	SocketPath = "/run/aikido-" + Version + "/aikido-agent.sock"
 )

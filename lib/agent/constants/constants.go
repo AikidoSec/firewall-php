@@ -1,7 +1,7 @@
 package constants
 
 const (
-	Version                             = "1.5.35"
+	Version                             = "1.5.36"
 	RunPath                             = "/run/aikido-" + Version
 	SocketPath                          = RunPath + "/aikido-agent.sock"
 	ConfigUpdatedAtMethod               = "GET"
