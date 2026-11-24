@@ -1,6 +1,8 @@
 --TEST--
 Test SSRF with CURLOPT_HEADERFUNCTION callback (process response headers)
 
+--CONFLICTS--
+tcp-port-4000
 --ENV--
 AIKIDO_BLOCK=1
 AIKIDO_DEBUG=1

@@ -1,6 +1,8 @@
 --TEST--
 Test SSRF with multiple callbacks combined (comprehensive nested hook stress test)
 
+--CONFLICTS--
+tcp-port-4000
 --ENV--
 AIKIDO_BLOCK=1
 AIKIDO_DEBUG=1
