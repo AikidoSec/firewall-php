@@ -1,5 +1,6 @@
 --TEST--
 Request https://ssrf-redirects.testssandbox.com/ssrf-test-4 with CURLOPT_FOLLOWLOCATION = false to inspect the Location: header and then manually follow redirects — mirrors how Guzzle, Symfony HttpClient auto-follow redirects.
+
 --CONFLICTS--
 tcp-port-4000
 
