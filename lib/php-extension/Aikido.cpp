@@ -58,6 +58,7 @@ PHP_MSHUTDOWN_FUNCTION(aikido) {
 static void aikido_do_request_init() {
     AIKIDO_LOG_DEBUG("RINIT started!\n");
 
+    AIKIDO_GLOBAL(astCleanupDone) = false;
     AIKIDO_GLOBAL(phpLifecycle).RequestInit();
 
     AIKIDO_LOG_DEBUG("RINIT finished!\n");
@@ -71,6 +72,8 @@ static void aikido_do_request_shutdown() {
         return;
     }
 
+    // From here on, any compile in this worker must not be instrumented (see aikido_ast_process).
+    AIKIDO_GLOBAL(astCleanupDone) = true;
     DestroyAstToClean();
     AIKIDO_GLOBAL(phpLifecycle).RequestShutdown();
 
@@ -172,6 +175,7 @@ PHP_GINIT_FUNCTION(aikido) {
     aikido_globals->checkedWhitelistRequest = false;
     aikido_globals->isIpBypassed = false;
     aikido_globals->isFrankenPhpWorkerMode = false;
+    aikido_globals->astCleanupDone = false;
     aikido_globals->globalAstToClean = nullptr;
     aikido_globals->originalAstProcess = nullptr;
 #ifdef ZTS

@@ -123,6 +123,16 @@ void aikido_ast_process(zend_ast *ast) {
         return;
     }
 
+    // A compile that runs after our request shutdown (e.g. eval() inside another
+    // module's shutdown, like a session save handler write callback) must not
+    // instrument the AST: globalAstToClean was freed and the request is over.
+    if (AIKIDO_GLOBAL(astCleanupDone)) {
+        if(original_ast_process){
+            original_ast_process(ast);
+        }
+        return;
+    }
+
     insert_call_to_ast(ast);
 
     if(original_ast_process){
