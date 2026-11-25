@@ -47,11 +47,6 @@ func GetAttackDetectedProto(res utils.InterceptorResult, instance *instance.Requ
 		request.Body = context.GetBodyRaw(instance)
 		request.Route = context.GetRoute(instance)
 	}
-	blockMode := utils.GetBlockingMode(server)
-	blocked := blockMode == 1
-	if res.Kind == utils.StoredSsrf && blockMode == utils.NoConfig && server != nil {
-		blocked = server.AikidoConfig.Blocking
-	}
 	return &protos.AttackDetected{
 		Token:     token,
 		ServerPid: serverPID,
@@ -60,7 +55,7 @@ func GetAttackDetectedProto(res utils.InterceptorResult, instance *instance.Requ
 			Kind:      string(res.Kind),
 			Operation: res.Operation,
 			Module:    context.GetModule(instance),
-			Blocked:   blocked,
+			Blocked:   utils.IsBlockingEnabled(server),
 			Source:    res.Source,
 			Path:      res.PathToPayload,
 			Stack:     context.GetStackTrace(instance),

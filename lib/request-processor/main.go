@@ -72,6 +72,9 @@ func RequestProcessorInit(platformName string, serverPID int32) (initOk bool) {
 	config.Init(platformName, serverPID)
 
 	grpc.Init()
+	if globals.EnvironmentConfig.PlatformName != "cli" {
+		grpc.StartCloudConfigRoutine()
+	}
 	if !zen_internals.Init() {
 		log.Error(nil, "Error initializing zen-internals library!")
 		return false

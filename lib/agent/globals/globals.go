@@ -63,8 +63,10 @@ func GetOrCreateServer(ServerKey ServerKey) (*ServerData, bool) {
 func DeleteServer(ServerKey ServerKey) {
 	ServersMutex.Lock()
 	defer ServersMutex.Unlock()
+	if server := Servers[ServerKey]; server != nil && server.AikidoConfig.PlatformName != "cli" {
+		PastDeletedServers[ServerKey] = true
+	}
 	delete(Servers, ServerKey)
-	PastDeletedServers[ServerKey] = true
 }
 
 func IsPastDeletedServer(ServerKey ServerKey) bool {
