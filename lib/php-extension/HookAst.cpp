@@ -116,7 +116,8 @@ void insert_call_to_ast(zend_ast *ast) {
 void aikido_ast_process(zend_ast *ast) {
     auto& original_ast_process = AIKIDO_GLOBAL(originalAstProcess);
 
-    if(AIKIDO_GLOBAL(disable) == true || AIKIDO_GLOBAL(phpLifecycle).IsRequestHandledInMainPid()) {
+    // Only inject during a request: PHP can still compile after our RSHUTDOWN, when the AST table is already freed.
+    if (!AIKIDO_GLOBAL(requestProcessorInstance).IsRequestInitialized()) {
         if(original_ast_process){
             original_ast_process(ast);
         }
