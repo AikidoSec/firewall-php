@@ -60,6 +60,7 @@ class RequestProcessorInstance {
     RequestProcessorInstance() = default;
 
     bool RequestInit();
+    bool IsRequestInitialized() const { return requestInitialized; }
     bool SendEvent(EVENT_ID eventId, std::string& output);
     bool SetUser(const std::string& id, const std::string& username);
     bool IsBlockingEnabled();
