@@ -10,6 +10,7 @@ const (
 	Shell_injection Kind = "shell_injection"
 	Path_traversal  Kind = "path_traversal"
 	Ssrf            Kind = "ssrf"
+	StoredSsrf      Kind = "stored_ssrf"
 )
 
 func GetDisplayNameForAttackKind(kind Kind) string {
@@ -22,6 +23,8 @@ func GetDisplayNameForAttackKind(kind Kind) string {
 		return "a shell injection"
 	case Path_traversal:
 		return "a path traversal attack"
+	case StoredSsrf:
+		return "a stored server-side request forgery"
 	case Ssrf:
 		return "a server-side request forgery"
 	default:

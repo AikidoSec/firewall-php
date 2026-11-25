@@ -19,7 +19,7 @@ import (
 - direct IMDS SSRF attacks (hostname is an IMDS IP)
 - blocked outbound domains (based on cloud configuration)
 
-All these checks first verify if the hostname was provided via user input.
+Stored SSRF also checks hostnames absent from user input when they resolve to an IMDS address.
 Protects both curl and fopen wrapper functions (file_get_contents, etc...).
 */
 func OnPreOutgoingRequest(instance *instance.RequestProcessorInstance) string {
@@ -64,7 +64,6 @@ func OnPreOutgoingRequest(instance *instance.RequestProcessorInstance) string {
 - re-direct SSRF attacks (redirects lead to a hostname that resolves to a local IP address)
 - re-direct IMDS SSRF attacks (redirects lead to a hostname that resolves to an IMDS IP address)
 
-All these checks first verify if the hostname was provided via user input.
 Protects curl.
 */
 func OnPostOutgoingRequest(instance *instance.RequestProcessorInstance) string {
@@ -106,6 +105,10 @@ func OnPostOutgoingRequest(instance *instance.RequestProcessorInstance) string {
 			// We double check here for SSRF on the effective hostname because some sinks might not provide the resolved IP address
 			res = ssrf.CheckEffectiveHostnameForSSRF(instance, effectiveHostname)
 		}
+	}
+
+	if res == nil && resolvedIp != "" {
+		res = ssrf.CheckStoredSSRF(instance, effectiveHostname, effectivePort, context.GetFunctionName(instance), resolvedIp)
 	}
 
 	if res != nil {

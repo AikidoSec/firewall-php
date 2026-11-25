@@ -1,11 +1,17 @@
 package ssrf
 
-// This IP address is used by AWS EC2 instances to access the instance metadata service (IMDS)
-// We should block any requests to these IP addresses
-// This prevents STORED SSRF attacks that try to access the instance metadata service
+import (
+	"main/helpers"
+	"main/instance"
+	"main/utils"
+	"net"
+	"strings"
+)
+
 var IMDSAddresses = map[string]struct{}{
 	"169.254.169.254": {}, // AWS IMDS (IPv4)
 	"fd00:ec2::254":   {}, // AWS IMDS (IPv6)
+	"100.100.100.200": {}, // Alibaba Cloud IMDS
 }
 
 // Google cloud uses the same IP addresses for its metadata service
@@ -35,9 +41,33 @@ func FindIMDSIp(hostname string, resolvedIps []string) string {
 	}
 
 	for _, ip := range resolvedIps {
+		ip = net.ParseIP(ip).String()
 		if isIMDSIPAddress(ip) {
 			return ip
 		}
 	}
 	return ""
+}
+
+func CheckStoredSSRF(instance *instance.RequestProcessorInstance, hostname string, port uint32, operation, peerIP string) *utils.InterceptorResult {
+	canonicalHost := strings.ToLower(strings.TrimSuffix(hostname, "."))
+	if canonicalHost == "" || net.ParseIP(canonicalHost) != nil || isTrustedHostname(canonicalHost) {
+		return nil
+	}
+	ips := []string{peerIP}
+	if peerIP == "" {
+		ips = helpers.ResolveHostname(instance, hostname)
+	}
+	ip := FindIMDSIp(canonicalHost, ips)
+	if ip == "" {
+		return nil
+	}
+	metadata := getMetadataForSSRFAttack(hostname, port)
+	metadata["privateIP"] = ip
+	return &utils.InterceptorResult{
+		Kind:      utils.StoredSsrf,
+		Operation: operation,
+		Metadata:  metadata,
+		Payload:   hostname,
+	}
 }

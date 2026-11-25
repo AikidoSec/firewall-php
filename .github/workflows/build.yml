@@ -1494,4 +1494,4 @@ jobs:
           dockerfile_path: ./zen-demo-php/Dockerfile
           app_env_file: ./zen-demo-php/.env.qa
           config_propagation_delay: 60
-          skip_tests: test-ssrf,test-stored-ssrf-no-context,test-stored-ssrf,test-excluded-user-from-rate-limiting,test-outbound-domain-blocking
+          skip_tests: test-ssrf,test-excluded-user-from-rate-limiting,test-outbound-domain-blocking
