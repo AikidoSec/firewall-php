@@ -9,6 +9,19 @@ import (
 
 /* This is called before a request is made to check for SSRF and block the request (not execute it) if SSRF found */
 func CheckContextForSSRF(instance *instance.RequestProcessorInstance, hostname string, port uint32, operation string) *utils.InterceptorResult {
+	if domain := matchSuspiciousOutboundDomain(instance.GetCurrentServer(), hostname); domain != "" {
+		metadata := getMetadataForSSRFAttack(hostname, port)
+		metadata["reason"] = "suspicious_outbound_domain"
+		metadata["matchedDomain"] = domain
+		return &utils.InterceptorResult{
+			Kind:      utils.Ssrf,
+			Operation: operation,
+			Source:    "outbound URL",
+			Payload:   hostname,
+			Metadata:  metadata,
+		}
+	}
+
 	trimmedHostname := helpers.TrimInvisible(hostname)
 
 	// Check if this is a request to the server itself (including HTTP/HTTPS special case)

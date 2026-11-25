@@ -57,18 +57,19 @@ type IpList struct {
 }
 
 type CloudConfigData struct {
-	ConfigUpdatedAt          int64
-	Endpoints                map[EndpointKey]EndpointData
-	WildcardEndpoints        map[string][]WildcardEndpointData
-	BlockedUserIds           map[string]bool
-	BypassedIps              *netipx.IPSet
-	BlockedIps               map[string]IpList
-	AllowedIps               map[string]IpList
-	BlockedUserAgents        *regexp.Regexp
-	MonitoredIps             map[string]IpList
-	MonitoredUserAgents      *regexp.Regexp
-	UserAgentDetails         map[string]*regexp.Regexp
-	Block                    int
-	BlockNewOutgoingRequests bool
-	OutboundDomains          map[string]bool // hostname -> block (true = block, false = allow)
+	ConfigUpdatedAt           int64
+	Endpoints                 map[EndpointKey]EndpointData
+	WildcardEndpoints         map[string][]WildcardEndpointData
+	BlockedUserIds            map[string]bool
+	BypassedIps               *netipx.IPSet
+	BlockedIps                map[string]IpList
+	AllowedIps                map[string]IpList
+	BlockedUserAgents         *regexp.Regexp
+	MonitoredIps              map[string]IpList
+	MonitoredUserAgents       *regexp.Regexp
+	UserAgentDetails          map[string]*regexp.Regexp
+	Block                     int
+	BlockNewOutgoingRequests  bool
+	OutboundDomains           map[string]bool // hostname -> block (true = block, false = allow)
+	SuspiciousOutboundDomains map[string]bool
 }

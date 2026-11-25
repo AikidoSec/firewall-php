@@ -1,0 +1,6 @@
+{
+    "success": true,
+    "serviceId": 1,
+    "block": false,
+    "suspiciousOutboundDomains": ["oast.live", "notoast.live"]
+}

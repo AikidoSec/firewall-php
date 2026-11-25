@@ -22,3 +22,16 @@ func TestSetCloudConfigIgnoresOlderOrRepeatedVersions(t *testing.T) {
 		t.Fatal("newer cloud config was not applied")
 	}
 }
+
+func TestSetCloudConfigReplacesSuspiciousOutboundDomains(t *testing.T) {
+	server := globals.NewServerData()
+	setCloudConfig(server, &protos.CloudConfig{ConfigUpdatedAt: 1, SuspiciousOutboundDomains: []string{"CALLBACK.example."}})
+	if !server.CloudConfig.SuspiciousOutboundDomains["callback.example"] {
+		t.Fatal("expected the normalized domain from the cloud list")
+	}
+
+	setCloudConfig(server, &protos.CloudConfig{ConfigUpdatedAt: 2})
+	if len(server.CloudConfig.SuspiciousOutboundDomains) != 0 {
+		t.Fatal("expected an empty list when the API omits the field")
+	}
+}

@@ -153,6 +153,7 @@ message CloudConfig {
   bool block = 11;
   bool blockNewOutgoingRequests = 12;
   repeated OutboundDomain outboundDomains = 13;
+  repeated string suspiciousOutboundDomains = 14;
 }
 
 message RateLimitingStatus {

@@ -71,12 +71,13 @@ type CloudConfigData struct {
 }
 
 type CloudListsData struct {
-	BlockedIpsList      map[string]IpBlocklist
-	AllowedIpsList      map[string]IpBlocklist
-	BlockedUserAgents   string
-	MonitoredIpsList    map[string]IpBlocklist
-	MonitoredUserAgents string
-	UserAgentDetails    map[string]string
+	SuspiciousOutboundDomains []string
+	BlockedIpsList            map[string]IpBlocklist
+	AllowedIpsList            map[string]IpBlocklist
+	BlockedUserAgents         string
+	MonitoredIpsList          map[string]IpBlocklist
+	MonitoredUserAgents       string
+	UserAgentDetails          map[string]string
 }
 
 type IpsData struct {
@@ -107,14 +108,15 @@ type AttackWaveState struct {
 }
 
 type ListsConfigData struct {
-	Success              bool               `json:"success"`
-	ServiceId            int                `json:"serviceId"`
-	BlockedIpAddresses   []IpsData          `json:"blockedIPAddresses"`
-	AllowedIpAddresses   []IpsData          `json:"allowedIPAddresses"`
-	BlockedUserAgents    string             `json:"blockedUserAgents"`
-	MonitoredIpAddresses []IpsData          `json:"monitoredIpAddresses"`
-	MonitoredUserAgents  string             `json:"monitoredUserAgents"`
-	UserAgentDetails     []UserAgentDetails `json:"userAgentDetails"`
+	SuspiciousOutboundDomains []string           `json:"suspiciousOutboundDomains"`
+	Success                   bool               `json:"success"`
+	ServiceId                 int                `json:"serviceId"`
+	BlockedIpAddresses        []IpsData          `json:"blockedIPAddresses"`
+	AllowedIpAddresses        []IpsData          `json:"allowedIPAddresses"`
+	BlockedUserAgents         string             `json:"blockedUserAgents"`
+	MonitoredIpAddresses      []IpsData          `json:"monitoredIpAddresses"`
+	MonitoredUserAgents       string             `json:"monitoredUserAgents"`
+	UserAgentDetails          []UserAgentDetails `json:"userAgentDetails"`
 }
 
 type CloudConfigUpdatedAt struct {
