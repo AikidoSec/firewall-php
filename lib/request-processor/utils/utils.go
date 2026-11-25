@@ -290,11 +290,7 @@ func GetBlockingMode(server *ServerData) int {
 }
 
 func IsBlockingEnabled(server *ServerData) bool {
-	mode := GetBlockingMode(server)
-	if mode == NoConfig && server != nil {
-		return server.AikidoConfig.Blocking
-	}
-	return mode == 1
+	return GetBlockingMode(server) == 1
 }
 
 func IsUserBlocked(server *ServerData, userID string) bool {

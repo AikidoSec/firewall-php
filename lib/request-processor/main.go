@@ -72,9 +72,7 @@ func RequestProcessorInit(platformName string, serverPID int32) (initOk bool) {
 	config.Init(platformName, serverPID)
 
 	grpc.Init()
-	if globals.EnvironmentConfig.PlatformName != "cli" {
-		grpc.StartCloudConfigRoutine()
-	}
+	grpc.StartCloudConfigRoutine()
 	if !zen_internals.Init() {
 		log.Error(nil, "Error initializing zen-internals library!")
 		return false
@@ -216,10 +214,6 @@ func RequestProcessorGetBlockingMode(instancePtr unsafe.Pointer) int {
 
 //export RequestProcessorReportStats
 func RequestProcessorReportStats(instancePtr unsafe.Pointer, sink, kind string, attacksDetected, attacksBlocked, interceptorThrewError, withoutContext, total int32, timings []int64) {
-	if globals.EnvironmentConfig.PlatformName == "cli" {
-		return
-	}
-
 	instance := instance.GetInstance(instancePtr)
 	if instance == nil {
 		return

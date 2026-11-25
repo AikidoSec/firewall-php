@@ -56,9 +56,6 @@ func Register(serverKey ServerKey, requestProcessorPID int32, req *protos.Config
 	// finishes. Holding this lock would make them wait for network I/O and time out.
 	globals.ServersMutex.Unlock()
 
-	if req.GetPlatformName() == "cli" {
-		return
-	}
 	cloud.Init(server)
 	if wasPastDeleted {
 		log.InfofMainAndServer(server.Logger, "Server \"AIK_RUNTIME_***%s\" (server PID: %d) was registered before for this server PID, but deleted due to inactivity! Skipping start event as it was sent before...", utils.AnonymizeToken(serverKey.Token), serverKey.ServerPID)

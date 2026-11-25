@@ -12,29 +12,6 @@ import (
 	"time"
 )
 
-func TestCLIRegistrationStaysLocal(t *testing.T) {
-	log.Init()
-	t.Cleanup(log.Uninit)
-	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		t.Errorf("CLI registration contacted %s", r.URL.Path)
-		w.WriteHeader(http.StatusNoContent)
-	}))
-	t.Cleanup(backend.Close)
-
-	key := aikido_types.ServerKey{Token: "AIK_RUNTIME_CLI_TEST", ServerPID: 13579}
-	Register(key, key.ServerPID, &protos.Config{
-		Token: key.Token, ServerPid: key.ServerPID, PlatformName: "cli",
-		Endpoint: backend.URL, ConfigEndpoint: backend.URL,
-	})
-	if globals.GetServer(key) == nil {
-		t.Fatal("CLI process was not registered for reporting")
-	}
-	Unregister(key)
-	if globals.GetServer(key) != nil || globals.IsPastDeletedServer(key) {
-		t.Fatal("CLI process was retained after unregistering")
-	}
-}
-
 func TestRegisterDoesNotBlockServerLookupsDuringCloudRequest(t *testing.T) {
 	log.Init()
 	t.Cleanup(log.Uninit)
