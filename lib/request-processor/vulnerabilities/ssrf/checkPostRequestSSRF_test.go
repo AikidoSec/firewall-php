@@ -152,3 +152,30 @@ func TestCheckEffectiveHostnameForSSRF_IMDSHostname_ReturnsInterceptorResultWith
 		t.Fatalf("expected isPrivateIp=true, got %q", got)
 	}
 }
+
+func TestStoredSSRFWithKnownPeer(t *testing.T) {
+	for _, tc := range []struct{ host, peerIP, wantIP string }{
+		{"saved.example", "::ffff:169.254.169.254", "169.254.169.254"},
+		{"saved.example", "fd00:ec2:0:0:0:0:0:254", "fd00:ec2::254"},
+		{"saved.example", "100.100.100.200", "100.100.100.200"},
+		{"saved.example", "10.0.0.1", ""},
+		{"saved.example", "203.0.113.10", ""},
+		{"METADATA.GOOG.", "169.254.169.254", ""},
+		{"metadata.google.internal", "169.254.169.254", ""},
+		{"169.254.169.254", "169.254.169.254", ""},
+		{"fd00:ec2::254", "fd00:ec2::254", ""},
+	} {
+		t.Run(tc.host+"/"+tc.peerIP, func(t *testing.T) {
+			result := CheckStoredSSRF(nil, tc.host, 80, "curl_exec", tc.peerIP)
+			if tc.wantIP == "" {
+				if result != nil {
+					t.Fatalf("unexpected result: %+v", result)
+				}
+				return
+			}
+			if result == nil || result.Kind != utils.StoredSsrf || result.Metadata["privateIP"] != tc.wantIP || result.Metadata["hostname"] != tc.host {
+				t.Fatalf("unexpected result: %+v", result)
+			}
+		})
+	}
+}

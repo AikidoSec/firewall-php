@@ -7,6 +7,7 @@ import (
 	"main/instance"
 	"main/log"
 	"main/utils"
+	"os/exec"
 	"time"
 
 	. "main/aikido_types"
@@ -23,7 +24,7 @@ var conn *grpc.ClientConn
 var client protos.AikidoClient
 
 func dialAgent(target string) (*grpc.ClientConn, error) {
-	return grpc.Dial(
+	return grpc.NewClient(
 		target,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithDefaultCallOptions(
@@ -37,11 +38,14 @@ func Init() {
 	conn, err = dialAgent("unix://" + globals.SocketPath)
 
 	if err != nil {
-		panic(fmt.Sprintf("did not connect: %v", err))
+		panic(fmt.Sprintf("could not initialize agent connection: %v", err))
 	}
 
+	if globals.EnvironmentConfig.PlatformName == "cli" {
+		return
+	}
 	client = protos.NewAikidoClient(conn)
-
+	StartCloudConfigRoutine()
 	log.Debugf(nil, "Current connection state: %s\n", conn.GetState().String())
 }
 
@@ -61,7 +65,17 @@ func SendAikidoConfig(server *ServerData) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
-	_, err := client.OnConfig(ctx, &protos.Config{
+	_, err := client.OnConfig(ctx, agentConfig(server))
+	if err != nil {
+		log.Warnf(nil, "Could not send Aikido Config: %v", err)
+		return
+	}
+
+	log.Debugf(nil, "Aikido config sent via socket!")
+}
+
+func agentConfig(server *ServerData) *protos.Config {
+	return &protos.Config{
 		Token:                     server.AikidoConfig.Token,
 		ServerPid:                 globals.EnvironmentConfig.ServerPID,
 		PlatformName:              server.AikidoConfig.PlatformName,
@@ -75,13 +89,7 @@ func SendAikidoConfig(server *ServerData) {
 		CollectApiSchema:          server.AikidoConfig.CollectApiSchema,
 		Sse:                       server.AikidoConfig.Sse,
 		RequestProcessorPid:       globals.EnvironmentConfig.RequestProcessorPID,
-	})
-	if err != nil {
-		log.Warnf(nil, "Could not send Aikido Config: %v", err)
-		return
 	}
-
-	log.Debugf(nil, "Aikido config sent via socket!")
 }
 
 /* Send outgoing domain to Aikido Agent via gRPC */
@@ -264,14 +272,31 @@ func OnAIUsage(usage *protos.AIUsage) {
 }
 
 func OnAttackDetected(instance *instance.RequestProcessorInstance, attackDetected *protos.AttackDetected) {
-	if client == nil {
-		return
-	}
-
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	_, err := client.OnAttackDetected(ctx, attackDetected)
+	attackClient := client
+	if attackClient == nil {
+		if conn == nil || globals.EnvironmentConfig.PlatformName != "cli" || attackDetected.GetAttack().GetKind() != string(utils.StoredSsrf) {
+			return
+		}
+		server := instance.GetCurrentServer()
+		if server == nil || attackDetected.Token == "" {
+			return
+		}
+		launcher := exec.CommandContext(ctx, "/opt/aikido-"+globals.Version+"/aikido-agent")
+		launcher.Env = []string{}
+		if err := launcher.Run(); err != nil {
+			log.Warnf(instance, "Could not start the CLI attack reporter: %v", err)
+			return
+		}
+		attackClient = protos.NewAikidoClient(conn)
+		if _, err := attackClient.OnConfig(ctx, agentConfig(server)); err != nil {
+			log.Warnf(instance, "Could not register CLI attack reporter: %v", err)
+			return
+		}
+	}
+	_, err := attackClient.OnAttackDetected(ctx, attackDetected)
 	if err != nil {
 		log.Warnf(instance, "Could not send attack detected event")
 		return

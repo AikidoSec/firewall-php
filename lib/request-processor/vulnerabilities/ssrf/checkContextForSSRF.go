@@ -17,6 +17,7 @@ func CheckContextForSSRF(instance *instance.RequestProcessorInstance, hostname s
 		return nil
 	}
 
+	matchedInput := false
 	for _, source := range context.SOURCES {
 		mapss := source.CacheGet(instance)
 
@@ -56,10 +57,14 @@ func CheckContextForSSRF(instance *instance.RequestProcessorInstance, hostname s
 				// Storing the matching information (interceptor result) in order to use it once the request completes,
 				// as at that point we might have more information to determine if SSRF or not.
 				context.EventContextSetCurrentSsrfInterceptorResult(instance, &interceptorResult)
+				matchedInput = true
 			}
 		}
 	}
-	return nil
+	if matchedInput {
+		return nil
+	}
+	return CheckStoredSSRF(instance, trimmedHostname, port, operation, "")
 }
 
 /* This is called after the request is made to check for SSRF in the effective hostname - hostname optained after redirects from the PHP library that made the request (curl) */
