@@ -102,5 +102,7 @@ func sendAttackDetectedEvent(server *ServerData, req *protos.AttackDetected, att
 		return
 	}
 
-	StoreCloudConfig(server, response)
+	if server.AikidoConfig.PlatformName != "cli" {
+		StoreCloudConfig(server, response)
+	}
 }

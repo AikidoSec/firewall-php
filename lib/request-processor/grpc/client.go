@@ -21,6 +21,7 @@ const maxMessageSize = 100 * 1024 * 1024
 
 var conn *grpc.ClientConn
 var client protos.AikidoClient
+var reporter protos.AikidoClient
 
 func dialAgent(target string) (*grpc.ClientConn, error) {
 	return grpc.Dial(
@@ -40,7 +41,11 @@ func Init() {
 		panic(fmt.Sprintf("did not connect: %v", err))
 	}
 
-	client = protos.NewAikidoClient(conn)
+	reporter = protos.NewAikidoClient(conn)
+	// CLI jobs send findings without collecting web telemetry or fetching cloud policy.
+	if globals.EnvironmentConfig.PlatformName != "cli" {
+		client = reporter
+	}
 
 	log.Debugf(nil, "Current connection state: %s\n", conn.GetState().String())
 }
@@ -54,14 +59,14 @@ func Uninit() {
 
 /* Send Aikido Config to Aikido Agent via gRPC */
 func SendAikidoConfig(server *ServerData) {
-	if client == nil {
+	if reporter == nil {
 		return
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
-	_, err := client.OnConfig(ctx, &protos.Config{
+	_, err := reporter.OnConfig(ctx, &protos.Config{
 		Token:                     server.AikidoConfig.Token,
 		ServerPid:                 globals.EnvironmentConfig.ServerPID,
 		PlatformName:              server.AikidoConfig.PlatformName,
@@ -264,14 +269,14 @@ func OnAIUsage(usage *protos.AIUsage) {
 }
 
 func OnAttackDetected(instance *instance.RequestProcessorInstance, attackDetected *protos.AttackDetected) {
-	if client == nil {
+	if reporter == nil || attackDetected.GetToken() == "" {
 		return
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	_, err := client.OnAttackDetected(ctx, attackDetected)
+	_, err := reporter.OnAttackDetected(ctx, attackDetected)
 	if err != nil {
 		log.Warnf(instance, "Could not send attack detected event")
 		return

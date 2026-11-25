@@ -38,19 +38,19 @@ func GetAttackDetectedProto(res utils.InterceptorResult, instance *instance.Requ
 	server := instance.GetCurrentServer()
 
 	serverPID := context.GetServerPID()
+	request := &protos.Request{Source: "php", Method: context.GetMethod(instance)}
+	if request.Method != "" {
+		request.IpAddress = context.GetIp(instance)
+		request.UserAgent = context.GetUserAgent(instance)
+		request.Url = context.GetUrl(instance)
+		request.Headers = GetHeadersProto(instance)
+		request.Body = context.GetBodyRaw(instance)
+		request.Route = context.GetRoute(instance)
+	}
 	return &protos.AttackDetected{
 		Token:     token,
 		ServerPid: serverPID,
-		Request: &protos.Request{
-			Method:    context.GetMethod(instance),
-			IpAddress: context.GetIp(instance),
-			UserAgent: context.GetUserAgent(instance),
-			Url:       context.GetUrl(instance),
-			Headers:   GetHeadersProto(instance),
-			Body:      context.GetBodyRaw(instance),
-			Source:    "php",
-			Route:     context.GetRoute(instance),
-		},
+		Request:   request,
 		Attack: &protos.Attack{
 			Kind:      string(res.Kind),
 			Operation: res.Operation,
