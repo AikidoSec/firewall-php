@@ -31,12 +31,11 @@ func TestScheduleCustomEventDropsEventsWhileCloudIsSlow(t *testing.T) {
 	releaseCloud := func() { releaseOnce.Do(func() { close(release) }) }
 	defer releaseCloud()
 
-	server := &ServerData{
-		Logger: log.CreateLogger("test", "ERROR", false),
-		AikidoConfig: AikidoConfigData{
-			Token:    "AIK_TEST",
-			Endpoint: cloudServer.URL,
-		},
+	server := NewServerData()
+	server.Logger = log.CreateLogger("test", "ERROR", false)
+	server.AikidoConfig = AikidoConfigData{
+		Token:    "AIK_TEST",
+		Endpoint: cloudServer.URL,
 	}
 
 	scheduled := make(chan struct{})
@@ -55,12 +54,11 @@ func TestScheduleCustomEventDropsEventsWhileCloudIsSlow(t *testing.T) {
 	if !waitFor(5*time.Second, func() bool { return received.Load() == constants.MaxConcurrentCustomEventRequests }) {
 		t.Fatalf("expected %d requests to reach the cloud, got %d", constants.MaxConcurrentCustomEventRequests, received.Load())
 	}
-	otherServer := &ServerData{
-		Logger: log.CreateLogger("other", "ERROR", false),
-		AikidoConfig: AikidoConfigData{
-			Token:    "AIK_OTHER",
-			Endpoint: cloudServer.URL,
-		},
+	otherServer := NewServerData()
+	otherServer.Logger = log.CreateLogger("other", "ERROR", false)
+	otherServer.AikidoConfig = AikidoConfigData{
+		Token:    "AIK_OTHER",
+		Endpoint: cloudServer.URL,
 	}
 	ScheduleCustomEvent(otherServer, &protos.CustomEvent{Name: "user.login_failed"})
 	select {

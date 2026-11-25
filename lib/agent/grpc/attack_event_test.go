@@ -40,10 +40,9 @@ func TestOnAttackDetectedReturnsBeforeCloudUploadCompletes(t *testing.T) {
 	defer close(releaseUpload)
 
 	key := ServerKey{Token: "AIK_ATTACK_EVENT_TEST", ServerPID: 1}
-	server := &ServerData{
-		AikidoConfig: AikidoConfigData{Token: key.Token, Endpoint: cloudServer.URL},
-		Logger:       log.CreateLogger("test", "ERROR", false),
-	}
+	server := NewServerData()
+	server.AikidoConfig = AikidoConfigData{Token: key.Token, Endpoint: cloudServer.URL}
+	server.Logger = log.CreateLogger("test", "ERROR", false)
 	globals.ServersMutex.Lock()
 	globals.Servers[key] = server
 	globals.ServersMutex.Unlock()

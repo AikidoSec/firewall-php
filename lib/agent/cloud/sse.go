@@ -204,14 +204,17 @@ func isRealtimeEnabled(server *ServerData) bool {
 		return true
 	}
 
-	server.CloudConfigMutex.Lock()
-	defer server.CloudConfigMutex.Unlock()
-
 	return slices.Contains(server.CloudConfig.EnabledFeatures, constants.RealtimeUpdatesFeature)
 }
 
 func StartConfigStreamRoutine(server *ServerData) {
-	if !isRealtimeEnabled(server) {
+	server.CloudConfigMutex.Lock()
+	defer server.CloudConfigMutex.Unlock()
+	startConfigStream(server)
+}
+
+func startConfigStream(server *ServerData) {
+	if server.StreamOwner != nil || !isRealtimeEnabled(server) {
 		return
 	}
 
@@ -220,6 +223,7 @@ func StartConfigStreamRoutine(server *ServerData) {
 		return
 	}
 
+	server.StreamOwner = server
 	ctx, cancel := context.WithCancel(context.Background())
 
 	/*
@@ -241,11 +245,6 @@ func StartConfigStreamRoutine(server *ServerData) {
 	}()
 }
 
-/*
-Stopped unconditionally, like the other polling routines: signalling a routine that
-was never started is harmless, while skipping the signal would leave a running
-routine behind if the feature flag ever read differently than it did at start.
-*/
 func StopConfigStreamRoutine(server *ServerData) {
 	utils.StopPollingRoutine(server.PollingData.ConfigStreamRoutineChannel)
 }

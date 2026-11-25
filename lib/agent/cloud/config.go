@@ -64,7 +64,9 @@ func StoreCloudConfig(server *ServerData, configReponse []byte) bool {
 	}
 	server.CloudConfig = tempCloudConfig
 	UpdateListsConfig(server)
-	ApplyCloudConfig(server)
+	for _, member := range server.CloudPolicy.Servers {
+		ApplyCloudConfig(member)
+	}
 	return true
 }
 

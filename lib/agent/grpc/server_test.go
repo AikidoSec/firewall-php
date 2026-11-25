@@ -22,15 +22,14 @@ func TestServerSendsLargeCloudConfig(t *testing.T) {
 		ips[i] = "2001:0db8:0000:0000:0000:0000:0000:0001/128"
 	}
 	key := ServerKey{Token: "AIK_LARGE_CONFIG_TEST", ServerPID: 1}
-	data := &ServerData{
-		Logger:      log.CreateLogger("test", "ERROR", false),
-		CloudConfig: CloudConfigData{ConfigUpdatedAt: 1},
-		CloudLists: CloudListsData{
-			BlockedIpsList: map[string]IpBlocklist{
-				"geoip/test": {Description: "Geo restrictions", Ips: []string{"198.51.100.0/24"}},
-			},
-			MonitoredIpsList: map[string]IpBlocklist{"large-list": {Ips: ips}},
+	data := NewServerData()
+	data.Logger = log.CreateLogger("test", "ERROR", false)
+	data.CloudConfig.ConfigUpdatedAt = 1
+	data.CloudLists = CloudListsData{
+		BlockedIpsList: map[string]IpBlocklist{
+			"geoip/test": {Description: "Geo restrictions", Ips: []string{"198.51.100.0/24"}},
 		},
+		MonitoredIpsList: map[string]IpBlocklist{"large-list": {Ips: ips}},
 	}
 	globals.ServersMutex.Lock()
 	globals.Servers[key] = data

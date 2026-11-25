@@ -153,16 +153,7 @@ type ServerKey struct {
 	Token     string
 }
 
-type ServerData struct {
-	// Logger for the server
-	Logger *log.AikidoLogger
-
-	// Each app gets its own session ID, and a PHP restart (new main PID) gets a new one
-	SessionID string
-
-	// Aikido config that contains info about endpoint, log_level, token, ...
-	AikidoConfig AikidoConfigData
-
+type CloudPolicy struct {
 	// Cloud config that is obtain as a result from sending events to cloud or pulling the config when it changes
 	CloudConfig CloudConfigData
 
@@ -173,6 +164,25 @@ type ServerData struct {
 
 	ConfigStreamRefreshMutex     sync.Mutex
 	ConfigStreamLastRefreshStart time.Time
+
+	InitialSync sync.Mutex
+	// The first registration polls for the group until it exits.
+	Servers     []*ServerData
+	StreamOwner *ServerData
+}
+
+type ServerData struct {
+	*CloudPolicy
+	Registration sync.WaitGroup
+
+	// Logger for the server
+	Logger *log.AikidoLogger
+
+	// Each app gets its own session ID, and a PHP restart (new main PID) gets a new one
+	SessionID string
+
+	// Aikido config that contains info about endpoint, log_level, token, ...
+	AikidoConfig AikidoConfigData
 
 	// Polling data for the server, including mutex used to sync access to polling data across the go routines
 	PollingData *ServerDataPolling
@@ -256,6 +266,7 @@ const (
 
 func NewServerData() *ServerData {
 	return &ServerData{
+		CloudPolicy:             &CloudPolicy{},
 		SessionID:               newSessionID(),
 		Hostnames:               make(map[string]map[uint32]uint64),
 		HostnamesQueue:          NewQueue[string](MaxNumberOfStoredHostnames),

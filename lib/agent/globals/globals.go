@@ -51,20 +51,30 @@ func CreateServer(ServerKey ServerKey) *ServerData {
 	return Servers[ServerKey]
 }
 
-func GetOrCreateServer(ServerKey ServerKey) (*ServerData, bool) {
-	server, exists := Servers[ServerKey]
-	if !exists {
-		Servers[ServerKey] = NewServerData()
-		server = Servers[ServerKey]
+func GetOrCreateServer(key ServerKey, endpoint, configEndpoint string) (*ServerData, bool) {
+	if server, exists := Servers[key]; exists {
+		return server, true
 	}
-	return server, exists
+	server := NewServerData()
+	for otherKey, other := range Servers {
+		if otherKey.Token == key.Token && other.AikidoConfig.Endpoint == endpoint && other.AikidoConfig.ConfigEndpoint == configEndpoint {
+			server.CloudPolicy = other.CloudPolicy
+			break
+		}
+	}
+	Servers[key] = server
+	return server, false
 }
 
-func DeleteServer(ServerKey ServerKey) {
+func DeleteServer(key ServerKey) *ServerData {
 	ServersMutex.Lock()
 	defer ServersMutex.Unlock()
-	delete(Servers, ServerKey)
-	PastDeletedServers[ServerKey] = true
+	server := Servers[key]
+	if server != nil {
+		delete(Servers, key)
+		PastDeletedServers[key] = true
+	}
+	return server
 }
 
 func IsPastDeletedServer(ServerKey ServerKey) bool {
