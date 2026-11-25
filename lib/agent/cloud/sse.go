@@ -124,30 +124,21 @@ func handleConfigStreamEvent(server *ServerData, event sseEvent) {
 		return
 	}
 
+	server.ConfigRefreshMutex.Lock()
+	defer server.ConfigRefreshMutex.Unlock()
 	if !WasConfigUpdated(server, cloudConfigUpdatedAt.ConfigUpdatedAt) {
 		return
 	}
 
-	if configStreamEventArrivedTooFast(server) {
+	now := time.Now()
+	if now.Sub(server.ConfigStreamLastRefreshStart) < 9*time.Second {
 		log.Debug(server.Logger, "Ignoring config stream event during refresh throttle")
 		return
 	}
 
+	server.ConfigStreamLastRefreshStart = now
 	log.Infof(server.Logger, "Config stream reported a config update, fetching new config!")
 	FetchAndStoreCloudConfig(server)
-}
-
-func configStreamEventArrivedTooFast(server *ServerData) bool {
-	server.ConfigStreamRefreshMutex.Lock()
-	defer server.ConfigStreamRefreshMutex.Unlock()
-
-	now := time.Now()
-	if now.Sub(server.ConfigStreamLastRefreshStart) < 9*time.Second {
-		return true
-	}
-
-	server.ConfigStreamLastRefreshStart = now
-	return false
 }
 
 /*
@@ -204,17 +195,14 @@ func isRealtimeEnabled(server *ServerData) bool {
 		return true
 	}
 
+	server.CloudConfigMutex.Lock()
+	defer server.CloudConfigMutex.Unlock()
+
 	return slices.Contains(server.CloudConfig.EnabledFeatures, constants.RealtimeUpdatesFeature)
 }
 
 func StartConfigStreamRoutine(server *ServerData) {
-	server.CloudConfigMutex.Lock()
-	defer server.CloudConfigMutex.Unlock()
-	startConfigStream(server)
-}
-
-func startConfigStream(server *ServerData) {
-	if server.StreamOwner != nil || !isRealtimeEnabled(server) {
+	if !isRealtimeEnabled(server) {
 		return
 	}
 
@@ -223,7 +211,6 @@ func startConfigStream(server *ServerData) {
 		return
 	}
 
-	server.StreamOwner = server
 	ctx, cancel := context.WithCancel(context.Background())
 
 	/*
@@ -245,6 +232,11 @@ func startConfigStream(server *ServerData) {
 	}()
 }
 
+/*
+Stopped unconditionally, like the other polling routines: signalling a routine that
+was never started is harmless, while skipping the signal would leave a running
+routine behind if the feature flag ever read differently than it did at start.
+*/
 func StopConfigStreamRoutine(server *ServerData) {
 	utils.StopPollingRoutine(server.PollingData.ConfigStreamRoutineChannel)
 }

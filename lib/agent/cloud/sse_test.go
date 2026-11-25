@@ -15,7 +15,6 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 /* Mock of the Aikido cloud, serving the config stream and the config endpoints used after an event */
@@ -146,38 +145,6 @@ func waitFor(timeout time.Duration, condition func() bool) bool {
 	return condition()
 }
 
-func TestSharedConfigStreamMovesToRemainingServer(t *testing.T) {
-	cloud := newMockCloud()
-	defer cloud.httpServer.Close()
-	first := newTestServerData(cloud, "AIK_SHARED_STREAM", true)
-	second := newTestServerData(cloud, "AIK_SHARED_STREAM", true)
-	second.CloudPolicy = first.CloudPolicy
-	Init(first)
-	stopFirst := sync.OnceFunc(func() { Uninit(first) })
-	defer stopFirst()
-	Init(second)
-	defer Uninit(second)
-	StartConfigStreamRoutine(first)
-	StartConfigStreamRoutine(second)
-
-	require.Eventually(t, func() bool {
-		return cloud.streamConnections.Load() == 1
-	}, 2*time.Second, 5*time.Millisecond)
-	stopFirst()
-	require.Eventually(t, func() bool {
-		return cloud.streamConnections.Load() == 2 && cloud.streamDisconnects.Load() == 1
-	}, 2*time.Second, 5*time.Millisecond)
-	cloud.configUpdatedAt.Store(2)
-	select {
-	case cloud.pushEvent <- 2:
-	case <-time.After(2 * time.Second):
-		t.Fatal("remaining server did not connect to the config stream")
-	}
-	require.Eventually(t, func() bool {
-		return getConfigUpdatedAt(second) == 2
-	}, 2*time.Second, 5*time.Millisecond)
-}
-
 func TestConfigStreamRoutine(t *testing.T) {
 	t.Run("it applies a config pushed over the stream", func(t *testing.T) {
 		originalMachine := globals.Machine
@@ -223,9 +190,9 @@ func TestConfigStreamRoutine(t *testing.T) {
 		assert.Equal(t, int64(1000), getConfigUpdatedAt(server))
 		assert.Equal(t, int32(1), cloud.configRequests.Load())
 
-		server.ConfigStreamRefreshMutex.Lock()
+		server.ConfigRefreshMutex.Lock()
 		server.ConfigStreamLastRefreshStart = time.Now().Add(-9 * time.Second)
-		server.ConfigStreamRefreshMutex.Unlock()
+		server.ConfigRefreshMutex.Unlock()
 
 		cloud.publishConfig(t, 3000)
 

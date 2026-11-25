@@ -29,11 +29,13 @@ func TestSendStartEventLogsFailure(t *testing.T) {
 		_ = reader.Close()
 	}()
 
-	server := NewServerData()
-	server.Logger = log.CreateLogger("test", "WARN", false)
-	server.AikidoConfig = AikidoConfigData{
-		Token:    "AIK_TEST",
-		Endpoint: cloudServer.URL,
+	server := &ServerData{
+		Logger: log.CreateLogger("test", "WARN", false),
+		AikidoConfig: AikidoConfigData{
+			Token:    "AIK_TEST",
+			Endpoint: cloudServer.URL,
+		},
+		CloudPolicy: &CloudPolicy{},
 	}
 
 	SendStartEvent(server)

@@ -2,59 +2,45 @@ package cloud
 
 import (
 	. "main/aikido_types"
+	"main/globals"
 	"main/utils"
-	"slices"
+	"sync"
 )
 
 func Init(server *ServerData) {
-	policy := server.CloudPolicy
-	policy.InitialSync.Lock()
-	defer policy.InitialSync.Unlock()
-
-	policy.CloudConfigMutex.Lock()
-	policy.Servers = append(policy.Servers, server)
-	if len(policy.Servers) == 1 {
-		startConfigPolling(server)
-	}
-	cached := policy.CloudConfig.ConfigUpdatedAt > 0
+	server.ConfigRefreshMutex.Lock()
+	server.CloudConfigMutex.Lock()
+	cached := server.CloudConfig.ConfigUpdatedAt > 0
 	if cached {
 		ApplyCloudConfig(server)
 	}
-	policy.CloudConfigMutex.Unlock()
-
+	server.CloudConfigMutex.Unlock()
 	if !cached {
 		CheckConfigUpdatedAt(server)
 	}
-	utils.StartPollingRoutine(server.PollingData.HeartbeatRoutineChannel, server.PollingData.HeartbeatTicker, SendHeartbeatEvent, server)
-}
+	server.ConfigRefreshMutex.Unlock()
 
-func startConfigPolling(server *ServerData) {
-	utils.StartPollingRoutine(server.PollingData.ConfigPollingRoutineChannel, server.PollingData.ConfigPollingTicker, CheckConfigUpdatedAt, server)
+	utils.StartPollingRoutine(server.PollingData.HeartbeatRoutineChannel, server.PollingData.HeartbeatTicker, SendHeartbeatEvent, server)
 }
 
 func Uninit(server *ServerData) {
 	utils.StopPollingRoutine(server.PollingData.HeartbeatRoutineChannel)
-	policy := server.CloudPolicy
-	policy.CloudConfigMutex.Lock()
-	defer policy.CloudConfigMutex.Unlock()
+	StopConfigStreamRoutine(server)
+}
 
-	index := slices.Index(policy.Servers, server)
-	policy.Servers = slices.Delete(policy.Servers, index, index+1)
-	if index == 0 {
-		utils.StopPollingRoutine(server.PollingData.ConfigPollingRoutineChannel)
-		if len(policy.Servers) > 0 {
-			startConfigPolling(policy.Servers[0])
+func PollCloudConfigs(_ *ServerData) {
+	seen := make(map[*CloudPolicy]bool)
+	var polls sync.WaitGroup
+	for _, server := range globals.GetServers() {
+		if seen[server.CloudPolicy] {
+			continue
 		}
+		seen[server.CloudPolicy] = true
+		polls.Go(func() {
+			server.ConfigRefreshMutex.Lock()
+			defer server.ConfigRefreshMutex.Unlock()
+			CheckConfigUpdatedAt(server)
+		})
 	}
-
-	if policy.StreamOwner == server {
-		StopConfigStreamRoutine(server)
-		policy.StreamOwner = nil
-		for _, other := range policy.Servers {
-			startConfigStream(other)
-			if policy.StreamOwner != nil {
-				break
-			}
-		}
-	}
+	polls.Wait()
 }

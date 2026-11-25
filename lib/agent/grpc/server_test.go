@@ -2,11 +2,19 @@ package grpc
 
 import (
 	"context"
+	"fmt"
 	. "main/aikido_types"
+	"main/cloud"
+	"main/constants"
 	"main/globals"
 	"main/ipc/protos"
 	"main/log"
+	"main/server_utils"
 	"net"
+	"net/http"
+	"net/http/httptest"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -15,6 +23,80 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/proto"
 )
+
+func TestGetCloudConfigSharesDownloadsAcrossServerPIDs(t *testing.T) {
+	log.Init()
+	t.Cleanup(log.Uninit)
+	var polls, downloads, lists atomic.Int32
+	api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case constants.ConfigUpdatedAtAPI:
+			fmt.Fprintf(w, `{"configUpdatedAt":%d}`, polls.Add(1))
+		case constants.ConfigAPI:
+			fmt.Fprintf(w, `{"configUpdatedAt":%d,"endpoints":[{"method":"GET","route":"/pets","rateLimiting":{"enabled":true,"windowSizeInMS":60000,"maxRequests":10}}]}`, downloads.Add(1))
+		case "/" + constants.ListsAPI:
+			fmt.Fprintf(w, `{"blockedUserAgents":"bot-%d"}`, lists.Add(1))
+		default:
+			fmt.Fprint(w, "{}")
+		}
+	}))
+	t.Cleanup(api.Close)
+	handler := &GrpcServer{}
+	const token = "AIK_SHARED_POLICY"
+	register := func(pid int32, token, endpoint, configEndpoint string) {
+		key := ServerKey{Token: token, ServerPID: pid}
+		_, err := handler.OnConfig(t.Context(), &protos.Config{Token: token, ServerPid: pid, Endpoint: endpoint, ConfigEndpoint: configEndpoint})
+		if err != nil {
+			t.Errorf("registration failed: %v", err)
+		}
+		t.Cleanup(func() {
+			server_utils.Unregister(key)
+			globals.ServersMutex.Lock()
+			delete(globals.PastDeletedServers, key)
+			globals.ServersMutex.Unlock()
+		})
+	}
+	var registrations sync.WaitGroup
+	for _, pid := range []int32{1, 2} {
+		registrations.Go(func() { register(pid, token, api.URL, api.URL) })
+	}
+	registrations.Wait()
+	assertRevision := func(version int32) {
+		t.Helper()
+		for _, pid := range []int32{1, 2} {
+			cfg, err := handler.GetCloudConfig(t.Context(), &protos.CloudConfigUpdatedAt{Token: token, ServerPid: pid, ConfigUpdatedAt: int64(version - 1)})
+			require.NoError(t, err)
+			require.EqualValues(t, version, cfg.ConfigUpdatedAt)
+			require.Equal(t, fmt.Sprintf("bot-%d", version), cfg.BlockedUserAgents)
+			_, err = handler.GetCloudConfig(t.Context(), &protos.CloudConfigUpdatedAt{Token: token, ServerPid: pid, ConfigUpdatedAt: cfg.ConfigUpdatedAt})
+			require.Error(t, err)
+		}
+		require.Equal(t, version, polls.Load())
+		require.Equal(t, version, downloads.Load())
+		require.Equal(t, version, lists.Load())
+	}
+	assertRevision(1)
+	cloud.PollCloudConfigs(nil)
+	assertRevision(2)
+	a := globals.GetServer(ServerKey{Token: token, ServerPID: 1})
+	b := globals.GetServer(ServerKey{Token: token, ServerPID: 2})
+	route := RateLimitingKey{Method: "GET", Route: "/pets"}
+	require.NotNil(t, a.RateLimitingMap[route])
+	require.NotNil(t, b.RateLimitingMap[route])
+	require.NotSame(t, a.RateLimitingMap[route], b.RateLimitingMap[route])
+	require.True(t, cloud.StoreCloudConfig(a, []byte(`{"configUpdatedAt":3}`)))
+	cfg, err := handler.GetCloudConfig(t.Context(), &protos.CloudConfigUpdatedAt{Token: token, ServerPid: 2, ConfigUpdatedAt: 2})
+	require.NoError(t, err)
+	require.EqualValues(t, 3, cfg.ConfigUpdatedAt)
+	require.Equal(t, "bot-3", cfg.BlockedUserAgents)
+
+	otherAPI := httptest.NewServer(api.Config.Handler)
+	t.Cleanup(otherAPI.Close)
+	register(3, "AIK_OTHER", api.URL, api.URL)
+	register(4, token, otherAPI.URL, api.URL)
+	register(5, token, api.URL, otherAPI.URL)
+	require.EqualValues(t, 5, downloads.Load())
+}
 
 func TestServerSendsLargeCloudConfig(t *testing.T) {
 	ips := make([]string, 300000)

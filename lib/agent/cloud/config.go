@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	. "main/aikido_types"
 	"main/constants"
+	"main/globals"
 	"main/log"
 	"main/rate_limiting"
 	"runtime"
@@ -64,8 +65,11 @@ func StoreCloudConfig(server *ServerData, configReponse []byte) bool {
 	}
 	server.CloudConfig = tempCloudConfig
 	UpdateListsConfig(server)
-	for _, member := range server.CloudPolicy.Servers {
-		ApplyCloudConfig(member)
+	ApplyCloudConfig(server)
+	for _, other := range globals.GetServers() {
+		if other != server && other.CloudPolicy == server.CloudPolicy {
+			ApplyCloudConfig(other)
+		}
 	}
 	return true
 }

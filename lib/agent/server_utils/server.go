@@ -32,7 +32,7 @@ func storeConfig(server *ServerData, req *protos.Config) {
 
 func Register(serverKey ServerKey, requestProcessorPID int32, req *protos.Config) {
 	globals.ServersMutex.Lock()
-	server, exists := globals.GetOrCreateServer(serverKey, req.GetEndpoint(), req.GetConfigEndpoint())
+	server, exists := globals.GetOrCreateServer(serverKey)
 	if exists {
 		globals.ServersMutex.Unlock()
 		log.Debugf(log.MainLogger, "Server \"AIK_RUNTIME_***%s\" already exists, skipping registration (request processor PID: %d, server PID: %d)", utils.AnonymizeToken(serverKey.Token), requestProcessorPID, serverKey.ServerPID)
@@ -41,8 +41,12 @@ func Register(serverKey ServerKey, requestProcessorPID int32, req *protos.Config
 	log.Infof(log.MainLogger, "Client (request processor PID: %d) connected. Registering server \"AIK_RUNTIME_***%s\" (server PID: %d)...", requestProcessorPID, utils.AnonymizeToken(serverKey.Token), serverKey.ServerPID)
 
 	storeConfig(server, req)
-	server.Registration.Add(1)
-	defer server.Registration.Done()
+	for key, other := range globals.Servers {
+		if other != server && key.Token == serverKey.Token && other.AikidoConfig.Endpoint == req.GetEndpoint() && other.AikidoConfig.ConfigEndpoint == req.GetConfigEndpoint() {
+			server.CloudPolicy = other.CloudPolicy
+			break
+		}
+	}
 	// One token can register several servers (one per PHP server PID), so the
 	// server PID keeps their log file names apart.
 	logTag := fmt.Sprintf("%s-%d", utils.AnonymizeToken(serverKey.Token), serverKey.ServerPID)
@@ -74,14 +78,14 @@ func Register(serverKey ServerKey, requestProcessorPID int32, req *protos.Config
 
 func Unregister(serverKey ServerKey) {
 	log.Infof(log.MainLogger, "Unregistering server \"AIK_RUNTIME_***%s\" (server PID: %d)...", utils.AnonymizeToken(serverKey.Token), serverKey.ServerPID)
-	server := globals.DeleteServer(serverKey)
+	server := globals.GetServer(serverKey)
 	if server == nil {
 		return
 	}
-	server.Registration.Wait()
 	attack_wave_detection.Uninit(server)
 	rate_limiting.Uninit(server)
 	cloud.Uninit(server)
+	globals.DeleteServer(serverKey)
 
 	log.Infof(log.MainLogger, "Server \"AIK_RUNTIME_***%s\" (server PID: %d) unregistered successfully!", utils.AnonymizeToken(serverKey.Token), serverKey.ServerPID)
 }
