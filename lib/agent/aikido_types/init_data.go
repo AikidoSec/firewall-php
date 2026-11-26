@@ -123,28 +123,24 @@ type CloudConfigUpdatedAt struct {
 }
 
 type ServerDataPolling struct {
-	HeartbeatRoutineChannel     chan struct{}
-	HeartbeatTicker             *time.Ticker
-	ConfigPollingRoutineChannel chan struct{}
-	ConfigPollingTicker         *time.Ticker
-	ConfigStreamRoutineChannel  chan struct{}
-	RateLimitingChannel         chan struct{}
-	RateLimitingTicker          *time.Ticker
-	AttackWaveChannel           chan struct{}
-	AttackWaveTicker            *time.Ticker
+	HeartbeatRoutineChannel    chan struct{}
+	HeartbeatTicker            *time.Ticker
+	ConfigStreamRoutineChannel chan struct{}
+	RateLimitingChannel        chan struct{}
+	RateLimitingTicker         *time.Ticker
+	AttackWaveChannel          chan struct{}
+	AttackWaveTicker           *time.Ticker
 }
 
 func NewServerDataPolling() *ServerDataPolling {
 	return &ServerDataPolling{
-		HeartbeatRoutineChannel:     make(chan struct{}),
-		HeartbeatTicker:             time.NewTicker(10 * time.Minute),
-		ConfigPollingRoutineChannel: make(chan struct{}),
-		ConfigPollingTicker:         time.NewTicker(1 * time.Minute),
-		ConfigStreamRoutineChannel:  make(chan struct{}),
-		RateLimitingChannel:         make(chan struct{}),
-		RateLimitingTicker:          time.NewTicker(constants.MinRateLimitingIntervalInMs * time.Millisecond),
-		AttackWaveChannel:           make(chan struct{}),
-		AttackWaveTicker:            time.NewTicker(1 * time.Minute),
+		HeartbeatRoutineChannel:    make(chan struct{}),
+		HeartbeatTicker:            time.NewTicker(10 * time.Minute),
+		ConfigStreamRoutineChannel: make(chan struct{}),
+		RateLimitingChannel:        make(chan struct{}),
+		RateLimitingTicker:         time.NewTicker(constants.MinRateLimitingIntervalInMs * time.Millisecond),
+		AttackWaveChannel:          make(chan struct{}),
+		AttackWaveTicker:           time.NewTicker(1 * time.Minute),
 	}
 }
 

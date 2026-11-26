@@ -91,7 +91,7 @@ func TestGetCloudConfigSharesDownloadsAcrossServerPIDs(t *testing.T) {
 	}
 	a.ConfigUpdateMutex.Unlock()
 	<-registered
-	cloud.CheckConfigUpdatedAt(a)
+	cloud.PollCloudConfigs(nil)
 	assertRevision(2)
 	route := RateLimitingKey{Method: "GET", Route: "/pets"}
 	require.NotNil(t, a.RateLimitingMap[route])

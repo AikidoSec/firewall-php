@@ -2,7 +2,9 @@ package cloud
 
 import (
 	. "main/aikido_types"
+	"main/globals"
 	"main/utils"
+	"sync"
 )
 
 func Init(server *ServerData) {
@@ -15,7 +17,6 @@ func Init(server *ServerData) {
 	}
 
 	utils.StartPollingRoutine(server.PollingData.HeartbeatRoutineChannel, server.PollingData.HeartbeatTicker, SendHeartbeatEvent, server)
-	utils.StartPollingRoutine(server.PollingData.ConfigPollingRoutineChannel, server.PollingData.ConfigPollingTicker, CheckConfigUpdatedAt, server)
 }
 
 func applyCachedConfig(server *ServerData) bool {
@@ -30,7 +31,18 @@ func applyCachedConfig(server *ServerData) bool {
 
 func Uninit(server *ServerData) {
 	utils.StopPollingRoutine(server.PollingData.HeartbeatRoutineChannel)
-	utils.StopPollingRoutine(server.PollingData.ConfigPollingRoutineChannel)
-
 	StopConfigStreamRoutine(server)
+}
+
+func PollCloudConfigs(_ *ServerData) {
+	seen := make(map[*CloudPolicy]bool)
+	var polls sync.WaitGroup
+	for _, server := range globals.GetServers() {
+		if seen[server.CloudPolicy] {
+			continue
+		}
+		seen[server.CloudPolicy] = true
+		polls.Go(func() { CheckConfigUpdatedAt(server) })
+	}
+	polls.Wait()
 }
