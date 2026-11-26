@@ -65,8 +65,8 @@ func StoreCloudConfig(server *ServerData, configReponse []byte) bool {
 	lists := fetchCloudLists(server)
 	ApplyCloudConfig(server, tempCloudConfig, lists)
 	if lists != nil {
-		runtime.GC()
 		// A large list refresh can leave old lists and temporary buffers on the heap until the next GC cycle.
+		runtime.GC()
 	}
 	return true
 }
