@@ -9,13 +9,14 @@ import (
 	"runtime"
 )
 
-func WasConfigUpdated(server *ServerData, configUpdatedAt int64) bool {
-	server.CloudConfigMutex.Lock()
-	defer server.CloudConfigMutex.Unlock()
-	if configUpdatedAt <= server.CloudConfig.ConfigUpdatedAt {
-		return false
-	}
-	return true
+func IsNewerConfigRevision(candidate, current int64) bool {
+	return candidate > current
+}
+
+func cachedConfigRevision(server *ServerData) int64 {
+	server.ConfigCacheMutex.Lock()
+	defer server.ConfigCacheMutex.Unlock()
+	return server.CloudConfig.ConfigUpdatedAt
 }
 
 func CheckConfigUpdatedAt(server *ServerData) {
@@ -31,7 +32,7 @@ func CheckConfigUpdatedAt(server *ServerData) {
 		return
 	}
 
-	if !WasConfigUpdated(server, cloudConfigUpdatedAt.ConfigUpdatedAt) {
+	if !IsNewerConfigRevision(cloudConfigUpdatedAt.ConfigUpdatedAt, cachedConfigRevision(server)) {
 		return
 	}
 
@@ -55,15 +56,15 @@ func StoreCloudConfig(server *ServerData, configReponse []byte) bool {
 		log.Warnf(server.Logger, "Failed to unmarshal cloud config: %v", err)
 		return false
 	}
-	server.ConfigUpdateMutex.Lock()
-	defer server.ConfigUpdateMutex.Unlock()
-	if tempCloudConfig.ConfigUpdatedAt <= server.CloudConfig.ConfigUpdatedAt {
-		log.Debugf(server.Logger, "ConfigUpdatedAt is the same!")
+	server.ConfigRefreshMutex.Lock()
+	defer server.ConfigRefreshMutex.Unlock()
+	if !IsNewerConfigRevision(tempCloudConfig.ConfigUpdatedAt, server.CloudConfig.ConfigUpdatedAt) {
+		log.Debugf(server.Logger, "Ignoring config revision %d, cached revision is %d", tempCloudConfig.ConfigUpdatedAt, server.CloudConfig.ConfigUpdatedAt)
 		return true
 	}
 	lists := fetchCloudLists(server)
-	server.CloudConfigMutex.Lock()
-	defer server.CloudConfigMutex.Unlock()
+	server.ConfigCacheMutex.Lock()
+	defer server.ConfigCacheMutex.Unlock()
 	server.CloudConfig = tempCloudConfig
 	if lists != nil {
 		server.CloudLists = *lists

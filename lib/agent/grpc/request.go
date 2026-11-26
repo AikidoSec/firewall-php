@@ -368,10 +368,10 @@ func getCloudConfig(server *ServerData, configUpdatedAt int64) *protos.CloudConf
 
 	isBlockingEnabled := utils.IsBlockingEnabled(server)
 
-	server.CloudConfigMutex.Lock()
-	defer server.CloudConfigMutex.Unlock()
+	server.ConfigCacheMutex.Lock()
+	defer server.ConfigCacheMutex.Unlock()
 
-	if server.CloudConfig.ConfigUpdatedAt <= configUpdatedAt {
+	if !cloud.IsNewerConfigRevision(server.CloudConfig.ConfigUpdatedAt, configUpdatedAt) {
 		return nil
 	}
 
