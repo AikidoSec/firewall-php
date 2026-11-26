@@ -137,6 +137,13 @@ func setCloudConfig(server *ServerData, cloudConfigFromAgent *protos.CloudConfig
 
 	server.CloudConfig.BlockNewOutgoingRequests = cloudConfigFromAgent.BlockNewOutgoingRequests
 
+	server.CloudConfig.SuspiciousOutboundDomains = make(map[string]bool, len(cloudConfigFromAgent.SuspiciousOutboundDomains))
+	for _, domain := range cloudConfigFromAgent.SuspiciousOutboundDomains {
+		if hostname := helpers.NormalizeHostname(domain); hostname != "" {
+			server.CloudConfig.SuspiciousOutboundDomains[hostname] = true
+		}
+	}
+
 	server.CloudConfig.OutboundDomains = map[string]bool{}
 	for _, domain := range cloudConfigFromAgent.OutboundDomains {
 		// Normalize hostname to prevent Punycode bypass attacks

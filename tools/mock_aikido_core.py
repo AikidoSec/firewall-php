@@ -37,6 +37,8 @@ def load_config(j):
     configUpdatedAt = max(int(time.time()), last_config_updated_at + 1)
     last_config_updated_at = configUpdatedAt
     responses["lists"] = { "success": True, "serviceId": j["serviceId"] }
+    if "suspiciousOutboundDomains" in j:
+        responses["lists"]["suspiciousOutboundDomains"] = j.pop("suspiciousOutboundDomains")
     if "blockedIPAddresses" in j:
         responses["lists"]["blockedIPAddresses"] = j["blockedIPAddresses"]
         del j["blockedIPAddresses"]

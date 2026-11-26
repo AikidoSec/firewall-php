@@ -93,6 +93,7 @@ func UpdateListsConfig(server *ServerData) bool {
 	server.CloudLists.AllowedIpsList = UpdateIpsLists(tempListsConfig.AllowedIpAddresses)
 
 	server.CloudLists.BlockedUserAgents = tempListsConfig.BlockedUserAgents
+	server.CloudLists.SuspiciousOutboundDomains = tempListsConfig.SuspiciousOutboundDomains
 	server.CloudLists.MonitoredUserAgents = tempListsConfig.MonitoredUserAgents
 
 	server.CloudLists.UserAgentDetails = make(map[string]string)

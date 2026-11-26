@@ -24,12 +24,13 @@ func TestStoreCloudConfigKeepsListsOnFailedDownload(t *testing.T) {
 		CloudConfig:  CloudConfigData{ConfigUpdatedAt: 1},
 		PollingData:  &ServerDataPolling{HeartbeatTicker: heartbeat},
 		CloudLists: CloudListsData{
-			BlockedIpsList:      map[string]IpBlocklist{"blocked": {Ips: []string{"1.2.3.4"}}},
-			AllowedIpsList:      map[string]IpBlocklist{"allowed": {Ips: []string{"1.2.3.5"}}},
-			MonitoredIpsList:    map[string]IpBlocklist{"monitored": {Ips: []string{"1.2.3.6"}}},
-			BlockedUserAgents:   "BlockedBot",
-			MonitoredUserAgents: "MonitoredBot",
-			UserAgentDetails:    map[string]string{"bot": "BlockedBot|MonitoredBot"},
+			BlockedIpsList:            map[string]IpBlocklist{"blocked": {Ips: []string{"1.2.3.4"}}},
+			AllowedIpsList:            map[string]IpBlocklist{"allowed": {Ips: []string{"1.2.3.5"}}},
+			MonitoredIpsList:          map[string]IpBlocklist{"monitored": {Ips: []string{"1.2.3.6"}}},
+			BlockedUserAgents:         "BlockedBot",
+			SuspiciousOutboundDomains: []string{"callback.example"},
+			MonitoredUserAgents:       "MonitoredBot",
+			UserAgentDetails:          map[string]string{"bot": "BlockedBot|MonitoredBot"},
 		},
 	}
 	lists := server.CloudLists
