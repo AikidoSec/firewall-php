@@ -7,7 +7,11 @@ import (
 	"main/ipc/protos"
 	"main/log"
 	"reflect"
+	"strconv"
+	"strings"
 )
+
+const maxBodyBytesForSchema = 1024 * 1024 // 1 MiB
 
 func GetApiInfo(instance *instance.RequestProcessorInstance, server *ServerData) *protos.APISpec {
 	if !server.AikidoConfig.CollectApiSchema {
@@ -15,11 +19,19 @@ func GetApiInfo(instance *instance.RequestProcessorInstance, server *ServerData)
 		return nil
 	}
 
+	headers := context.GetHeadersParsed(instance)
+	contentLength, _ := headers["content_length"].(string)
+	bodyBytes, err := strconv.ParseUint(strings.Trim(contentLength, " \t"), 10, 64)
+	if bodyBytes > maxBodyBytesForSchema {
+		return nil
+	}
+
 	var bodyInfo *protos.APIBodyInfo
 	var queryInfo *protos.DataSchema
-
-	body := context.GetBodyParsed(instance)
-	headers := context.GetHeadersParsed(instance)
+	var body map[string]interface{}
+	if err == nil && bodyBytes > 0 {
+		body = context.GetBodyParsed(instance)
+	}
 	query := context.GetQueryParsed(instance)
 
 	// Check body data

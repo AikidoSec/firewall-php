@@ -41,6 +41,7 @@ nginx_conf_template = r"""
 server {{
     listen {port};
     server_name {name};
+    client_max_body_size 2m;
 
     root {test_dir};
     index index.php;

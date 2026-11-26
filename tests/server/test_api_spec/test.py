@@ -75,11 +75,25 @@ def get_api_spec_merge():
     return url, body, headers
 
 
+def post_form_size_cases():
+    base = f"http://localhost:{get_php_port()}"
+    limit = 1024 * 1024
+    field = b"field="
+    response = requests.post(base + "/form-boundary", data=field + b"x" * (limit - len(field)),
+                             headers={"Content-Type": "application/x-www-form-urlencoded"})
+    assert_response_code_is(response, 200)
+
+    response = requests.post(base + "/file-upload?source=form", data={"field": "small"},
+                             files={"file": ("report.txt", b"x" * limit)})
+    assert_response_code_is(response, 200)
+
+
 def run_api_spec_tests(fns, expected_json):
     for fn in fns:
         response = php_server_post(*fn())
         assert_response_code_is(response, 200)
     
+    post_form_size_cases()
     mock_server_wait_for_new_events(70)
     
     events = mock_server_get_events()
@@ -87,6 +101,9 @@ def run_api_spec_tests(fns, expected_json):
     assert_started_event_is_valid(events[0])
     
     assert_event_contains_subset_file(events[1], expected_json)
+    schemas = {route["path"]: route["apispec"] for route in events[1]["routes"]}
+    assert "field" in schemas["/form-boundary"]["body"]["schema"]["properties"]
+    assert schemas["/file-upload"] is None
 
 def run_test():
     run_api_spec_tests([
