@@ -20,6 +20,7 @@ platform_name = ""
 
 # Incremented every time the config changes, so open config streams know to push an event
 config_version = 0
+last_config_updated_at = 0
 
 # Counters used by tests to check how the agent got a config update
 config_fetch_count = 0
@@ -29,9 +30,12 @@ excluded_routes = ['mock_get_events', 'mock_tests_simple', 'mock_down', 'mock_up
                    'mock_get_config_fetch_count', 'mock_get_stream_connections']
 
 def load_config(j):
-    global config_version
+    global config_version, last_config_updated_at
     config_version += 1
-    configUpdatedAt = int(time.time())
+    # The agent ignores a config that is not newer than the one it has, so two configs
+    # loaded within the same second must still get increasing timestamps.
+    configUpdatedAt = max(int(time.time()), last_config_updated_at + 1)
+    last_config_updated_at = configUpdatedAt
     responses["lists"] = { "success": True, "serviceId": j["serviceId"] }
     if "blockedIPAddresses" in j:
         responses["lists"]["blockedIPAddresses"] = j["blockedIPAddresses"]

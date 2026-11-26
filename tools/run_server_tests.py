@@ -63,6 +63,8 @@ passed_tests = []
 failed_tests = []
 
 lock = threading.Lock()
+MOCK_START_TIMEOUT = 30
+startup_slots = threading.Semaphore(4)
 
 def is_port_in_active_use(port):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
@@ -120,28 +122,31 @@ def _handle_test_scenario_impl(data, root_tests_dir, test_lib_dir, server, bench
     test_process = None
     try:
         print(f"Running {test_name}...")
-        
-        # For frankenphp modes, mock servers are already started and FrankenPHP is already running
-        if server in ["frankenphp-worker", "frankenphp-classic"]:
-            mock_aikido_core = data.get("mock_process")
-            if not mock_aikido_core:
-                raise RuntimeError(f"Mock process not found for {test_name} in {server} mode")
-        else:
-            # For other server modes, start mock server normally
-            print(f"Starting mock server on port {mock_port} with start_config.json for {test_name}...")
-            mock_aikido_core = subprocess.Popen(["python3", "-u", "mock_aikido_core.py", str(mock_port), data["config_path"]], cwd=os.path.dirname(os.path.abspath(__file__)))
-            
-            # Wait for mock server to be ready (instead of fixed sleep)
-            if not wait_for_port_ready(mock_port, timeout=10):
-                raise RuntimeError(f"Mock server on port {mock_port} failed to start within 10 seconds")
-            print(f"Mock server on port {mock_port} is ready")
 
-            print(f"Starting {server} server on port {server_port} for {test_name}...")
+        # Only a few scenarios start their servers at a time: starting all of them at once
+        # overloads small runners. Once started, the test bodies all run in parallel.
+        with startup_slots:
+            # For frankenphp modes, mock servers are already started and FrankenPHP is already running
+            if server in ["frankenphp-worker", "frankenphp-classic"]:
+                mock_aikido_core = data.get("mock_process")
+                if not mock_aikido_core:
+                    raise RuntimeError(f"Mock process not found for {test_name} in {server} mode")
+            else:
+                # For other server modes, start mock server normally
+                print(f"Starting mock server on port {mock_port} with start_config.json for {test_name}...")
+                mock_aikido_core = subprocess.Popen(["python3", "-u", "mock_aikido_core.py", str(mock_port), data["config_path"]], cwd=os.path.dirname(os.path.abspath(__file__)))
 
-            server_start = servers[server][START_SERVER]
-            server_process = server_start(data, test_lib_dir, valgrind)
+                if not wait_for_port_ready(mock_port, timeout=MOCK_START_TIMEOUT):
+                    raise RuntimeError(f"Mock server on port {mock_port} failed to start within {MOCK_START_TIMEOUT} seconds")
+                print(f"Mock server on port {mock_port} is ready")
 
-        time.sleep(20)
+                print(f"Starting {server} server on port {server_port} for {test_name}...")
+
+                server_start = servers[server][START_SERVER]
+                server_process = server_start(data, test_lib_dir, valgrind)
+
+            if not wait_for_port_ready(server_port, timeout=60):
+                raise RuntimeError(f"{server} server on port {server_port} failed to start within 60 seconds")
 
         test_script_name = "test.py"
         test_script_cwd = data["test_dir"]
@@ -253,7 +258,6 @@ def main(root_tests_dir, test_lib_dir, test_dirs, server="php-built-in", benchma
         server_start = servers[server][START_SERVER]
         server_start(tests_data[0], test_lib_dir, valgrind)
         print(f"FrankenPHP started with all mock servers ready")
-        time.sleep(5)  # Give FrankenPHP time to initialize
     
     threads = []
     for test_data in tests_data:
@@ -261,7 +265,6 @@ def main(root_tests_dir, test_lib_dir, test_dirs, server="php-built-in", benchma
         thread = threading.Thread(target=handle_test_scenario, args=args)
         threads.append(thread)
         thread.start()
-        time.sleep(10)
     for thread in threads:
         thread.join()
 
