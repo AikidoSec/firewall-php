@@ -117,8 +117,8 @@ func handleConfigStreamEvent(server *ServerData, event sseEvent) {
 		return
 	}
 
-	server.ConfigUpdateMutex.Lock()
-	defer server.ConfigUpdateMutex.Unlock()
+	server.ConfigRefreshMutex.Lock()
+	defer server.ConfigRefreshMutex.Unlock()
 	if !announcesNewerConfig(server, []byte(event.data)) {
 		return
 	}
@@ -188,8 +188,8 @@ func isRealtimeEnabled(server *ServerData) bool {
 		return true
 	}
 
-	server.CloudConfigMutex.Lock()
-	defer server.CloudConfigMutex.Unlock()
+	server.ConfigCacheMutex.Lock()
+	defer server.ConfigCacheMutex.Unlock()
 
 	return slices.Contains(server.CloudConfig.EnabledFeatures, constants.RealtimeUpdatesFeature)
 }

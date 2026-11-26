@@ -43,7 +43,7 @@ func AdvanceRateLimitingQueues(server *ServerData) {
 	}
 }
 
-// The caller must hold server.CloudConfigMutex to prevent endpoint settings changing during the update.
+// The caller must hold server.ConfigCacheMutex to prevent endpoint settings changing during the update.
 func UpdateConfig(server *ServerData) {
 	server.RateLimitingMutex.Lock()
 	defer server.RateLimitingMutex.Unlock()

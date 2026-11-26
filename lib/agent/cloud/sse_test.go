@@ -117,12 +117,6 @@ func newTestServerData(cloud *mockCloud, token string, sse bool) *ServerData {
 	return server
 }
 
-func getConfigUpdatedAt(server *ServerData) int64 {
-	server.CloudConfigMutex.Lock()
-	defer server.CloudConfigMutex.Unlock()
-	return server.CloudConfig.ConfigUpdatedAt
-}
-
 func assertAgentHeaders(t *testing.T, server *ServerData, headers http.Header) {
 	t.Helper()
 	assert.Equal(t, "php", headers.Get("X-Agent-Platform"))
@@ -175,7 +169,7 @@ func TestConfigStreamRoutine(t *testing.T) {
 		cloud.publishConfig(t, 1000)
 
 		assert.True(t, waitFor(5*time.Second, func() bool {
-			return getConfigUpdatedAt(server) == 1000
+			return cachedConfigRevision(server) == 1000
 		}), "expected the pushed config to be applied")
 		assert.Equal(t, int32(1), cloud.configRequests.Load())
 		assertAgentHeaders(t, server, cloud.configHeaders.Load().(http.Header))
@@ -187,17 +181,17 @@ func TestConfigStreamRoutine(t *testing.T) {
 
 		cloud.publishConfig(t, 2000)
 		time.Sleep(200 * time.Millisecond)
-		assert.Equal(t, int64(1000), getConfigUpdatedAt(server))
+		assert.Equal(t, int64(1000), cachedConfigRevision(server))
 		assert.Equal(t, int32(1), cloud.configRequests.Load())
 
-		server.ConfigUpdateMutex.Lock()
+		server.ConfigRefreshMutex.Lock()
 		server.ConfigStreamLastRefreshStart = time.Now().Add(-9 * time.Second)
-		server.ConfigUpdateMutex.Unlock()
+		server.ConfigRefreshMutex.Unlock()
 
 		cloud.publishConfig(t, 3000)
 
 		assert.True(t, waitFor(5*time.Second, func() bool {
-			return getConfigUpdatedAt(server) == 3000
+			return cachedConfigRevision(server) == 3000
 		}), "expected the throttled config stream to refresh again")
 		assert.Equal(t, int32(2), cloud.configRequests.Load())
 
