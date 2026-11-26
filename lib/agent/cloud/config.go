@@ -57,7 +57,7 @@ func StoreCloudConfig(server *ServerData, configReponse []byte) bool {
 	}
 	server.ConfigUpdateMutex.Lock()
 	defer server.ConfigUpdateMutex.Unlock()
-	if !WasConfigUpdated(server, tempCloudConfig.ConfigUpdatedAt) {
+	if tempCloudConfig.ConfigUpdatedAt <= server.CloudConfig.ConfigUpdatedAt {
 		log.Debugf(server.Logger, "ConfigUpdatedAt is the same!")
 		return true
 	}
