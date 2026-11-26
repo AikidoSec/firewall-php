@@ -7,11 +7,11 @@ import (
 
 func Init(server *ServerData) {
 	if !applyCachedConfig(server) {
-		server.ConfigUpdateMutex.Lock()
+		server.ConfigRefreshMutex.Lock()
 		if !applyCachedConfig(server) {
 			checkConfigUpdatedAt(server)
 		}
-		server.ConfigUpdateMutex.Unlock()
+		server.ConfigRefreshMutex.Unlock()
 	}
 
 	utils.StartPollingRoutine(server.PollingData.HeartbeatRoutineChannel, server.PollingData.HeartbeatTicker, SendHeartbeatEvent, server)
@@ -19,8 +19,8 @@ func Init(server *ServerData) {
 }
 
 func applyCachedConfig(server *ServerData) bool {
-	server.CloudConfigMutex.Lock()
-	defer server.CloudConfigMutex.Unlock()
+	server.ConfigCacheMutex.Lock()
+	defer server.ConfigCacheMutex.Unlock()
 	if server.CloudConfig.ConfigUpdatedAt == 0 {
 		return false
 	}

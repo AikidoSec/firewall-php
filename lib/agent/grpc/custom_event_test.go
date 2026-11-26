@@ -24,8 +24,8 @@ func TestOnCustomEventDoesNotWaitForCloudConfig(t *testing.T) {
 		globals.ServersMutex.Unlock()
 	}()
 
-	server.CloudConfigMutex.Lock()
-	defer server.CloudConfigMutex.Unlock()
+	server.ConfigCacheMutex.Lock()
+	defer server.ConfigCacheMutex.Unlock()
 
 	scheduled := make(chan error, 1)
 	go func() {

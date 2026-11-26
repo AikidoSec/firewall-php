@@ -159,9 +159,10 @@ type CloudPolicy struct {
 
 	CloudLists CloudListsData
 
-	// Config mutex used to sync access to configuration data across the multiple go routines that we run in parallel
-	CloudConfigMutex  sync.Mutex
-	ConfigUpdateMutex sync.Mutex
+	// Workers can read the cache while a refresh waits for the cloud.
+	// A refresh takes ConfigRefreshMutex before ConfigCacheMutex to publish the result.
+	ConfigRefreshMutex sync.Mutex
+	ConfigCacheMutex   sync.Mutex
 
 	ConfigStreamLastRefreshStart time.Time
 }

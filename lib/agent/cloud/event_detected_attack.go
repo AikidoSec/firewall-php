@@ -102,5 +102,5 @@ func sendAttackDetectedEvent(server *ServerData, req *protos.AttackDetected, att
 		return
 	}
 
-	StoreCloudConfig(server, response)
+	UpdateCloudConfig(server, response)
 }

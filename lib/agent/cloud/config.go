@@ -10,18 +10,28 @@ import (
 	"runtime"
 )
 
+func IsNewerConfigRevision(candidate, current int64) bool {
+	return candidate > current
+}
+
+func cachedConfigRevision(server *ServerData) int64 {
+	server.ConfigCacheMutex.Lock()
+	defer server.ConfigCacheMutex.Unlock()
+	return server.CloudConfig.ConfigUpdatedAt
+}
+
 func announcesNewerConfig(server *ServerData, payload []byte) bool {
 	var update CloudConfigUpdatedAt
 	if err := json.Unmarshal(payload, &update); err != nil {
 		log.Debugf(server.Logger, "Invalid config update notification: %v", err)
 		return false
 	}
-	return update.ConfigUpdatedAt > server.CloudConfig.ConfigUpdatedAt
+	return IsNewerConfigRevision(update.ConfigUpdatedAt, server.CloudConfig.ConfigUpdatedAt)
 }
 
 func CheckConfigUpdatedAt(server *ServerData) {
-	server.ConfigUpdateMutex.Lock()
-	defer server.ConfigUpdateMutex.Unlock()
+	server.ConfigRefreshMutex.Lock()
+	defer server.ConfigRefreshMutex.Unlock()
 	checkConfigUpdatedAt(server)
 }
 
@@ -45,7 +55,7 @@ func fetchAndStoreCloudConfig(server *ServerData) {
 	}
 
 	if config := parseCloudConfig(server, configResponse); config != nil {
-		storeCloudConfig(server, config)
+		refreshCloudPolicy(server, config)
 	}
 }
 
@@ -58,30 +68,31 @@ func parseCloudConfig(server *ServerData, response []byte) *CloudConfigData {
 	return &config
 }
 
-func StoreCloudConfig(server *ServerData, response []byte) bool {
+func UpdateCloudConfig(server *ServerData, response []byte) bool {
 	config := parseCloudConfig(server, response)
 	if config == nil {
 		return false
 	}
-	server.CloudConfigMutex.Lock()
-	alreadyStored := config.ConfigUpdatedAt <= server.CloudConfig.ConfigUpdatedAt
-	server.CloudConfigMutex.Unlock()
-	if alreadyStored {
+	if !IsNewerConfigRevision(config.ConfigUpdatedAt, cachedConfigRevision(server)) {
 		return true
 	}
-	server.ConfigUpdateMutex.Lock()
-	defer server.ConfigUpdateMutex.Unlock()
-	storeCloudConfig(server, config)
+	server.ConfigRefreshMutex.Lock()
+	defer server.ConfigRefreshMutex.Unlock()
+	refreshCloudPolicy(server, config)
 	return true
 }
 
-func storeCloudConfig(server *ServerData, config *CloudConfigData) {
-	if config.ConfigUpdatedAt <= server.CloudConfig.ConfigUpdatedAt {
+func refreshCloudPolicy(server *ServerData, config *CloudConfigData) {
+	if !IsNewerConfigRevision(config.ConfigUpdatedAt, server.CloudConfig.ConfigUpdatedAt) {
 		return
 	}
 	lists := fetchCloudLists(server)
-	server.CloudConfigMutex.Lock()
-	defer server.CloudConfigMutex.Unlock()
+	storeCloudConfig(server, config, lists)
+}
+
+func storeCloudConfig(server *ServerData, config *CloudConfigData, lists *CloudListsData) {
+	server.ConfigCacheMutex.Lock()
+	defer server.ConfigCacheMutex.Unlock()
 	server.CloudConfig = *config
 	if lists != nil {
 		server.CloudLists = *lists

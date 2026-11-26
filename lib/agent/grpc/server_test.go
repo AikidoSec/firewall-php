@@ -78,7 +78,7 @@ func TestGetCloudConfigSharesDownloadsAcrossServerPIDs(t *testing.T) {
 	assertRevision(1)
 	a := globals.GetServer(ServerKey{Token: token, ServerPID: 1})
 	b := globals.GetServer(ServerKey{Token: token, ServerPID: 2})
-	a.ConfigUpdateMutex.Lock()
+	a.ConfigRefreshMutex.Lock()
 	registered := make(chan struct{})
 	go func() {
 		register(6, token, api.URL, api.URL)
@@ -89,7 +89,7 @@ func TestGetCloudConfigSharesDownloadsAcrossServerPIDs(t *testing.T) {
 	case <-time.After(time.Second):
 		t.Error("registration with cached config waited for a refresh")
 	}
-	a.ConfigUpdateMutex.Unlock()
+	a.ConfigRefreshMutex.Unlock()
 	<-registered
 	cloud.CheckConfigUpdatedAt(a)
 	assertRevision(2)
@@ -97,7 +97,7 @@ func TestGetCloudConfigSharesDownloadsAcrossServerPIDs(t *testing.T) {
 	require.NotNil(t, a.RateLimitingMap[route])
 	require.NotNil(t, b.RateLimitingMap[route])
 	require.NotSame(t, a.RateLimitingMap[route], b.RateLimitingMap[route])
-	require.True(t, cloud.StoreCloudConfig(a, []byte(`{"configUpdatedAt":3}`)))
+	require.True(t, cloud.UpdateCloudConfig(a, []byte(`{"configUpdatedAt":3}`)))
 	cfg, err := handler.GetCloudConfig(t.Context(), &protos.CloudConfigUpdatedAt{Token: token, ServerPid: 2, ConfigUpdatedAt: 2})
 	require.NoError(t, err)
 	require.EqualValues(t, 3, cfg.ConfigUpdatedAt)
@@ -132,7 +132,7 @@ func TestGetCloudConfigDuringListDownload(t *testing.T) {
 	}))
 	defer api.Close()
 	server.AikidoConfig = AikidoConfigData{Token: "AIK_TEST", Endpoint: api.URL}
-	require.True(t, cloud.StoreCloudConfig(server, []byte(`{"configUpdatedAt":2}`)))
+	require.True(t, cloud.UpdateCloudConfig(server, []byte(`{"configUpdatedAt":2}`)))
 	cfg := getCloudConfig(server, 1)
 	require.EqualValues(t, 2, cfg.GetConfigUpdatedAt())
 	require.Equal(t, "new", cfg.GetBlockedUserAgents())
