@@ -18,5 +18,5 @@ func SendStartEvent(server *ServerData) {
 		LogCloudRequestError(server, "Error in sending start event: ", err)
 		return
 	}
-	StoreCloudConfig(server, response)
+	UpdateCloudConfig(server, response)
 }

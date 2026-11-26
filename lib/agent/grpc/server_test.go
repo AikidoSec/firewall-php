@@ -40,7 +40,7 @@ func TestGetCloudConfigDuringListDownload(t *testing.T) {
 	}))
 	defer api.Close()
 	server.AikidoConfig = AikidoConfigData{Token: "AIK_TEST", Endpoint: api.URL}
-	require.True(t, cloud.StoreCloudConfig(server, []byte(`{"configUpdatedAt":2}`)))
+	require.True(t, cloud.UpdateCloudConfig(server, []byte(`{"configUpdatedAt":2}`)))
 	cfg := getCloudConfig(server, 1)
 	require.EqualValues(t, 2, cfg.GetConfigUpdatedAt())
 	require.Equal(t, "new", cfg.GetBlockedUserAgents())

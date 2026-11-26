@@ -41,7 +41,7 @@ func TestPollKeepsCachedConfigWhenDownloadedRevisionIsOlder(t *testing.T) {
 	require.Equal(t, "cached", server.CloudLists.BlockedUserAgents)
 }
 
-func TestStoreCloudConfigKeepsListsOnFailedDownload(t *testing.T) {
+func TestUpdateCloudConfigKeepsListsOnFailedDownload(t *testing.T) {
 	cloudServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusServiceUnavailable)
 	}))
@@ -63,7 +63,7 @@ func TestStoreCloudConfigKeepsListsOnFailedDownload(t *testing.T) {
 		},
 	}
 	lists := server.CloudLists
-	require.True(t, StoreCloudConfig(server, []byte(`{"configUpdatedAt":2,"block":true}`)))
+	require.True(t, UpdateCloudConfig(server, []byte(`{"configUpdatedAt":2,"block":true}`)))
 	require.Equal(t, int64(2), server.CloudConfig.ConfigUpdatedAt)
 	require.NotNil(t, server.CloudConfig.Block)
 	require.True(t, *server.CloudConfig.Block)

@@ -46,31 +46,34 @@ func FetchAndStoreCloudConfig(server *ServerData) {
 		return
 	}
 
-	StoreCloudConfig(server, configResponse)
+	UpdateCloudConfig(server, configResponse)
 }
 
-func StoreCloudConfig(server *ServerData, configReponse []byte) bool {
-	tempCloudConfig := CloudConfigData{}
-	err := json.Unmarshal(configReponse, &tempCloudConfig)
-	if err != nil {
+func UpdateCloudConfig(server *ServerData, response []byte) bool {
+	var config CloudConfigData
+	if err := json.Unmarshal(response, &config); err != nil {
 		log.Warnf(server.Logger, "Failed to unmarshal cloud config: %v", err)
 		return false
 	}
 	server.ConfigRefreshMutex.Lock()
 	defer server.ConfigRefreshMutex.Unlock()
-	if !IsNewerConfigRevision(tempCloudConfig.ConfigUpdatedAt, server.CloudConfig.ConfigUpdatedAt) {
-		log.Debugf(server.Logger, "Ignoring config revision %d, cached revision is %d", tempCloudConfig.ConfigUpdatedAt, server.CloudConfig.ConfigUpdatedAt)
+	if !IsNewerConfigRevision(config.ConfigUpdatedAt, server.CloudConfig.ConfigUpdatedAt) {
+		log.Debugf(server.Logger, "Ignoring config revision %d, cached revision is %d", config.ConfigUpdatedAt, server.CloudConfig.ConfigUpdatedAt)
 		return true
 	}
 	lists := fetchCloudLists(server)
+	storeCloudConfig(server, &config, lists)
+	return true
+}
+
+func storeCloudConfig(server *ServerData, config *CloudConfigData, lists *CloudListsData) {
 	server.ConfigCacheMutex.Lock()
 	defer server.ConfigCacheMutex.Unlock()
-	server.CloudConfig = tempCloudConfig
+	server.CloudConfig = *config
 	if lists != nil {
 		server.CloudLists = *lists
 	}
 	ApplyCloudConfig(server)
-	return true
 }
 
 func ApplyCloudConfig(server *ServerData) {
