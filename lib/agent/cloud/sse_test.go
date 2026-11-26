@@ -190,9 +190,9 @@ func TestConfigStreamRoutine(t *testing.T) {
 		assert.Equal(t, int64(1000), getConfigUpdatedAt(server))
 		assert.Equal(t, int32(1), cloud.configRequests.Load())
 
-		server.ConfigStreamRefreshMutex.Lock()
+		server.ConfigUpdateMutex.Lock()
 		server.ConfigStreamLastRefreshStart = time.Now().Add(-9 * time.Second)
-		server.ConfigStreamRefreshMutex.Unlock()
+		server.ConfigUpdateMutex.Unlock()
 
 		cloud.publishConfig(t, 3000)
 

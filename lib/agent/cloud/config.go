@@ -12,13 +12,16 @@ import (
 func WasConfigUpdated(server *ServerData, configUpdatedAt int64) bool {
 	server.CloudConfigMutex.Lock()
 	defer server.CloudConfigMutex.Unlock()
-	if configUpdatedAt <= server.CloudConfig.ConfigUpdatedAt {
-		return false
-	}
-	return true
+	return configUpdatedAt > server.CloudConfig.ConfigUpdatedAt
 }
 
 func CheckConfigUpdatedAt(server *ServerData) {
+	server.ConfigUpdateMutex.Lock()
+	defer server.ConfigUpdateMutex.Unlock()
+	checkConfigUpdatedAt(server)
+}
+
+func checkConfigUpdatedAt(server *ServerData) {
 	response, err := SendCloudRequest(server, server.AikidoConfig.ConfigEndpoint, constants.ConfigUpdatedAtAPI, constants.ConfigUpdatedAtMethod, nil)
 	if err != nil {
 		LogCloudRequestError(server, "Error in sending polling config request: ", err)
@@ -35,41 +38,56 @@ func CheckConfigUpdatedAt(server *ServerData) {
 		return
 	}
 
-	FetchAndStoreCloudConfig(server)
+	fetchAndStoreCloudConfig(server)
 }
 
-func FetchAndStoreCloudConfig(server *ServerData) {
+func fetchAndStoreCloudConfig(server *ServerData) {
 	configResponse, err := SendCloudRequest(server, server.AikidoConfig.Endpoint, constants.ConfigAPI, constants.ConfigAPIMethod, nil)
 	if err != nil {
 		LogCloudRequestError(server, "Error in sending config request: ", err)
 		return
 	}
 
-	StoreCloudConfig(server, configResponse)
+	if config := parseCloudConfig(server, configResponse); config != nil {
+		storeCloudConfig(server, config)
+	}
 }
 
-func StoreCloudConfig(server *ServerData, configReponse []byte) bool {
-	tempCloudConfig := CloudConfigData{}
-	err := json.Unmarshal(configReponse, &tempCloudConfig)
-	if err != nil {
+func parseCloudConfig(server *ServerData, response []byte) *CloudConfigData {
+	var config CloudConfigData
+	if err := json.Unmarshal(response, &config); err != nil {
 		log.Warnf(server.Logger, "Failed to unmarshal cloud config: %v", err)
+		return nil
+	}
+	return &config
+}
+
+func StoreCloudConfig(server *ServerData, response []byte) bool {
+	config := parseCloudConfig(server, response)
+	if config == nil {
 		return false
+	}
+	if !WasConfigUpdated(server, config.ConfigUpdatedAt) {
+		return true
 	}
 	server.ConfigUpdateMutex.Lock()
 	defer server.ConfigUpdateMutex.Unlock()
-	if !WasConfigUpdated(server, tempCloudConfig.ConfigUpdatedAt) {
-		log.Debugf(server.Logger, "ConfigUpdatedAt is the same!")
-		return true
+	storeCloudConfig(server, config)
+	return true
+}
+
+func storeCloudConfig(server *ServerData, config *CloudConfigData) {
+	if !WasConfigUpdated(server, config.ConfigUpdatedAt) {
+		return
 	}
 	lists := fetchCloudLists(server)
 	server.CloudConfigMutex.Lock()
 	defer server.CloudConfigMutex.Unlock()
-	server.CloudConfig = tempCloudConfig
+	server.CloudConfig = *config
 	if lists != nil {
 		server.CloudLists = *lists
 	}
 	ApplyCloudConfig(server)
-	return true
 }
 
 func ApplyCloudConfig(server *ServerData) {
