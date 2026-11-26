@@ -76,10 +76,23 @@ func TestGetCloudConfigSharesDownloadsAcrossServerPIDs(t *testing.T) {
 		require.Equal(t, version, lists.Load())
 	}
 	assertRevision(1)
-	cloud.PollCloudConfigs(nil)
-	assertRevision(2)
 	a := globals.GetServer(ServerKey{Token: token, ServerPID: 1})
 	b := globals.GetServer(ServerKey{Token: token, ServerPID: 2})
+	a.ConfigUpdateMutex.Lock()
+	registered := make(chan struct{})
+	go func() {
+		register(6, token, api.URL, api.URL)
+		close(registered)
+	}()
+	select {
+	case <-registered:
+	case <-time.After(time.Second):
+		t.Error("registration with cached config waited for a refresh")
+	}
+	a.ConfigUpdateMutex.Unlock()
+	<-registered
+	cloud.CheckConfigUpdatedAt(a)
+	assertRevision(2)
 	route := RateLimitingKey{Method: "GET", Route: "/pets"}
 	require.NotNil(t, a.RateLimitingMap[route])
 	require.NotNil(t, b.RateLimitingMap[route])
@@ -96,6 +109,45 @@ func TestGetCloudConfigSharesDownloadsAcrossServerPIDs(t *testing.T) {
 	register(4, token, otherAPI.URL, api.URL)
 	register(5, token, api.URL, otherAPI.URL)
 	require.EqualValues(t, 5, downloads.Load())
+}
+
+func TestGetCloudConfigDuringListDownload(t *testing.T) {
+	started, release := make(chan struct{}), make(chan struct{})
+	resume := sync.OnceFunc(func() { close(release) })
+	api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		close(started)
+		<-release
+		_, _ = w.Write([]byte(`{"blockedUserAgents":"new"}`))
+	}))
+	defer api.Close()
+	server := NewServerData()
+	server.Logger = log.CreateLogger("test", "ERROR", false)
+	server.AikidoConfig = AikidoConfigData{Token: "AIK_TEST", Endpoint: api.URL}
+	server.CloudConfig.ConfigUpdatedAt = 1
+	server.CloudLists.BlockedUserAgents = "old"
+	done := make(chan bool, 1)
+	go func() { done <- cloud.StoreCloudConfig(server, []byte(`{"configUpdatedAt":2}`)) }()
+	defer resume()
+	select {
+	case <-started:
+	case <-time.After(2 * time.Second):
+		t.Fatal("list download did not start")
+	}
+
+	read := make(chan *protos.CloudConfig, 1)
+	go func() { read <- getCloudConfig(server, 0) }()
+	select {
+	case cfg := <-read:
+		require.EqualValues(t, 1, cfg.ConfigUpdatedAt)
+		require.Equal(t, "old", cfg.BlockedUserAgents)
+	case <-time.After(time.Second):
+		t.Fatal("cached config read waited for the firewall-list download")
+	}
+	resume()
+	require.True(t, <-done)
+	cfg := getCloudConfig(server, 1)
+	require.EqualValues(t, 2, cfg.ConfigUpdatedAt)
+	require.Equal(t, "new", cfg.BlockedUserAgents)
 }
 
 func TestServerSendsLargeCloudConfig(t *testing.T) {

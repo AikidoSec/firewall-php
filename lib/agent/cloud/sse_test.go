@@ -47,8 +47,8 @@ func newMockCloud() *mockCloud {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/api/runtime/stream", func(w http.ResponseWriter, r *http.Request) {
-		cloud.streamConnections.Add(1)
 		cloud.streamHeaders.Store(r.Header.Clone())
+		cloud.streamConnections.Add(1)
 
 		if status := int(cloud.streamStatus.Load()); status != http.StatusOK {
 			w.WriteHeader(status)
@@ -190,9 +190,9 @@ func TestConfigStreamRoutine(t *testing.T) {
 		assert.Equal(t, int64(1000), getConfigUpdatedAt(server))
 		assert.Equal(t, int32(1), cloud.configRequests.Load())
 
-		server.ConfigRefreshMutex.Lock()
+		server.ConfigUpdateMutex.Lock()
 		server.ConfigStreamLastRefreshStart = time.Now().Add(-9 * time.Second)
-		server.ConfigRefreshMutex.Unlock()
+		server.ConfigUpdateMutex.Unlock()
 
 		cloud.publishConfig(t, 3000)
 

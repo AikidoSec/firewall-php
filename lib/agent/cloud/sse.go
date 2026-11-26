@@ -124,8 +124,8 @@ func handleConfigStreamEvent(server *ServerData, event sseEvent) {
 		return
 	}
 
-	server.ConfigRefreshMutex.Lock()
-	defer server.ConfigRefreshMutex.Unlock()
+	server.ConfigUpdateMutex.Lock()
+	defer server.ConfigUpdateMutex.Unlock()
 	if !WasConfigUpdated(server, cloudConfigUpdatedAt.ConfigUpdatedAt) {
 		return
 	}
@@ -138,7 +138,7 @@ func handleConfigStreamEvent(server *ServerData, event sseEvent) {
 
 	server.ConfigStreamLastRefreshStart = now
 	log.Infof(server.Logger, "Config stream reported a config update, fetching new config!")
-	FetchAndStoreCloudConfig(server)
+	fetchAndStoreCloudConfig(server)
 }
 
 /*

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	. "main/aikido_types"
-	"main/cloud"
 	"main/constants"
 	"main/globals"
 	"main/grpc"
@@ -24,7 +23,6 @@ import (
 
 var serversCleanupChannel = make(chan struct{})
 var serversCleanupTicker = time.NewTicker(time.Minute)
-var configPollingChannel = make(chan struct{})
 
 const (
 	agentWorkerArg       = "--agent-worker"
@@ -74,14 +72,12 @@ func AgentInit() (initOk bool) {
 	}
 
 	utils.StartPollingRoutine(serversCleanupChannel, serversCleanupTicker, serversCleanupRoutine, nil)
-	utils.StartPollingRoutine(configPollingChannel, time.NewTicker(time.Minute), cloud.PollCloudConfigs, nil)
 
 	log.Infof(log.MainLogger, "Aikido Agent v%s started!", constants.Version)
 	return true
 }
 
 func AgentUninit() {
-	utils.StopPollingRoutine(configPollingChannel)
 	utils.StopPollingRoutine(serversCleanupChannel)
 
 	for _, serverKey := range globals.GetServersKeys() {
