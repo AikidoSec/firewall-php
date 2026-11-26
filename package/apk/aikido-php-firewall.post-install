@@ -14,7 +14,7 @@ for pid in $(pidof aikido-agent 2>/dev/null || true); do
 done
 
 if [ -n "$OLD_VERSION" ]; then
-	rm -rf "/var/log/aikido-${OLD_VERSION}" "/run/aikido-${OLD_VERSION}"
+	rm -rf "/var/log/aikido-${OLD_VERSION}" "/run/aikido-${OLD_VERSION}" || true
 	rm -f "/usr/lib/frankenphp/modules/aikido-${OLD_VERSION}.so"
 	rm -f "/etc/frankenphp/php.d/zz-aikido-${OLD_VERSION}.ini"
 fi
