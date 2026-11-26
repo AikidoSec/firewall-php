@@ -72,8 +72,8 @@ func StopPollingRoutine(stopChan chan struct{}) {
 }
 
 func IsBlockingEnabled(server *ServerData) bool {
-	server.CloudConfigMutex.Lock()
-	defer server.CloudConfigMutex.Unlock()
+	server.ConfigCacheMutex.Lock()
+	defer server.ConfigCacheMutex.Unlock()
 
 	if server.CloudConfig.Block == nil {
 		return config.GetBlocking(server)

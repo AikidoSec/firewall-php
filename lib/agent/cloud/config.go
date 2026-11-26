@@ -10,8 +10,8 @@ import (
 )
 
 func WasConfigUpdated(server *ServerData, configUpdatedAt int64) bool {
-	server.CloudConfigMutex.Lock()
-	defer server.CloudConfigMutex.Unlock()
+	server.ConfigCacheMutex.Lock()
+	defer server.ConfigCacheMutex.Unlock()
 	if configUpdatedAt <= server.CloudConfig.ConfigUpdatedAt {
 		return false
 	}
@@ -49,8 +49,8 @@ func FetchAndStoreCloudConfig(server *ServerData) {
 }
 
 func StoreCloudConfig(server *ServerData, configReponse []byte) bool {
-	server.CloudConfigMutex.Lock()
-	defer server.CloudConfigMutex.Unlock()
+	server.ConfigRefreshMutex.Lock()
+	defer server.ConfigRefreshMutex.Unlock()
 
 	tempCloudConfig := CloudConfigData{}
 	err := json.Unmarshal(configReponse, &tempCloudConfig)
@@ -58,36 +58,49 @@ func StoreCloudConfig(server *ServerData, configReponse []byte) bool {
 		log.Warnf(server.Logger, "Failed to unmarshal cloud config: %v", err)
 		return false
 	}
-	if tempCloudConfig.ConfigUpdatedAt <= server.CloudConfig.ConfigUpdatedAt {
+	if !WasConfigUpdated(server, tempCloudConfig.ConfigUpdatedAt) {
 		log.Debugf(server.Logger, "ConfigUpdatedAt is the same!")
 		return true
 	}
-	server.CloudConfig = tempCloudConfig
-	UpdateListsConfig(server)
-	ApplyCloudConfig(server)
+	lists := fetchCloudLists(server)
+	ApplyCloudConfig(server, tempCloudConfig, lists)
+	if lists != nil {
+		// A large list refresh can leave old lists and temporary buffers on the heap until the next GC cycle.
+		runtime.GC()
+	}
 	return true
 }
 
-func ApplyCloudConfig(server *ServerData) {
+func ApplyCloudConfig(server *ServerData, config CloudConfigData, lists *ListsConfigData) {
+	server.ConfigCacheMutex.Lock()
+	defer server.ConfigCacheMutex.Unlock()
+	server.CloudConfig = config
+	if lists != nil {
+		UpdateListsConfig(server, lists)
+	}
 	log.Infof(server.Logger, "Applying new cloud config: %v", server.CloudConfig)
 	ResetHeartbeatTicker(server)
 	rate_limiting.UpdateConfig(server)
 }
 
-func UpdateListsConfig(server *ServerData) bool {
+func fetchCloudLists(server *ServerData) *ListsConfigData {
 	response, err := SendCloudRequest(server, server.AikidoConfig.Endpoint, constants.ListsAPI, constants.ListsAPIMethod, nil)
 	if err != nil {
 		LogCloudRequestError(server, "Error in sending lists request: ", err)
-		return false
+		return nil
 	}
 
 	tempListsConfig := ListsConfigData{}
 	err = json.Unmarshal(response, &tempListsConfig)
 	if err != nil {
 		log.Warnf(server.Logger, "Failed to unmarshal lists config: %v", err)
-		return false
+		return nil
 	}
 
+	return &tempListsConfig
+}
+
+func UpdateListsConfig(server *ServerData, tempListsConfig *ListsConfigData) {
 	server.CloudLists.BlockedIpsList = UpdateIpsLists(tempListsConfig.BlockedIpAddresses)
 	server.CloudLists.MonitoredIpsList = UpdateIpsLists(tempListsConfig.MonitoredIpAddresses)
 	server.CloudLists.AllowedIpsList = UpdateIpsLists(tempListsConfig.AllowedIpAddresses)
@@ -99,12 +112,6 @@ func UpdateListsConfig(server *ServerData) bool {
 	for _, userAgentDetail := range tempListsConfig.UserAgentDetails {
 		server.CloudLists.UserAgentDetails[userAgentDetail.Key] = userAgentDetail.Pattern
 	}
-
-	/* Force garbage collection to ensure that the IP blocklists temporary memory is released ASAP */
-	tempListsConfig = ListsConfigData{}
-	runtime.GC()
-
-	return true
 }
 
 func UpdateIpsLists(ipLists []IpsData) map[string]IpBlocklist {

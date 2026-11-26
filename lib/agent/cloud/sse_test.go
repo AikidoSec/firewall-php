@@ -118,8 +118,8 @@ func newTestServerData(cloud *mockCloud, token string, sse bool) *ServerData {
 }
 
 func getConfigUpdatedAt(server *ServerData) int64 {
-	server.CloudConfigMutex.Lock()
-	defer server.CloudConfigMutex.Unlock()
+	server.ConfigCacheMutex.Lock()
+	defer server.ConfigCacheMutex.Unlock()
 	return server.CloudConfig.ConfigUpdatedAt
 }
 

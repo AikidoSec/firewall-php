@@ -3,10 +3,13 @@ package grpc
 import (
 	"context"
 	. "main/aikido_types"
+	"main/cloud"
 	"main/globals"
 	"main/ipc/protos"
 	"main/log"
 	"net"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 
@@ -15,6 +18,33 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/proto"
 )
+
+func TestGetCloudConfigDuringListDownload(t *testing.T) {
+	server := NewServerData()
+	server.Logger = log.CreateLogger("test", "ERROR", false)
+	server.CloudConfig.ConfigUpdatedAt = 1
+	server.CloudLists.BlockedUserAgents = "old"
+
+	api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		read := make(chan *protos.CloudConfig, 1)
+		go func() { read <- getCloudConfig(server, 0) }()
+		select {
+		case cfg := <-read:
+			if cfg.GetConfigUpdatedAt() != 1 || cfg.GetBlockedUserAgents() != "old" {
+				t.Errorf("during download got revision %d and list %q", cfg.GetConfigUpdatedAt(), cfg.GetBlockedUserAgents())
+			}
+		case <-time.After(time.Second):
+			t.Error("cached config read waited for the firewall-list response")
+		}
+		_, _ = w.Write([]byte(`{"blockedUserAgents":"new"}`))
+	}))
+	defer api.Close()
+	server.AikidoConfig = AikidoConfigData{Token: "AIK_TEST", Endpoint: api.URL}
+	require.True(t, cloud.StoreCloudConfig(server, []byte(`{"configUpdatedAt":2}`)))
+	cfg := getCloudConfig(server, 1)
+	require.EqualValues(t, 2, cfg.GetConfigUpdatedAt())
+	require.Equal(t, "new", cfg.GetBlockedUserAgents())
+}
 
 func TestServerSendsLargeCloudConfig(t *testing.T) {
 	ips := make([]string, 300000)
