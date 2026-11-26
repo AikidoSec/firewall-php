@@ -2,14 +2,44 @@ package cloud
 
 import (
 	. "main/aikido_types"
+	"main/constants"
 	"main/log"
 	"net/http"
 	"net/http/httptest"
+	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 )
+
+func TestPollKeepsCachedConfigWhenDownloadedRevisionIsOlder(t *testing.T) {
+	var downloaded atomic.Bool
+	api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case constants.ConfigUpdatedAtAPI:
+			_, _ = w.Write([]byte(`{"configUpdatedAt":3}`))
+		case constants.ConfigAPI:
+			downloaded.Store(true)
+			_, _ = w.Write([]byte(`{"configUpdatedAt":1}`))
+		default:
+			t.Errorf("unexpected request to %s", r.URL.Path)
+			http.NotFound(w, r)
+		}
+	}))
+	defer api.Close()
+	server := NewServerData()
+	server.Logger = log.CreateLogger("test", "ERROR", false)
+	server.AikidoConfig = AikidoConfigData{Token: "AIK_TEST", Endpoint: api.URL, ConfigEndpoint: api.URL}
+	server.CloudConfig.ConfigUpdatedAt = 2
+	server.CloudLists.BlockedUserAgents = "cached"
+
+	CheckConfigUpdatedAt(server)
+
+	require.True(t, downloaded.Load())
+	require.EqualValues(t, 2, server.CloudConfig.ConfigUpdatedAt)
+	require.Equal(t, "cached", server.CloudLists.BlockedUserAgents)
+}
 
 func TestStoreCloudConfigKeepsListsOnFailedDownload(t *testing.T) {
 	cloudServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {

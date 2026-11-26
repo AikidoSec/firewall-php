@@ -204,8 +204,8 @@ func isRealtimeEnabled(server *ServerData) bool {
 		return true
 	}
 
-	server.CloudConfigMutex.Lock()
-	defer server.CloudConfigMutex.Unlock()
+	server.ConfigCacheMutex.Lock()
+	defer server.ConfigCacheMutex.Unlock()
 
 	return slices.Contains(server.CloudConfig.EnabledFeatures, constants.RealtimeUpdatesFeature)
 }
