@@ -13,10 +13,7 @@ import (
 func WasConfigUpdated(server *ServerData, configUpdatedAt int64) bool {
 	server.CloudConfigMutex.Lock()
 	defer server.CloudConfigMutex.Unlock()
-	if configUpdatedAt <= server.CloudConfig.ConfigUpdatedAt {
-		return false
-	}
-	return true
+	return configUpdatedAt > server.CloudConfig.ConfigUpdatedAt
 }
 
 func CheckConfigUpdatedAt(server *ServerData) {

@@ -135,7 +135,10 @@ func TestGetCloudConfigDuringListDownload(t *testing.T) {
 	}
 
 	read := make(chan *protos.CloudConfig, 1)
-	go func() { read <- getCloudConfig(server, 0) }()
+	go func() {
+		cloud.StoreCloudConfig(server, []byte(`{"configUpdatedAt":1}`))
+		read <- getCloudConfig(server, 0)
+	}()
 	select {
 	case cfg := <-read:
 		require.EqualValues(t, 1, cfg.ConfigUpdatedAt)
