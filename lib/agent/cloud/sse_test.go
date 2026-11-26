@@ -47,8 +47,8 @@ func newMockCloud() *mockCloud {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/api/runtime/stream", func(w http.ResponseWriter, r *http.Request) {
-		cloud.streamConnections.Add(1)
 		cloud.streamHeaders.Store(r.Header.Clone())
+		cloud.streamConnections.Add(1)
 
 		if status := int(cloud.streamStatus.Load()); status != http.StatusOK {
 			w.WriteHeader(status)

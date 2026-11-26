@@ -169,7 +169,8 @@ type ServerData struct {
 	CloudLists CloudListsData
 
 	// Config mutex used to sync access to configuration data across the multiple go routines that we run in parallel
-	CloudConfigMutex sync.Mutex
+	CloudConfigMutex  sync.Mutex
+	ConfigUpdateMutex sync.Mutex
 
 	ConfigStreamRefreshMutex     sync.Mutex
 	ConfigStreamLastRefreshStart time.Time

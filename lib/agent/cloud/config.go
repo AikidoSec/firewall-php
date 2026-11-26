@@ -49,21 +49,25 @@ func FetchAndStoreCloudConfig(server *ServerData) {
 }
 
 func StoreCloudConfig(server *ServerData, configReponse []byte) bool {
-	server.CloudConfigMutex.Lock()
-	defer server.CloudConfigMutex.Unlock()
-
 	tempCloudConfig := CloudConfigData{}
 	err := json.Unmarshal(configReponse, &tempCloudConfig)
 	if err != nil {
 		log.Warnf(server.Logger, "Failed to unmarshal cloud config: %v", err)
 		return false
 	}
-	if tempCloudConfig.ConfigUpdatedAt <= server.CloudConfig.ConfigUpdatedAt {
+	server.ConfigUpdateMutex.Lock()
+	defer server.ConfigUpdateMutex.Unlock()
+	if !WasConfigUpdated(server, tempCloudConfig.ConfigUpdatedAt) {
 		log.Debugf(server.Logger, "ConfigUpdatedAt is the same!")
 		return true
 	}
+	lists := fetchCloudLists(server)
+	server.CloudConfigMutex.Lock()
+	defer server.CloudConfigMutex.Unlock()
 	server.CloudConfig = tempCloudConfig
-	UpdateListsConfig(server)
+	if lists != nil {
+		server.CloudLists = *lists
+	}
 	ApplyCloudConfig(server)
 	return true
 }
@@ -74,37 +78,37 @@ func ApplyCloudConfig(server *ServerData) {
 	rate_limiting.UpdateConfig(server)
 }
 
-func UpdateListsConfig(server *ServerData) bool {
+func fetchCloudLists(server *ServerData) *CloudListsData {
 	response, err := SendCloudRequest(server, server.AikidoConfig.Endpoint, constants.ListsAPI, constants.ListsAPIMethod, nil)
 	if err != nil {
 		LogCloudRequestError(server, "Error in sending lists request: ", err)
-		return false
+		return nil
 	}
 
 	tempListsConfig := ListsConfigData{}
 	err = json.Unmarshal(response, &tempListsConfig)
 	if err != nil {
 		log.Warnf(server.Logger, "Failed to unmarshal lists config: %v", err)
-		return false
+		return nil
 	}
 
-	server.CloudLists.BlockedIpsList = UpdateIpsLists(tempListsConfig.BlockedIpAddresses)
-	server.CloudLists.MonitoredIpsList = UpdateIpsLists(tempListsConfig.MonitoredIpAddresses)
-	server.CloudLists.AllowedIpsList = UpdateIpsLists(tempListsConfig.AllowedIpAddresses)
-
-	server.CloudLists.BlockedUserAgents = tempListsConfig.BlockedUserAgents
-	server.CloudLists.MonitoredUserAgents = tempListsConfig.MonitoredUserAgents
-
-	server.CloudLists.UserAgentDetails = make(map[string]string)
+	lists := &CloudListsData{
+		BlockedIpsList:      UpdateIpsLists(tempListsConfig.BlockedIpAddresses),
+		MonitoredIpsList:    UpdateIpsLists(tempListsConfig.MonitoredIpAddresses),
+		AllowedIpsList:      UpdateIpsLists(tempListsConfig.AllowedIpAddresses),
+		BlockedUserAgents:   tempListsConfig.BlockedUserAgents,
+		MonitoredUserAgents: tempListsConfig.MonitoredUserAgents,
+		UserAgentDetails:    make(map[string]string, len(tempListsConfig.UserAgentDetails)),
+	}
 	for _, userAgentDetail := range tempListsConfig.UserAgentDetails {
-		server.CloudLists.UserAgentDetails[userAgentDetail.Key] = userAgentDetail.Pattern
+		lists.UserAgentDetails[userAgentDetail.Key] = userAgentDetail.Pattern
 	}
 
 	/* Force garbage collection to ensure that the IP blocklists temporary memory is released ASAP */
 	tempListsConfig = ListsConfigData{}
 	runtime.GC()
 
-	return true
+	return lists
 }
 
 func UpdateIpsLists(ipLists []IpsData) map[string]IpBlocklist {
