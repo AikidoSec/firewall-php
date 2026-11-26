@@ -11,6 +11,8 @@ test=https://ssrf-redirects.testssandbox.com/ssrf-test-4
 --FILE--
 <?php
 
+require __DIR__ . '/redirect_request.inc';
+
 $host = '127.0.0.1';
 $port = 4001;
 $pid = null;
@@ -23,7 +25,7 @@ $descriptorspec = [
 
 try {
     // Start PHP server
-    $process = proc_open("php -S $host:$port", $descriptorspec, $pipes);
+    $process = proc_open("exec php -S $host:$port", $descriptorspec, $pipes);
     if (!is_resource($process)) {
         throw new RuntimeException("Failed to start PHP server.");
     }
@@ -39,18 +41,17 @@ try {
     curl_setopt($ch1, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch1, CURLOPT_FOLLOWLOCATION, false);
 
-    $response = curl_exec($ch1);
-
-    if ($response === false) {
-        echo "cURL Error: " . curl_error($ch);
-    } else {
-        echo "Response: " . $response;
+    requestRedirect($ch1);
+    if (!curl_getinfo($ch1, CURLINFO_REDIRECT_URL)) {
+        throw new RuntimeException("Expected a redirect response");
     }
 
     $ch2 = curl_init("http://127.0.0.1:4001");
     curl_setopt($ch2, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch2, CURLOPT_FOLLOWLOCATION, false);
-    $response2 = curl_exec($ch2);
+    if (curl_exec($ch2) !== false) {
+        echo "Local request completed\n";
+    }
 
 } catch (Throwable $e) {
     echo "Error: " . $e->getMessage() . "\n";
@@ -66,4 +67,4 @@ try {
 
 
 --EXPECTREGEX--
-(?s)\A(?!.*Aikido firewall has blocked a server-side request forgery).*?\z
+(?s)\A(?!.*Aikido firewall has blocked a server-side request forgery).*Local request completed.*\z
