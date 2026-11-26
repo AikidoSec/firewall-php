@@ -3,7 +3,6 @@ package cloud
 import (
 	"bufio"
 	"context"
-	"encoding/json"
 	. "main/aikido_types"
 	"main/config"
 	"main/constants"
@@ -118,15 +117,9 @@ func handleConfigStreamEvent(server *ServerData, event sseEvent) {
 		return
 	}
 
-	cloudConfigUpdatedAt := CloudConfigUpdatedAt{}
-	if err := json.Unmarshal([]byte(event.data), &cloudConfigUpdatedAt); err != nil {
-		log.Debugf(server.Logger, "Config stream event has invalid payload: %s", event.data)
-		return
-	}
-
 	server.ConfigUpdateMutex.Lock()
 	defer server.ConfigUpdateMutex.Unlock()
-	if !WasConfigUpdated(server, cloudConfigUpdatedAt.ConfigUpdatedAt) {
+	if !announcesNewerConfig(server, []byte(event.data)) {
 		return
 	}
 

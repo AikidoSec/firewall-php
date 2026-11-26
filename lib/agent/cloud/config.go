@@ -10,10 +10,13 @@ import (
 	"runtime"
 )
 
-func WasConfigUpdated(server *ServerData, configUpdatedAt int64) bool {
-	server.CloudConfigMutex.Lock()
-	defer server.CloudConfigMutex.Unlock()
-	return configUpdatedAt > server.CloudConfig.ConfigUpdatedAt
+func announcesNewerConfig(server *ServerData, payload []byte) bool {
+	var update CloudConfigUpdatedAt
+	if err := json.Unmarshal(payload, &update); err != nil {
+		log.Debugf(server.Logger, "Invalid config update notification: %v", err)
+		return false
+	}
+	return update.ConfigUpdatedAt > server.CloudConfig.ConfigUpdatedAt
 }
 
 func CheckConfigUpdatedAt(server *ServerData) {
@@ -29,17 +32,9 @@ func checkConfigUpdatedAt(server *ServerData) {
 		return
 	}
 
-	cloudConfigUpdatedAt := CloudConfigUpdatedAt{}
-	err = json.Unmarshal(response, &cloudConfigUpdatedAt)
-	if err != nil {
-		return
+	if announcesNewerConfig(server, response) {
+		fetchAndStoreCloudConfig(server)
 	}
-
-	if !WasConfigUpdated(server, cloudConfigUpdatedAt.ConfigUpdatedAt) {
-		return
-	}
-
-	fetchAndStoreCloudConfig(server)
 }
 
 func fetchAndStoreCloudConfig(server *ServerData) {
@@ -68,7 +63,10 @@ func StoreCloudConfig(server *ServerData, response []byte) bool {
 	if config == nil {
 		return false
 	}
-	if !WasConfigUpdated(server, config.ConfigUpdatedAt) {
+	server.CloudConfigMutex.Lock()
+	alreadyStored := config.ConfigUpdatedAt <= server.CloudConfig.ConfigUpdatedAt
+	server.CloudConfigMutex.Unlock()
+	if alreadyStored {
 		return true
 	}
 	server.ConfigUpdateMutex.Lock()
@@ -78,7 +76,7 @@ func StoreCloudConfig(server *ServerData, response []byte) bool {
 }
 
 func storeCloudConfig(server *ServerData, config *CloudConfigData) {
-	if !WasConfigUpdated(server, config.ConfigUpdatedAt) {
+	if config.ConfigUpdatedAt <= server.CloudConfig.ConfigUpdatedAt {
 		return
 	}
 	lists := fetchCloudLists(server)
