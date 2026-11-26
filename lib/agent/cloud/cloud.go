@@ -6,7 +6,12 @@ import (
 )
 
 func Init(server *ServerData) {
-	CheckConfigUpdatedAt(server)
+	server.CloudPolicy.ConfigCacheMutex.Lock()
+	hasCachedPolicy := updateServerSettings(server)
+	server.CloudPolicy.ConfigCacheMutex.Unlock()
+	if !hasCachedPolicy {
+		CheckConfigUpdatedAt(server)
+	}
 
 	utils.StartPollingRoutine(server.PollingData.HeartbeatRoutineChannel, server.PollingData.HeartbeatTicker, SendHeartbeatEvent, server)
 	utils.StartPollingRoutine(server.PollingData.ConfigPollingRoutineChannel, server.PollingData.ConfigPollingTicker, CheckConfigUpdatedAt, server)

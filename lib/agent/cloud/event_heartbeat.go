@@ -157,13 +157,13 @@ func GetMiddlewareInstalled(server *ServerData) bool {
 }
 
 func ResetHeartbeatTicker(server *ServerData) {
-	if !server.CloudConfig.ReceivedAnyStats {
+	if !server.CloudPolicy.CloudConfig.ReceivedAnyStats {
 		log.Info(server.Logger, "Resetting HeartbeatTicker to 1m!")
 		server.PollingData.HeartbeatTicker.Reset(1 * time.Minute)
 	} else {
-		if server.CloudConfig.HeartbeatIntervalInMS >= constants.MinHeartbeatIntervalInMS {
-			log.Infof(server.Logger, "Resetting HeartbeatTicker to %dms!", server.CloudConfig.HeartbeatIntervalInMS)
-			server.PollingData.HeartbeatTicker.Reset(time.Duration(server.CloudConfig.HeartbeatIntervalInMS) * time.Millisecond)
+		if server.CloudPolicy.CloudConfig.HeartbeatIntervalInMS >= constants.MinHeartbeatIntervalInMS {
+			log.Infof(server.Logger, "Resetting HeartbeatTicker to %dms!", server.CloudPolicy.CloudConfig.HeartbeatIntervalInMS)
+			server.PollingData.HeartbeatTicker.Reset(time.Duration(server.CloudPolicy.CloudConfig.HeartbeatIntervalInMS) * time.Millisecond)
 		}
 	}
 }

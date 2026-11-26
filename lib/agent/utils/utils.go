@@ -72,13 +72,13 @@ func StopPollingRoutine(stopChan chan struct{}) {
 }
 
 func IsBlockingEnabled(server *ServerData) bool {
-	server.ConfigCacheMutex.Lock()
-	defer server.ConfigCacheMutex.Unlock()
+	server.CloudPolicy.ConfigCacheMutex.Lock()
+	defer server.CloudPolicy.ConfigCacheMutex.Unlock()
 
-	if server.CloudConfig.Block == nil {
+	if server.CloudPolicy.CloudConfig.Block == nil {
 		return config.GetBlocking(server)
 	}
-	return *server.CloudConfig.Block
+	return *server.CloudPolicy.CloudConfig.Block
 }
 
 func GetTime() int64 {

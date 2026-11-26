@@ -13,7 +13,8 @@ import (
 
 func TestOnCustomEventDoesNotWaitForCloudConfig(t *testing.T) {
 	key := ServerKey{Token: "AIK_CUSTOM_EVENT_CONFIG_TEST", ServerPID: 493}
-	server := &ServerData{Logger: log.CreateLogger("test", "ERROR", false)}
+	server := NewServerData()
+	server.Logger = log.CreateLogger("test", "ERROR", false)
 	globals.ServersMutex.Lock()
 	globals.Servers[key] = server
 	globals.ServersMutex.Unlock()
@@ -23,8 +24,8 @@ func TestOnCustomEventDoesNotWaitForCloudConfig(t *testing.T) {
 		globals.ServersMutex.Unlock()
 	}()
 
-	server.ConfigCacheMutex.Lock()
-	defer server.ConfigCacheMutex.Unlock()
+	server.CloudPolicy.ConfigCacheMutex.Lock()
+	defer server.CloudPolicy.ConfigCacheMutex.Unlock()
 
 	scheduled := make(chan error, 1)
 	go func() {

@@ -153,7 +153,19 @@ type ServerKey struct {
 	Token     string
 }
 
+type CloudPolicy struct {
+	CloudConfig CloudConfigData
+	CloudLists  CloudListsData
+
+	// Separate locks let workers read cached policy while a refresh downloads firewall lists.
+	ConfigRefreshMutex sync.Mutex
+	ConfigCacheMutex   sync.Mutex
+}
+
 type ServerData struct {
+	// PHP processes for the same Zen app can share this policy cache.
+	CloudPolicy *CloudPolicy
+
 	// Logger for the server
 	Logger *log.AikidoLogger
 
@@ -162,15 +174,6 @@ type ServerData struct {
 
 	// Aikido config that contains info about endpoint, log_level, token, ...
 	AikidoConfig AikidoConfigData
-
-	// Cloud config that is obtain as a result from sending events to cloud or pulling the config when it changes
-	CloudConfig CloudConfigData
-
-	CloudLists CloudListsData
-
-	// Separate locks let workers read cached policy while a refresh downloads firewall lists.
-	ConfigRefreshMutex sync.Mutex
-	ConfigCacheMutex   sync.Mutex
 
 	ConfigStreamRefreshMutex     sync.Mutex
 	ConfigStreamLastRefreshStart time.Time
@@ -257,6 +260,7 @@ const (
 
 func NewServerData() *ServerData {
 	return &ServerData{
+		CloudPolicy:             &CloudPolicy{},
 		SessionID:               newSessionID(),
 		Hostnames:               make(map[string]map[uint32]uint64),
 		HostnamesQueue:          NewQueue[string](MaxNumberOfStoredHostnames),
