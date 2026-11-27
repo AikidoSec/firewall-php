@@ -15,6 +15,7 @@ import (
 	"net/http/httptest"
 	"sync/atomic"
 	"testing"
+	"testing/synctest"
 	"time"
 
 	"github.com/stretchr/testify/require"
@@ -34,7 +35,7 @@ func TestRegistrationReusesCachedCloudPolicy(t *testing.T) {
 			fmt.Fprint(w, `{"configUpdatedAt":1}`)
 		case constants.ConfigAPI:
 			downloads.Add(1)
-			fmt.Fprint(w, `{"configUpdatedAt":1,"endpoints":[{"method":"GET","route":"/pets","rateLimiting":{"enabled":true,"windowSizeInMS":60000,"maxRequests":10}}]}`)
+			fmt.Fprint(w, `{"configUpdatedAt":1,"requestCountExclusions":{"suffix":["/healthz"]},"endpoints":[{"method":"GET","route":"/pets","rateLimiting":{"enabled":true,"windowSizeInMS":60000,"maxRequests":10}}]}`)
 		case "/" + constants.ListsAPI:
 			fmt.Fprintf(w, `{"blockedUserAgents":"bot-%d"}`, lists.Add(1))
 		default:
@@ -74,7 +75,11 @@ func TestRegistrationReusesCachedCloudPolicy(t *testing.T) {
 	require.NotNil(t, a.RateLimitingMap[route])
 	require.NotNil(t, b.RateLimitingMap[route])
 	require.NotSame(t, a.RateLimitingMap[route], b.RateLimitingMap[route])
+	storeTotalStats(b, "/api/healthz", false)
+	require.Zero(t, cloud.GetStatsAndClear(b).Requests.Total)
 	require.True(t, cloud.StoreCloudConfig(a, []byte(`{"configUpdatedAt":2}`)))
+	storeTotalStats(b, "/api/healthz", false)
+	require.Equal(t, 1, cloud.GetStatsAndClear(b).Requests.Total)
 	require.Equal(t, "bot-2", getCloudConfig(b, 1).GetBlockedUserAgents())
 	require.NotContains(t, b.RateLimitingMap, route)
 
@@ -83,6 +88,58 @@ func TestRegistrationReusesCachedCloudPolicy(t *testing.T) {
 	require.NotSame(t, a.CloudPolicy, register(ServerKey{Token: "AIK_OTHER_POLICY", ServerPID: first.ServerPID}, api.URL, api.URL, false).CloudPolicy)
 	require.NotSame(t, a.CloudPolicy, register(ServerKey{Token: first.Token, ServerPID: 4}, otherAPI.URL, api.URL, false).CloudPolicy)
 	require.NotSame(t, a.CloudPolicy, register(ServerKey{Token: first.Token, ServerPID: 5}, api.URL, otherAPI.URL, false).CloudPolicy)
+}
+
+func TestRequestCountExclusionsInHeartbeat(t *testing.T) {
+	key := ServerKey{Token: "AIK_REQUEST_COUNTS", ServerPID: 1}
+	server := globals.CreateServer(key)
+	t.Cleanup(func() {
+		globals.ServersMutex.Lock()
+		delete(globals.Servers, key)
+		globals.ServersMutex.Unlock()
+	})
+	api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		fmt.Fprint(w, "{}")
+	}))
+	t.Cleanup(api.Close)
+	server.Logger = log.CreateLogger("test", "ERROR", false)
+	server.AikidoConfig = AikidoConfigData{Token: key.Token, Endpoint: api.URL}
+
+	report := func(path, parsed string, rateLimited bool) {
+		synctest.Test(t, func(t *testing.T) {
+			_, err := (&GrpcServer{}).OnRequestShutdown(t.Context(), &protos.RequestMetadataShutdown{
+				Token: key.Token, ServerPid: key.ServerPID, Method: "GET", Route: path, RouteParsed: parsed,
+				ShouldDiscoverRoute: !rateLimited, RateLimited: rateLimited,
+			})
+			require.NoError(t, err)
+		})
+	}
+	require.True(t, cloud.StoreCloudConfig(server, []byte(`{"configUpdatedAt":1,"requestCountExclusions":{"exact":["/workers/:number"],"suffix":["/healthz",""]}}`)))
+	report("/workers/42", "/workers/:number", false)
+	report("/api/healthz", "/api/healthz", true)
+	report("/api/HEALTHZ", "/api/HEALTHZ", false)
+	report("/api/workers/42", "/api/workers/:number", true)
+
+	stats := cloud.GetStatsAndClear(server).Requests
+	require.Equal(t, 2, stats.Total)
+	require.Equal(t, 2, stats.RateLimited)
+	require.EqualValues(t, 1, server.Routes["/workers/:number"]["GET"].Hits)
+	require.EqualValues(t, 1, server.Routes["/api/healthz"]["GET"].RateLimitedCount)
+
+	for _, tc := range []struct {
+		config string
+		total  int
+	}{
+		{`{"configUpdatedAt":2,"requestCountExclusions":null}`, 1},
+		{`{"configUpdatedAt":3,"requestCountExclusions":{"exact":["/api/healthz"]}}`, 0},
+		{`{"configUpdatedAt":4}`, 1},
+		{`{"configUpdatedAt":5,"requestCountExclusions":{"exact":[],"suffix":["/healthz"]}}`, 0},
+		{`{"configUpdatedAt":6,"requestCountExclusions":{"exact":null}}`, 1},
+	} {
+		require.True(t, cloud.StoreCloudConfig(server, []byte(tc.config)))
+		report("/api/healthz", "/api/healthz", false)
+		require.Equal(t, tc.total, cloud.GetStatsAndClear(server).Requests.Total, tc.config)
+	}
 }
 
 func TestGetCloudConfigDuringListDownload(t *testing.T) {
