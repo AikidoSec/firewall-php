@@ -1,6 +1,26 @@
 package aikido_types
 
-import "main/ipc/protos"
+import (
+	"main/ipc/protos"
+	"slices"
+	"strings"
+)
+
+func (p *CloudPolicy) ExcludesRequestFromCount(route string) bool {
+	p.ConfigCacheMutex.Lock()
+	rules := p.CloudConfig.RequestCountExclusions
+	p.ConfigCacheMutex.Unlock()
+
+	if slices.Contains(rules.Exact, route) {
+		return true
+	}
+	for _, suffix := range rules.Suffix {
+		if suffix != "" && strings.HasSuffix(route, suffix) {
+			return true
+		}
+	}
+	return false
+}
 
 type RouteData struct {
 	Method  string

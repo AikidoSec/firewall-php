@@ -68,18 +68,18 @@ func TestRateLimitingCatchesUpAfterDelayedTicks(t *testing.T) {
 }
 
 func TestStoreTotalStats(t *testing.T) {
-	t.Run("increments Requests on every call, and RequestsRateLimited only when rate limited", func(t *testing.T) {
-		server := &ServerData{}
+	t.Run("counts all requests when exclusions are unset", func(t *testing.T) {
+		server := NewServerData()
 
-		storeTotalStats(server, false)
+		storeTotalStats(server, "/healthz", false)
 		assert.Equal(t, 1, server.StatsData.Requests)
 		assert.Equal(t, 0, server.StatsData.RequestsRateLimited)
 
-		storeTotalStats(server, true)
+		storeTotalStats(server, "/healthz", true)
 		assert.Equal(t, 2, server.StatsData.Requests)
 		assert.Equal(t, 1, server.StatsData.RequestsRateLimited)
 
-		storeTotalStats(server, true)
+		storeTotalStats(server, "/orders", true)
 		assert.Equal(t, 3, server.StatsData.Requests)
 		assert.Equal(t, 2, server.StatsData.RequestsRateLimited)
 	})

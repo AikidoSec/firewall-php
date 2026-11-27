@@ -14,11 +14,14 @@ import (
 	"time"
 )
 
-func storeTotalStats(server *ServerData, rateLimited bool) {
+func storeTotalStats(server *ServerData, route string, rateLimited bool) {
+	excluded := server.CloudPolicy.ExcludesRequestFromCount(route)
 	server.StatsData.StatsMutex.Lock()
 	defer server.StatsData.StatsMutex.Unlock()
 
-	server.StatsData.Requests += 1
+	if !excluded {
+		server.StatsData.Requests += 1
+	}
 	if rateLimited {
 		server.StatsData.RequestsRateLimited += 1
 	}
