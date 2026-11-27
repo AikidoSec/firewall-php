@@ -3,6 +3,7 @@ package helpers
 import (
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 )
 
@@ -37,28 +38,31 @@ const maxDepth = 1024
 // extractStringsFromUserInput recursively extracts strings from user input and stops at maxDepth to prevent stack overflow
 func ExtractStringsFromUserInput(obj interface{}, pathToPayload []PathPart, depth int) map[string]string {
 	results := make(map[string]string)
+	collectInputStrings(obj, buildPathToPayload(pathToPayload), depth, results, len(pathToPayload) == 0)
+	return results
+}
 
+func collectInputStrings(obj interface{}, path string, depth int, results map[string]string, atRoot bool) {
 	if depth > maxDepth {
-		return results
+		return
 	}
 
+	prefix := path
+	if atRoot {
+		prefix = ""
+	}
 	val := reflect.ValueOf(obj)
 	switch val.Kind() {
 	case reflect.Map:
-		for _, key := range val.MapKeys() {
-			keyStr := fmt.Sprintf("%v", key.Interface())
-			results[keyStr] = buildPathToPayload(pathToPayload)
-			nestedResults := ExtractStringsFromUserInput(val.MapIndex(key).Interface(), append(pathToPayload, PathPart{Type: "object", Key: keyStr}), depth+1)
-			for k, v := range nestedResults {
-				results[k] = v
-			}
+		iter := val.MapRange()
+		for iter.Next() {
+			keyStr := fmt.Sprintf("%v", iter.Key().Interface())
+			results[keyStr] = path
+			collectInputStrings(iter.Value().Interface(), prefix+"."+keyStr, depth+1, results, false)
 		}
 	case reflect.Slice, reflect.Array:
 		for i := 0; i < val.Len(); i++ {
-			nestedResults := ExtractStringsFromUserInput(val.Index(i).Interface(), append(pathToPayload, PathPart{Type: "array", Index: i}), depth+1)
-			for k, v := range nestedResults {
-				results[k] = v
-			}
+			collectInputStrings(val.Index(i).Interface(), prefix+".["+strconv.Itoa(i)+"]", depth+1, results, false)
 		}
 
 		// Add array as string to results
@@ -70,22 +74,17 @@ func ExtractStringsFromUserInput(obj interface{}, pathToPayload []PathPart, dept
 			for i := 0; i < val.Len(); i++ {
 				values = append(values, reflect.ValueOf(val.Index(i).Interface()).String())
 			}
-			results[strings.Join(values, ",")] = buildPathToPayload(pathToPayload)
+			results[strings.Join(values, ",")] = path
 		}
 
 	case reflect.String:
 		str := val.String()
-		results[str] = buildPathToPayload(pathToPayload)
+		results[str] = path
 		jwt := tryDecodeAsJWT(str)
 		if jwt.JWT {
-			for k, v := range ExtractStringsFromUserInput(jwt.Object, append(pathToPayload, PathPart{Type: "jwt"}), depth+1) {
-				results[k] = v
-			}
+			collectInputStrings(jwt.Object, prefix+"<jwt>", depth+1, results, false)
 		}
-
 	}
-
-	return results
 }
 
 func ExtractResourceOrOriginal(filePath string) string {
