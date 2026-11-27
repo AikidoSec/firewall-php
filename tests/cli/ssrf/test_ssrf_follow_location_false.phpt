@@ -14,6 +14,8 @@ test=https://ssrf-redirects.testssandbox.com/ssrf-test-4
 --FILE--
 <?php
 
+require __DIR__ . '/redirect_request.inc';
+
 $host = '127.0.0.1';
 $port = 4000;
 $pid = null;
@@ -26,7 +28,7 @@ $descriptorspec = [
 
 try {
     // Start PHP server
-    $process = proc_open("php -S $host:$port", $descriptorspec, $pipes);
+    $process = proc_open("exec php -S $host:$port", $descriptorspec, $pipes);
     if (!is_resource($process)) {
         throw new RuntimeException("Failed to start PHP server.");
     }
@@ -42,23 +44,19 @@ try {
     curl_setopt($ch1, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch1, CURLOPT_FOLLOWLOCATION, false);
 
-    $response = curl_exec($ch1);
+    $response = requestRedirect($ch1);
 
-    if ($response === false) {
-        echo "cURL Error: " . curl_error($ch);
-    } else {
-        echo "Response: " . $response . "\n";
-        $code = curl_getinfo($ch1, CURLINFO_HTTP_CODE);
-        echo "Code: " . $code . "\n";
-        $redirectUrl = curl_getinfo($ch1, CURLINFO_REDIRECT_URL);
-        echo "Redirect URL: " . $redirectUrl . "\n";
+    echo "Response: " . $response . "\n";
+    $code = curl_getinfo($ch1, CURLINFO_HTTP_CODE);
+    echo "Code: " . $code . "\n";
+    $redirectUrl = curl_getinfo($ch1, CURLINFO_REDIRECT_URL);
+    echo "Redirect URL: " . $redirectUrl . "\n";
 
-        $ch2 = curl_init($redirectUrl);
-        curl_setopt($ch2, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch2, CURLOPT_FOLLOWLOCATION, true);
-        $response2 = curl_exec($ch2);
-        echo "Response2: " . $response2;
-    }
+    $ch2 = curl_init($redirectUrl);
+    curl_setopt($ch2, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch2, CURLOPT_FOLLOWLOCATION, true);
+    $response2 = curl_exec($ch2);
+    echo "Response2: " . $response2;
 
 } catch (Throwable $e) {
     echo "Error: " . $e->getMessage() . "\n";

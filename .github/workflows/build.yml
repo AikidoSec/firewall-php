@@ -698,7 +698,7 @@ jobs:
               cd lib/php-extension
               phpize
               cd ../..
-              php lib/php-extension/run-tests.php ./tests/cli
+              php lib/php-extension/run-tests.php --show-diff ./tests/cli
 
               cd tools
               python3 run_server_tests.py ../tests/server ../tests/testlib \
@@ -917,7 +917,7 @@ jobs:
           cd lib/php-extension/
           phpize
           cd ../../
-          php lib/php-extension/run-tests.php ./tests/cli
+          php lib/php-extension/run-tests.php --show-diff ./tests/cli
 
       - name: Run ${{ matrix.server }} server tests
         run: |
@@ -1001,7 +1001,7 @@ jobs:
           cd lib/php-extension/
           phpize
           cd ../../
-          php lib/php-extension/run-tests.php ./tests/cli
+          php lib/php-extension/run-tests.php --show-diff ./tests/cli
 
       - name: Run ${{ matrix.server }} server tests
         run: |
@@ -1090,7 +1090,7 @@ jobs:
           cd lib/php-extension/
           phpize
           cd ../../
-          php lib/php-extension/run-tests.php ./tests/cli
+          php lib/php-extension/run-tests.php --show-diff ./tests/cli
 
       - name: Run ${{ matrix.server }} server tests
         run: |
@@ -1206,7 +1206,7 @@ jobs:
           cd lib/php-extension/
           phpize
           cd ../../
-          php lib/php-extension/run-tests.php ./tests/cli
+          php lib/php-extension/run-tests.php --show-diff ./tests/cli
 
       - name: Run ${{ matrix.server }} server tests
         run: |

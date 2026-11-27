@@ -11,6 +11,8 @@ test=https://ssrf-redirects.testssandbox.com/ssrf-test-3
 --FILE--
 <?php
 
+require __DIR__ . '/redirect_request.inc';
+
 $host = '127.0.0.1';
 $port = 3000;
 $pid = null;
@@ -23,7 +25,7 @@ $descriptorspec = [
 
 try {
     // Start PHP server
-    $process = proc_open("php -S $host:$port", $descriptorspec, $pipes);
+    $process = proc_open("exec php -S $host:$port", $descriptorspec, $pipes);
     if (!is_resource($process)) {
         throw new RuntimeException("Failed to start PHP server.");
     }
@@ -38,7 +40,7 @@ try {
     $ch1 = curl_init("https://ssrf-redirects.testssandbox.com/ssrf-test-3");
     curl_setopt($ch1, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch1, CURLOPT_FOLLOWLOCATION, true);
-    $response = curl_exec($ch1);
+    $response = requestRedirect($ch1);
     curl_close($ch1);
 
     echo "Response:\n$response\n";
