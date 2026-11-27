@@ -32,7 +32,8 @@ func TestScheduleCustomEventDropsEventsWhileCloudIsSlow(t *testing.T) {
 	defer releaseCloud()
 
 	server := &ServerData{
-		Logger: log.CreateLogger("test", "ERROR", false),
+		CloudPolicy: &CloudPolicy{},
+		Logger:      log.CreateLogger("test", "ERROR", false),
 		AikidoConfig: AikidoConfigData{
 			Token:    "AIK_TEST",
 			Endpoint: cloudServer.URL,
@@ -56,7 +57,8 @@ func TestScheduleCustomEventDropsEventsWhileCloudIsSlow(t *testing.T) {
 		t.Fatalf("expected %d requests to reach the cloud, got %d", constants.MaxConcurrentCustomEventRequests, received.Load())
 	}
 	otherServer := &ServerData{
-		Logger: log.CreateLogger("other", "ERROR", false),
+		CloudPolicy: &CloudPolicy{},
+		Logger:      log.CreateLogger("other", "ERROR", false),
 		AikidoConfig: AikidoConfigData{
 			Token:    "AIK_OTHER",
 			Endpoint: cloudServer.URL,

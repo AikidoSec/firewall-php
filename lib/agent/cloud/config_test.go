@@ -31,14 +31,14 @@ func TestPollKeepsCachedConfigWhenDownloadedRevisionIsOlder(t *testing.T) {
 	server := NewServerData()
 	server.Logger = log.CreateLogger("test", "ERROR", false)
 	server.AikidoConfig = AikidoConfigData{Token: "AIK_TEST", Endpoint: api.URL, ConfigEndpoint: api.URL}
-	server.CloudConfig.ConfigUpdatedAt = 2
-	server.CloudLists.BlockedUserAgents = "cached"
+	server.CloudPolicy.CloudConfig.ConfigUpdatedAt = 2
+	server.CloudPolicy.CloudLists.BlockedUserAgents = "cached"
 
 	CheckConfigUpdatedAt(server)
 
 	require.True(t, downloaded.Load())
-	require.EqualValues(t, 2, server.CloudConfig.ConfigUpdatedAt)
-	require.Equal(t, "cached", server.CloudLists.BlockedUserAgents)
+	require.EqualValues(t, 2, server.CloudPolicy.CloudConfig.ConfigUpdatedAt)
+	require.Equal(t, "cached", server.CloudPolicy.CloudLists.BlockedUserAgents)
 }
 
 func TestStoreCloudConfigKeepsListsOnFailedDownload(t *testing.T) {
@@ -51,21 +51,21 @@ func TestStoreCloudConfigKeepsListsOnFailedDownload(t *testing.T) {
 	server := &ServerData{
 		Logger:       log.CreateLogger("test", "ERROR", false),
 		AikidoConfig: AikidoConfigData{Token: "AIK_TEST", Endpoint: cloudServer.URL},
-		CloudConfig:  CloudConfigData{ConfigUpdatedAt: 1},
 		PollingData:  &ServerDataPolling{HeartbeatTicker: heartbeat},
-		CloudLists: CloudListsData{
-			BlockedIpsList:      map[string]IpBlocklist{"blocked": {Ips: []string{"1.2.3.4"}}},
-			AllowedIpsList:      map[string]IpBlocklist{"allowed": {Ips: []string{"1.2.3.5"}}},
-			MonitoredIpsList:    map[string]IpBlocklist{"monitored": {Ips: []string{"1.2.3.6"}}},
-			BlockedUserAgents:   "BlockedBot",
-			MonitoredUserAgents: "MonitoredBot",
-			UserAgentDetails:    map[string]string{"bot": "BlockedBot|MonitoredBot"},
-		},
+		CloudPolicy:  &CloudPolicy{CloudConfig: CloudConfigData{ConfigUpdatedAt: 1}},
 	}
-	lists := server.CloudLists
+	server.CloudPolicy.CloudLists = CloudListsData{
+		BlockedIpsList:      map[string]IpBlocklist{"blocked": {Ips: []string{"1.2.3.4"}}},
+		AllowedIpsList:      map[string]IpBlocklist{"allowed": {Ips: []string{"1.2.3.5"}}},
+		MonitoredIpsList:    map[string]IpBlocklist{"monitored": {Ips: []string{"1.2.3.6"}}},
+		BlockedUserAgents:   "BlockedBot",
+		MonitoredUserAgents: "MonitoredBot",
+		UserAgentDetails:    map[string]string{"bot": "BlockedBot|MonitoredBot"},
+	}
+	lists := server.CloudPolicy.CloudLists
 	require.True(t, StoreCloudConfig(server, []byte(`{"configUpdatedAt":2,"block":true}`)))
-	require.Equal(t, int64(2), server.CloudConfig.ConfigUpdatedAt)
-	require.NotNil(t, server.CloudConfig.Block)
-	require.True(t, *server.CloudConfig.Block)
-	require.Equal(t, lists, server.CloudLists)
+	require.Equal(t, int64(2), server.CloudPolicy.CloudConfig.ConfigUpdatedAt)
+	require.NotNil(t, server.CloudPolicy.CloudConfig.Block)
+	require.True(t, *server.CloudPolicy.CloudConfig.Block)
+	require.Equal(t, lists, server.CloudPolicy.CloudLists)
 }

@@ -204,10 +204,10 @@ func isRealtimeEnabled(server *ServerData) bool {
 		return true
 	}
 
-	server.ConfigCacheMutex.Lock()
-	defer server.ConfigCacheMutex.Unlock()
+	server.CloudPolicy.ConfigCacheMutex.Lock()
+	defer server.CloudPolicy.ConfigCacheMutex.Unlock()
 
-	return slices.Contains(server.CloudConfig.EnabledFeatures, constants.RealtimeUpdatesFeature)
+	return slices.Contains(server.CloudPolicy.CloudConfig.EnabledFeatures, constants.RealtimeUpdatesFeature)
 }
 
 func StartConfigStreamRoutine(server *ServerData) {

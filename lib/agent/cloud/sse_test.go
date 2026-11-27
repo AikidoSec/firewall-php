@@ -118,9 +118,9 @@ func newTestServerData(cloud *mockCloud, token string, sse bool) *ServerData {
 }
 
 func getConfigUpdatedAt(server *ServerData) int64 {
-	server.ConfigCacheMutex.Lock()
-	defer server.ConfigCacheMutex.Unlock()
-	return server.CloudConfig.ConfigUpdatedAt
+	server.CloudPolicy.ConfigCacheMutex.Lock()
+	defer server.CloudPolicy.ConfigCacheMutex.Unlock()
+	return server.CloudPolicy.CloudConfig.ConfigUpdatedAt
 }
 
 func assertAgentHeaders(t *testing.T, server *ServerData, headers http.Header) {
@@ -223,7 +223,7 @@ func TestConfigStreamRoutine(t *testing.T) {
 	t.Run("it connects when the cloud enables realtime updates", func(t *testing.T) {
 		cloud := newMockCloud()
 		server := newTestServerData(cloud, "AIK_RUNTIME_TEST_TOKEN", false)
-		server.CloudConfig.EnabledFeatures = []string{constants.RealtimeUpdatesFeature}
+		server.CloudPolicy.CloudConfig.EnabledFeatures = []string{constants.RealtimeUpdatesFeature}
 
 		StartConfigStreamRoutine(server)
 
@@ -240,7 +240,7 @@ func TestConfigStreamRoutine(t *testing.T) {
 		cloud := newMockCloud()
 		defer cloud.httpServer.Close()
 		server := newTestServerData(cloud, "AIK_RUNTIME_TEST_TOKEN", false)
-		server.CloudConfig.EnabledFeatures = []string{"some_other_feature"}
+		server.CloudPolicy.CloudConfig.EnabledFeatures = []string{"some_other_feature"}
 
 		StartConfigStreamRoutine(server)
 		defer StopConfigStreamRoutine(server)
@@ -361,7 +361,7 @@ func TestIsRealtimeEnabled(t *testing.T) {
 	newServer := func(sse bool, enabledFeatures []string) *ServerData {
 		server := NewServerData()
 		server.AikidoConfig.Sse = sse
-		server.CloudConfig.EnabledFeatures = enabledFeatures
+		server.CloudPolicy.CloudConfig.EnabledFeatures = enabledFeatures
 		return server
 	}
 

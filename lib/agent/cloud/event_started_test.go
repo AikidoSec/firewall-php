@@ -30,7 +30,8 @@ func TestSendStartEventLogsFailure(t *testing.T) {
 	}()
 
 	server := &ServerData{
-		Logger: log.CreateLogger("test", "WARN", false),
+		CloudPolicy: &CloudPolicy{},
+		Logger:      log.CreateLogger("test", "WARN", false),
 		AikidoConfig: AikidoConfigData{
 			Token:    "AIK_TEST",
 			Endpoint: cloudServer.URL,

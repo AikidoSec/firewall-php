@@ -368,28 +368,28 @@ func getCloudConfig(server *ServerData, configUpdatedAt int64) *protos.CloudConf
 
 	isBlockingEnabled := utils.IsBlockingEnabled(server)
 
-	server.ConfigCacheMutex.Lock()
-	defer server.ConfigCacheMutex.Unlock()
+	server.CloudPolicy.ConfigCacheMutex.Lock()
+	defer server.CloudPolicy.ConfigCacheMutex.Unlock()
 
-	if server.CloudConfig.ConfigUpdatedAt <= configUpdatedAt {
+	if server.CloudPolicy.CloudConfig.ConfigUpdatedAt <= configUpdatedAt {
 		return nil
 	}
 
 	cloudConfig := &protos.CloudConfig{
-		ConfigUpdatedAt:          server.CloudConfig.ConfigUpdatedAt,
-		BlockedUserIds:           server.CloudConfig.BlockedUserIds,
-		BypassedIps:              server.CloudConfig.BypassedIps,
-		BlockedIps:               getIpsList(server.CloudLists.BlockedIpsList),
-		AllowedIps:               getIpsList(server.CloudLists.AllowedIpsList),
-		BlockedUserAgents:        server.CloudLists.BlockedUserAgents,
-		MonitoredIps:             getIpsList(server.CloudLists.MonitoredIpsList),
-		MonitoredUserAgents:      server.CloudLists.MonitoredUserAgents,
-		UserAgentDetails:         server.CloudLists.UserAgentDetails,
+		ConfigUpdatedAt:          server.CloudPolicy.CloudConfig.ConfigUpdatedAt,
+		BlockedUserIds:           server.CloudPolicy.CloudConfig.BlockedUserIds,
+		BypassedIps:              server.CloudPolicy.CloudConfig.BypassedIps,
+		BlockedIps:               getIpsList(server.CloudPolicy.CloudLists.BlockedIpsList),
+		AllowedIps:               getIpsList(server.CloudPolicy.CloudLists.AllowedIpsList),
+		BlockedUserAgents:        server.CloudPolicy.CloudLists.BlockedUserAgents,
+		MonitoredIps:             getIpsList(server.CloudPolicy.CloudLists.MonitoredIpsList),
+		MonitoredUserAgents:      server.CloudPolicy.CloudLists.MonitoredUserAgents,
+		UserAgentDetails:         server.CloudPolicy.CloudLists.UserAgentDetails,
 		Block:                    isBlockingEnabled,
-		BlockNewOutgoingRequests: server.CloudConfig.BlockNewOutgoingRequests,
+		BlockNewOutgoingRequests: server.CloudPolicy.CloudConfig.BlockNewOutgoingRequests,
 	}
 
-	for _, endpoint := range server.CloudConfig.Endpoints {
+	for _, endpoint := range server.CloudPolicy.CloudConfig.Endpoints {
 		cloudConfig.Endpoints = append(cloudConfig.Endpoints, &protos.Endpoint{
 			Method:             endpoint.Method,
 			Route:              endpoint.Route,
@@ -401,7 +401,7 @@ func getCloudConfig(server *ServerData, configUpdatedAt int64) *protos.CloudConf
 		})
 	}
 
-	for _, domain := range server.CloudConfig.OutboundDomains {
+	for _, domain := range server.CloudPolicy.CloudConfig.OutboundDomains {
 		cloudConfig.OutboundDomains = append(cloudConfig.OutboundDomains, &protos.OutboundDomain{
 			Hostname: domain.Hostname,
 			Block:    domain.Mode == "block",

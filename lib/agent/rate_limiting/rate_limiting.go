@@ -43,7 +43,7 @@ func AdvanceRateLimitingQueues(server *ServerData) {
 	}
 }
 
-// The caller must hold server.ConfigCacheMutex to prevent endpoint settings changing during the update.
+// The caller must hold server.CloudPolicy.ConfigCacheMutex to prevent endpoint settings changing during the update.
 func UpdateConfig(server *ServerData) {
 	server.RateLimitingMutex.Lock()
 	defer server.RateLimitingMutex.Unlock()
@@ -51,7 +51,7 @@ func UpdateConfig(server *ServerData) {
 	newMap := make(map[RateLimitingKey]*RateLimitingValue)
 	newWildcardMap := make(map[RateLimitingKey]*RateLimitingWildcardValue)
 
-	for _, newEndpointConfig := range server.CloudConfig.Endpoints {
+	for _, newEndpointConfig := range server.CloudPolicy.CloudConfig.Endpoints {
 		// Skip disabled endpoints
 		if !newEndpointConfig.RateLimiting.Enabled {
 			log.Infof(server.Logger, "Got new rate limiting endpoint config, but is disabled: %v", newEndpointConfig)

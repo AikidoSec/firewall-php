@@ -4,15 +4,16 @@ import (
 	"encoding/json"
 	. "main/aikido_types"
 	"main/constants"
+	"main/globals"
 	"main/log"
 	"main/rate_limiting"
 	"runtime"
 )
 
 func WasConfigUpdated(server *ServerData, configUpdatedAt int64) bool {
-	server.ConfigCacheMutex.Lock()
-	defer server.ConfigCacheMutex.Unlock()
-	if configUpdatedAt <= server.CloudConfig.ConfigUpdatedAt {
+	server.CloudPolicy.ConfigCacheMutex.Lock()
+	defer server.CloudPolicy.ConfigCacheMutex.Unlock()
+	if configUpdatedAt <= server.CloudPolicy.CloudConfig.ConfigUpdatedAt {
 		return false
 	}
 	return true
@@ -49,8 +50,8 @@ func FetchAndStoreCloudConfig(server *ServerData) {
 }
 
 func StoreCloudConfig(server *ServerData, configReponse []byte) bool {
-	server.ConfigRefreshMutex.Lock()
-	defer server.ConfigRefreshMutex.Unlock()
+	server.CloudPolicy.ConfigRefreshMutex.Lock()
+	defer server.CloudPolicy.ConfigRefreshMutex.Unlock()
 
 	tempCloudConfig := CloudConfigData{}
 	err := json.Unmarshal(configReponse, &tempCloudConfig)
@@ -72,15 +73,29 @@ func StoreCloudConfig(server *ServerData, configReponse []byte) bool {
 }
 
 func ApplyCloudConfig(server *ServerData, config CloudConfigData, lists *ListsConfigData) {
-	server.ConfigCacheMutex.Lock()
-	defer server.ConfigCacheMutex.Unlock()
-	server.CloudConfig = config
+	policy := server.CloudPolicy
+	policy.ConfigCacheMutex.Lock()
+	defer policy.ConfigCacheMutex.Unlock()
+	policy.CloudConfig = config
 	if lists != nil {
 		UpdateListsConfig(server, lists)
 	}
-	log.Infof(server.Logger, "Applying new cloud config: %v", server.CloudConfig)
+	updateServerSettings(server)
+	for _, other := range globals.GetServers() {
+		if other != server && other.CloudPolicy == policy {
+			updateServerSettings(other)
+		}
+	}
+}
+
+func updateServerSettings(server *ServerData) bool {
+	if server.CloudPolicy.CloudConfig.ConfigUpdatedAt == 0 {
+		return false
+	}
+	log.Infof(server.Logger, "Applying new cloud config: %v", server.CloudPolicy.CloudConfig)
 	ResetHeartbeatTicker(server)
 	rate_limiting.UpdateConfig(server)
+	return true
 }
 
 func fetchCloudLists(server *ServerData) *ListsConfigData {
@@ -101,16 +116,16 @@ func fetchCloudLists(server *ServerData) *ListsConfigData {
 }
 
 func UpdateListsConfig(server *ServerData, tempListsConfig *ListsConfigData) {
-	server.CloudLists.BlockedIpsList = UpdateIpsLists(tempListsConfig.BlockedIpAddresses)
-	server.CloudLists.MonitoredIpsList = UpdateIpsLists(tempListsConfig.MonitoredIpAddresses)
-	server.CloudLists.AllowedIpsList = UpdateIpsLists(tempListsConfig.AllowedIpAddresses)
+	server.CloudPolicy.CloudLists.BlockedIpsList = UpdateIpsLists(tempListsConfig.BlockedIpAddresses)
+	server.CloudPolicy.CloudLists.MonitoredIpsList = UpdateIpsLists(tempListsConfig.MonitoredIpAddresses)
+	server.CloudPolicy.CloudLists.AllowedIpsList = UpdateIpsLists(tempListsConfig.AllowedIpAddresses)
 
-	server.CloudLists.BlockedUserAgents = tempListsConfig.BlockedUserAgents
-	server.CloudLists.MonitoredUserAgents = tempListsConfig.MonitoredUserAgents
+	server.CloudPolicy.CloudLists.BlockedUserAgents = tempListsConfig.BlockedUserAgents
+	server.CloudPolicy.CloudLists.MonitoredUserAgents = tempListsConfig.MonitoredUserAgents
 
-	server.CloudLists.UserAgentDetails = make(map[string]string)
+	server.CloudPolicy.CloudLists.UserAgentDetails = make(map[string]string)
 	for _, userAgentDetail := range tempListsConfig.UserAgentDetails {
-		server.CloudLists.UserAgentDetails[userAgentDetail.Key] = userAgentDetail.Pattern
+		server.CloudPolicy.CloudLists.UserAgentDetails[userAgentDetail.Key] = userAgentDetail.Pattern
 	}
 }
 

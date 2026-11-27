@@ -42,6 +42,7 @@ func TestOnAttackDetectedReturnsBeforeCloudUploadCompletes(t *testing.T) {
 	key := ServerKey{Token: "AIK_ATTACK_EVENT_TEST", ServerPID: 1}
 	server := &ServerData{
 		AikidoConfig: AikidoConfigData{Token: key.Token, Endpoint: cloudServer.URL},
+		CloudPolicy:  &CloudPolicy{},
 		Logger:       log.CreateLogger("test", "ERROR", false),
 	}
 	globals.ServersMutex.Lock()

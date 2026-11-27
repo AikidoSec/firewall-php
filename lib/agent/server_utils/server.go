@@ -41,6 +41,12 @@ func Register(serverKey ServerKey, requestProcessorPID int32, req *protos.Config
 	log.Infof(log.MainLogger, "Client (request processor PID: %d) connected. Registering server \"AIK_RUNTIME_***%s\" (server PID: %d)...", requestProcessorPID, utils.AnonymizeToken(serverKey.Token), serverKey.ServerPID)
 
 	storeConfig(server, req)
+	for key, other := range globals.Servers {
+		if other != server && key.Token == serverKey.Token && other.AikidoConfig.Endpoint == req.GetEndpoint() && other.AikidoConfig.ConfigEndpoint == req.GetConfigEndpoint() {
+			server.CloudPolicy = other.CloudPolicy
+			break
+		}
+	}
 	// One token can register several servers (one per PHP server PID), so the
 	// server PID keeps their log file names apart.
 	logTag := fmt.Sprintf("%s-%d", utils.AnonymizeToken(serverKey.Token), serverKey.ServerPID)
