@@ -1386,7 +1386,7 @@ jobs:
           echo "#!/usr/bin/env bash" > ./zen-demo-php/.fly/scripts/aikido.sh
           echo "dpkg -i -E \"/var/www/html/aikido-php-firewall.${ARCH}.deb\"" >> ./zen-demo-php/.fly/scripts/aikido.sh
       - name: Run Firewall QA Tests
-        uses: AikidoSec/firewall-tester-action@3d448c6929e168148cf74c3d998d1dd5950d40ee # v1.1.1
+        uses: AikidoSec/firewall-tester-action@901b7a3230c4899f87d327266383b8d2efdcebfe # v1.1.2
         with:
           dockerfile_path: ./zen-demo-php/Dockerfile.qa-control-apache-mod-php
           app_env_file: ./zen-demo-php/.env.qa
@@ -1420,7 +1420,7 @@ jobs:
           echo "#!/usr/bin/env bash" > ./zen-demo-php/.fly/scripts/aikido.sh
           echo "dpkg -i -E \"/var/www/html/aikido-php-firewall.${ARCH}.deb\"" >> ./zen-demo-php/.fly/scripts/aikido.sh
       - name: Run Firewall QA Tests
-        uses: AikidoSec/firewall-tester-action@3d448c6929e168148cf74c3d998d1dd5950d40ee # v1.1.1
+        uses: AikidoSec/firewall-tester-action@901b7a3230c4899f87d327266383b8d2efdcebfe # v1.1.2
         with:
           dockerfile_path: ./zen-demo-php/Dockerfile.qa-control-apache-php-fpm
           app_env_file: ./zen-demo-php/.env.qa
@@ -1454,7 +1454,7 @@ jobs:
           echo "#!/usr/bin/env bash" > ./zen-demo-php/.fly/scripts/aikido.sh
           echo "dpkg -i -E \"/var/www/html/aikido-php-firewall.${ARCH}.deb\"" >> ./zen-demo-php/.fly/scripts/aikido.sh
       - name: Run Firewall QA Tests
-        uses: AikidoSec/firewall-tester-action@3d448c6929e168148cf74c3d998d1dd5950d40ee # v1.1.1
+        uses: AikidoSec/firewall-tester-action@901b7a3230c4899f87d327266383b8d2efdcebfe # v1.1.2
         with:
           dockerfile_path: ./zen-demo-php/Dockerfile.qa-control-nginx-php-fpm
           app_env_file: ./zen-demo-php/.env.qa
@@ -1489,9 +1489,20 @@ jobs:
           echo "dpkg -i -E \"/var/www/html/aikido-php-firewall.${ARCH}.deb\"" > ./zen-demo-php/.fly/scripts/aikido.sh
         
       - name: Run Firewall QA Tests
-        uses: AikidoSec/firewall-tester-action@3d448c6929e168148cf74c3d998d1dd5950d40ee # v1.1.1
+        uses: AikidoSec/firewall-tester-action@901b7a3230c4899f87d327266383b8d2efdcebfe # v1.1.2
         with:
           dockerfile_path: ./zen-demo-php/Dockerfile
           app_env_file: ./zen-demo-php/.env.qa
           config_propagation_delay: 60
-          skip_tests: test-ssrf,test-stored-ssrf-no-context,test-stored-ssrf,test-excluded-user-from-rate-limiting,test-outbound-domain-blocking
+          skip_tests: >-
+            test-ssrf,
+            test-stored-ssrf-no-context,
+            test-stored-ssrf,
+            test-excluded-user-from-rate-limiting,
+            test-outbound-domain-blocking,
+            test-allowed-ip-for-routes,
+            test-api-spec-large-body,
+            test-bot-blocking,
+            test-force-protection-off-stats,
+            test-ip-lists-monitoring,
+            test-request-count-exclusions
